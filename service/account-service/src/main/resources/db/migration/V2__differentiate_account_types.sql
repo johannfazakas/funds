@@ -1,0 +1,6 @@
+ALTER TABLE "account"
+    ADD COLUMN type VARCHAR(50) NOT NULL DEFAULT 'currency';
+ALTER TABLE "account"
+    ADD COLUMN currency VARCHAR(50) NOT NULL DEFAULT 'RON';
+ALTER TABLE "account"
+    ADD COLUMN symbol VARCHAR(50);
