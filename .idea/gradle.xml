@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/service/buildSrc" name="buildSrc">
+                <projects>
+                  <project path="$PROJECT_DIR$/service/buildSrc" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/service" />
+        <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/service" />
+            <option value="$PROJECT_DIR$/service/account-api" />
+            <option value="$PROJECT_DIR$/service/account-sdk" />
+            <option value="$PROJECT_DIR$/service/account-service" />
+            <option value="$PROJECT_DIR$/service/buildSrc" />
+            <option value="$PROJECT_DIR$/service/commons" />
+            <option value="$PROJECT_DIR$/service/commons-service" />
+            <option value="$PROJECT_DIR$/service/commons-test" />
+            <option value="$PROJECT_DIR$/service/fund-api" />
+            <option value="$PROJECT_DIR$/service/fund-sdk" />
+            <option value="$PROJECT_DIR$/service/fund-service" />
+            <option value="$PROJECT_DIR$/service/historical-pricing-api" />
+            <option value="$PROJECT_DIR$/service/historical-pricing-sdk" />
+            <option value="$PROJECT_DIR$/service/historical-pricing-service" />
+            <option value="$PROJECT_DIR$/service/investment-api" />
+            <option value="$PROJECT_DIR$/service/investment-sdk" />
+            <option value="$PROJECT_DIR$/service/investment-service" />
+            <option value="$PROJECT_DIR$/service/user-api" />
+            <option value="$PROJECT_DIR$/service/user-sdk" />
+            <option value="$PROJECT_DIR$/service/user-service" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>

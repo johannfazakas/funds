@@ -1,0 +1,10 @@
+ktor:
+  application:
+    modules:
+      - ro.jf.bk.account.service.AccountServiceApplicationKt.module
+  deployment:
+    port: 5211
+database:
+  url: "jdbc:postgresql://localhost:5438/bk_account"
+  user: postgres
+  password: pass

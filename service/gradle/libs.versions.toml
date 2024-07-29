@@ -1,0 +1,18 @@
+[versions]
+groovy = "3.0.5"
+checkstyle = "8.37"
+logback-catalog = "1.4.14"
+
+[libraries]
+# TODO(Johann) try to reach this format. kafka is actually not needed
+kafka = { module = "org.apache.kafka:kafka-clients", version = "3.7.1" }
+#logback-catalog = { module = "ch.qos.logback:logback-classic", version.ref = "logback-catalog" }
+
+groovy-core = { module = "org.codehaus.groovy:groovy", version.ref = "groovy" }
+groovy-json = { module = "org.codehaus.groovy:groovy-json", version.ref = "groovy" }
+groovy-nio = { module = "org.codehaus.groovy:groovy-nio", version.ref = "groovy" }
+commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version = { strictly = "[3.8, 4.0[", prefer = "3.9" } }
+
+[bundles]
+
+[plugins]

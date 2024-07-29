@@ -1,0 +1,10 @@
+ktor:
+  application:
+    modules:
+      - ro.jf.bk.account.service.FundServiceApplicationKt.module
+  deployment:
+    port: 5253
+database:
+  url: "jdbc:postgresql://localhost:5438/bk_fund"
+  user: postgres
+  password: pass
