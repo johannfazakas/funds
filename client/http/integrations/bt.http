@@ -1,0 +1,23 @@
+POST https://www.btassetmanagement.ro/bt-energy
+Content-Type: application/x-www-form-urlencoded
+#Host: www.btassetmanagement.ro
+#Origin: https://www.btassetmanagement.ro
+#Cookie: OptConsent={"val":["necesare","performanta_analiza","promovare"],"uuid":"99130e35-dfcf-4a24-ba7c-2c704e2e6a30","dtime":"07-05-2024"}; _hjSessionUser_988058=eyJpZCI6ImU3MTg1NzBjLWFlYTItNThhOC1hNGY5LTFjMTg4MzE1OWYwOSIsImNyZWF0ZWQiOjE3MTUwNjMwNjM4ODIsImV4aXN0aW5nIjp0cnVlfQ==; _fbp=fb.1.1715063064047.1612272878; _gcl_au=1.1.1854409761.1715063065; _ga=GA1.1.174863601.1715063065; _hjSession_988058=eyJpZCI6IjQ3MjE5ODdmLWNmNGUtNDc3Ny05OTczLWFmYzlkMTU1ZGJiZSIsImMiOjE3MTc3NjYwNTUzOTIsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowLCJzcCI6MH0=; _ga_GFTQDTMEWX=GS1.1.1717766055.6.0.1717766056.59.0.0; bt_asset_session=eyJpdiI6IkVBV3Rya0Z1K3NCM0NXRzVhdHR6OWc9PSIsInZhbHVlIjoic01qWTBldzJTOFFPZ1pxY1VOMGVsbXhmVnVhWmV4Wkh5SkhyWGRjZ0syanltVFh5dit3RTdMNCtcL3pyRnRTRFdpTnRucWtDdHkweHkxU25wNkIrYzBKeG1hQWwrT29XbkpCbWhaRnl6eHhOK00rbFF5eGtxdnVpMm5vMXNPdWo2IiwibWFjIjoiMTBhMTRkOTIyZjg0MDQzZDFkZTRmZTk0OGE0NGQxOGEwMjJkNTU4NDdlNjNmMTZhODg2ZmUyMTY0NWQ2ZjZkNCJ9
+X-Requested-With: XMLHttpRequest
+X-October-Request-Handler: onIstoric
+
+tip_titlu=Valoare+titlu
+
+### Download BT Maxim
+GET https://www.btassetmanagement.ro/storage/app/media/download.xlsx
+Cookie: bt_asset_session=eyJpdiI6Ikd1Y2RFWmtCZ09YbENsVlwvTmtpQmFRPT0iLCJ2YWx1ZSI6IjBMQ2lFUENGUlVIa2I0bnRDQ1crTEVISEtwcElBTUVDM2MxUzB2UnBzMlBWTFdwS08zWWNnSFFraE11S2lRZ2dnSkR1dXRFUVh6UVc0NkNzTDJmOTJtUVQzT1p1V1RyNDVWT09PeUQ1MXVPSnBOdWNrOWxxbTBIZmtiWEpsZ1h6IiwibWFjIjoiNjlhMDMzODZmOTkyOGU4NzRiYTA2ZTRjNDJjMTA0NmY5NDZhZGExYTBlNjk1YjM5NzdjNjNmNzg2MjEyYjAyNyJ9; expires=Fri, 07-Jun-2024 16:20:36 GMT; Max-Age=7200; path=/; secure; httponly; samesite=strict; HTTPOnly; Secure; SameSite=strict
+
+#2024-06-05	26,646	9,065	13,652,792.95
+#2024-06-04	26,408	9,063	13,574,389.45
+#2024-06-03	26,327	9,038	13,496,063.32
+#2024-05-31	26,364	9,030	13,481,076.39
+#2024-05-30	26,278	9,023	13,454,760.98
+
+### Download BT Technology
+GET https://www.btassetmanagement.ro/storage/app/media/download.xlsx
+Cookie: bt_asset_session=eyJpdiI6ImhWb1ljTmsxR1RRNUxHM1p0SWd5d2c9PSIsInZhbHVlIjoidVhSMVlrZHNadlh2U2pjT0JKVE9seG44a08rWHlpVHk2amJVcUVFejM1cnBINmNBU2lUQW9CdnNLSVA2WW8zKzZPUm51VUtONWV5TjJraTUwbm94ZWp6RmhZM2JvYXBuelwvWVpNRUFNbGs1cmpJdkdzZ29LM2ZwMitLM2pjRHd0IiwibWFjIjoiODlhMzExNDc4M2M0OGJlNGY1NGVmYzQ5NTIxZWYxNjEzNTg1MmFlZTZkMzNmZTA3NzJhMTYxMTVmZjNlOWZjYyJ9; expires=Fri, 07-Jun-2024 16:22:05 GMT; Max-Age=7200; path=/; secure; httponly; samesite=strict; HTTPOnly; Secure; SameSite=strict

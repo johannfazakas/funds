@@ -1,0 +1,34 @@
+@account-id=cd72c105-c759-4253-8ba8-bbb9f62db0e9
+
+### Get Accounts
+GET {{account-host}}/bk-api/account/v1/accounts
+BK_USER_ID: {{user-id}}
+
+### Get Account by id
+GET {{account-host}}/bk-api/account/v1/accounts/{{account-id}}
+BK_USER_ID: {{user-id}}
+
+### Delete Account by id
+DELETE {{account-host}}/bk-api/account/v1/accounts/{{account-id}}
+BK_USER_ID: {{user-id}}
+
+### Create Instrument Account
+POST {{account-host}}/bk-api/account/v1/accounts/instrument
+BK_USER_ID: {{user-id}}
+Content-Type: application/json
+
+{
+  "name": "S&P 500",
+  "currency": "RON",
+  "symbol": "SXR8_DE"
+}
+
+### Create Currency Account
+POST {{account-host}}/bk-api/account/v1/accounts/currency
+BK_USER_ID: {{user-id}}
+Content-Type: application/json
+
+{
+  "name": "BT RON",
+  "currency": "RON"
+}

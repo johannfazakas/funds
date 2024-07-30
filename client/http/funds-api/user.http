@@ -1,0 +1,26 @@
+### Get Users
+GET {{user-host}}/bk-api/user/v1/users
+
+### Get User by id
+GET {{user-host}}/bk-api/user/v1/users/{{user-id}}
+
+### Get User by username
+GET {{user-host}}/bk-api/user/v1/users/username/johann
+
+> {%
+    client.global.set("user-id", response.body["id"]);
+%}
+
+### Create User
+POST {{user-host}}/bk-api/user/v1/users
+Content-Type: application/json
+
+{
+  "username": "user"
+}
+> {%
+    client.global.set("user-id", response.body["id"]);
+%}
+
+### Delete User
+DELETE {{user-host}}/bk-api/user/v1/users/{{user-id}}

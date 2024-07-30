@@ -1,0 +1,2 @@
+### Get Goldman Sachs Romania Equity prices
+GET https://markets.ft.com/data/equities/ajax/get-historical-prices?startDate=2024%2F05%2F01&endDate=2024%2F06%2F06&symbol=28304712
