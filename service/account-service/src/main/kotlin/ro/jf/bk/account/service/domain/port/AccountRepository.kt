@@ -7,11 +7,11 @@ import java.util.*
 
 interface AccountRepository {
     suspend fun list(userId: UUID): List<Account>
-    suspend fun findById(userId: UUID, id: UUID): Account?
+    suspend fun findById(userId: UUID, accountId: UUID): Account?
     suspend fun findByName(userId: UUID, name: String): Account?
     suspend fun save(command: CreateCurrencyAccountCommand): Account.Currency
     suspend fun save(command: CreateInstrumentAccountCommand): Account.Instrument
-    suspend fun deleteById(userId: UUID, id: UUID)
+    suspend fun deleteById(userId: UUID, accountId: UUID)
     suspend fun deleteAllByUserId(userId: UUID)
     suspend fun deleteAll()
 }

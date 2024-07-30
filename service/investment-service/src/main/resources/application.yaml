@@ -4,7 +4,3 @@ ktor:
       - ro.jf.bk.investment.service.InvestmentServiceApplicationKt.module
   deployment:
     port: 5275
-database:
-  url: "jdbc:postgresql://localhost:5438/bk_investment"
-  user: postgres
-  password: pass

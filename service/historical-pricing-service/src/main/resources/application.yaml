@@ -1,7 +1,7 @@
 ktor:
     application:
         modules:
-            - ro.jf.finance.historicalpricing.ApplicationKt.module
+            - ro.jf.finance.historicalpricing.service.HistoricalPricingApplicationKt.module
     deployment:
         port: 5231
 database:

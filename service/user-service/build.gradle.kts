@@ -60,7 +60,7 @@ application {
 ktor {
     docker {
         jreVersion.set(JreVersion.JRE_17)
-        localImageName.set("bookkeeper/user-api")
+        localImageName.set("funds/user-service")
     }
 }
 
