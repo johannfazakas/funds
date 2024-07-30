@@ -71,7 +71,7 @@ application {
 ktor {
     docker {
         jreVersion.set(JreVersion.JRE_17)
-        localImageName.set("bookkeeper/historical-pricing")
+        localImageName.set("funds/historical-pricing-service")
     }
 }
 

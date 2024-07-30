@@ -1,0 +1,50 @@
+version: "3.9"
+name: funds
+services:
+  postgres:
+    image: postgres:15
+    container_name: ff_postgres
+    ports:
+      - '5438:5432'
+    volumes:
+      - ./volumes/postgres/data:/var/lib/postgresql/data
+      - ./volumes/postgres/init/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pass
+
+  user-service:
+    image: funds/user-service:latest
+    container_name: ff_user
+    ports:
+      - '5247:5247'
+    environment:
+      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_user
+    depends_on:
+      - postgres
+
+  historical-pricing-service:
+    image: funds/historical-pricing-service:latest
+    container_name: ff_historical_pricing
+    ports:
+      - '5231:5231'
+
+  account-service:
+    image: funds/account-service:latest
+    container_name: ff_account
+    ports:
+      - '5211:5211'
+    environment:
+      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_account
+    depends_on:
+      - postgres
+
+  fund-service:
+    image: funds/fund-service:latest
+    container_name: ff_fund
+    ports:
+      - '5253:5253'
+    environment:
+      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_fund
+    depends_on:
+      - postgres

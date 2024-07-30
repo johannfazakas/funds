@@ -5,6 +5,6 @@ ktor:
   deployment:
     port: 5211
 database:
-  url: "jdbc:postgresql://localhost:5438/bk_account"
+  url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/ff_account"
   user: postgres
   password: pass
