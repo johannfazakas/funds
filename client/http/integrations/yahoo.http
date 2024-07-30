@@ -1,0 +1,25 @@
+### Get IMAEA.XC historical data
+GET https://query1.finance.yahoo.com/v8/finance/chart/IMAEA.XC?
+    events=capitalGain%7Cdiv%7Csplit
+    &formatted=true
+    &includeAdjustedClose=true
+    &interval=1d
+    &period1=1709276742
+    &period2=1717049116
+    &symbol=IMAEA.XC
+    &userYfid=true
+    &lang=en-US
+    &region=US
+
+### Get IMAEA.XC historical data
+GET https://query1.finance.yahoo.com/v8/finance/chart/IMAEA.XC?
+    events=capitalGain%7Cdiv%7Csplit
+    &formatted=true
+    &includeAdjustedClose=true
+    &interval=1d
+    &period1=1709276742
+    &period2=1717049116
+    &symbol=IMAEA.XC
+    &userYfid=true
+    &lang=en-US
+    &region=US

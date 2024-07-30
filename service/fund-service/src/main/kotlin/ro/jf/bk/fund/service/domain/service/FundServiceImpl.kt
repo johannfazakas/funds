@@ -13,7 +13,11 @@ class FundServiceImpl(
         return fundRepository.list(userId)
     }
 
-    override suspend fun findFundByName(userId: UUID, name: String): Fund? {
+    override suspend fun findById(userId: UUID, fundId: UUID): Fund? {
+        return fundRepository.findById(userId, fundId)
+    }
+
+    override suspend fun findByName(userId: UUID, name: String): Fund? {
         return fundRepository.findByName(userId, name)
     }
 

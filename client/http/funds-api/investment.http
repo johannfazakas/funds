@@ -1,0 +1,2 @@
+### Get instrument positions
+GET http://localhost:5275/api/investment/instruments/SXR8_DE/positions

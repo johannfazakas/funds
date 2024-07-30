@@ -25,11 +25,19 @@ fun Routing.fundApiRouting(fundService: FundService) {
             val funds = fundService.listFunds(userId)
             call.respond(funds.toListTO(Fund::toTO))
         }
+        get("/{fundId}") {
+            val userId = call.userId()
+            val fundId = call.parameters["fundId"]?.let(UUID::fromString) ?: error("Fund id is missing.")
+            log.debug { "Get account by id $fundId for user id $userId." }
+            val fund = fundService.findById(userId, fundId)
+                ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respond(status = HttpStatusCode.OK, message = fund.toTO())
+        }
         post {
             val userId = call.userId()
             val request = call.receive<CreateFundTO>()
             log.info { "Create currency account $request for user $userId." }
-            if (fundService.findFundByName(userId, request.name) != null)
+            if (fundService.findByName(userId, request.name) != null)
                 return@post call.respond(HttpStatusCode.Conflict)
             val fund = fundService.createAccount(request.toCommand(userId))
             call.respond(status = HttpStatusCode.Created, message = fund.toTO())

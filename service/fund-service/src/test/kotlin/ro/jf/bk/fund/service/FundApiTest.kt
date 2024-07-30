@@ -46,6 +46,24 @@ class FundApiTest {
     }
 
     @Test
+    fun `test get fund by id`() = testApplication {
+        configureEnvironment()
+
+        val userId = randomUUID()
+        val fund = fundRepository.save(CreateFundCommand(userId, "Savings"))
+
+        val response = createJsonHttpClient().get("/bk-api/fund/v1/funds/${fund.id}") {
+            header(USER_ID_HEADER, userId)
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+        val fundTO = response.body<FundTO>()
+        assertThat(fundTO).isNotNull
+        assertThat(fundTO.name).isEqualTo("Savings")
+        assertThat(fundTO.id).isEqualTo(fund.id)
+    }
+
+    @Test
     fun `test create fund`() = testApplication {
         configureEnvironment()
 

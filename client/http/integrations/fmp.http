@@ -1,0 +1,19 @@
+#### Search
+GET https://financialmodelingprep.com/api/v3/search?query=EUNL&apikey=mjtRXwRGbbsrtv0lMIwJgd1kXQRTrQQP
+
+### List ETFs
+GET https://financialmodelingprep.com/api/v3/etf/list?apikey=mjtRXwRGbbsrtv0lMIwJgd1kXQRTrQQP
+
+### GET IMAE quote
+GET https://financialmodelingprep.com/api/v3/quote-short/EUNK.DE?apikey=mjtRXwRGbbsrtv0lMIwJgd1kXQRTrQQP
+
+### GET Apple historical data
+GET https://financialmodelingprep.com/api/v3/historical-chart/1day/AAPL?from=2023-08-10&to=2023-09-10&apikey=mjtRXwRGbbsrtv0lMIwJgd1kXQRTrQQP
+
+### GET IMAE historical data
+GET https://financialmodelingprep.com/api/v3/historical-chart/1day/EUNK.DE?from=2023-08-10&to=2023-09-10&apikey=mjtRXwRGbbsrtv0lMIwJgd1kXQRTrQQP
+
+### Free plan limitation
+#{
+#  "Error Message": "Free plan is limited to US stocks only please visit our subscription page to upgrade your plan at https://site.financialmodelingprep.com/developer/docs/pricing"
+#}
