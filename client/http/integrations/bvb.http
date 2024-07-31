@@ -1,0 +1,5 @@
+### Get ICBETNETF price
+GET https://wapi.bvb.ro/api/history?symbol=ICBETNETF&dt=INTRA&p=intraday_60&ajust=1&from=1719441226&to=1722407686
+Content-Type: application/json
+Origin: https://bvb.ro
+Referer: https://bvb.ro/FinancialInstruments/Details/FinancialInstrumentsDetails.aspx?s=ICBETNETF
