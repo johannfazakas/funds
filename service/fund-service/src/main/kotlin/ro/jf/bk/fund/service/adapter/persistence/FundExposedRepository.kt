@@ -5,7 +5,8 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import ro.jf.bk.commons.service.persistence.exposed.blockingTransaction
 import ro.jf.bk.fund.service.domain.command.CreateFundCommand
-import ro.jf.bk.fund.service.domain.fund.Fund
+import ro.jf.bk.fund.service.domain.model.Fund
+import ro.jf.bk.fund.service.domain.model.FundAccount
 import ro.jf.bk.fund.service.domain.port.FundRepository
 import java.util.*
 
@@ -17,35 +18,54 @@ class FundExposedRepository(
         val name = varchar("name", 50)
     }
 
+    object FundAccountTable : UUIDTable("fund_account") {
+        val userId = uuid("user_id")
+        val fundId = uuid("fund_id").references(FundTable.id)
+        val accountId = uuid("account_id")
+    }
+
     override suspend fun list(userId: UUID): List<Fund> = blockingTransaction {
-        FundTable
+        (FundTable leftJoin FundAccountTable)
             .select { FundTable.userId eq userId }
-            .map { it.toModel() }
+            .toFunds()
     }
 
     override suspend fun findById(userId: UUID, fundId: UUID): Fund? = blockingTransaction {
-        FundTable
+        (FundTable leftJoin FundAccountTable)
             .select { (FundTable.userId eq userId) and (FundTable.id eq fundId) }
-            .map { it.toModel() }
+            .toFunds()
             .singleOrNull()
     }
 
     override suspend fun findByName(userId: UUID, name: String): Fund? = blockingTransaction {
         FundTable
             .select { (FundTable.userId eq userId) and (FundTable.name eq name) }
-            .map { it.toModel() }
+            .toFunds()
             .singleOrNull()
     }
 
     override suspend fun save(command: CreateFundCommand): Fund = blockingTransaction {
-        FundTable.insert {
+        val fund = FundTable.insert {
             it[userId] = command.userId
             it[name] = command.name
-        }.let {
+        }
+        val accounts = command.accounts.map { account ->
+            FundAccountTable.insert {
+                it[fundId] = fund[FundTable.id].value
+                it[userId] = command.userId
+                it[accountId] = account.accountId
+            }
+        }
+        fund.let {
             Fund(
                 id = it[FundTable.id].value,
                 userId = it[FundTable.userId],
                 name = it[FundTable.name],
+                accounts = accounts.map {
+                    FundAccount(
+                        accountId = it[FundAccountTable.accountId]
+                    )
+                }
             )
         }
     }
@@ -54,11 +74,23 @@ class FundExposedRepository(
         FundTable.deleteWhere { (FundTable.userId eq userId) and (FundTable.id eq fundId) }
     }
 
-    private fun ResultRow.toModel(): Fund {
-        return Fund(
-            id = this[FundTable.id].value,
-            userId = this[FundTable.userId],
-            name = this[FundTable.name]
-        )
-    }
+    private fun Query.toFunds(): List<Fund> = this
+        .groupBy { it[FundTable.id].value }
+        .map { (_, rows) -> rows.toFund() }
+
+    private fun List<ResultRow>.toFund() = Fund(
+        id = this.first()[FundTable.id].value,
+        userId = this.first()[FundTable.userId],
+        name = this.first()[FundTable.name],
+        accounts = this.mapNotNull { it.toFundAccount() }
+    )
+
+    private fun ResultRow.toFundAccount(): FundAccount? =
+        if (this.hasValue(FundAccountTable.id)) {
+            FundAccount(
+                accountId = this[FundAccountTable.accountId]
+            )
+        } else {
+            null
+        }
 }

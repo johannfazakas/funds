@@ -1,7 +1,7 @@
 package ro.jf.bk.fund.service.domain.service
 
 import ro.jf.bk.fund.service.domain.command.CreateFundCommand
-import ro.jf.bk.fund.service.domain.fund.Fund
+import ro.jf.bk.fund.service.domain.model.Fund
 import ro.jf.bk.fund.service.domain.port.FundRepository
 import ro.jf.bk.fund.service.domain.port.FundService
 import java.util.*
@@ -21,7 +21,7 @@ class FundServiceImpl(
         return fundRepository.findByName(userId, name)
     }
 
-    override suspend fun createAccount(command: CreateFundCommand): Fund {
+    override suspend fun createFund(command: CreateFundCommand): Fund {
         return fundRepository.save(command)
     }
 

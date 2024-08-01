@@ -4,5 +4,10 @@ import java.util.*
 
 data class CreateFundCommand(
     val userId: UUID,
-    val name: String
+    val name: String,
+    val accounts: List<CreateFundAccountCommand>
+)
+
+data class CreateFundAccountCommand(
+    val accountId: UUID
 )

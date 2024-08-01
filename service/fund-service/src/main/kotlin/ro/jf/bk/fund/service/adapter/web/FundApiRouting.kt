@@ -11,7 +11,7 @@ import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.bk.fund.api.model.CreateFundTO
 import ro.jf.bk.fund.service.adapter.mapper.toCommand
 import ro.jf.bk.fund.service.adapter.mapper.toTO
-import ro.jf.bk.fund.service.domain.fund.Fund
+import ro.jf.bk.fund.service.domain.model.Fund
 import ro.jf.bk.fund.service.domain.port.FundService
 import java.util.*
 
@@ -39,7 +39,7 @@ fun Routing.fundApiRouting(fundService: FundService) {
             log.info { "Create currency account $request for user $userId." }
             if (fundService.findByName(userId, request.name) != null)
                 return@post call.respond(HttpStatusCode.Conflict)
-            val fund = fundService.createAccount(request.toCommand(userId))
+            val fund = fundService.createFund(request.toCommand(userId))
             call.respond(status = HttpStatusCode.Created, message = fund.toTO())
         }
         delete("/{fundId}") {

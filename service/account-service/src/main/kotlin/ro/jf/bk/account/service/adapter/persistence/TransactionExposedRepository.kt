@@ -33,7 +33,7 @@ class TransactionExposedRepository(
     }
 
     override suspend fun list(userId: UUID): List<Transaction> = blockingTransaction {
-        (TransactionTable innerJoin RecordTable)
+        (TransactionTable leftJoin RecordTable)
             .select { TransactionTable.userId eq userId }
             .groupBy { it[TransactionTable.id].value }
             .map { (transactionId, rows) ->
