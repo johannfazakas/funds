@@ -1,7 +1,7 @@
 package ro.jf.bk.fund.service.domain.port
 
 import ro.jf.bk.fund.service.domain.command.CreateFundCommand
-import ro.jf.bk.fund.service.domain.fund.Fund
+import ro.jf.bk.fund.service.domain.model.Fund
 import java.util.*
 
 interface FundRepository {
