@@ -12,6 +12,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockserver.client.MockServerClient
+import org.mockserver.model.Header
+import org.mockserver.model.HttpRequest.request
+import org.mockserver.model.HttpResponse.response
+import org.mockserver.model.MediaType
 import ro.jf.bk.commons.model.ListTO
 import ro.jf.bk.commons.test.extension.MockServerExtension
 import ro.jf.bk.commons.test.extension.PostgresContainerExtension
@@ -90,11 +95,35 @@ class FundApiTest {
     }
 
     @Test
-    fun `test create fund`() = testApplication {
+    fun `test create fund`(mockServerClient: MockServerClient) = testApplication {
         configureEnvironment()
 
         val userId = randomUUID()
         val accountId = randomUUID()
+
+        mockServerClient
+            .`when`(
+                request()
+                    .withMethod("GET")
+                    .withPath("/bk-api/account/v1/accounts/$accountId")
+                    .withHeader(Header(USER_ID_HEADER, userId.toString()))
+            )
+            .respond(
+                response()
+                    .withStatusCode(200)
+                    .withContentType(MediaType.APPLICATION_JSON)
+                    .withBody(
+                        """
+                        {
+                            "id": "$accountId",
+                            "name": "Savings Account",
+                            "type": "currency",
+                            "currency": "RON"   
+                        }
+                        """.trimIndent()
+                    )
+            )
+
         val response = createJsonHttpClient().post("/bk-api/fund/v1/funds") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
@@ -145,7 +174,8 @@ class FundApiTest {
             config = MapApplicationConfig(
                 "database.url" to PostgresContainerExtension.jdbcUrl,
                 "database.user" to PostgresContainerExtension.username,
-                "database.password" to PostgresContainerExtension.password
+                "database.password" to PostgresContainerExtension.password,
+                "integration.account-service.base-url" to MockServerExtension.baseUrl
             )
         }
         application {
