@@ -3,8 +3,8 @@ plugins {
 }
 
 dependencies {
-    api(project(":account-api"))
     api(project(":commons"))
+    api(project(":account-api"))
 
     // TODO(Johann) some might be moved to the common module
     implementation(libs.ktor.client.core)

@@ -13,6 +13,8 @@ version = "0.0.1"
 dependencies {
     api(project(":fund-api"))
     api(project(":commons-service"))
+    api(project(":account-sdk"))
+    api(project(":account-api"))
 
     implementation(libs.kotlinx.datetime)
 
@@ -52,6 +54,8 @@ dependencies {
     testImplementation(libs.testcontainers.junit)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.jdbc)
+    testImplementation(libs.testcontainers.mockserver)
+    testImplementation(libs.mockserver.client)
 }
 
 application {

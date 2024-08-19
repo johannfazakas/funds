@@ -109,6 +109,4 @@ class AccountSdk(
             throw AccountApiException.Generic(response)
         }
     }
-
-
 }

@@ -8,3 +8,6 @@ database:
   url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/ff_fund"
   user: postgres
   password: pass
+integration:
+  account-service:
+    base-url: "$ACCOUNT_BASE_URL:http://localhost:5211"
