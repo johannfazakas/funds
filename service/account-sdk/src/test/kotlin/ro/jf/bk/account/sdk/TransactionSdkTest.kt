@@ -71,6 +71,9 @@ class TransactionSdkTest {
                                             put("id", JsonPrimitive(recordId.toString()))
                                             put("accountId", JsonPrimitive(accountId.toString()))
                                             put("amount", JsonPrimitive(42.0))
+                                            put("metadata", buildJsonObject {
+                                                put("external_id", JsonPrimitive("4321"))
+                                            })
                                         })
                                     })
                                     put("metadata", buildJsonObject {
@@ -93,6 +96,7 @@ class TransactionSdkTest {
         assertThat(transaction.records.first().id).isEqualTo(recordId)
         assertThat(transaction.records.first().accountId).isEqualTo(accountId)
         assertThat(transaction.records.first().amount.compareTo(BigDecimal(42.0))).isZero()
+        assertThat(transaction.records.first().metadata["external_id"]).isEqualTo("4321")
         assertThat(transaction.metadata).hasSize(1)
         assertThat(transaction.metadata["external_id"]).isEqualTo("1234")
     }

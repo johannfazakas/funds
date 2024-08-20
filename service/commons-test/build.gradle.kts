@@ -6,6 +6,8 @@ dependencies {
     implementation(libs.kotlin.test.junit)
     implementation(libs.junit.jupiter)
 
+    implementation(libs.exposed.core)
+
     implementation(libs.ktor.server.tests.jvm)
     implementation(libs.ktor.server.test.host)
 

@@ -1,0 +1,3 @@
+ALTER TABLE record
+    ADD COLUMN metadata JSONB NOT NULL DEFAULT '{}'::JSONB;
+

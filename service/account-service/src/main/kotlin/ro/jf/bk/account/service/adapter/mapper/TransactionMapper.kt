@@ -18,6 +18,5 @@ fun Record.toTO() = RecordTO(
     id = id,
     accountId = accountId,
     amount = amount,
+    metadata = metadata,
 )
-
-

@@ -11,8 +11,8 @@ import ro.jf.bk.account.service.domain.command.CreateTransactionCommand
 import ro.jf.bk.account.service.domain.model.Record
 import ro.jf.bk.account.service.domain.model.Transaction
 import ro.jf.bk.account.service.domain.port.TransactionRepository
-import ro.jf.bk.commons.service.persistence.exposed.blockingTransaction
-import ro.jf.bk.commons.service.persistence.exposed.jsonb
+import ro.jf.bk.commons.service.persistence.blockingTransaction
+import ro.jf.bk.commons.service.persistence.jsonb
 import java.util.*
 
 class TransactionExposedRepository(
@@ -22,7 +22,7 @@ class TransactionExposedRepository(
     object TransactionTable : UUIDTable("transaction") {
         val userId = uuid("user_id")
         val dateTime = datetime("date_time")
-        val metadata: Column<Map<String, String>> = jsonb(name = "metadata")
+        val metadata = jsonb(name = "metadata")
     }
 
     object RecordTable : UUIDTable("record") {
@@ -30,6 +30,7 @@ class TransactionExposedRepository(
         val transactionId = uuid("transaction_id").references(TransactionTable.id)
         val accountId = uuid("account_id").references(AccountTable.id)
         val amount = decimal("amount", 20, 8)
+        val metadata = jsonb(name = "metadata")
     }
 
     override suspend fun list(userId: UUID): List<Transaction> = blockingTransaction {
@@ -41,7 +42,8 @@ class TransactionExposedRepository(
                     Record(
                         id = it[RecordTable.id].value,
                         accountId = it[RecordTable.accountId],
-                        amount = it[RecordTable.amount]
+                        amount = it[RecordTable.amount],
+                        metadata = it[RecordTable.metadata]
                     )
                 }
                 Transaction(
@@ -67,6 +69,7 @@ class TransactionExposedRepository(
                 it[this.transactionId] = transactionId
                 it[accountId] = record.accountId
                 it[amount] = record.amount
+                it[metadata] = record.metadata
             }
         }
         Transaction(
@@ -77,7 +80,8 @@ class TransactionExposedRepository(
                 Record(
                     id = it[RecordTable.id].value,
                     accountId = it[RecordTable.accountId],
-                    amount = it[RecordTable.amount]
+                    amount = it[RecordTable.amount],
+                    metadata = it[RecordTable.metadata]
                 )
             },
             metadata = transaction[TransactionTable.metadata]

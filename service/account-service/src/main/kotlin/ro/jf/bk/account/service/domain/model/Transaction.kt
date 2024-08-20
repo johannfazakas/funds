@@ -16,4 +16,5 @@ data class Record(
     val id: UUID,
     val accountId: UUID,
     val amount: BigDecimal,
+    val metadata: Map<String, String>
 )

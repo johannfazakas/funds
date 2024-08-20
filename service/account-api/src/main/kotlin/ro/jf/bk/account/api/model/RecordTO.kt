@@ -13,5 +13,6 @@ data class RecordTO(
     @Serializable(with = UUIDSerializer::class)
     val accountId: UUID,
     @Serializable(with = BigDecimalSerializer::class)
-    val amount: BigDecimal
+    val amount: BigDecimal,
+    val metadata: Map<String, String>
 )

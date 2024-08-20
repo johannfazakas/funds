@@ -6,10 +6,12 @@ import java.util.*
 
 data class CreateTransactionTO(
     val dateTime: LocalDateTime,
-    val records: List<CreateRecordTO>
+    val records: List<CreateRecordTO>,
+    val metadata: Map<String, String> = emptyMap(),
 )
 
 data class CreateRecordTO(
     val accountId: UUID,
-    val amount: BigDecimal
+    val amount: BigDecimal,
+    val metadata: Map<String, String> = emptyMap(),
 )

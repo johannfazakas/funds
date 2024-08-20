@@ -58,8 +58,8 @@ class TransactionApiTest {
                 userId = userId,
                 dateTime = dateTime,
                 records = listOf(
-                    CreateRecordCommand(accountId = account1.id, amount = BigDecimal(100.0)),
-                    CreateRecordCommand(accountId = account2.id, amount = BigDecimal(-100.0))
+                    CreateRecordCommand(accountId = account1.id, amount = BigDecimal(100.0), metadata = mapOf("externalId" to "record1")),
+                    CreateRecordCommand(accountId = account2.id, amount = BigDecimal(-100.0), metadata = mapOf("externalId" to "record2"))
                 ),
                 metadata = mapOf("externalId" to "transaction1")
             )
@@ -69,7 +69,7 @@ class TransactionApiTest {
                 userId = userId,
                 dateTime = dateTime,
                 records = listOf(
-                    CreateRecordCommand(accountId = account1.id, amount = BigDecimal(50.123))
+                    CreateRecordCommand(accountId = account1.id, amount = BigDecimal(50.123), metadata = mapOf("externalId" to "record3")),
                 ),
                 metadata = mapOf("externalId" to "transaction2")
             )
@@ -87,8 +87,10 @@ class TransactionApiTest {
         assertThat(transaction1.records).hasSize(2)
         assertThat(transaction1.records[0].amount.compareTo(BigDecimal(100))).isZero()
         assertThat(transaction1.records[0].accountId).isEqualTo(account1.id)
+        assertThat(transaction1.records[0].metadata["externalId"]).isEqualTo("record1")
         assertThat(transaction1.records[1].amount.compareTo(BigDecimal(-100))).isZero()
         assertThat(transaction1.records[1].accountId).isEqualTo(account2.id)
+        assertThat(transaction1.records[1].metadata["externalId"]).isEqualTo("record2")
     }
 
     private fun ApplicationTestBuilder.createJsonHttpClient() =
