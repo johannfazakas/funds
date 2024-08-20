@@ -100,4 +100,29 @@ class TransactionSdkTest {
         assertThat(transaction.metadata).hasSize(1)
         assertThat(transaction.metadata["external_id"]).isEqualTo("1234")
     }
+
+    @Test
+    fun `test remove transaction by id`(mockServerClient: MockServerClient): Unit = runBlocking {
+        val userId = randomUUID()
+        val transactionId = randomUUID()
+
+        mockServerClient
+            .`when`(
+                request()
+                    .withMethod("DELETE")
+                    .withPath("/bk-api/account/v1/transactions/$transactionId")
+                    .withHeader(Header(USER_ID_HEADER, userId.toString()))
+            )
+            .respond(response().withStatusCode(204))
+
+        transactionSdk.deleteTransaction(userId, transactionId)
+
+        mockServerClient
+            .verify(
+                request()
+                    .withMethod("DELETE")
+                    .withPath("/bk-api/account/v1/transactions/$transactionId")
+                    .withHeader(Header(USER_ID_HEADER, userId.toString()))
+            )
+    }
 }

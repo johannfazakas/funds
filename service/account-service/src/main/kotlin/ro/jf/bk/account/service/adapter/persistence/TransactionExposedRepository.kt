@@ -37,23 +37,15 @@ class TransactionExposedRepository(
         (TransactionTable leftJoin RecordTable)
             .select { TransactionTable.userId eq userId }
             .groupBy { it[TransactionTable.id].value }
-            .map { (transactionId, rows) ->
-                val records = rows.map {
-                    Record(
-                        id = it[RecordTable.id].value,
-                        accountId = it[RecordTable.accountId],
-                        amount = it[RecordTable.amount],
-                        metadata = it[RecordTable.metadata]
-                    )
-                }
-                Transaction(
-                    id = transactionId,
-                    userId = rows.first()[TransactionTable.userId],
-                    dateTime = rows.first()[TransactionTable.dateTime].toKotlinLocalDateTime(),
-                    records = records,
-                    metadata = rows.first()[TransactionTable.metadata]
-                )
-            }
+            .map { (_, rows) -> toTransaction(rows) }
+    }
+
+    override suspend fun findById(userId: UUID, transactionId: UUID): Transaction? = blockingTransaction {
+        (TransactionTable leftJoin RecordTable)
+            .select { TransactionTable.userId eq userId and (TransactionTable.id eq transactionId) }
+            .groupBy { it[TransactionTable.id].value }
+            .map { (_, rows) -> toTransaction(rows) }
+            .firstOrNull()
     }
 
     override suspend fun save(command: CreateTransactionCommand): Transaction = blockingTransaction {
@@ -93,8 +85,33 @@ class TransactionExposedRepository(
         TransactionTable.deleteWhere { TransactionTable.userId eq userId }
     }
 
+    override suspend fun deleteById(userId: UUID, transactionId: UUID): Unit = blockingTransaction {
+        RecordTable.deleteWhere { RecordTable.userId eq userId and (RecordTable.transactionId eq transactionId) }
+        TransactionTable.deleteWhere { TransactionTable.userId eq userId and (TransactionTable.id eq transactionId) }
+    }
+
     override suspend fun deleteAll(): Unit = blockingTransaction {
         RecordTable.deleteAll()
         TransactionTable.deleteAll()
+    }
+
+    private fun toTransaction(
+        rows: List<ResultRow>
+    ): Transaction {
+        val records = rows.map {
+            Record(
+                id = it[RecordTable.id].value,
+                accountId = it[RecordTable.accountId],
+                amount = it[RecordTable.amount],
+                metadata = it[RecordTable.metadata]
+            )
+        }
+        return Transaction(
+            id = rows.first()[TransactionTable.id].value,
+            userId = rows.first()[TransactionTable.userId],
+            dateTime = rows.first()[TransactionTable.dateTime].toKotlinLocalDateTime(),
+            records = records,
+            metadata = rows.first()[TransactionTable.metadata]
+        )
     }
 }

@@ -5,4 +5,5 @@ import java.util.*
 
 interface TransactionService {
     suspend fun listTransactions(userId: UUID): List<Transaction>
+    suspend fun deleteTransaction(userId: UUID, transactionId: UUID)
 }

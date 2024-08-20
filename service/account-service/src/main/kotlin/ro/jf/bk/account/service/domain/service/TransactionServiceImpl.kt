@@ -9,4 +9,8 @@ class TransactionServiceImpl(private val transactionRepository: TransactionRepos
     override suspend fun listTransactions(userId: UUID): List<Transaction> {
         return transactionRepository.list(userId)
     }
+
+    override suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
+        transactionRepository.deleteById(userId, transactionId)
+    }
 }

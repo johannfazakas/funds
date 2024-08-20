@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import ro.jf.bk.account.api.model.TransactionTO
 import ro.jf.bk.account.service.adapter.persistence.AccountExposedRepository
 import ro.jf.bk.account.service.adapter.persistence.TransactionExposedRepository
+import ro.jf.bk.account.service.adapter.persistence.TransactionExposedRepository.RecordTable.transactionId
 import ro.jf.bk.account.service.domain.command.CreateCurrencyAccountCommand
 import ro.jf.bk.account.service.domain.command.CreateRecordCommand
 import ro.jf.bk.account.service.domain.command.CreateTransactionCommand
@@ -58,8 +59,16 @@ class TransactionApiTest {
                 userId = userId,
                 dateTime = dateTime,
                 records = listOf(
-                    CreateRecordCommand(accountId = account1.id, amount = BigDecimal(100.0), metadata = mapOf("externalId" to "record1")),
-                    CreateRecordCommand(accountId = account2.id, amount = BigDecimal(-100.0), metadata = mapOf("externalId" to "record2"))
+                    CreateRecordCommand(
+                        accountId = account1.id,
+                        amount = BigDecimal(100.0),
+                        metadata = mapOf("externalId" to "record1")
+                    ),
+                    CreateRecordCommand(
+                        accountId = account2.id,
+                        amount = BigDecimal(-100.0),
+                        metadata = mapOf("externalId" to "record2")
+                    )
                 ),
                 metadata = mapOf("externalId" to "transaction1")
             )
@@ -69,7 +78,11 @@ class TransactionApiTest {
                 userId = userId,
                 dateTime = dateTime,
                 records = listOf(
-                    CreateRecordCommand(accountId = account1.id, amount = BigDecimal(50.123), metadata = mapOf("externalId" to "record3")),
+                    CreateRecordCommand(
+                        accountId = account1.id,
+                        amount = BigDecimal(50.123),
+                        metadata = mapOf("externalId" to "record3")
+                    ),
                 ),
                 metadata = mapOf("externalId" to "transaction2")
             )
@@ -91,6 +104,43 @@ class TransactionApiTest {
         assertThat(transaction1.records[1].amount.compareTo(BigDecimal(-100))).isZero()
         assertThat(transaction1.records[1].accountId).isEqualTo(account2.id)
         assertThat(transaction1.records[1].metadata["externalId"]).isEqualTo("record2")
+    }
+
+    @Test
+    fun `test delete transaction`() = testApplication {
+        configureEnvironment()
+
+        val userId = randomUUID()
+        val dateTime = LocalDateTime(2024, 7, 22, 9, 17)
+        val account1 = accountRepository.save(CreateCurrencyAccountCommand(userId, "Revolut", "RON"))
+        val account2 = accountRepository.save(CreateCurrencyAccountCommand(userId, "BT", "RON"))
+        val transaction = transactionRepository.save(
+            CreateTransactionCommand(
+                userId = userId,
+                dateTime = dateTime,
+                records = listOf(
+                    CreateRecordCommand(
+                        accountId = account1.id,
+                        amount = BigDecimal(100.0),
+                        metadata = mapOf("externalId" to "record1")
+                    ),
+                    CreateRecordCommand(
+                        accountId = account2.id,
+                        amount = BigDecimal(-100.0),
+                        metadata = mapOf("externalId" to "record2")
+                    )
+                ),
+                metadata = mapOf("externalId" to "transaction1")
+            )
+        )
+
+        val response = createJsonHttpClient()
+            .delete("/bk-api/account/v1/transactions/${transaction.id}") {
+                header(USER_ID_HEADER, userId)
+            }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
+        assertThat(transactionRepository.findById(userId, transaction.id)).isNull()
     }
 
     private fun ApplicationTestBuilder.createJsonHttpClient() =
