@@ -1,4 +1,4 @@
-package ro.jf.bk.commons.service.persistence.exposed
+package ro.jf.bk.commons.service.persistence
 
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Transaction

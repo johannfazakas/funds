@@ -14,4 +14,5 @@ data class CreateTransactionCommand(
 data class CreateRecordCommand(
     val accountId: UUID,
     val amount: BigDecimal,
+    val metadata: Map<String, String> = emptyMap()
 )

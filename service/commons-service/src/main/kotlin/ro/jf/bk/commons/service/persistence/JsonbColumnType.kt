@@ -1,4 +1,4 @@
-package ro.jf.bk.commons.service.persistence.exposed
+package ro.jf.bk.commons.service.persistence
 
 import kotlinx.serialization.json.*
 import org.jetbrains.exposed.sql.Column

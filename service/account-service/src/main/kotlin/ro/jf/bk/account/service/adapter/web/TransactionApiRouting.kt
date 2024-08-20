@@ -8,8 +8,7 @@ import ro.jf.bk.account.service.adapter.mapper.toTO
 import ro.jf.bk.account.service.domain.model.Transaction
 import ro.jf.bk.account.service.domain.port.TransactionService
 import ro.jf.bk.commons.model.toListTO
-import ro.jf.bk.commons.web.USER_ID_HEADER
-import java.util.*
+import ro.jf.bk.commons.service.routing.userId
 
 private val log = logger { }
 
@@ -22,9 +21,4 @@ fun Routing.transactionApiRouting(transactionService: TransactionService) {
             call.respond(transactions.toListTO(Transaction::toTO))
         }
     }
-}
-
-// TODO(Johann) extract
-private fun ApplicationCall.userId(): UUID {
-    return request.headers[USER_ID_HEADER]?.let(UUID::fromString) ?: error("User id is missing.")
 }

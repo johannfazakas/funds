@@ -7,7 +7,7 @@ import ro.jf.bk.account.service.domain.command.CreateCurrencyAccountCommand
 import ro.jf.bk.account.service.domain.command.CreateInstrumentAccountCommand
 import ro.jf.bk.account.service.domain.model.Account
 import ro.jf.bk.account.service.domain.port.AccountRepository
-import ro.jf.bk.commons.service.persistence.exposed.blockingTransaction
+import ro.jf.bk.commons.service.persistence.blockingTransaction
 import java.util.*
 
 class AccountExposedRepository(
