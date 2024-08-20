@@ -7,6 +7,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
 import ro.jf.bk.commons.model.toListTO
+import ro.jf.bk.commons.service.routing.userId
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.bk.fund.api.model.CreateFundTO
 import ro.jf.bk.fund.service.adapter.mapper.toCommand
@@ -56,8 +57,4 @@ fun Routing.fundApiRouting(fundService: FundService) {
             call.respond(HttpStatusCode.NoContent)
         }
     }
-}
-
-private fun ApplicationCall.userId(): UUID {
-    return request.headers[USER_ID_HEADER]?.let(UUID::fromString) ?: error("User id is missing.")
 }

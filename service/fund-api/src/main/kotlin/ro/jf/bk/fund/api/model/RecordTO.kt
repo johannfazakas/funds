@@ -6,6 +6,7 @@ import ro.jf.bk.commons.serialization.UUIDSerializer
 import java.math.BigDecimal
 import java.util.*
 
+@Serializable
 data class RecordTO(
     @Serializable(with = UUIDSerializer::class)
     val id: UUID,
