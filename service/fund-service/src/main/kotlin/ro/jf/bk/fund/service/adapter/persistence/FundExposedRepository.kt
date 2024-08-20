@@ -3,7 +3,7 @@ package ro.jf.bk.fund.service.adapter.persistence
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import ro.jf.bk.commons.service.persistence.exposed.blockingTransaction
+import ro.jf.bk.commons.service.persistence.blockingTransaction
 import ro.jf.bk.fund.service.domain.command.CreateFundCommand
 import ro.jf.bk.fund.service.domain.model.Fund
 import ro.jf.bk.fund.service.domain.model.FundAccount
