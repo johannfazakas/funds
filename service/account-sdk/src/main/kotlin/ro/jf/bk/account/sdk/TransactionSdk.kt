@@ -5,7 +5,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
-import ro.jf.bk.account.api.AccountApi
 import ro.jf.bk.account.api.TransactionApi
 import ro.jf.bk.account.api.exception.AccountApiException
 import ro.jf.bk.account.api.model.TransactionTO
@@ -35,5 +34,17 @@ class TransactionSdk(
         val transactions = response.body<ListTO<TransactionTO>>()
         log.debug { "Retrieved transactions: $transactions" }
         return transactions.items
+    }
+
+    override suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
+        val response = httpClient.delete("$baseUrl$BASE_PATH/transactions/$transactionId") {
+            headers {
+                append(USER_ID_HEADER, userId.toString())
+            }
+        }
+        if (!response.status.isSuccess()) {
+            log.warn { "Unexpected response on delete transaction: $response" }
+            throw AccountApiException.Generic()
+        }
     }
 }
