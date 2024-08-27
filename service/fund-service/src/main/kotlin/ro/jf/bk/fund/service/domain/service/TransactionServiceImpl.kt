@@ -18,6 +18,6 @@ class TransactionServiceImpl(
     }
 
     override suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
-        TODO("Not yet implemented")
+        return transactionRepository.deleteTransaction(userId, transactionId)
     }
 }

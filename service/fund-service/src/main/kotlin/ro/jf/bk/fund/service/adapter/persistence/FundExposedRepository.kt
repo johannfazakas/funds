@@ -63,7 +63,7 @@ class FundExposedRepository(
                 name = it[FundTable.name],
                 accounts = accounts.map {
                     FundAccount(
-                        accountId = it[FundAccountTable.accountId]
+                        id = it[FundAccountTable.accountId]
                     )
                 }
             )
@@ -88,7 +88,7 @@ class FundExposedRepository(
     private fun ResultRow.toFundAccount(): FundAccount? =
         if (this.hasValue(FundAccountTable.id)) {
             FundAccount(
-                accountId = this[FundAccountTable.accountId]
+                id = this[FundAccountTable.accountId]
             )
         } else {
             null
