@@ -17,7 +17,7 @@ fun Fund.toTO() = FundTO(
 )
 
 fun FundAccount.toTO() = FundAccountTO(
-    accountId = accountId
+    id = id
 )
 
 fun CreateFundTO.toCommand(userId: UUID) = CreateFundCommand(

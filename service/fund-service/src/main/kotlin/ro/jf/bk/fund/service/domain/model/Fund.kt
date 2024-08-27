@@ -10,5 +10,5 @@ data class Fund(
 )
 
 data class FundAccount(
-    val accountId: UUID
+    val id: UUID
 )

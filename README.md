@@ -14,9 +14,9 @@ Personal app for money &amp; investment management.
 
 ## TODO
 
-- [ ] fix fund api tests
-- [ ] add metadata on account records
+- [ ] implement fund transaction removal in service & sdk
 
 ### Improvements
 
 - [ ] Define a domain based Property/Properties to be used instead of raw metadata
+- [ ] Use a mock sdk to not test the same api integration twice and introduce ktor mocks

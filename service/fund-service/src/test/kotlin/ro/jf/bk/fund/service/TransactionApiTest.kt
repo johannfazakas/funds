@@ -113,6 +113,30 @@ class TransactionApiTest {
         assertThat(record2.fundId).isEqualTo(fund2Id)
     }
 
+    @Test
+    fun `test remove transaction`(mockServerClient: MockServerClient) = testApplication {
+        configureEnvironment()
+
+        val userId = randomUUID()
+        val transactionId = randomUUID()
+
+        mockServerClient
+            .`when`(
+                request()
+                    .withMethod("DELETE")
+                    .withPath("/bk-api/account/v1/transactions/$transactionId")
+                    .withHeader(Header(USER_ID_HEADER, userId.toString()))
+            )
+            .respond(response().withStatusCode(204))
+
+        val response = createJsonHttpClient()
+            .delete("/bk-api/fund/v1/transactions/$transactionId") {
+                header(USER_ID_HEADER, userId.toString())
+            }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
+    }
+
     private fun ApplicationTestBuilder.createJsonHttpClient() =
         createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
 

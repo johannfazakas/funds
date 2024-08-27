@@ -38,7 +38,7 @@ class TransactionSdkAdapter(
     }
 
     override suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
-        TODO("Not yet implemented")
+        return transactionSdk.deleteTransaction(userId, transactionId)
     }
 }
 

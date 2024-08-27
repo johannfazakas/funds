@@ -15,5 +15,5 @@ data class FundTO(
 @Serializable
 data class FundAccountTO(
     @Serializable(with = UUIDSerializer::class)
-    val accountId: UUID
+    val id: UUID
 )

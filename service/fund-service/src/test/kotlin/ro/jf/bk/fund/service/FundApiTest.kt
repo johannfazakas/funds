@@ -62,7 +62,7 @@ class FundApiTest {
         assertThat(funds.items.first().name).isEqualTo("Expenses")
         assertThat(funds.items.first().id).isEqualTo(fund.id)
         assertThat(funds.items.first().accounts).hasSize(1)
-        assertThat(funds.items.first().accounts.first().accountId).isEqualTo(accountId)
+        assertThat(funds.items.first().accounts.first().id).isEqualTo(accountId)
     }
 
     @Test
@@ -91,7 +91,7 @@ class FundApiTest {
         assertThat(fundTO.name).isEqualTo("Savings")
         assertThat(fundTO.id).isEqualTo(fund.id)
         assertThat(fundTO.accounts).hasSize(1)
-        assertThat(fundTO.accounts.first().accountId).isEqualTo(accountId)
+        assertThat(fundTO.accounts.first().id).isEqualTo(accountId)
     }
 
     @Test
@@ -142,14 +142,14 @@ class FundApiTest {
         assertThat(fundTO).isNotNull
         assertThat(fundTO.name).isEqualTo("Investment Portfolio")
         assertThat(fundTO.accounts).hasSize(1)
-        assertThat(fundTO.accounts.first().accountId).isEqualTo(accountId)
+        assertThat(fundTO.accounts.first().id).isEqualTo(accountId)
 
         val dbFund = fundRepository.findById(userId, fundTO.id)
         assertThat(dbFund).isNotNull
         assertThat(dbFund!!.name).isEqualTo("Investment Portfolio")
         assertThat(dbFund.userId).isEqualTo(userId)
         assertThat(dbFund.accounts).hasSize(1)
-        assertThat(dbFund.accounts.first().accountId).isEqualTo(accountId)
+        assertThat(dbFund.accounts.first().id).isEqualTo(accountId)
     }
 
     @Test
