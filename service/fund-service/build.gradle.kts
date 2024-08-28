@@ -49,6 +49,7 @@ dependencies {
     testImplementation(libs.ktor.server.tests.jvm)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.assertj)
+    testImplementation(libs.kotlin.mockito)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.testcontainers.bom)
     testImplementation(libs.testcontainers.junit)

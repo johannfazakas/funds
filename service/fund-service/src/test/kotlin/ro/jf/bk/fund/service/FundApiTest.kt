@@ -12,12 +12,16 @@ import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.koin.ktor.ext.get
 import org.mockserver.client.MockServerClient
 import org.mockserver.model.Header
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
 import ro.jf.bk.commons.model.ListTO
+import ro.jf.bk.commons.service.config.configureContentNegotiation
+import ro.jf.bk.commons.service.config.configureDatabaseMigration
+import ro.jf.bk.commons.service.config.configureDependencies
 import ro.jf.bk.commons.test.extension.MockServerExtension
 import ro.jf.bk.commons.test.extension.PostgresContainerExtension
 import ro.jf.bk.commons.web.USER_ID_HEADER
@@ -25,9 +29,12 @@ import ro.jf.bk.fund.api.model.CreateFundAccountTO
 import ro.jf.bk.fund.api.model.CreateFundTO
 import ro.jf.bk.fund.api.model.FundTO
 import ro.jf.bk.fund.service.adapter.persistence.FundExposedRepository
+import ro.jf.bk.fund.service.config.configureRouting
+import ro.jf.bk.fund.service.config.fundsAppModule
 import ro.jf.bk.fund.service.domain.command.CreateFundAccountCommand
 import ro.jf.bk.fund.service.domain.command.CreateFundCommand
 import java.util.UUID.randomUUID
+import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(MockServerExtension::class)
@@ -179,7 +186,10 @@ class FundApiTest {
             )
         }
         application {
-            module()
+            configureDependencies(fundsAppModule)
+            configureContentNegotiation()
+            configureDatabaseMigration(get<DataSource>())
+            configureRouting()
         }
     }
 
