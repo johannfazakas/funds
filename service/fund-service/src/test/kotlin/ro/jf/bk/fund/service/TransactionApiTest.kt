@@ -12,24 +12,37 @@ import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockserver.client.MockServerClient
-import org.mockserver.model.Header
-import org.mockserver.model.HttpRequest.request
-import org.mockserver.model.HttpResponse.response
-import org.mockserver.model.MediaType
+import org.koin.dsl.module
+import org.koin.ktor.ext.get
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.whenever
 import ro.jf.bk.commons.model.ListTO
+import ro.jf.bk.commons.service.config.configureContentNegotiation
+import ro.jf.bk.commons.service.config.configureDatabaseMigration
+import ro.jf.bk.commons.service.config.configureDependencies
 import ro.jf.bk.commons.test.extension.MockServerExtension
 import ro.jf.bk.commons.test.extension.PostgresContainerExtension
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.bk.fund.api.model.TransactionTO
+import ro.jf.bk.fund.service.config.configureRouting
+import ro.jf.bk.fund.service.config.fundsAppModule
+import ro.jf.bk.fund.service.domain.model.Record
+import ro.jf.bk.fund.service.domain.model.Transaction
+import ro.jf.bk.fund.service.domain.port.AccountRepository
+import ro.jf.bk.fund.service.domain.port.TransactionRepository
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
+import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(MockServerExtension::class)
 class TransactionApiTest {
+    private val transactionRepository: TransactionRepository = mock()
+    private val accountRepository: AccountRepository = mock()
+
     @Test
-    fun `test list transactions`(mockServerClient: MockServerClient) = testApplication {
+    fun `test list transactions`() = testApplication {
         configureEnvironment()
 
         val userId = randomUUID()
@@ -43,50 +56,29 @@ class TransactionApiTest {
         val rawTransactionTime = "2021-09-01T12:00:00"
         val transactionTime = LocalDateTime.parse(rawTransactionTime)
 
-        mockServerClient
-            .`when`(
-                request()
-                    .withMethod("GET")
-                    .withPath("/bk-api/account/v1/transactions")
-                    .withHeader(Header(USER_ID_HEADER, userId.toString()))
-            )
-            .respond(
-                response()
-                    .withStatusCode(200)
-                    .withContentType(MediaType.APPLICATION_JSON)
-                    .withBody(
-                        """
-                        {
-                            "items": [
-                              {
-                                "id": $transactionId,
-                                "dateTime": "$rawTransactionTime",
-                                "records": [
-                                  {
-                                    "id": "$record1Id",
-                                    "accountId": "$account1Id",  
-                                    "amount": 100.25,
-                                    "metadata": {
-                                      "fundId": "$fund1Id"  
-                                    }
-                                  },
-                                  {
-                                    "id": "$record2Id",
-                                    "accountId": "$account2Id",
-                                    "amount": 50.75,
-                                    "metadata": {
-                                       "fundId": "$fund2Id"
-                                    }
-                                  }
-                                ],
-                                "metadata": {
-                                }
-                              }
-                            ]
-                        }
-                        """.trimIndent()
+        whenever(transactionRepository.listTransactions(userId)).thenReturn(
+            listOf(
+                Transaction(
+                    id = transactionId,
+                    userId = userId,
+                    dateTime = transactionTime,
+                    records = listOf(
+                        Record(
+                            id = record1Id,
+                            accountId = account1Id,
+                            amount = BigDecimal(100.25),
+                            fundId = fund1Id
+                        ),
+                        Record(
+                            id = record2Id,
+                            accountId = account2Id,
+                            amount = BigDecimal(50.75),
+                            fundId = fund2Id
+                        )
                     )
+                )
             )
+        )
 
         val response = createJsonHttpClient()
             .get("/bk-api/fund/v1/transactions") {
@@ -114,20 +106,13 @@ class TransactionApiTest {
     }
 
     @Test
-    fun `test remove transaction`(mockServerClient: MockServerClient) = testApplication {
+    fun `test remove transaction`() = testApplication {
         configureEnvironment()
 
         val userId = randomUUID()
         val transactionId = randomUUID()
 
-        mockServerClient
-            .`when`(
-                request()
-                    .withMethod("DELETE")
-                    .withPath("/bk-api/account/v1/transactions/$transactionId")
-                    .withHeader(Header(USER_ID_HEADER, userId.toString()))
-            )
-            .respond(response().withStatusCode(204))
+        whenever(transactionRepository.deleteTransaction(userId, transactionId)).thenReturn(Unit)
 
         val response = createJsonHttpClient()
             .delete("/bk-api/fund/v1/transactions/$transactionId") {
@@ -135,6 +120,7 @@ class TransactionApiTest {
             }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
+        verify(transactionRepository).deleteTransaction(userId, transactionId)
     }
 
     private fun ApplicationTestBuilder.createJsonHttpClient() =
@@ -147,11 +133,18 @@ class TransactionApiTest {
                 "database.url" to PostgresContainerExtension.jdbcUrl,
                 "database.user" to PostgresContainerExtension.username,
                 "database.password" to PostgresContainerExtension.password,
-                "integration.account-service.base-url" to MockServerExtension.baseUrl
             )
         }
         application {
-            module()
+            // TODO(Johann) might simplify this further
+            val fundsAppTestModule = module {
+                single<AccountRepository> { accountRepository }
+                single<TransactionRepository> { transactionRepository }
+            }
+            configureDependencies(fundsAppModule, fundsAppTestModule)
+            configureContentNegotiation()
+            configureDatabaseMigration(get<DataSource>())
+            configureRouting()
         }
     }
 }

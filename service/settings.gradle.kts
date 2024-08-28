@@ -63,6 +63,7 @@ dependencyResolutionManagement {
             library("ktor-server-tests-jvm", "io.ktor", "ktor-server-tests-jvm").versionRef("ktor")
             library("ktor-server-test-host", "io.ktor", "ktor-server-test-host").versionRef("ktor")
             library("assertj", "org.assertj", "assertj-core").version("3.26.0")
+            library("kotlin-mockito", "org.mockito.kotlin", "mockito-kotlin").version("5.4.0")
             library("testcontainers-bom", "org.testcontainers", "testcontainers-bom").versionRef("testcontainers")
             library("testcontainers-junit", "org.testcontainers", "junit-jupiter").versionRef("testcontainers")
             library("testcontainers-postgresql", "org.testcontainers", "postgresql").versionRef("testcontainers")
