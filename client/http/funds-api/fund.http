@@ -1,15 +1,15 @@
 @fund-id=cbac32e9-21ca-4890-9e53-3468c2c75dbb
 
 ### Get Funds
-GET {{fund-host}}/bk-api/fund/v1/funds
+GET {{fund_host}}/bk-api/fund/v1/funds
 BK_USER_ID: {{user-id}}
 
 ### Get Fund by id
-GET {{fund-host}}/bk-api/fund/v1/funds/{{fund-id}}
+GET {{fund_host}}/bk-api/fund/v1/funds/{{fund-id}}
 BK_USER_ID: {{user-id}}
 
 ### Create Fund
-POST {{fund-host}}/bk-api/fund/v1/funds
+POST {{fund_host}}/bk-api/fund/v1/funds
 BK_USER_ID: {{user-id}}
 Content-Type: application/json
 
@@ -18,5 +18,5 @@ Content-Type: application/json
 }
 
 ### Delete Fund
-DELETE {{fund-host}}/bk-api/fund/v1/funds/{{fund-id}}
+DELETE {{fund_host}}/bk-api/fund/v1/funds/{{fund-id}}
 BK_USER_ID: {{user-id}}
