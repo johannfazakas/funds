@@ -1,19 +1,19 @@
 @account-id=cd72c105-c759-4253-8ba8-bbb9f62db0e9
 
 ### Get Accounts
-GET {{account-host}}/bk-api/account/v1/accounts
+GET {{account_host}}/bk-api/account/v1/accounts
 BK_USER_ID: {{user-id}}
 
 ### Get Account by id
-GET {{account-host}}/bk-api/account/v1/accounts/{{account-id}}
+GET {{account_host}}/bk-api/account/v1/accounts/{{account-id}}
 BK_USER_ID: {{user-id}}
 
 ### Delete Account by id
-DELETE {{account-host}}/bk-api/account/v1/accounts/{{account-id}}
+DELETE {{account_host}}/bk-api/account/v1/accounts/{{account-id}}
 BK_USER_ID: {{user-id}}
 
 ### Create Instrument Account
-POST {{account-host}}/bk-api/account/v1/accounts/instrument
+POST {{account_host}}/bk-api/account/v1/accounts/instrument
 BK_USER_ID: {{user-id}}
 Content-Type: application/json
 
@@ -24,7 +24,7 @@ Content-Type: application/json
 }
 
 ### Create Currency Account
-POST {{account-host}}/bk-api/account/v1/accounts/currency
+POST {{account_host}}/bk-api/account/v1/accounts/currency
 BK_USER_ID: {{user-id}}
 Content-Type: application/json
 

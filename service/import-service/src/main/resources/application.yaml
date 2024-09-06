@@ -1,0 +1,6 @@
+ktor:
+  application:
+    modules:
+      - ro.jf.funds.importer.service.ImportServiceApplicationKt.module
+  deployment:
+    port: 5207

@@ -12,9 +12,14 @@ Personal app for money &amp; investment management.
 
 ### Fund
 
+### Import
+
 ## TODO
 
 - [ ] implement fund transaction removal in service & sdk
+
+## Bugs
+- [ ] 500 on calling api without user id
 
 ### Improvements
 
