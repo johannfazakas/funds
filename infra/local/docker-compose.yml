@@ -48,3 +48,9 @@ services:
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_fund
     depends_on:
       - postgres
+
+  import-service:
+    image: funds/import-service:latest
+    container_name: ff_import
+    ports:
+      - '5207:5207'

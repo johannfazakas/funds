@@ -7,9 +7,6 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-group = "ro.jf.funds"
-version = "0.0.1"
-
 dependencies {
     // TODO(Johann) probably not all are needed
     api(project(":import-api"))
@@ -54,6 +51,7 @@ dependencies {
 }
 
 application {
+    mainClass.set("ro.jf.funds.importer.service.ImportServiceApplicationKt")
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }

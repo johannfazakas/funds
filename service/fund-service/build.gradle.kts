@@ -7,9 +7,6 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-group = "ro.jf.bk"
-version = "0.0.1"
-
 dependencies {
     api(project(":fund-api"))
     api(project(":commons-service"))
@@ -60,6 +57,7 @@ dependencies {
 }
 
 application {
+    mainClass.set("ro.jf.bk.fund.service.FundServiceApplicationKt")
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }

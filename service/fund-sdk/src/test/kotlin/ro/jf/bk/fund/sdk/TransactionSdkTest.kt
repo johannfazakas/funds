@@ -86,7 +86,7 @@ class TransactionSdkTest {
 
         assertThat(transactions).hasSize(1)
         assertThat(transactions.first()).isInstanceOf(TransactionTO::class.java)
-        val transaction = transactions.first() as TransactionTO
+        val transaction = transactions.first()
         assertThat(transaction.id).isEqualTo(transactionId)
         assertThat(transaction.dateTime.toString()).isEqualTo(dateTime)
         assertThat(transaction.records).hasSize(1)

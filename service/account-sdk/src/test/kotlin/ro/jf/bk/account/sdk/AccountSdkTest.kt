@@ -193,11 +193,10 @@ class AccountSdkTest {
 
         val account = accountSdk.createAccount(userId, CreateCurrencyAccountTO(accountName, "RON"))
 
-        val currencyAccount = account as AccountTO.Currency
-        assertThat(currencyAccount).isNotNull
-        assertThat(currencyAccount.id).isEqualTo(accountId)
-        assertThat(currencyAccount.name).isEqualTo(accountName)
-        assertThat(currencyAccount.currency).isEqualTo("RON")
+        assertThat(account).isNotNull
+        assertThat(account.id).isEqualTo(accountId)
+        assertThat(account.name).isEqualTo(accountName)
+        assertThat(account.currency).isEqualTo("RON")
     }
 
     @Test
@@ -259,12 +258,11 @@ class AccountSdkTest {
         val account =
             accountSdk.createAccount(userId, CreateInstrumentAccountTO(accountName, "RON", "ICBETNETF"))
 
-        val instrumentAccount = account as AccountTO.Instrument
-        assertThat(instrumentAccount).isNotNull
-        assertThat(instrumentAccount.id).isEqualTo(accountId)
-        assertThat(instrumentAccount.name).isEqualTo(accountName)
-        assertThat(instrumentAccount.currency).isEqualTo("RON")
-        assertThat(instrumentAccount.symbol).isEqualTo("ICBETNETF")
+        assertThat(account).isNotNull
+        assertThat(account.id).isEqualTo(accountId)
+        assertThat(account.name).isEqualTo(accountName)
+        assertThat(account.currency).isEqualTo("RON")
+        assertThat(account.symbol).isEqualTo("ICBETNETF")
     }
 
     @Test
