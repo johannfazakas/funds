@@ -1,6 +1,7 @@
 import io.ktor.plugin.features.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
+// TODO(Johann) remove these, use common versions from libs/toml
 val kotlin_version: String by project
 val logback_version: String by project
 val exposed_version: String by project
@@ -15,9 +16,6 @@ plugins {
     id("io.ktor.plugin") version "2.3.2"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
 }
-
-group = "ro.jf.finance"
-version = "0.0.1"
 
 repositories {
     mavenCentral()
