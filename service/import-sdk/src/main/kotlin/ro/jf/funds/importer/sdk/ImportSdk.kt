@@ -7,7 +7,10 @@ import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
 import ro.jf.bk.commons.web.USER_ID_HEADER
+import ro.jf.funds.importer.api.CSV_DELIMITER_HEADER
+import ro.jf.funds.importer.api.CSV_ENCODING_HEADER
 import ro.jf.funds.importer.api.ImportApi
+import ro.jf.funds.importer.api.model.CsvFormattingTO
 import ro.jf.funds.importer.api.model.ImportResponse
 import java.io.File
 import java.util.*
@@ -21,10 +24,12 @@ class ImportSdk(
     private val httpClient: HttpClient,
     private val baseUrl: String = LOCALHOST_BASE_URL
 ) : ImportApi {
-    override suspend fun import(userId: UUID, csvFileSource: File): ImportResponse {
+    override suspend fun import(userId: UUID, csvFileSource: File, csvFormatting: CsvFormattingTO): ImportResponse {
         log.info { "Importing CSV file ${csvFileSource.name} for user $userId." }
         val response = httpClient.post("$baseUrl/bk-api/import/v1/imports") {
             header(USER_ID_HEADER, userId.toString())
+            header(CSV_ENCODING_HEADER, csvFormatting.encoding)
+            header(CSV_DELIMITER_HEADER, csvFormatting.delimiter)
             setBody(MultiPartFormDataContent(
                 formData {
                     append("file", csvFileSource.readBytes(), Headers.build {
