@@ -55,6 +55,9 @@ dependencyResolutionManagement {
             library("kotlin-logging", "io.github.microutils", "kotlin-logging-jvm").version("3.0.5")
             library("logback", "ch.qos.logback", "logback-classic").version("1.4.14")
 
+            // other libraries
+            library("kotlin-csv", "com.jsoizo", "kotlin-csv").version("1.10.0")
+
             // test libraries
             library("junit.jupiter", "org.junit.jupiter", "junit-jupiter").version("5.9.3")
             library("junit.platform.launcher", "org.junit.platform", "junit-platform-launcher").version("1.8.2")

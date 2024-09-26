@@ -7,6 +7,7 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
+import ro.jf.funds.importer.service.adapter.file.CsvParser
 
 // TODO(Johann) should the rest be renamed to this pattern?
 val Application.importServiceDependenciesModule
@@ -22,4 +23,6 @@ val Application.importServiceDependenciesModule
                 }
             }
         }
+
+        single<CsvParser> { CsvParser() }
     }
