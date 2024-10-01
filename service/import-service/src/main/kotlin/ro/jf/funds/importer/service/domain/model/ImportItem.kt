@@ -4,8 +4,10 @@ import kotlinx.datetime.LocalDateTime
 import java.math.BigDecimal
 
 data class ImportItem(
-    val transactionId: String,
     val amount: BigDecimal,
+    // TODO(Johann) extract Currency type? maybe to a library?
+    val currency: String,
     val accountName: String,
     val date: LocalDateTime,
+    val transactionId: String
 )

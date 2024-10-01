@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.funds.importer.api.ImportApi
-import ro.jf.funds.importer.api.model.ImportConfigurationRequest
+import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
 import java.io.File
 import java.util.*
@@ -27,7 +27,7 @@ class ImportSdk(
     override suspend fun import(
         userId: UUID,
         csvFileSource: File,
-        importConfiguration: ImportConfigurationRequest
+        importConfiguration: ImportConfigurationTO
     ): ImportResponse {
         log.info { "Importing CSV file ${csvFileSource.name} for user $userId." }
         val response = httpClient.post("$baseUrl/bk-api/import/v1/imports") {

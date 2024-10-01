@@ -13,8 +13,7 @@ import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import ro.jf.bk.commons.web.USER_ID_HEADER
-import ro.jf.funds.importer.api.model.ImportConfigurationRequest
-import ro.jf.funds.importer.api.model.ImportResponse
+import ro.jf.funds.importer.api.model.*
 import java.io.File
 import java.util.*
 import java.util.UUID.randomUUID
@@ -27,17 +26,24 @@ class ImportApiTest {
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
         val csvFile = File("src/test/resources/data/csv-v2.csv")
-        val importConfiguration = ImportConfigurationRequest(
-            keys = ImportConfigurationRequest.Keys(
+        val importConfiguration = ImportConfigurationTO(
+            keys = KeysTO(
+                accountName = "cont",
+                currency = "valuta",
                 amount = "suma",
-                date = "data",
-                transactionId = "tranzactie",
-                accountName = "cont"
+                date = "data"
             ),
-            formatting = ImportConfigurationRequest.Formatting(
+            formatting = FormattingTO(
                 csvDelimiter = ";",
                 dateTimeFormat = "yyyy-MM-dd'T'HH:mm",
                 locale = Locale.FRENCH
+            ),
+            transactionIdentification = TransactionIdentificationTO(
+                conditions = listOf(
+                    TransactionConditionTO.ColumnEquality("tranzactie"),
+                    TransactionConditionTO.ColumnConstant("tip", "TRANSFER"),
+                    TransactionConditionTO.NumericalAbsoluteEquality("suma")
+                )
             )
         )
 
