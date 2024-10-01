@@ -8,7 +8,7 @@ import java.util.*
 
 private val log = logger { }
 
-class ImportServiceImpl() : ImportService {
+class ImportServiceImpl : ImportService {
     override suspend fun import(userId: UUID, configuration: ImportConfiguration, importItems: List<ImportItem>) {
         log.info { "Importing for user $userId items ${importItems.size} with configuration $configuration." }
     }

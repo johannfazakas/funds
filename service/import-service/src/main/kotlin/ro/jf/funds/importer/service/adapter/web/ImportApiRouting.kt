@@ -12,7 +12,7 @@ import ro.jf.bk.commons.service.routing.userId
 import ro.jf.funds.importer.api.CSV_DELIMITER_HEADER
 import ro.jf.funds.importer.api.CSV_ENCODING_HEADER
 import ro.jf.funds.importer.api.model.CsvFormattingTO
-import ro.jf.funds.importer.api.model.ImportConfigurationRequest
+import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
 import ro.jf.funds.importer.service.adapter.file.CsvParser
 import ro.jf.funds.importer.service.adapter.mapper.toImportItem
@@ -47,7 +47,7 @@ fun Routing.importApiRouting(
                 importService.import(
                     userId,
                     ImportConfiguration(accounts = listOf()),
-                    csvLines.map { it.toImportItem(importConfiguration.keys, importConfiguration.formatting) })
+                    csvLines.map { it.toImportItem(importConfiguration) })
                 // Process the CSV content (csvContent is a String containing the CSV data)
                 call.respond(HttpStatusCode.OK, ImportResponse("Imported in service"))
             }
@@ -55,12 +55,12 @@ fun Routing.importApiRouting(
     }
 }
 
-private fun List<PartData>.importConfigurationPart(): ImportConfigurationRequest? {
+private fun List<PartData>.importConfigurationPart(): ImportConfigurationTO? {
     return this
         .mapNotNull { it as? PartData.FormItem }
         .firstOrNull { it.name == "configuration" }
         ?.value
-        ?.let { json -> Json.decodeFromString<ImportConfigurationRequest>(json) }
+        ?.let { json -> Json.decodeFromString<ImportConfigurationTO>(json) }
 }
 
 private fun List<PartData>.rawCsvParts(): List<String> {
