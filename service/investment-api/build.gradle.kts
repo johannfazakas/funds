@@ -3,7 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
 }
 
+// TODO(Johann) is this service/api/sdk required?
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
+    api(project(":commons"))
+    testApi(project(":commons-test"))
 }

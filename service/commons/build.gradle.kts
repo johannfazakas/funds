@@ -4,9 +4,9 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.datetime)
+    api(libs.kotlinx.serialization.json)
+    api(libs.kotlinx.datetime)
 
-    implementation(libs.kotlin.logging)
-    implementation(libs.logback)
+    api(libs.kotlin.logging)
+    api(libs.logback)
 }

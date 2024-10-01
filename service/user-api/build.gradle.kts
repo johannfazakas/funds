@@ -5,6 +5,5 @@ plugins {
 
 dependencies {
     api(project(":commons"))
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.datetime)
+    testApi(project(":commons-test"))
 }
