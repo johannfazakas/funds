@@ -4,7 +4,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ImportConfigurationTO(
-    val keys: KeysTO,
-    val formatting: FormattingTO,
-    val transactionIdentification: TransactionIdentificationTO
+    val fileType: ImportFileTypeTO,
 )
