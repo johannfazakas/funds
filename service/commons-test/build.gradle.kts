@@ -3,20 +3,24 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlin.test.junit)
-    implementation(libs.junit.jupiter)
+    api(libs.kotlin.test.junit)
+    api(libs.junit.jupiter)
+    api(libs.kotlin.mockito)
+    api(libs.assertj)
 
-    implementation(libs.exposed.core)
+    // TODO(Johann) is this required here?
+    api(libs.exposed.core)
 
-    implementation(libs.ktor.server.tests.jvm)
-    implementation(libs.ktor.server.test.host)
+    api(libs.ktor.server.tests.jvm)
+    api(libs.ktor.server.test.host)
 
-    implementation(libs.testcontainers.bom)
-    implementation(libs.testcontainers.junit)
-    implementation(libs.testcontainers.mockserver)
-    implementation(libs.testcontainers.postgresql)
-    implementation(libs.testcontainers.jdbc)
-    implementation(libs.mockserver.client)
+    api(libs.testcontainers.bom)
+    api(libs.testcontainers.junit)
+    api(libs.testcontainers.mockserver)
+    api(libs.testcontainers.postgresql)
+    api(libs.testcontainers.jdbc)
+    api(libs.mockserver.client)
 
-    implementation(libs.flyway)
+    // TODO(Johann) is this required here?
+    api(libs.flyway)
 }

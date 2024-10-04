@@ -79,6 +79,7 @@ dependencyResolutionManagement {
 
 include("commons")
 include("commons-service")
+include("commons-sdk")
 include("commons-test")
 
 include("historical-pricing-api")

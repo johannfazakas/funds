@@ -7,6 +7,7 @@ import io.ktor.server.testing.*
 import kotlin.test.*
 
 class ApplicationTest {
+    // TODO(Johann) rewrite tests using junit @Test. or actually, what should I do so kotlin.test is recognized? what is the difference?
     @Test
     fun testRoot() = testApplication {
         client.get("/").apply {
@@ -14,5 +15,4 @@ class ApplicationTest {
             assertEquals("Hello World!", bodyAsText())
         }
     }
-    
 }
