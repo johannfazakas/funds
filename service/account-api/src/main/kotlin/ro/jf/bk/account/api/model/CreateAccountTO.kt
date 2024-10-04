@@ -12,5 +12,5 @@ data class CreateCurrencyAccountTO(
 data class CreateInstrumentAccountTO(
     val name: String,
     val currency: String,
-    val symbol: String
+    val symbol: String,
 )

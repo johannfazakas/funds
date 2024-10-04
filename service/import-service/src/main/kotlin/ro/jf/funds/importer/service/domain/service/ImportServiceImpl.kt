@@ -14,7 +14,7 @@ class ImportServiceImpl(
 ) : ImportService {
     override suspend fun import(userId: UUID, configuration: ImportConfiguration, files: List<String>) {
         log.info { "Importing files >> user = $userId configuration = $configuration files count = ${files.size}." }
-        val importItems = importParserRegistry[configuration.importType].parse(files)
+        val importItems = importParserRegistry[configuration.importType].parse(configuration, files)
         importHandler.import(userId, importItems)
     }
 }

@@ -12,6 +12,7 @@ import ro.jf.bk.commons.service.routing.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
 import ro.jf.funds.importer.service.adapter.mapper.toModel
+import ro.jf.funds.importer.service.domain.exception.ImportException
 import ro.jf.funds.importer.service.domain.port.ImportService
 
 private val log = logger { }
@@ -33,10 +34,14 @@ fun Routing.importApiRouting(
             val importConfiguration: ImportConfigurationTO = requestParts.importConfigurationPart()
                 ?: return@post call.respond(HttpStatusCode.BadRequest, "No import configuration provided.")
 
-            importService.import(userId, importConfiguration.toModel(), rawFileParts)
-
-            // TODO(Johann) should probably return something relevant from the service
-            call.respond(HttpStatusCode.OK, ImportResponse("Imported in service"))
+            try {
+                importService.import(userId, importConfiguration.toModel(), rawFileParts)
+                // TODO(Johann) should probably return something relevant from the service
+                call.respond(HttpStatusCode.OK, ImportResponse("Imported in service"))
+            } catch (importException: ImportException) {
+                log.warn(importException) { "Error importing for user $userId." }
+                return@post call.respond(HttpStatusCode.BadRequest, importException.message!!)
+            }
         }
     }
 }
