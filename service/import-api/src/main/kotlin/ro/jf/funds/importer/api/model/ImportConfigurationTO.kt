@@ -5,4 +5,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ImportConfigurationTO(
     val fileType: ImportFileTypeTO,
+    val accountMatchers: List<AccountMatcherTO>,
 )

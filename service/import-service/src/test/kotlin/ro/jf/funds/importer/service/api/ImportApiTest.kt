@@ -13,6 +13,7 @@ import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import ro.jf.bk.commons.web.USER_ID_HEADER
+import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import ro.jf.funds.importer.api.model.ImportResponse
@@ -29,7 +30,10 @@ class ImportApiTest {
         val userId = randomUUID()
         val csvFile = File("src/test/resources/data/wallet_export.csv")
         val importConfiguration = ImportConfigurationTO(
-            fileType = ImportFileTypeTO.WALLET_CSV
+            fileType = ImportFileTypeTO.WALLET_CSV,
+            accountMatchers = listOf(
+                AccountMatcherTO("ING old", "ING")
+            )
         )
 
         val response = httpClient.post("/bk-api/import/v1/imports") {
