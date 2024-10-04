@@ -1,6 +1,0 @@
-ktor:
-  application:
-    modules:
-      - ro.jf.bk.investment.service.InvestmentServiceApplicationKt.module
-  deployment:
-    port: 5275

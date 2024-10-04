@@ -4,27 +4,27 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":commons"))
+    api(project(":commons"))
 
-    implementation(libs.ktor.server.content.negotiation)
-    implementation(libs.ktor.server.core)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.ktor.server.netty)
-    implementation(libs.ktor.server.yaml)
+    api(libs.ktor.server.content.negotiation)
+    api(libs.ktor.server.core)
+    api(libs.ktor.serialization.kotlinx.json)
+    api(libs.ktor.server.netty)
+    api(libs.ktor.server.yaml)
 
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.cio)
-    implementation(libs.ktor.client.serialization)
-    implementation(libs.ktor.client.json)
-    implementation(libs.ktor.client.content.negotiation)
+    api(libs.ktor.client.core)
+    api(libs.ktor.client.cio)
+    api(libs.ktor.client.serialization)
+    api(libs.ktor.client.json)
+    api(libs.ktor.client.content.negotiation)
 
-    implementation(libs.koin.core)
-    implementation(libs.koin.ktor)
+    api(libs.koin.core)
+    api(libs.koin.ktor)
 
-    implementation(libs.postgresql)
-    implementation(libs.flyway)
-    implementation(libs.exposed.core)
-    implementation(libs.exposed.jdbc)
-    implementation(libs.exposed.java.time)
-    implementation(libs.exposed.dao)
+    api(libs.postgresql)
+    api(libs.flyway)
+    api(libs.exposed.core)
+    api(libs.exposed.jdbc)
+    api(libs.exposed.java.time)
+    api(libs.exposed.dao)
 }
