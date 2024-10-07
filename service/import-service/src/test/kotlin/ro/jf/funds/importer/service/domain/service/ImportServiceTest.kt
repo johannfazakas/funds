@@ -7,7 +7,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import ro.jf.funds.importer.service.domain.model.ImportConfiguration
-import ro.jf.funds.importer.service.domain.model.ImportItem
+import ro.jf.funds.importer.service.domain.model.ImportTransaction
 import ro.jf.funds.importer.service.domain.model.ImportType
 import ro.jf.funds.importer.service.domain.service.parser.ImportParser
 import ro.jf.funds.importer.service.domain.service.parser.ImportParserRegistry
@@ -27,7 +27,7 @@ class ImportServiceTest {
         val configuration = ImportConfiguration(importType, emptyList())
         val importFiles = listOf("fileContent1", "fileContent2")
         whenever(importParserRegistry[importType]).thenReturn(importParser)
-        val importItems = mock<List<ImportItem>>()
+        val importItems = mock<List<ImportTransaction>>()
         whenever(importParser.parse(configuration, importFiles)).thenReturn(importItems)
 
         importService.import(userId, configuration, importFiles)
