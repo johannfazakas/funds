@@ -38,7 +38,7 @@ fun Routing.fundApiRouting(fundService: FundService) {
         post {
             val userId = call.userId()
             val request = call.receive<CreateFundTO>()
-            log.info { "Create currency account $request for user $userId." }
+            log.info { "Create fund $request for user $userId." }
             if (fundService.findByName(userId, request.name) != null)
                 return@post call.respond(HttpStatusCode.Conflict)
             try {

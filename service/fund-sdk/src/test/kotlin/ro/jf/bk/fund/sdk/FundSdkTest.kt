@@ -19,6 +19,7 @@ import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
 import ro.jf.bk.commons.test.extension.MockServerExtension
 import ro.jf.bk.commons.web.USER_ID_HEADER
+import ro.jf.bk.fund.api.model.CreateFundTO
 import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerExtension::class)
@@ -77,5 +78,43 @@ class FundSdkTest {
         assertThat(funds[0].name).isEqualTo("Expenses")
         assertThat(funds[0].accounts).hasSize(1)
         assertThat(funds[0].accounts[0].id).isEqualTo(accountId)
+    }
+
+    @Test
+    fun `test create fund`(mockServerClient: MockServerClient): Unit = runBlocking {
+        val userId = randomUUID()
+        val fundId = randomUUID()
+        val accountId = randomUUID()
+
+        mockServerClient
+            .`when`(
+                request()
+                    .withMethod("POST")
+                    .withPath("/bk-api/fund/v1/funds")
+                    .withHeader(Header(USER_ID_HEADER, userId.toString()))
+            )
+            .respond(
+                response()
+                    .withStatusCode(201)
+                    .withContentType(MediaType.APPLICATION_JSON)
+                    .withBody(
+                        buildJsonObject {
+                            put("id", JsonPrimitive(fundId.toString()))
+                            put("name", JsonPrimitive("Expenses"))
+                            put("accounts", buildJsonArray {
+                                add(buildJsonObject {
+                                    put("id", JsonPrimitive(accountId.toString()))
+                                })
+                            })
+                        }.toString()
+                    )
+            )
+
+        val fund = fundSdk.createFund(userId, CreateFundTO(name = "Expenses"))
+
+        assertThat(fund.id).isEqualTo(fundId)
+        assertThat(fund.name).isEqualTo("Expenses")
+        assertThat(fund.accounts).hasSize(1)
+        assertThat(fund.accounts[0].id).isEqualTo(accountId)
     }
 }

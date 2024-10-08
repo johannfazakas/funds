@@ -185,6 +185,7 @@ class AccountSdkTest {
                     .withBody(
                         buildJsonObject {
                             put("id", JsonPrimitive(accountId.toString()))
+                            put("type", JsonPrimitive("currency"))
                             put("name", JsonPrimitive(accountName))
                             put("currency", JsonPrimitive("RON"))
                         }.toString()

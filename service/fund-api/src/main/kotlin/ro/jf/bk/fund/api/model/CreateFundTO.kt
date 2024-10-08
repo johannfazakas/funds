@@ -7,9 +7,9 @@ import java.util.*
 @Serializable
 data class CreateFundTO(
     val name: String,
+    // TODO(Johann) accounts might not be needed at all, linking might be done only at record level
     val accounts: List<CreateFundAccountTO> = emptyList(),
-) {
-}
+)
 
 @Serializable
 data class CreateFundAccountTO(
