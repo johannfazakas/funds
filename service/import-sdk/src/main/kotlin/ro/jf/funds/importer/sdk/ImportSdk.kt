@@ -9,6 +9,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
 import ro.jf.bk.commons.web.USER_ID_HEADER
+import ro.jf.funds.commons.sdk.createHttpClient
 import ro.jf.funds.importer.api.ImportApi
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
@@ -21,8 +22,8 @@ private val log = logger { }
 
 class ImportSdk(
     // TODO(Johann) this could have a default, would be easier to configure in the notebook
-    private val httpClient: HttpClient,
-    private val baseUrl: String = LOCALHOST_BASE_URL
+    private val baseUrl: String = LOCALHOST_BASE_URL,
+    private val httpClient: HttpClient = createHttpClient(),
 ) : ImportApi {
     override suspend fun import(
         userId: UUID,
