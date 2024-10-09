@@ -28,16 +28,16 @@ fun FundMatcherTO.toModel() = when (this) {
         fundName = fundName
     )
 
-    is FundMatcherTO.ByLabelAndAccount -> FundMatcher.ByLabelAndAccount(
-        importLabel = importLabel,
+    is FundMatcherTO.ByAccountLabel -> FundMatcher.ByAccountLabel(
         importAccountName = importAccountName,
+        importLabel = importLabel,
         fundName = fundName
     )
 
-    is FundMatcherTO.ByLabelAndAccountWithImplicitTransfer -> FundMatcher.ByLabelAndAccountWithImplicitTransfer(
+    is FundMatcherTO.ByAccountLabelWithTransfer -> FundMatcher.ByAccountLabelWithTransfer(
         importAccountName = importAccountName,
         importLabel = importLabel,
         initialFundName = initialFundName,
-        destinationFundName = destinationFundName
+        destinationFundName = fundName
     )
 }

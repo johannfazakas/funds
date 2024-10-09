@@ -17,19 +17,19 @@ sealed class FundMatcherTO {
     ) : FundMatcherTO()
 
     @Serializable
-    @SerialName("by_label_account")
-    data class ByLabelAndAccount(
-        val importLabel: String,
+    @SerialName("by_account_label")
+    data class ByAccountLabel(
         val importAccountName: String,
+        val importLabel: String,
         val fundName: String
     ) : FundMatcherTO()
 
     @Serializable
-    @SerialName("by_label_account_with_implicit_transfer")
-    data class ByLabelAndAccountWithImplicitTransfer(
+    @SerialName("by_account_label_with_transfer")
+    data class ByAccountLabelWithTransfer(
         val importAccountName: String,
         val importLabel: String,
         val initialFundName: String,
-        val destinationFundName: String,
+        val fundName: String,
     ) : FundMatcherTO()
 }
