@@ -17,13 +17,13 @@ sealed class FundMatcher {
         val fundName: String
     ) : FundMatcher()
 
-    data class ByLabelAndAccount(
-        val importLabel: String,
+    data class ByAccountLabel(
         val importAccountName: String,
+        val importLabel: String,
         val fundName: String
     ) : FundMatcher()
 
-    data class ByLabelAndAccountWithImplicitTransfer(
+    data class ByAccountLabelWithTransfer(
         val importAccountName: String,
         val importLabel: String,
         val initialFundName: String,
