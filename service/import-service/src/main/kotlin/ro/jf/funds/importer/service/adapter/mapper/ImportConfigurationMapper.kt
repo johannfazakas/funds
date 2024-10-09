@@ -4,17 +4,14 @@ import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
-import ro.jf.funds.importer.service.domain.model.AccountMatcher
-import ro.jf.funds.importer.service.domain.model.FundMatcher
-import ro.jf.funds.importer.service.domain.model.ImportConfiguration
-import ro.jf.funds.importer.service.domain.model.ImportType
+import ro.jf.funds.importer.service.domain.model.*
 
 fun ImportConfigurationTO.toModel() = ImportConfiguration(
     importType = when (fileType) {
         ImportFileTypeTO.WALLET_CSV -> ImportType.WALLET_CSV
     },
-    accountMatchers = accountMatchers.map { it.toModel() },
-    fundMatchers = fundMatchers.map { it.toModel() }
+    accountMatchers = AccountMatchers(accountMatchers.map { it.toModel() }),
+    fundMatchers = FundMatchers(fundMatchers.map { it.toModel() })
 )
 
 fun AccountMatcherTO.toModel() = AccountMatcher(

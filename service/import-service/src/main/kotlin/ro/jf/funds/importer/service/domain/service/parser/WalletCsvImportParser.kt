@@ -21,32 +21,20 @@ class WalletCsvImportParser(
     @OptIn(FormatStringsInDatetimeFormats::class)
     private val dateTimeFormat = LocalDateTime.Format { byUnicodePattern(DATE_FORMAT) }
 
-    override fun parse(importConfiguration: ImportConfiguration, files: List<String>): List<ImportTransaction> {
-        val rawImportItems = files.map { csvParser.parse(it) }.flatten()
-        // TODO(Johann) raise exception if empty raw import items
-        // TODO(Johann) could move account names by label recognition on a domain class
-        val accountNamesByLabel =
-            importConfiguration.accountMatchers.map { it.importAccountName to it.accountName }.toMap()
-
-        return rawImportItems
+    override fun parse(
+        importConfiguration: ImportConfiguration, files: List<String>
+    ): List<ImportTransaction> {
+        return files
+            .parse()
             .groupBy { it.transactionId() }
-            .map { (transactionId, csvRows) ->
-                ImportTransaction(
-                    transactionId = transactionId,
-                    date = csvRows.first().getDateTime(DATE_COLUMN, dateTimeFormat),
-                    records = csvRows.map { csvRow ->
-                        ImportRecord(
-                            accountName = csvRow.getString(ACCOUNT_LABEL_COLUMN).let {
-                                accountNamesByLabel[it] ?: throw ImportDataException(
-                                    "Account name not matched: ${csvRow.getString(ACCOUNT_LABEL_COLUMN)}"
-                                )
-                            },
-                            currency = csvRow.getString(CURRENCY_COLUMN),
-                            amount = csvRow.getBigDecimal(AMOUNT_COLUMN)
-                        )
-                    }
-                )
-            }
+            .map { (transactionId, csvRows) -> toTransaction(importConfiguration, transactionId, csvRows) }
+    }
+
+    private fun List<String>.parse(): List<CsvRow> {
+        val rawImportItems = this.map { csvParser.parse(it) }.flatten()
+        if (rawImportItems.isEmpty())
+            throw ImportDataException("No import data")
+        return rawImportItems
     }
 
     private fun CsvRow.transactionId(): String {
@@ -55,5 +43,24 @@ class WalletCsvImportParser(
             this[AMOUNT_COLUMN]!!.toBigDecimal().abs(),
             this[DATE_COLUMN]!!
         ).hashCode().toString()
+    }
+
+    private fun toTransaction(
+        importConfiguration: ImportConfiguration,
+        transactionId: String,
+        csvRows: List<CsvRow>
+    ): ImportTransaction {
+        return ImportTransaction(
+            transactionId = transactionId,
+            date = csvRows.first().getDateTime(DATE_COLUMN, dateTimeFormat),
+            records = csvRows.map { csvRow ->
+                ImportRecord(
+                    accountName = csvRow.getString(ACCOUNT_LABEL_COLUMN)
+                        .let { importConfiguration.accountMatchers.getAccountName(it) },
+                    currency = csvRow.getString(CURRENCY_COLUMN),
+                    amount = csvRow.getBigDecimal(AMOUNT_COLUMN)
+                )
+            }
+        )
     }
 }

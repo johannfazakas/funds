@@ -6,9 +6,7 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import ro.jf.funds.importer.service.domain.model.ImportConfiguration
-import ro.jf.funds.importer.service.domain.model.ImportTransaction
-import ro.jf.funds.importer.service.domain.model.ImportType
+import ro.jf.funds.importer.service.domain.model.*
 import ro.jf.funds.importer.service.domain.service.parser.ImportParser
 import ro.jf.funds.importer.service.domain.service.parser.ImportParserRegistry
 import java.util.UUID.randomUUID
@@ -24,7 +22,7 @@ class ImportServiceTest {
     fun `should parse and handle import files`() = runBlocking {
         val userId = randomUUID()
         val importType = ImportType.WALLET_CSV
-        val configuration = ImportConfiguration(importType, emptyList(), emptyList())
+        val configuration = ImportConfiguration(importType, AccountMatchers(emptyList()), FundMatchers(emptyList()))
         val importFiles = listOf("fileContent1", "fileContent2")
         whenever(importParserRegistry[importType]).thenReturn(importParser)
         val importItems = mock<List<ImportTransaction>>()
