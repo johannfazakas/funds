@@ -16,7 +16,7 @@ data class ImportTransaction(
 
 data class ImportRecord(
     val accountName: String,
-    // TODO(Johann) add fund here
+    val fundName: String,
     val currency: String,
     val amount: BigDecimal,
 )
