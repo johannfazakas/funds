@@ -11,8 +11,6 @@ data class AccountMatchers(
 
     fun getAccountName(importAccountName: String): String = accountNamesByImportAccountName[importAccountName]
         ?: throw ImportDataException("Account name not matched: $importAccountName")
-
-    fun getAccountNameOrNull(importAccountName: String): String? = accountNamesByImportAccountName[importAccountName]
 }
 
 data class AccountMatcher(
