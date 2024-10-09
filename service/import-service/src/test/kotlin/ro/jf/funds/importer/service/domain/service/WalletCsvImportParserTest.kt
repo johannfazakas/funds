@@ -4,10 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.domain.model.AccountMatcher
-import ro.jf.funds.importer.service.domain.model.FundMatcher
-import ro.jf.funds.importer.service.domain.model.ImportConfiguration
-import ro.jf.funds.importer.service.domain.model.ImportType
+import ro.jf.funds.importer.service.domain.model.*
 import ro.jf.funds.importer.service.domain.service.parser.CsvParser
 import ro.jf.funds.importer.service.domain.service.parser.WalletCsvImportParser
 
@@ -22,8 +19,8 @@ class WalletCsvImportParserTest {
         """.trimIndent()
         val importConfiguration = ImportConfiguration(
             importType = ImportType.WALLET_CSV,
-            accountMatchers = listOf(AccountMatcher("ING old", "ING")),
-            fundMatchers = listOf(FundMatcher.ByLabel("Basic - Food", "Expenses"))
+            accountMatchers = AccountMatchers(AccountMatcher("ING old", "ING")),
+            fundMatchers = FundMatchers(FundMatcher.ByLabel("Basic - Food", "Expenses"))
         )
 
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
@@ -46,12 +43,14 @@ class WalletCsvImportParserTest {
     """.trimIndent()
         val importConfiguration = ImportConfiguration(
             importType = ImportType.WALLET_CSV,
-            accountMatchers = listOf(
-                AccountMatcher("ING old", "ING"),
-                AccountMatcher("Cash RON", "Cash")
+            accountMatchers = AccountMatchers(
+                listOf(
+                    AccountMatcher("ING old", "ING"),
+                    AccountMatcher("Cash RON", "Cash")
+                )
             ),
             // TODO(Johann) this test should also contain fund matchers
-            fundMatchers = emptyList()
+            fundMatchers = FundMatchers(emptyList())
         )
 
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
@@ -76,12 +75,28 @@ class WalletCsvImportParserTest {
         """.trimIndent()
         val importConfiguration = ImportConfiguration(
             importType = ImportType.WALLET_CSV,
-            accountMatchers = listOf(AccountMatcher("ING new", "ING")),
-            fundMatchers = listOf(FundMatcher.ByLabel("Basic - Food", "Expenses"))
+            accountMatchers = AccountMatchers(AccountMatcher("ING new", "ING")),
+            fundMatchers = FundMatchers(FundMatcher.ByLabel("Basic - Food", "Expenses"))
         )
 
         assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
             .isInstanceOf(ImportDataException::class.java)
             .hasMessage("Account name not matched: ING old")
+    }
+
+    @Test
+    fun `should raise import data exception when empty import`() {
+        val fileContent = """
+            account;category;currency;amount;ref_currency_amount;type;payment_type;payment_type_local;note;date;gps_latitude;gps_longitude;gps_accuracy_in_meters;warranty_in_month;transfer;payee;labels;envelope_id;custom_category
+        """.trimIndent()
+        val importConfiguration = ImportConfiguration(
+            importType = ImportType.WALLET_CSV,
+            accountMatchers = AccountMatchers(AccountMatcher("ING old", "ING")),
+            fundMatchers = FundMatchers(FundMatcher.ByLabel("Basic - Food", "Expenses"))
+        )
+
+        assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
+            .isInstanceOf(ImportDataException::class.java)
+            .hasMessage("No import data")
     }
 }
