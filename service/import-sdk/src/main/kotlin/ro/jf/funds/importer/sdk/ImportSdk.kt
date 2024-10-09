@@ -45,6 +45,7 @@ class ImportSdk(
                 }
             ))
         }
+        // TODO(Johann) should respond with some ErrorResponse when status is not OK
         return response.body<ImportResponse>()
     }
 }

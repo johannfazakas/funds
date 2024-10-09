@@ -13,10 +13,7 @@ import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import ro.jf.bk.commons.web.USER_ID_HEADER
-import ro.jf.funds.importer.api.model.AccountMatcherTO
-import ro.jf.funds.importer.api.model.ImportConfigurationTO
-import ro.jf.funds.importer.api.model.ImportFileTypeTO
-import ro.jf.funds.importer.api.model.ImportResponse
+import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.service.module
 import java.io.File
 import java.util.UUID.randomUUID
@@ -33,6 +30,12 @@ class ImportApiTest {
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
                 AccountMatcherTO("ING old", "ING")
+            ),
+            fundMatchers = listOf(
+                FundMatcherTO.ByLabel("Basic - Food", "Expenses"),
+                FundMatcherTO.ByLabel("Gifts", "Expenses"),
+                FundMatcherTO.ByLabel("C&T - Gas & Parking", "Expenses"),
+                FundMatcherTO.ByLabelAndAccountWithImplicitTransfer("ING Old", "Work Income", "Work", "Expenses"),
             )
         )
 

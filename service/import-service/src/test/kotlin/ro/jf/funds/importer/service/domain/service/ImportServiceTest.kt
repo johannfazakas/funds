@@ -24,7 +24,7 @@ class ImportServiceTest {
     fun `should parse and handle import files`() = runBlocking {
         val userId = randomUUID()
         val importType = ImportType.WALLET_CSV
-        val configuration = ImportConfiguration(importType, emptyList())
+        val configuration = ImportConfiguration(importType, emptyList(), emptyList())
         val importFiles = listOf("fileContent1", "fileContent2")
         whenever(importParserRegistry[importType]).thenReturn(importParser)
         val importItems = mock<List<ImportTransaction>>()

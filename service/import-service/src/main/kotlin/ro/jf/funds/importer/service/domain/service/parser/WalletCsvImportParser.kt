@@ -3,6 +3,7 @@ package ro.jf.funds.importer.service.domain.service.parser
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
+import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import ro.jf.funds.importer.service.domain.model.ImportConfiguration
 import ro.jf.funds.importer.service.domain.model.ImportRecord
 import ro.jf.funds.importer.service.domain.model.ImportTransaction
@@ -22,20 +23,26 @@ class WalletCsvImportParser(
 
     override fun parse(importConfiguration: ImportConfiguration, files: List<String>): List<ImportTransaction> {
         val rawImportItems = files.map { csvParser.parse(it) }.flatten()
-        val accountNamesByLabel = importConfiguration.accountMatchers.map { it.importLabel to it.accountName }.toMap()
+        // TODO(Johann) raise exception if empty raw import items
+        // TODO(Johann) could move account names by label recognition on a domain class
+        val accountNamesByLabel =
+            importConfiguration.accountMatchers.map { it.importAccountName to it.accountName }.toMap()
 
         return rawImportItems
             .groupBy { it.transactionId() }
             .map { (transactionId, csvRows) ->
-                // TODO(Johann) remove !! operators
                 ImportTransaction(
                     transactionId = transactionId,
-                    date = csvRows.first().let { LocalDateTime.parse(it[DATE_COLUMN]!!, dateTimeFormat) },
+                    date = csvRows.first().getDateTime(DATE_COLUMN, dateTimeFormat),
                     records = csvRows.map { csvRow ->
                         ImportRecord(
-                            accountName = accountNamesByLabel[csvRow[ACCOUNT_LABEL_COLUMN]!!]!!,
-                            currency = csvRow[CURRENCY_COLUMN]!!,
-                            amount = csvRow[AMOUNT_COLUMN]!!.toBigDecimal()
+                            accountName = csvRow.getString(ACCOUNT_LABEL_COLUMN).let {
+                                accountNamesByLabel[it] ?: throw ImportDataException(
+                                    "Account name not matched: ${csvRow.getString(ACCOUNT_LABEL_COLUMN)}"
+                                )
+                            },
+                            currency = csvRow.getString(CURRENCY_COLUMN),
+                            amount = csvRow.getBigDecimal(AMOUNT_COLUMN)
                         )
                     }
                 )
