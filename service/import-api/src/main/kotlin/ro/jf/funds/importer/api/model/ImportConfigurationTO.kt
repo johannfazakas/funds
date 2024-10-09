@@ -6,4 +6,5 @@ import kotlinx.serialization.Serializable
 data class ImportConfigurationTO(
     val fileType: ImportFileTypeTO,
     val accountMatchers: List<AccountMatcherTO>,
+    val fundMatchers: List<FundMatcherTO>,
 )
