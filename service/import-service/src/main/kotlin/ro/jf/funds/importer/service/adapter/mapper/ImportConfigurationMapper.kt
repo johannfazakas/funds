@@ -20,6 +20,12 @@ fun AccountMatcherTO.toModel() = AccountMatcher(
 )
 
 fun FundMatcherTO.toModel() = when (this) {
+
+    is FundMatcherTO.ByAccount -> FundMatcher.ByAccount(
+        importAccountName = importAccountName,
+        fundName = fundName
+    )
+
     is FundMatcherTO.ByLabel -> FundMatcher.ByLabel(
         importLabel = importLabel,
         fundName = fundName
@@ -35,6 +41,6 @@ fun FundMatcherTO.toModel() = when (this) {
         importAccountName = importAccountName,
         importLabel = importLabel,
         initialFundName = initialFundName,
-        destinationFundName = fundName
+        fundName = fundName
     )
 }

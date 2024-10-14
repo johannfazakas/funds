@@ -36,7 +36,6 @@ class WalletCsvImportParserTest {
     }
 
     @Test
-    @Disabled("Handle fund recognition on transfers")
     fun `should parse transfer wallet csv import item`() {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "-400.00", "", "2019-01-31 02:00:49"),
@@ -52,7 +51,9 @@ class WalletCsvImportParserTest {
             ),
             fundMatchers = FundMatchers(
                 FundMatcher.ByLabel("Basic - Food", "Expenses"),
-                FundMatcher.ByLabel("Basic - Food", "Income")
+                FundMatcher.ByLabel("Basic - Food", "Income"),
+                FundMatcher.ByAccount("ING old", "Expenses"),
+                FundMatcher.ByAccount("Cash RON", "Expenses")
             )
         )
 
@@ -60,7 +61,7 @@ class WalletCsvImportParserTest {
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionId).isNotNull()
-        assertThat(importTransactions[0].date.toString()).isEqualTo("2019-01-29T02:00:37")
+        assertThat(importTransactions[0].date.toString()).isEqualTo("2019-01-31T02:00:49")
         assertThat(importTransactions[0].records).hasSize(2)
         assertThat(importTransactions[0].records[0].accountName).isEqualTo("ING")
         assertThat(importTransactions[0].records[0].currency).isEqualTo("RON")
@@ -77,7 +78,7 @@ class WalletCsvImportParserTest {
     }
 
     @Test
-    fun `should raise import data exception when multiple fund matchers are matching`() {
+    fun `should use first matching fund when multiple fund matchers are matching`() {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "-13.80", "Basic - Food", "2019-01-31 02:00:49")
         )
@@ -86,12 +87,14 @@ class WalletCsvImportParserTest {
             accountMatchers = AccountMatchers(AccountMatcher("ING old", "ING")),
             fundMatchers = FundMatchers(
                 FundMatcher.ByLabel("Basic - Food", "Expenses"),
-                FundMatcher.ByAccountLabel("ING old", "Basic - Food", "Savings")
+                FundMatcher.ByAccount("ING old", "Savings")
             )
         )
 
-        assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
-            .isInstanceOf(ImportDataException::class.java)
+        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+
+        assertThat(importTransactions).hasSize(1)
+        assertThat(importTransactions[0].records[0].fundName).isEqualTo("Expenses")
     }
 
     @Test

@@ -68,17 +68,14 @@ class WalletCsvImportParser(
         val fundMatcher = importConfiguration.fundMatchers.getFundMatcher(importAccountName, importType)
 
         return when (fundMatcher) {
-            is FundMatcher.ByLabel ->
-                listOf(ImportRecord(accountName, fundMatcher.fundName, currency, amount))
-
-            is FundMatcher.ByAccountLabel ->
+            is FundMatcher.ByAccount, is FundMatcher.ByLabel, is FundMatcher.ByAccountLabel ->
                 listOf(ImportRecord(accountName, fundMatcher.fundName, currency, amount))
 
             is FundMatcher.ByAccountLabelWithTransfer -> {
                 listOf(
                     ImportRecord(accountName, fundMatcher.initialFundName, currency, amount),
                     ImportRecord(accountName, fundMatcher.initialFundName, currency, amount.negate()),
-                    ImportRecord(accountName, fundMatcher.destinationFundName, currency, amount)
+                    ImportRecord(accountName, fundMatcher.fundName, currency, amount)
                 )
             }
         }
