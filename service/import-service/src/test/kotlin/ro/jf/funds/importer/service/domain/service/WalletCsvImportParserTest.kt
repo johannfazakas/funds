@@ -72,9 +72,41 @@ class WalletCsvImportParserTest {
     }
 
     @Test
-    @Disabled
     fun `should parse wallet csv import item with implicit fund transfer`() {
-        error("Not implemented")
+        val fileContent = generateFileContent(
+            WalletCsvRowContent("ING old", "RON", "6740.00", "Work Income", "2019-01-06 02:00:23")
+        )
+        val importConfiguration = ImportConfiguration(
+            importType = ImportType.WALLET_CSV,
+            accountMatchers = AccountMatchers(
+                AccountMatcher("ING old", "ING")
+            ),
+            fundMatchers = FundMatchers(
+                FundMatcher.ByAccountLabelWithTransfer("ING old", importLabel = "Work Income", "Work", "Expenses"),
+            )
+        )
+
+        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+
+        assertThat(importTransactions).hasSize(1)
+        assertThat(importTransactions[0].transactionId).isNotNull()
+        assertThat(importTransactions[0].date.toString()).isEqualTo("2019-01-06T02:00:23")
+        assertThat(importTransactions[0].records).hasSize(3)
+
+        assertThat(importTransactions[0].records[0].accountName).isEqualTo("ING")
+        assertThat(importTransactions[0].records[0].fundName).isEqualTo("Work")
+        assertThat(importTransactions[0].records[0].currency).isEqualTo("RON")
+        assertThat(importTransactions[0].records[0].amount).isEqualTo("6740.00".toBigDecimal())
+
+        assertThat(importTransactions[0].records[1].accountName).isEqualTo("ING")
+        assertThat(importTransactions[0].records[1].fundName).isEqualTo("Work")
+        assertThat(importTransactions[0].records[1].currency).isEqualTo("RON")
+        assertThat(importTransactions[0].records[1].amount).isEqualTo("-6740.00".toBigDecimal())
+
+        assertThat(importTransactions[0].records[2].accountName).isEqualTo("ING")
+        assertThat(importTransactions[0].records[2].fundName).isEqualTo("Expenses")
+        assertThat(importTransactions[0].records[2].currency).isEqualTo("RON")
+        assertThat(importTransactions[0].records[2].amount).isEqualTo("6740.00".toBigDecimal())
     }
 
     @Test

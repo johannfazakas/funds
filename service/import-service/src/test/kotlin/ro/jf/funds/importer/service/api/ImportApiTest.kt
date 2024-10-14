@@ -35,7 +35,7 @@ class ImportApiTest {
                 FundMatcherTO.ByLabel("Basic - Food", "Expenses"),
                 FundMatcherTO.ByLabel("Gifts", "Expenses"),
                 FundMatcherTO.ByLabel("C&T - Gas & Parking", "Expenses"),
-                FundMatcherTO.ByAccountLabelWithTransfer("ING Old", "Work Income", "Work", "Expenses"),
+                FundMatcherTO.ByAccountLabelWithTransfer("ING old", "Work Income", "Work", "Expenses"),
             )
         )
 

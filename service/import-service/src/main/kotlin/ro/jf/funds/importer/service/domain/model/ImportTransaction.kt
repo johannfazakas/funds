@@ -10,7 +10,7 @@ data class ImportTransaction(
     val records: List<ImportRecord>
 ) {
     init {
-        require(records.size in 1..2) { "ImportTransaction must have one or two records." }
+        require(records.size in 1..3) { "ImportTransaction must have 1 to 3 records." }
     }
 }
 
