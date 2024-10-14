@@ -10,6 +10,13 @@ import kotlinx.serialization.json.JsonClassDiscriminator
 @Serializable
 sealed class FundMatcherTO {
     @Serializable
+    @SerialName("by_account")
+    data class ByAccount(
+        val importAccountName: String,
+        val fundName: String
+    ) : FundMatcherTO()
+
+    @Serializable
     @SerialName("by_label")
     data class ByLabel(
         val importLabel: String,
