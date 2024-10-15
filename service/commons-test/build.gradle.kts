@@ -3,6 +3,10 @@ plugins {
 }
 
 dependencies {
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.kotlinx.serialization.json)
+
     api(libs.kotlin.test.junit)
     api(libs.junit.jupiter)
     api(libs.kotlin.mockito)
@@ -13,6 +17,7 @@ dependencies {
 
     api(libs.ktor.server.tests.jvm)
     api(libs.ktor.server.test.host)
+    implementation(libs.ktor.server.content.negotiation)
 
     api(libs.testcontainers.bom)
     api(libs.testcontainers.junit)

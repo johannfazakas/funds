@@ -1,14 +1,11 @@
 package ro.jf.bk.fund.service
 
 import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.config.*
+import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.datetime.LocalDateTime
-import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -23,6 +20,8 @@ import ro.jf.bk.commons.service.config.configureDatabaseMigration
 import ro.jf.bk.commons.service.config.configureDependencies
 import ro.jf.bk.commons.test.extension.MockServerExtension
 import ro.jf.bk.commons.test.extension.PostgresContainerExtension
+import ro.jf.bk.commons.test.utils.configureEnvironmentWithDB
+import ro.jf.bk.commons.test.utils.createJsonHttpClient
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.bk.fund.api.model.TransactionTO
 import ro.jf.bk.fund.service.config.configureRouting
@@ -43,7 +42,7 @@ class TransactionApiTest {
 
     @Test
     fun `test list transactions`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { testModule() }
 
         val userId = randomUUID()
         val transactionId = randomUUID()
@@ -107,7 +106,7 @@ class TransactionApiTest {
 
     @Test
     fun `test remove transaction`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { testModule() }
 
         val userId = randomUUID()
         val transactionId = randomUUID()
@@ -123,28 +122,14 @@ class TransactionApiTest {
         verify(transactionRepository).deleteTransaction(userId, transactionId)
     }
 
-    private fun ApplicationTestBuilder.createJsonHttpClient() =
-        createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
-
-    // TODO(Johann) should extract this
-    private fun ApplicationTestBuilder.configureEnvironment() {
-        environment {
-            config = MapApplicationConfig(
-                "database.url" to PostgresContainerExtension.jdbcUrl,
-                "database.user" to PostgresContainerExtension.username,
-                "database.password" to PostgresContainerExtension.password,
-            )
+    private fun Application.testModule() {
+        val fundsAppTestModule = module {
+            single<AccountRepository> { accountRepository }
+            single<TransactionRepository> { transactionRepository }
         }
-        application {
-            // TODO(Johann) might simplify this further
-            val fundsAppTestModule = module {
-                single<AccountRepository> { accountRepository }
-                single<TransactionRepository> { transactionRepository }
-            }
-            configureDependencies(fundsAppModule, fundsAppTestModule)
-            configureContentNegotiation()
-            configureDatabaseMigration(get<DataSource>())
-            configureRouting()
-        }
+        configureDependencies(fundsAppModule, fundsAppTestModule)
+        configureContentNegotiation()
+        configureDatabaseMigration(get<DataSource>())
+        configureRouting()
     }
 }

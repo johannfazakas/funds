@@ -1,17 +1,16 @@
 package ro.jf.funds.importer.service.api
 
 import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import ro.jf.bk.commons.test.utils.configureEnvironmentWithDB
+import ro.jf.bk.commons.test.utils.createJsonHttpClient
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.service.module
@@ -21,7 +20,7 @@ import java.util.UUID.randomUUID
 class ImportApiTest {
     @Test
     fun `test import`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { module() }
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
@@ -58,16 +57,4 @@ class ImportApiTest {
         val responseBody = response.body<ImportResponse>()
         assertThat(responseBody.response).isNotEmpty()
     }
-
-    private fun ApplicationTestBuilder.configureEnvironment() {
-        environment {
-            config = MapApplicationConfig()
-        }
-        application {
-            module()
-        }
-    }
-
-    private fun ApplicationTestBuilder.createJsonHttpClient() =
-        createClient { install(ContentNegotiation) { json() } }
 }

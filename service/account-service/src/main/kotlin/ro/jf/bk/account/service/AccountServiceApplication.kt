@@ -9,6 +9,7 @@ import ro.jf.bk.commons.service.config.configureContentNegotiation
 import ro.jf.bk.commons.service.config.configureDatabaseMigration
 import javax.sql.DataSource
 
+
 fun main(args: Array<String>) {
     EngineMain.main(args)
 }

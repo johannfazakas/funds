@@ -1,13 +1,11 @@
 package ro.jf.bk.fund.service
 
 import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.testing.*
-import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.Test
@@ -24,6 +22,8 @@ import ro.jf.bk.commons.service.config.configureDatabaseMigration
 import ro.jf.bk.commons.service.config.configureDependencies
 import ro.jf.bk.commons.test.extension.MockServerExtension
 import ro.jf.bk.commons.test.extension.PostgresContainerExtension
+import ro.jf.bk.commons.test.utils.configureEnvironmentWithDB
+import ro.jf.bk.commons.test.utils.createJsonHttpClient
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.bk.fund.api.model.CreateFundAccountTO
 import ro.jf.bk.fund.api.model.CreateFundTO
@@ -44,7 +44,7 @@ class FundApiTest {
 
     @Test
     fun `test list funds`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB(appConfig) { testModule() }
 
         val userId = randomUUID()
         val accountId = randomUUID()
@@ -74,7 +74,7 @@ class FundApiTest {
 
     @Test
     fun `test get fund by id`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB(appConfig) { testModule() }
 
         val userId = randomUUID()
         val accountId = randomUUID()
@@ -103,7 +103,7 @@ class FundApiTest {
 
     @Test
     fun `test create fund`(mockServerClient: MockServerClient) = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB(appConfig) { testModule() }
 
         val userId = randomUUID()
         val accountId = randomUUID()
@@ -161,7 +161,7 @@ class FundApiTest {
 
     @Test
     fun `test delete fund by id`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB(appConfig) { testModule() }
         val userId = randomUUID()
         val fund = fundRepository.save(CreateFundCommand(userId, "Company", listOf()))
 
@@ -173,24 +173,32 @@ class FundApiTest {
         assertThat(fundRepository.findById(userId, fund.id)).isNull()
     }
 
-    private fun ApplicationTestBuilder.createJsonHttpClient() =
-        createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
+//    private fun ApplicationTestBuilder.createJsonHttpClient() =
+//        createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
 
-    private fun ApplicationTestBuilder.configureEnvironment() {
-        environment {
-            config = MapApplicationConfig(
-                "database.url" to PostgresContainerExtension.jdbcUrl,
-                "database.user" to PostgresContainerExtension.username,
-                "database.password" to PostgresContainerExtension.password,
-                "integration.account-service.base-url" to MockServerExtension.baseUrl
-            )
-        }
-        application {
-            configureDependencies(fundsAppModule)
-            configureContentNegotiation()
-            configureDatabaseMigration(get<DataSource>())
-            configureRouting()
-        }
+//    private fun ApplicationTestBuilder.configureEnvironment() {
+//        environment {
+//            config = MapApplicationConfig(
+//                "database.url" to PostgresContainerExtension.jdbcUrl,
+//                "database.user" to PostgresContainerExtension.username,
+//                "database.password" to PostgresContainerExtension.password,
+//                "integration.account-service.base-url" to MockServerExtension.baseUrl
+//            )
+//        }
+//        application {
+//            testModule()
+//        }
+//    }
+
+    private val appConfig = MapApplicationConfig(
+        "integration.account-service.base-url" to MockServerExtension.baseUrl
+    )
+
+    private fun Application.testModule() {
+        configureDependencies(fundsAppModule)
+        configureContentNegotiation()
+        configureDatabaseMigration(get<DataSource>())
+        configureRouting()
     }
 
     private fun createFundRepository() = FundExposedRepository(
