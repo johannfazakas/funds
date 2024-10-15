@@ -1,15 +1,11 @@
 package ro.jf.bk.account.service
 
 import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
-import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.AfterEach
@@ -18,12 +14,13 @@ import org.junit.jupiter.api.extension.ExtendWith
 import ro.jf.bk.account.api.model.TransactionTO
 import ro.jf.bk.account.service.adapter.persistence.AccountExposedRepository
 import ro.jf.bk.account.service.adapter.persistence.TransactionExposedRepository
-import ro.jf.bk.account.service.adapter.persistence.TransactionExposedRepository.RecordTable.transactionId
 import ro.jf.bk.account.service.domain.command.CreateCurrencyAccountCommand
 import ro.jf.bk.account.service.domain.command.CreateRecordCommand
 import ro.jf.bk.account.service.domain.command.CreateTransactionCommand
 import ro.jf.bk.commons.model.ListTO
 import ro.jf.bk.commons.test.extension.PostgresContainerExtension
+import ro.jf.bk.commons.test.utils.configureEnvironmentWithDB
+import ro.jf.bk.commons.test.utils.createJsonHttpClient
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
@@ -48,7 +45,7 @@ class TransactionApiTest {
 
     @Test
     fun `test list transactions`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
         val dateTime = LocalDateTime(2024, 7, 22, 9, 17)
@@ -108,7 +105,7 @@ class TransactionApiTest {
 
     @Test
     fun `test delete transaction`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
         val dateTime = LocalDateTime(2024, 7, 22, 9, 17)
@@ -141,22 +138,5 @@ class TransactionApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
         assertThat(transactionRepository.findById(userId, transaction.id)).isNull()
-    }
-
-    private fun ApplicationTestBuilder.createJsonHttpClient() =
-        createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
-
-    // TODO(Johann) could extract
-    private fun ApplicationTestBuilder.configureEnvironment() {
-        environment {
-            config = MapApplicationConfig(
-                "database.url" to PostgresContainerExtension.jdbcUrl,
-                "database.user" to PostgresContainerExtension.username,
-                "database.password" to PostgresContainerExtension.password
-            )
-        }
-        application {
-            module()
-        }
     }
 }

@@ -1,14 +1,10 @@
 package ro.jf.bk.account.service
 
 import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.AfterEach
@@ -23,6 +19,8 @@ import ro.jf.bk.account.service.domain.command.CreateInstrumentAccountCommand
 import ro.jf.bk.account.service.domain.model.Account
 import ro.jf.bk.commons.model.ListTO
 import ro.jf.bk.commons.test.extension.PostgresContainerExtension
+import ro.jf.bk.commons.test.utils.configureEnvironmentWithDB
+import ro.jf.bk.commons.test.utils.createJsonHttpClient
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import java.util.UUID.randomUUID
 
@@ -38,7 +36,7 @@ class AccountApiTest {
 
     @Test
     fun `test list accounts`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
         accountRepository.save(CreateCurrencyAccountCommand(userId, "Cash", "RON"))
@@ -57,7 +55,7 @@ class AccountApiTest {
 
     @Test
     fun `test get account by id`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
         val user = accountRepository.save(CreateCurrencyAccountCommand(userId, "Revolut", "RON"))
@@ -74,7 +72,7 @@ class AccountApiTest {
 
     @Test
     fun `test get account by id when missing`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
         val response = createJsonHttpClient().get("/bk-api/account/v1/accounts/${randomUUID()}") {
@@ -86,7 +84,7 @@ class AccountApiTest {
 
     @Test
     fun `test create currency account`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
         val response = createJsonHttpClient().post("/bk-api/account/v1/accounts/currency") {
@@ -107,7 +105,7 @@ class AccountApiTest {
 
     @Test
     fun `test create instrument account`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
         val response = createJsonHttpClient().post("/bk-api/account/v1/accounts/instrument") {
@@ -133,7 +131,7 @@ class AccountApiTest {
 
     @Test
     fun `test create account with duplicate name`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
         accountRepository.save(CreateCurrencyAccountCommand(userId, "BT", "EUR"))
@@ -149,7 +147,8 @@ class AccountApiTest {
 
     @Test
     fun `test delete account by id`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { module() }
+
         val userId = randomUUID()
         val account = accountRepository.save(CreateCurrencyAccountCommand(userId, "ING", "RON"))
 
@@ -163,7 +162,7 @@ class AccountApiTest {
 
     @Test
     fun `test delete not existing user by id`() = testApplication {
-        configureEnvironment()
+        configureEnvironmentWithDB { module() }
 
         val response = createJsonHttpClient().delete("/bk-api/account/v1/accounts/${randomUUID()}") {
             header(USER_ID_HEADER, randomUUID())
@@ -172,22 +171,22 @@ class AccountApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
     }
 
-    // TODO(Johann) could extract helpers to common-test
-    private fun ApplicationTestBuilder.createJsonHttpClient() =
-        createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
-
-    private fun ApplicationTestBuilder.configureEnvironment() {
-        environment {
-            config = MapApplicationConfig(
-                "database.url" to PostgresContainerExtension.jdbcUrl,
-                "database.user" to PostgresContainerExtension.username,
-                "database.password" to PostgresContainerExtension.password
-            )
-        }
-        application {
-            module()
-        }
-    }
+//    // TODO(Johann) could extract helpers to common-test
+//    private fun ApplicationTestBuilder.createJsonHttpClient() =
+//        createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
+//
+//    private fun ApplicationTestBuilder.configureEnvironment() {
+//        environment {
+//            config = MapApplicationConfig(
+//                "database.url" to PostgresContainerExtension.jdbcUrl,
+//                "database.user" to PostgresContainerExtension.username,
+//                "database.password" to PostgresContainerExtension.password
+//            )
+//        }
+//        application {
+//            module()
+//        }
+//    }
 
     private fun createAccountRepository() = AccountExposedRepository(
         database = Database.connect(
