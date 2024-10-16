@@ -26,6 +26,7 @@ import java.util.UUID.randomUUID
 class FundSdkTest {
     private val fundSdk = FundSdk(
         baseUrl = MockServerExtension.baseUrl,
+        // TODO extract to commons test
         httpClient = HttpClient(CIO) {
             install(ContentNegotiation) {
                 json(Json {
