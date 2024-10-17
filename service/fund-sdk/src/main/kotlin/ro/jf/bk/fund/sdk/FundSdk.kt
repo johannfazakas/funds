@@ -12,7 +12,7 @@ import ro.jf.bk.fund.api.FundApi
 import ro.jf.bk.fund.api.exception.FundApiException
 import ro.jf.bk.fund.api.model.FundTO
 import ro.jf.bk.fund.api.model.CreateFundTO
-import ro.jf.funds.commons.sdk.createHttpClient
+import ro.jf.funds.commons.sdk.client.createHttpClient
 import java.util.*
 
 private val log = logger { }

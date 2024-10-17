@@ -41,7 +41,7 @@ value class CsvRow(private val values: Map<String, String>) {
 }
 
 class CsvParser {
-    fun parse(fileContent: String, delimiter: Char = ';', newLine: Char = '\n'): List<CsvRow> {
+    fun parse(fileContent: String, delimiter: Char = ';'): List<CsvRow> {
         val csvReader = csvReader {
             this.delimiter = delimiter
         }

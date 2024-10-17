@@ -41,9 +41,9 @@ class WalletCsvImportParser(
 
     private fun CsvRow.transactionId(): String {
         return listOf(
-            this[NOTE_COLUMN]!!,
-            this[AMOUNT_COLUMN]!!.toBigDecimal().abs(),
-            this[DATE_COLUMN]!!
+            this.getString(NOTE_COLUMN),
+            this.getBigDecimal(AMOUNT_COLUMN).abs(),
+            this.getString(DATE_COLUMN)
         ).hashCode().toString()
     }
 

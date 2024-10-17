@@ -13,7 +13,7 @@ import ro.jf.bk.account.api.model.CreateInstrumentAccountTO
 import ro.jf.bk.commons.model.ListTO
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import java.util.*
-import ro.jf.funds.commons.sdk.createHttpClient
+import ro.jf.funds.commons.sdk.client.createHttpClient
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5211"
 private const val BASE_PATH = "/bk-api/account/v1"
