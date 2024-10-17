@@ -1,4 +1,5 @@
 package ro.jf.bk.fund.sdk
+// TODO(Johann) change base package
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -26,7 +27,7 @@ import java.util.UUID.randomUUID
 class FundSdkTest {
     private val fundSdk = FundSdk(
         baseUrl = MockServerExtension.baseUrl,
-        // TODO extract to commons test
+        // TODO extract to commons test, or have a default client in the SDK. might be even better
         httpClient = HttpClient(CIO) {
             install(ContentNegotiation) {
                 json(Json {

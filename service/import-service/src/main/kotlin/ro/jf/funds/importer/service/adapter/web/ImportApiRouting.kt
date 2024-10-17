@@ -8,10 +8,12 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
+import ro.jf.bk.commons.model.ProblemTO
 import ro.jf.bk.commons.service.routing.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
 import ro.jf.funds.importer.service.adapter.mapper.toModel
+import ro.jf.funds.importer.service.adapter.mapper.toProblem
 import ro.jf.funds.importer.service.domain.exception.ImportException
 import ro.jf.funds.importer.service.domain.port.ImportService
 
@@ -32,7 +34,7 @@ fun Routing.importApiRouting(
             val rawFileParts = requestParts.rawFileParts()
 
             val importConfiguration: ImportConfigurationTO = requestParts.importConfigurationPart()
-                ?: return@post call.respond(HttpStatusCode.BadRequest, "No import configuration provided.")
+                ?: return@post call.respond(HttpStatusCode.BadRequest, ProblemTO("Import configuration missing."))
 
             try {
                 importService.import(userId, importConfiguration.toModel(), rawFileParts)
@@ -40,7 +42,7 @@ fun Routing.importApiRouting(
                 call.respond(HttpStatusCode.OK, ImportResponse("Imported in service"))
             } catch (importException: ImportException) {
                 log.warn(importException) { "Error importing for user $userId." }
-                return@post call.respond(HttpStatusCode.BadRequest, importException.message!!)
+                return@post call.respond(HttpStatusCode.BadRequest, importException.toProblem())
             }
         }
     }
