@@ -7,12 +7,14 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
+import ro.jf.bk.account.sdk.AccountSdk
+import ro.jf.bk.fund.sdk.FundSdk
+import ro.jf.funds.importer.service.domain.port.ImportService
+import ro.jf.funds.importer.service.domain.service.ImportHandler
+import ro.jf.funds.importer.service.domain.service.ImportServiceImpl
 import ro.jf.funds.importer.service.domain.service.parser.CsvParser
 import ro.jf.funds.importer.service.domain.service.parser.ImportParserRegistry
 import ro.jf.funds.importer.service.domain.service.parser.WalletCsvImportParser
-import ro.jf.funds.importer.service.domain.port.ImportService
-import ro.jf.funds.importer.service.domain.service.ImportServiceImpl
-import ro.jf.funds.importer.service.domain.service.ImportHandler
 
 // TODO(Johann) should the rest be renamed to this pattern?
 val Application.importServiceDependenciesModule
@@ -31,6 +33,16 @@ val Application.importServiceDependenciesModule
         single<CsvParser> { CsvParser() }
         single<WalletCsvImportParser> { WalletCsvImportParser(get()) }
         single<ImportParserRegistry> { ImportParserRegistry(get()) }
-        single<ImportHandler> { ImportHandler() }
+        single<AccountSdk> {
+            AccountSdk(
+                baseUrl = environment.config.property("integration.account-service.base-url").getString(), get()
+            )
+        }
+        single<FundSdk> {
+            FundSdk(
+                baseUrl = environment.config.property("integration.fund-service.base-url").getString(), get()
+            )
+        }
+        single<ImportHandler> { ImportHandler(get(), get()) }
         single<ImportService> { ImportServiceImpl(get(), get()) }
     }

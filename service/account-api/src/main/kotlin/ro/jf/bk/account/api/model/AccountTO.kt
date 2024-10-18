@@ -12,6 +12,7 @@ import java.util.*
 @Serializable
 sealed class AccountTO {
     abstract val id: UUID
+    // TODO(Johann) could be interesting to treat account names and fund names as value classes for less confusion
     abstract val name: String
 
     @Serializable

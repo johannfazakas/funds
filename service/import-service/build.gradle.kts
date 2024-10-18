@@ -10,6 +10,7 @@ plugins {
 dependencies {
     implementation(project(":import-api"))
     implementation(project(":commons-service"))
+    implementation(project(":account-sdk"))
     implementation(project(":fund-sdk"))
     implementation(libs.kotlin.csv)
     testImplementation(project(":commons-test"))
