@@ -2,7 +2,6 @@ package ro.jf.funds.importer.service.domain.service
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import ro.jf.funds.importer.service.domain.model.*
@@ -27,7 +26,7 @@ class WalletCsvImportParserTest {
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionId).isNotNull()
-        assertThat(importTransactions[0].date.toString()).isEqualTo("2019-01-31T02:00:49")
+        assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-31T02:00:49")
         assertThat(importTransactions[0].records).hasSize(1)
         assertThat(importTransactions[0].records[0].accountName).isEqualTo("ING")
         assertThat(importTransactions[0].records[0].fundName).isEqualTo("Expenses")
@@ -61,7 +60,7 @@ class WalletCsvImportParserTest {
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionId).isNotNull()
-        assertThat(importTransactions[0].date.toString()).isEqualTo("2019-01-31T02:00:49")
+        assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-31T02:00:49")
         assertThat(importTransactions[0].records).hasSize(2)
         assertThat(importTransactions[0].records[0].accountName).isEqualTo("ING")
         assertThat(importTransactions[0].records[0].currency).isEqualTo("RON")
@@ -90,7 +89,7 @@ class WalletCsvImportParserTest {
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionId).isNotNull()
-        assertThat(importTransactions[0].date.toString()).isEqualTo("2019-01-06T02:00:23")
+        assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-06T02:00:23")
         assertThat(importTransactions[0].records).hasSize(3)
 
         assertThat(importTransactions[0].records[0].accountName).isEqualTo("ING")

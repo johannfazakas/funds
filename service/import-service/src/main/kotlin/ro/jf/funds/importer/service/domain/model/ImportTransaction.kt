@@ -6,7 +6,7 @@ import java.math.BigDecimal
 data class ImportTransaction(
     // TODO(Johann) should this be called a hash? How will it be used downstream?
     val transactionId: String,
-    val date: LocalDateTime,
+    val dateTime: LocalDateTime,
     val records: List<ImportRecord>
 ) {
     init {

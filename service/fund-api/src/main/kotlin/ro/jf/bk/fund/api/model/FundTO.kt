@@ -9,6 +9,7 @@ data class FundTO(
     @Serializable(with = UUIDSerializer::class)
     val id: UUID,
     val name: String,
+    // TODO(Johann) not required actually, right?
     val accounts: List<FundAccountTO>
 )
 

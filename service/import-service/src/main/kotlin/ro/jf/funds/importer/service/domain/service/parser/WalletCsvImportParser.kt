@@ -54,7 +54,7 @@ class WalletCsvImportParser(
     ): ImportTransaction {
         return ImportTransaction(
             transactionId = transactionId,
-            date = csvRows.first().getDateTime(DATE_COLUMN, dateTimeFormat),
+            dateTime = csvRows.first().getDateTime(DATE_COLUMN, dateTimeFormat),
             records = csvRows.flatMap { csvRow -> toImportRecords(importConfiguration, csvRow) }
         )
     }

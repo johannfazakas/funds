@@ -108,6 +108,7 @@ class FundApiTest {
         val userId = randomUUID()
         val accountId = randomUUID()
 
+        // TODO(Johann) should this be tested here? it is already tested in sdk
         mockServerClient
             .`when`(
                 request()
@@ -172,23 +173,6 @@ class FundApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
         assertThat(fundRepository.findById(userId, fund.id)).isNull()
     }
-
-//    private fun ApplicationTestBuilder.createJsonHttpClient() =
-//        createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
-
-//    private fun ApplicationTestBuilder.configureEnvironment() {
-//        environment {
-//            config = MapApplicationConfig(
-//                "database.url" to PostgresContainerExtension.jdbcUrl,
-//                "database.user" to PostgresContainerExtension.username,
-//                "database.password" to PostgresContainerExtension.password,
-//                "integration.account-service.base-url" to MockServerExtension.baseUrl
-//            )
-//        }
-//        application {
-//            testModule()
-//        }
-//    }
 
     private val appConfig = MapApplicationConfig(
         "integration.account-service.base-url" to MockServerExtension.baseUrl

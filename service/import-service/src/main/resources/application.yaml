@@ -4,3 +4,8 @@ ktor:
       - ro.jf.funds.importer.service.ImportServiceApplicationKt.module
   deployment:
     port: 5207
+integration:
+  account-service:
+    base-url: "$ACCOUNT_BASE_URL:http://localhost:5211"
+  fund-service:
+    base-url: "$FUND_BASE_URL:http://localhost:5253"
