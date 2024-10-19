@@ -1,19 +1,18 @@
-package ro.jf.bk.fund.service.adapter.persistence
+package ro.jf.bk.fund.service.persistence
 
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import ro.jf.bk.commons.service.persistence.blockingTransaction
+import ro.jf.bk.fund.api.model.CreateFundTO
 import ro.jf.bk.fund.api.model.FundName
-import ro.jf.bk.fund.service.domain.command.CreateFundCommand
-import ro.jf.bk.fund.service.domain.model.Fund
-import ro.jf.bk.fund.service.domain.model.FundAccount
-import ro.jf.bk.fund.service.domain.port.FundRepository
+import ro.jf.bk.fund.service.domain.Fund
+import ro.jf.bk.fund.service.domain.FundAccount
 import java.util.*
 
-class FundExposedRepository(
+class FundRepository(
     private val database: Database
-) : FundRepository {
+) {
     object FundTable : UUIDTable("fund") {
         val userId = uuid("user_id")
         val name = varchar("name", 50)
@@ -25,36 +24,36 @@ class FundExposedRepository(
         val accountId = uuid("account_id")
     }
 
-    override suspend fun list(userId: UUID): List<Fund> = blockingTransaction {
+    suspend fun list(userId: UUID): List<Fund> = blockingTransaction {
         (FundTable leftJoin FundAccountTable)
             .select { FundTable.userId eq userId }
             .toFunds()
     }
 
-    override suspend fun findById(userId: UUID, fundId: UUID): Fund? = blockingTransaction {
+    suspend fun findById(userId: UUID, fundId: UUID): Fund? = blockingTransaction {
         (FundTable leftJoin FundAccountTable)
             .select { (FundTable.userId eq userId) and (FundTable.id eq fundId) }
             .toFunds()
             .singleOrNull()
     }
 
-    override suspend fun findByName(userId: UUID, name: FundName): Fund? = blockingTransaction {
+    suspend fun findByName(userId: UUID, name: FundName): Fund? = blockingTransaction {
         FundTable
             .select { (FundTable.userId eq userId) and (FundTable.name eq name.value) }
             .toFunds()
             .singleOrNull()
     }
 
-    override suspend fun save(command: CreateFundCommand): Fund = blockingTransaction {
+    suspend fun save(userId: UUID, command: CreateFundTO): Fund = blockingTransaction {
         val fund = FundTable.insert {
-            it[userId] = command.userId
-            it[name] = command.name.value
+            it[FundTable.userId] = userId
+            it[FundTable.name] = command.name.value
         }
         val accounts = command.accounts.map { account ->
             FundAccountTable.insert {
-                it[fundId] = fund[FundTable.id].value
-                it[userId] = command.userId
-                it[accountId] = account.accountId
+                it[FundAccountTable.fundId] = fund[FundTable.id].value
+                it[FundAccountTable.userId] = userId
+                it[FundAccountTable.accountId] = account.accountId
             }
         }
         fund.let {
@@ -71,7 +70,7 @@ class FundExposedRepository(
         }
     }
 
-    override suspend fun deleteById(userId: UUID, fundId: UUID): Unit = blockingTransaction {
+    suspend fun deleteById(userId: UUID, fundId: UUID): Unit = blockingTransaction {
         FundTable.deleteWhere { (FundTable.userId eq userId) and (FundTable.id eq fundId) }
     }
 

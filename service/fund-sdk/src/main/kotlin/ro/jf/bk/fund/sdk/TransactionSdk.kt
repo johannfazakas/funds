@@ -9,6 +9,7 @@ import ro.jf.bk.commons.model.ListTO
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.bk.fund.api.TransactionApi
 import ro.jf.bk.fund.api.exception.FundApiException
+import ro.jf.bk.fund.api.model.CreateTransactionTO
 import ro.jf.bk.fund.api.model.TransactionTO
 import java.util.*
 
@@ -18,6 +19,10 @@ class TransactionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient
 ) : TransactionApi {
+    override suspend fun createTransaction(userId: UUID, transaction: CreateTransactionTO): TransactionTO {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun listTransactions(userId: UUID): List<TransactionTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
             headers {
