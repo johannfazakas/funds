@@ -1,10 +1,10 @@
-package ro.jf.funds.importer.service.adapter.mapper
+package ro.jf.funds.importer.service.web.mapper
 
 import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
-import ro.jf.funds.importer.service.domain.model.*
+import ro.jf.funds.importer.service.domain.*
 
 fun ImportConfigurationTO.toModel() = ImportConfiguration(
     importType = when (fileType) {

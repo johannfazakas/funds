@@ -1,9 +1,9 @@
-package ro.jf.funds.importer.service.domain.service.parser
+package ro.jf.funds.importer.service.service.parser
 
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.DateTimeFormat
-import ro.jf.funds.importer.service.domain.exception.ImportFormatException
+import ro.jf.funds.importer.service.domain.ImportFormatException
 import java.math.BigDecimal
 
 @JvmInline

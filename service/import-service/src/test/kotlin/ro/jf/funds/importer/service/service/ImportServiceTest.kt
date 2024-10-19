@@ -1,4 +1,4 @@
-package ro.jf.funds.importer.service.domain.service
+package ro.jf.funds.importer.service.service
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
@@ -6,9 +6,11 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import ro.jf.funds.importer.service.domain.model.*
-import ro.jf.funds.importer.service.domain.service.parser.ImportParser
-import ro.jf.funds.importer.service.domain.service.parser.ImportParserRegistry
+import ro.jf.funds.importer.service.domain.*
+import ro.jf.funds.importer.service.service.parser.ImportParser
+import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
+import ro.jf.funds.importer.service.service.ImportHandler
+import ro.jf.funds.importer.service.service.ImportService
 import java.util.UUID.randomUUID
 
 class ImportServiceTest {
@@ -16,7 +18,7 @@ class ImportServiceTest {
     private val importParser = mock<ImportParser>()
     private val importHandler = mock<ImportHandler>()
 
-    private val importService = ImportServiceImpl(importParserRegistry, importHandler)
+    private val importService = ImportService(importParserRegistry, importHandler)
 
     @Test
     fun `should parse and handle import files`() = runBlocking {

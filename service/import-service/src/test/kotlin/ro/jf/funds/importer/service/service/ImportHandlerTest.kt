@@ -1,4 +1,4 @@
-package ro.jf.funds.importer.service.domain.service
+package ro.jf.funds.importer.service.service
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
@@ -10,9 +10,9 @@ import ro.jf.bk.account.api.model.AccountTO
 import ro.jf.bk.account.sdk.AccountSdk
 import ro.jf.bk.fund.api.model.FundTO
 import ro.jf.bk.fund.sdk.FundSdk
-import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.domain.model.ImportRecord
-import ro.jf.funds.importer.service.domain.model.ImportTransaction
+import ro.jf.funds.importer.service.domain.ImportDataException
+import ro.jf.funds.importer.service.domain.ImportRecord
+import ro.jf.funds.importer.service.domain.ImportTransaction
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
