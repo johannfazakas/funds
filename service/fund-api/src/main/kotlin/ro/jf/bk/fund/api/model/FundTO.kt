@@ -8,7 +8,7 @@ import java.util.*
 data class FundTO(
     @Serializable(with = UUIDSerializer::class)
     val id: UUID,
-    val name: String,
+    val name: FundName,
     // TODO(Johann) not required actually, right?
     val accounts: List<FundAccountTO>
 )

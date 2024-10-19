@@ -1,5 +1,6 @@
 package ro.jf.bk.fund.service.domain.service
 
+import ro.jf.bk.fund.api.model.FundName
 import ro.jf.bk.fund.service.domain.command.CreateFundCommand
 import ro.jf.bk.fund.service.domain.model.Fund
 import ro.jf.bk.fund.service.domain.port.AccountRepository
@@ -19,7 +20,7 @@ class FundServiceImpl(
         return fundRepository.findById(userId, fundId)
     }
 
-    override suspend fun findByName(userId: UUID, name: String): Fund? {
+    override suspend fun findByName(userId: UUID, name: FundName): Fund? {
         return fundRepository.findByName(userId, name)
     }
 

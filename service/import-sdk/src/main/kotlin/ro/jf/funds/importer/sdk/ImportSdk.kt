@@ -1,6 +1,7 @@
 package ro.jf.funds.importer.sdk
 
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
@@ -8,13 +9,13 @@ import io.ktor.http.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
-import ro.jf.bk.commons.model.ResponseTO
+import ro.jf.bk.commons.model.ProblemTO
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.sdk.client.createHttpClient
-import ro.jf.funds.commons.sdk.client.toResponseTO
 import ro.jf.funds.importer.api.ImportApi
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
+import ro.jf.funds.importer.api.model.exception.ImportApiException
 import java.io.File
 import java.util.*
 
@@ -30,7 +31,7 @@ class ImportSdk(
         userId: UUID,
         importConfiguration: ImportConfigurationTO,
         csvFile: File
-    ): ResponseTO<ImportResponse> {
+    ): ImportResponse {
         return import(userId, importConfiguration, listOf(csvFile))
     }
 
@@ -38,7 +39,7 @@ class ImportSdk(
         userId: UUID,
         importConfiguration: ImportConfigurationTO,
         csvFiles: List<File>
-    ): ResponseTO<ImportResponse> {
+    ): ImportResponse {
         log.info { "Importing CSV files ${csvFiles.map { it.name }} for user $userId." }
         val response: HttpResponse = httpClient.post("$baseUrl/bk-api/import/v1/imports") {
             header(USER_ID_HEADER, userId.toString())
@@ -56,6 +57,15 @@ class ImportSdk(
                 }
             ))
         }
-        return response.toResponseTO()
+        return when (response.status) {
+            HttpStatusCode.Created -> response.body<ImportResponse>()
+            HttpStatusCode.BadRequest -> throw ImportApiException.FormatException(
+                response.body<ProblemTO>().let { it.detail ?: it.title })
+
+            HttpStatusCode.UnprocessableEntity -> throw ImportApiException.DataException(
+                response.body<ProblemTO>().let { it.detail ?: it.title })
+
+            else -> throw ImportApiException.Generic("Unexpected response on import: $response")
+        }
     }
 }

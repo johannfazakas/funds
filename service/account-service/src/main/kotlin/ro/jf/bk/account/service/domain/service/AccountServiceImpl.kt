@@ -1,5 +1,6 @@
 package ro.jf.bk.account.service.domain.service
 
+import ro.jf.bk.account.api.model.AccountName
 import ro.jf.bk.account.service.domain.command.CreateCurrencyAccountCommand
 import ro.jf.bk.account.service.domain.command.CreateInstrumentAccountCommand
 import ro.jf.bk.account.service.domain.model.Account
@@ -18,7 +19,7 @@ class AccountServiceImpl(
         return accountRepository.findById(userId, accountId)
     }
 
-    override suspend fun findAccountByName(userId: UUID, name: String): Account? {
+    override suspend fun findAccountByName(userId: UUID, name: AccountName): Account? {
         return accountRepository.findByName(userId, name)
     }
 

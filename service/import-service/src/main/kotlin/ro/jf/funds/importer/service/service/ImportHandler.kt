@@ -3,7 +3,7 @@ package ro.jf.funds.importer.service.service
 import mu.KotlinLogging.logger
 import ro.jf.bk.account.sdk.AccountSdk
 import ro.jf.bk.fund.sdk.FundSdk
-import ro.jf.funds.importer.service.domain.ImportDataException
+import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import ro.jf.funds.importer.service.domain.ImportTransaction
 import java.util.*
 

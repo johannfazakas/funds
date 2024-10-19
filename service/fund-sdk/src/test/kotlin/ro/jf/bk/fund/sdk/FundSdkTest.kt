@@ -21,6 +21,7 @@ import org.mockserver.model.MediaType
 import ro.jf.bk.commons.test.extension.MockServerExtension
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.bk.fund.api.model.CreateFundTO
+import ro.jf.bk.fund.api.model.FundName
 import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerExtension::class)
@@ -77,7 +78,7 @@ class FundSdkTest {
 
         assertThat(funds).hasSize(1)
         assertThat(funds[0].id).isEqualTo(fundId)
-        assertThat(funds[0].name).isEqualTo("Expenses")
+        assertThat(funds[0].name).isEqualTo(FundName("Expenses"))
         assertThat(funds[0].accounts).hasSize(1)
         assertThat(funds[0].accounts[0].id).isEqualTo(accountId)
     }
@@ -112,10 +113,10 @@ class FundSdkTest {
                     )
             )
 
-        val fund = fundSdk.createFund(userId, CreateFundTO(name = "Expenses"))
+        val fund = fundSdk.createFund(userId, CreateFundTO(name = FundName("Expenses")))
 
         assertThat(fund.id).isEqualTo(fundId)
-        assertThat(fund.name).isEqualTo("Expenses")
+        assertThat(fund.name).isEqualTo(FundName("Expenses"))
         assertThat(fund.accounts).hasSize(1)
         assertThat(fund.accounts[0].id).isEqualTo(accountId)
     }

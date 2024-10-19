@@ -1,6 +1,8 @@
 package ro.jf.funds.importer.service.domain
 
 import kotlinx.datetime.LocalDateTime
+import ro.jf.bk.account.api.model.AccountName
+import ro.jf.bk.fund.api.model.FundName
 import java.math.BigDecimal
 
 data class ImportTransaction(
@@ -15,8 +17,8 @@ data class ImportTransaction(
 }
 
 data class ImportRecord(
-    val accountName: String,
-    val fundName: String,
+    val accountName: AccountName,
+    val fundName: FundName,
     val currency: String,
     val amount: BigDecimal,
 )

@@ -12,7 +12,9 @@ import ro.jf.bk.commons.model.ProblemTO
 import ro.jf.bk.commons.service.routing.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
-import ro.jf.funds.importer.service.domain.ImportException
+import ro.jf.funds.importer.service.domain.exception.ImportDataException
+import ro.jf.funds.importer.service.domain.exception.ImportException
+import ro.jf.funds.importer.service.domain.exception.ImportFormatException
 import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.web.mapper.toProblem
 
@@ -38,10 +40,14 @@ fun Routing.importApiRouting(
             try {
                 importService.import(userId, importConfiguration, rawFileParts)
                 // TODO(Johann) should probably return something relevant from the service
-                call.respond(HttpStatusCode.OK, ImportResponse("Imported in service"))
+                call.respond(HttpStatusCode.Created, ImportResponse("Imported in service"))
             } catch (importException: ImportException) {
                 log.warn(importException) { "Error importing for user $userId." }
-                return@post call.respond(HttpStatusCode.BadRequest, importException.toProblem())
+                val statusCode = when (importException) {
+                    is ImportFormatException -> HttpStatusCode.BadRequest
+                    is ImportDataException -> HttpStatusCode.BadRequest
+                }
+                return@post call.respond(statusCode, importException.toProblem())
             }
         }
     }

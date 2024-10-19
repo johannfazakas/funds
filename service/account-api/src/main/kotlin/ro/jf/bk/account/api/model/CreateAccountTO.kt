@@ -4,13 +4,13 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CreateCurrencyAccountTO(
-    val name: String,
+    val name: AccountName,
     val currency: String,
 )
 
 @Serializable
 data class CreateInstrumentAccountTO(
-    val name: String,
+    val name: AccountName,
     val currency: String,
     val symbol: String,
 )

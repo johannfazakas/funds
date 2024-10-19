@@ -1,9 +1,11 @@
 package ro.jf.funds.importer.service.domain
 
+import ro.jf.bk.account.api.model.AccountName
 import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
+import ro.jf.funds.importer.service.domain.exception.ImportDataException
 
-fun List<AccountMatcherTO>.getAccountName(importAccountName: String): String =
+fun List<AccountMatcherTO>.getAccountName(importAccountName: String): AccountName =
     firstOrNull { it.importAccountName == importAccountName }
         ?.accountName
         ?: throw ImportDataException("Account name not matched: $importAccountName")

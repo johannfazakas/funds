@@ -3,11 +3,13 @@ package ro.jf.funds.importer.service.service.parser
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import ro.jf.bk.account.api.model.AccountName
+import ro.jf.bk.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
-import ro.jf.funds.importer.service.domain.ImportDataException
+import ro.jf.funds.importer.service.domain.exception.ImportDataException
 
 class WalletCsvImportParserTest {
     private val walletCsvImportParser = WalletCsvImportParser(CsvParser())
@@ -19,8 +21,8 @@ class WalletCsvImportParserTest {
         )
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
-            accountMatchers = listOf(AccountMatcherTO("ING old", "ING")),
-            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", "Expenses"))
+            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
+            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")))
         )
 
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
@@ -29,8 +31,8 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[0].transactionId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-31T02:00:49")
         assertThat(importTransactions[0].records).hasSize(1)
-        assertThat(importTransactions[0].records[0].accountName).isEqualTo("ING")
-        assertThat(importTransactions[0].records[0].fundName).isEqualTo("Expenses")
+        assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
+        assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Expenses"))
         assertThat(importTransactions[0].records[0].currency).isEqualTo("RON")
         assertThat(importTransactions[0].records[0].amount).isEqualTo("-13.80".toBigDecimal())
     }
@@ -44,14 +46,14 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO("ING old", "ING"),
-                AccountMatcherTO("Cash RON", "Cash")
+                AccountMatcherTO("ING old", AccountName("ING")),
+                AccountMatcherTO("Cash RON", AccountName("Cash"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabel("Basic - Food", "Expenses"),
-                FundMatcherTO.ByLabel("Basic - Food", "Income"),
-                FundMatcherTO.ByAccount("ING old", "Expenses"),
-                FundMatcherTO.ByAccount("Cash RON", "Expenses")
+                FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
+                FundMatcherTO.ByLabel("Basic - Food", FundName("Income")),
+                FundMatcherTO.ByAccount("ING old", FundName("Expenses")),
+                FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
             )
         )
 
@@ -61,10 +63,10 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[0].transactionId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-31T02:00:49")
         assertThat(importTransactions[0].records).hasSize(2)
-        assertThat(importTransactions[0].records[0].accountName).isEqualTo("ING")
+        assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[0].records[0].currency).isEqualTo("RON")
         assertThat(importTransactions[0].records[0].amount).isEqualTo("-400.00".toBigDecimal())
-        assertThat(importTransactions[0].records[1].accountName).isEqualTo("Cash")
+        assertThat(importTransactions[0].records[1].accountName).isEqualTo(AccountName("Cash"))
         assertThat(importTransactions[0].records[1].currency).isEqualTo("RON")
         assertThat(importTransactions[0].records[1].amount).isEqualTo("400.00".toBigDecimal())
     }
@@ -77,10 +79,10 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO("ING old", "ING")
+                AccountMatcherTO("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByAccountLabelWithTransfer("ING old", importLabel = "Work Income", "Work", "Expenses"),
+                FundMatcherTO.ByAccountLabelWithTransfer("ING old", importLabel = "Work Income", FundName("Work"), FundName("Expenses")),
             )
         )
 
@@ -91,18 +93,18 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-06T02:00:23")
         assertThat(importTransactions[0].records).hasSize(3)
 
-        assertThat(importTransactions[0].records[0].accountName).isEqualTo("ING")
-        assertThat(importTransactions[0].records[0].fundName).isEqualTo("Work")
+        assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
+        assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Work"))
         assertThat(importTransactions[0].records[0].currency).isEqualTo("RON")
         assertThat(importTransactions[0].records[0].amount).isEqualTo("6740.00".toBigDecimal())
 
-        assertThat(importTransactions[0].records[1].accountName).isEqualTo("ING")
-        assertThat(importTransactions[0].records[1].fundName).isEqualTo("Work")
+        assertThat(importTransactions[0].records[1].accountName).isEqualTo(AccountName("ING"))
+        assertThat(importTransactions[0].records[1].fundName).isEqualTo(FundName("Work"))
         assertThat(importTransactions[0].records[1].currency).isEqualTo("RON")
         assertThat(importTransactions[0].records[1].amount).isEqualTo("-6740.00".toBigDecimal())
 
-        assertThat(importTransactions[0].records[2].accountName).isEqualTo("ING")
-        assertThat(importTransactions[0].records[2].fundName).isEqualTo("Expenses")
+        assertThat(importTransactions[0].records[2].accountName).isEqualTo(AccountName("ING"))
+        assertThat(importTransactions[0].records[2].fundName).isEqualTo(FundName("Expenses"))
         assertThat(importTransactions[0].records[2].currency).isEqualTo("RON")
         assertThat(importTransactions[0].records[2].amount).isEqualTo("6740.00".toBigDecimal())
     }
@@ -114,17 +116,17 @@ class WalletCsvImportParserTest {
         )
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
-            accountMatchers = listOf(AccountMatcherTO("ING old", "ING")),
+            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabel("Basic - Food", "Expenses"),
-                FundMatcherTO.ByAccount("ING old", "Savings")
+                FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
+                FundMatcherTO.ByAccount("ING old", FundName("Savings"))
             )
         )
 
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(1)
-        assertThat(importTransactions[0].records[0].fundName).isEqualTo("Expenses")
+        assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Expenses"))
     }
 
     @Test
@@ -134,8 +136,8 @@ class WalletCsvImportParserTest {
         )
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
-            accountMatchers = listOf(AccountMatcherTO("ING new", "ING")),
-            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", "Expenses"))
+            accountMatchers = listOf(AccountMatcherTO("ING new", AccountName("ING"))),
+            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")))
         )
 
         assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
@@ -150,8 +152,8 @@ class WalletCsvImportParserTest {
         """.trimIndent()
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
-            accountMatchers = listOf(AccountMatcherTO("ING old", "ING")),
-            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", "Expenses"))
+            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
+            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")))
         )
 
         assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }

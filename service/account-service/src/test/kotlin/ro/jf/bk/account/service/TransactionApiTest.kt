@@ -11,6 +11,7 @@ import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import ro.jf.bk.account.api.model.AccountName
 import ro.jf.bk.account.api.model.TransactionTO
 import ro.jf.bk.account.service.adapter.persistence.AccountExposedRepository
 import ro.jf.bk.account.service.adapter.persistence.TransactionExposedRepository
@@ -49,8 +50,8 @@ class TransactionApiTest {
 
         val userId = randomUUID()
         val dateTime = LocalDateTime(2024, 7, 22, 9, 17)
-        val account1 = accountRepository.save(CreateCurrencyAccountCommand(userId, "Revolut", "RON"))
-        val account2 = accountRepository.save(CreateCurrencyAccountCommand(userId, "BT", "RON"))
+        val account1 = accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("Revolut"), "RON"))
+        val account2 = accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("BT"), "RON"))
         transactionRepository.save(
             CreateTransactionCommand(
                 userId = userId,
@@ -109,8 +110,8 @@ class TransactionApiTest {
 
         val userId = randomUUID()
         val dateTime = LocalDateTime(2024, 7, 22, 9, 17)
-        val account1 = accountRepository.save(CreateCurrencyAccountCommand(userId, "Revolut", "RON"))
-        val account2 = accountRepository.save(CreateCurrencyAccountCommand(userId, "BT", "RON"))
+        val account1 = accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("Revolut"), "RON"))
+        val account2 = accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("BT"), "RON"))
         val transaction = transactionRepository.save(
             CreateTransactionCommand(
                 userId = userId,

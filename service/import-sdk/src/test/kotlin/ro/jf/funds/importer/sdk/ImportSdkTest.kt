@@ -4,19 +4,22 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockserver.client.MockServerClient
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.bk.commons.model.ResponseTO
+import ro.jf.bk.account.api.model.AccountName
 import ro.jf.bk.commons.test.extension.MockServerExtension
 import ro.jf.bk.commons.web.USER_ID_HEADER
+import ro.jf.bk.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
+import ro.jf.funds.importer.api.model.exception.ImportApiException
 import java.io.File
 import java.util.UUID.randomUUID
 
@@ -34,10 +37,10 @@ class ImportSdkTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO("Cash RON", "Cash")
+                AccountMatcherTO("Cash RON", AccountName("Cash"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByAccount("Cash RON", "Expenses")
+                FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
             )
         )
         mockServerClient
@@ -50,7 +53,7 @@ class ImportSdkTest {
             )
             .respond(
                 response()
-                    .withStatusCode(200)
+                    .withStatusCode(201)
                     .withContentType(MediaType.APPLICATION_JSON)
                     .withBody(
                         buildJsonObject {
@@ -66,57 +69,90 @@ class ImportSdkTest {
         )
 
         assertThat(response).isNotNull
-        assertThat(response is ResponseTO.Success).isTrue()
-        val importResponse = (response as ResponseTO.Success).value
-        assertThat(importResponse.response).isEqualTo("success")
+        assertThat(response.response).isEqualTo("success")
     }
 
     @Test
-    fun `given import failed due to client error should retrieve response`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val userId = randomUUID()
-        val files = listOf(
-            File("src/test/resources/mock/import-file-1.csv"),
-            File("src/test/resources/mock/import-file-2.csv"),
-        )
-        val importConfiguration = ImportConfigurationTO(
-            fileType = ImportFileTypeTO.WALLET_CSV,
-            accountMatchers = listOf(
-                AccountMatcherTO("Cash RON", "Cash")
-            ),
-            fundMatchers = listOf(
-                FundMatcherTO.ByAccount("Cash RON", "Expenses")
+    fun `given import failed due to client format error should retrieve response`(mockServerClient: MockServerClient): Unit =
+        runBlocking {
+            val userId = randomUUID()
+            val files = listOf(
+                File("src/test/resources/mock/import-file-1.csv"),
+                File("src/test/resources/mock/import-file-2.csv"),
             )
-        )
-        mockServerClient
-            .`when`(
-                request()
-                    .withMethod("POST")
-                    .withPath("/bk-api/import/v1/imports")
-                    .withHeader("Content-Type", "multipart/form-data.*")
-                    .withHeader(USER_ID_HEADER, userId.toString())
+            val importConfiguration = ImportConfigurationTO(
+                fileType = ImportFileTypeTO.WALLET_CSV,
+                accountMatchers = listOf(
+                    AccountMatcherTO("Cash RON", AccountName("Cash"))
+                ),
+                fundMatchers = listOf(
+                    FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
+                )
             )
-            .respond(
-                response()
-                    .withStatusCode(400)
-                    .withContentType(MediaType.APPLICATION_JSON)
-                    .withBody(
-                        buildJsonObject {
-                            put("title", JsonPrimitive("Problem title"))
-                            put("detail", JsonPrimitive("Specific problem detail"))
-                        }.toString()
-                    )
-            )
+            mockServerClient
+                .`when`(
+                    request()
+                        .withMethod("POST")
+                        .withPath("/bk-api/import/v1/imports")
+                        .withHeader("Content-Type", "multipart/form-data.*")
+                        .withHeader(USER_ID_HEADER, userId.toString())
+                )
+                .respond(
+                    response()
+                        .withStatusCode(400)
+                        .withContentType(MediaType.APPLICATION_JSON)
+                        .withBody(
+                            buildJsonObject {
+                                put("title", JsonPrimitive("Problem title"))
+                                put("detail", JsonPrimitive("Specific problem detail"))
+                            }.toString()
+                        )
+                )
 
-        val response = importSdk.import(
-            userId = userId,
-            importConfiguration = importConfiguration,
-            csvFiles = files
-        )
+            assertThatThrownBy { runBlocking { importSdk.import(userId, importConfiguration, files) } }
+                .isInstanceOf(ImportApiException.FormatException::class.java)
+                .hasMessage("Specific problem detail")
+        }
 
-        assertThat(response).isNotNull
-        assertThat(response is ResponseTO.Problem).isTrue()
-        val importResponse = (response as ResponseTO.Problem).value
-        assertThat(importResponse.title).isEqualTo("Problem title")
-        assertThat(importResponse.detail).isEqualTo("Specific problem detail")
-    }
+    @Test
+    fun `given import failed due to client data error should retrieve response`(mockServerClient: MockServerClient): Unit =
+        runBlocking {
+            val userId = randomUUID()
+            val files = listOf(
+                File("src/test/resources/mock/import-file-1.csv"),
+                File("src/test/resources/mock/import-file-2.csv"),
+            )
+            val importConfiguration = ImportConfigurationTO(
+                fileType = ImportFileTypeTO.WALLET_CSV,
+                accountMatchers = listOf(
+                    AccountMatcherTO("Cash RON", AccountName("Cash"))
+                ),
+                fundMatchers = listOf(
+                    FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
+                )
+            )
+            mockServerClient
+                .`when`(
+                    request()
+                        .withMethod("POST")
+                        .withPath("/bk-api/import/v1/imports")
+                        .withHeader("Content-Type", "multipart/form-data.*")
+                        .withHeader(USER_ID_HEADER, userId.toString())
+                )
+                .respond(
+                    response()
+                        .withStatusCode(422)
+                        .withContentType(MediaType.APPLICATION_JSON)
+                        .withBody(
+                            buildJsonObject {
+                                put("title", JsonPrimitive("Problem title"))
+                                put("detail", JsonPrimitive("Specific problem detail"))
+                            }.toString()
+                        )
+                )
+
+            assertThatThrownBy { runBlocking { importSdk.import(userId, importConfiguration, files) } }
+                .isInstanceOf(ImportApiException.DataException::class.java)
+                .hasMessage("Specific problem detail")
+        }
 }

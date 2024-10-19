@@ -4,6 +4,7 @@ import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import ro.jf.bk.commons.service.persistence.blockingTransaction
+import ro.jf.bk.fund.api.model.FundName
 import ro.jf.bk.fund.service.domain.command.CreateFundCommand
 import ro.jf.bk.fund.service.domain.model.Fund
 import ro.jf.bk.fund.service.domain.model.FundAccount
@@ -37,9 +38,9 @@ class FundExposedRepository(
             .singleOrNull()
     }
 
-    override suspend fun findByName(userId: UUID, name: String): Fund? = blockingTransaction {
+    override suspend fun findByName(userId: UUID, name: FundName): Fund? = blockingTransaction {
         FundTable
-            .select { (FundTable.userId eq userId) and (FundTable.name eq name) }
+            .select { (FundTable.userId eq userId) and (FundTable.name eq name.value) }
             .toFunds()
             .singleOrNull()
     }
@@ -47,7 +48,7 @@ class FundExposedRepository(
     override suspend fun save(command: CreateFundCommand): Fund = blockingTransaction {
         val fund = FundTable.insert {
             it[userId] = command.userId
-            it[name] = command.name
+            it[name] = command.name.value
         }
         val accounts = command.accounts.map { account ->
             FundAccountTable.insert {
@@ -60,7 +61,7 @@ class FundExposedRepository(
             Fund(
                 id = it[FundTable.id].value,
                 userId = it[FundTable.userId],
-                name = it[FundTable.name],
+                name = FundName(it[FundTable.name]),
                 accounts = accounts.map {
                     FundAccount(
                         id = it[FundAccountTable.accountId]
@@ -81,7 +82,7 @@ class FundExposedRepository(
     private fun List<ResultRow>.toFund() = Fund(
         id = this.first()[FundTable.id].value,
         userId = this.first()[FundTable.userId],
-        name = this.first()[FundTable.name],
+        name = FundName(this.first()[FundTable.name]),
         accounts = this.mapNotNull { it.toFundAccount() }
     )
 

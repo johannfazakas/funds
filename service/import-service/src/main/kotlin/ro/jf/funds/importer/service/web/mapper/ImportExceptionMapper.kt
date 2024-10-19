@@ -1,9 +1,9 @@
 package ro.jf.funds.importer.service.web.mapper
 
 import ro.jf.bk.commons.model.ProblemTO
-import ro.jf.funds.importer.service.domain.ImportDataException
-import ro.jf.funds.importer.service.domain.ImportException
-import ro.jf.funds.importer.service.domain.ImportFormatException
+import ro.jf.funds.importer.service.domain.exception.ImportDataException
+import ro.jf.funds.importer.service.domain.exception.ImportException
+import ro.jf.funds.importer.service.domain.exception.ImportFormatException
 
 fun ImportException.toProblem(): ProblemTO = ProblemTO(
     title = when (this) {

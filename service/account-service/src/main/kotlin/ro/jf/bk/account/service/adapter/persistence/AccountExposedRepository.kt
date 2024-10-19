@@ -3,6 +3,7 @@ package ro.jf.bk.account.service.adapter.persistence
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import ro.jf.bk.account.api.model.AccountName
 import ro.jf.bk.account.service.domain.command.CreateCurrencyAccountCommand
 import ro.jf.bk.account.service.domain.command.CreateInstrumentAccountCommand
 import ro.jf.bk.account.service.domain.model.Account
@@ -35,9 +36,9 @@ class AccountExposedRepository(
             .singleOrNull()
     }
 
-    override suspend fun findByName(userId: UUID, name: String): Account? = blockingTransaction {
+    override suspend fun findByName(userId: UUID, name: AccountName): Account? = blockingTransaction {
         AccountTable
-            .select { (AccountTable.userId eq userId) and (AccountTable.name eq name) }
+            .select { (AccountTable.userId eq userId) and (AccountTable.name eq name.value) }
             .map { it.toModel() }
             .singleOrNull()
     }
@@ -46,13 +47,13 @@ class AccountExposedRepository(
         AccountTable.insert {
             it[type] = "currency"
             it[userId] = command.userId
-            it[name] = command.name
+            it[name] = command.name.value
             it[currency] = command.currency
         }.let {
             Account.Currency(
                 id = it[AccountTable.id].value,
                 userId = it[AccountTable.userId],
-                name = it[AccountTable.name],
+                name = AccountName(it[AccountTable.name]),
                 currency = it[AccountTable.currency]
             )
         }
@@ -62,14 +63,14 @@ class AccountExposedRepository(
         AccountTable.insert {
             it[type] = "instrument"
             it[userId] = command.userId
-            it[name] = command.name
+            it[name] = command.name.value
             it[currency] = command.currency
             it[symbol] = command.symbol
         }.let {
             Account.Instrument(
                 id = it[AccountTable.id].value,
                 userId = it[AccountTable.userId],
-                name = it[AccountTable.name],
+                name = AccountName(it[AccountTable.name]),
                 currency = it[AccountTable.currency],
                 symbol = it[AccountTable.symbol] ?: error("Symbol is missing")
             )
@@ -93,14 +94,14 @@ class AccountExposedRepository(
             "currency" -> Account.Currency(
                 id = this[AccountTable.id].value,
                 userId = this[AccountTable.userId],
-                name = this[AccountTable.name],
+                name = AccountName(this[AccountTable.name]),
                 currency = this[AccountTable.currency],
             )
 
             "instrument" -> Account.Instrument(
                 id = this[AccountTable.id].value,
                 userId = this[AccountTable.userId],
-                name = this[AccountTable.name],
+                name = AccountName(this[AccountTable.name]),
                 currency = this[AccountTable.currency],
                 symbol = this[AccountTable.symbol] ?: error("Symbol is missing")
             )
