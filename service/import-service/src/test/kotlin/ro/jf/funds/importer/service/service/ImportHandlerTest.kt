@@ -6,11 +6,13 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
+import ro.jf.bk.account.api.model.AccountName
 import ro.jf.bk.account.api.model.AccountTO
 import ro.jf.bk.account.sdk.AccountSdk
+import ro.jf.bk.fund.api.model.FundName
 import ro.jf.bk.fund.api.model.FundTO
 import ro.jf.bk.fund.sdk.FundSdk
-import ro.jf.funds.importer.service.domain.ImportDataException
+import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import ro.jf.funds.importer.service.domain.ImportRecord
 import ro.jf.funds.importer.service.domain.ImportTransaction
 import java.math.BigDecimal
@@ -29,14 +31,14 @@ class ImportHandlerTest {
                 transactionId = "transaction-1",
                 dateTime = LocalDateTime(2024, 7, 22, 9, 17),
                 records = listOf(
-                    ImportRecord("Revolut", "Expenses", "RON", BigDecimal("-100.00"))
+                    ImportRecord(AccountName("Revolut"), FundName("Expenses"), "RON", BigDecimal("-100.00"))
                 )
             ),
             ImportTransaction(
                 transactionId = "transaction-2",
                 dateTime = LocalDateTime(2024, 7, 22, 9, 18),
                 records = listOf(
-                    ImportRecord("Cash RON", "Expenses", "RON", BigDecimal("-50.00"))
+                    ImportRecord(AccountName("Cash RON"), FundName("Expenses"), "RON", BigDecimal("-50.00"))
                 )
             )
         )
@@ -57,7 +59,7 @@ class ImportHandlerTest {
                 transactionId = "transaction-1",
                 dateTime = LocalDateTime(2024, 7, 22, 9, 17),
                 records = listOf(
-                    ImportRecord("Revolut", "Expenses", "RON", BigDecimal("-100.00"))
+                    ImportRecord(AccountName("Revolut"), FundName("Expenses"), "RON", BigDecimal("-100.00"))
                 )
             )
         )
@@ -77,7 +79,7 @@ class ImportHandlerTest {
                 transactionId = "transaction-1",
                 dateTime = LocalDateTime(2024, 7, 22, 9, 17),
                 records = listOf(
-                    ImportRecord("Revolut", "Expenses", "RON", BigDecimal("-100.00"))
+                    ImportRecord(AccountName("Revolut"), FundName("Expenses"), "RON", BigDecimal("-100.00"))
                 )
             )
         )
@@ -92,14 +94,14 @@ class ImportHandlerTest {
     private fun account(name: String): AccountTO.Currency =
         AccountTO.Currency(
             id = randomUUID(),
-            name = name,
+            name = AccountName(name),
             currency = "RON"
         )
 
     private fun fund(name: String): FundTO =
         FundTO(
             id = randomUUID(),
-            name = name,
+            name = FundName(name),
             accounts = emptyList()
         )
 }

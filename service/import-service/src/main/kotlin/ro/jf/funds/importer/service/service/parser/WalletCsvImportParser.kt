@@ -3,10 +3,10 @@ package ro.jf.funds.importer.service.service.parser
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
-import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO.*
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.service.domain.*
+import ro.jf.funds.importer.service.domain.exception.ImportDataException
 
 private const val ACCOUNT_NAME_COLUMN = "account"
 private const val AMOUNT_COLUMN = "amount"

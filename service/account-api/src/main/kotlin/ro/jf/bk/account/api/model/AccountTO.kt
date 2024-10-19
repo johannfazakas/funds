@@ -13,14 +13,14 @@ import java.util.*
 sealed class AccountTO {
     abstract val id: UUID
     // TODO(Johann) could be interesting to treat account names and fund names as value classes for less confusion
-    abstract val name: String
+    abstract val name: AccountName
 
     @Serializable
     @SerialName("currency")
     data class Currency(
         @Serializable(with = UUIDSerializer::class)
         override val id: UUID,
-        override val name: String,
+        override val name: AccountName,
         val currency: String
     ) : AccountTO()
 
@@ -29,7 +29,7 @@ sealed class AccountTO {
     data class Instrument(
         @Serializable(with = UUIDSerializer::class)
         override val id: UUID,
-        override val name: String,
+        override val name: AccountName,
         val currency: String,
         val symbol: String
     ) : AccountTO()

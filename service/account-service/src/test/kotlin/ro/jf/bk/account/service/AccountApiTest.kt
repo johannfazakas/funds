@@ -10,6 +10,7 @@ import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import ro.jf.bk.account.api.model.AccountName
 import ro.jf.bk.account.api.model.AccountTO
 import ro.jf.bk.account.api.model.CreateCurrencyAccountTO
 import ro.jf.bk.account.api.model.CreateInstrumentAccountTO
@@ -39,8 +40,8 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        accountRepository.save(CreateCurrencyAccountCommand(userId, "Cash", "RON"))
-        accountRepository.save(CreateInstrumentAccountCommand(userId, "BET", "RON", "TVBETETF"))
+        accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("Cash"), "RON"))
+        accountRepository.save(CreateInstrumentAccountCommand(userId, AccountName("BET"), "RON", "TVBETETF"))
 
         val response = createJsonHttpClient().get("/bk-api/account/v1/accounts") {
             header(USER_ID_HEADER, userId)
@@ -50,7 +51,7 @@ class AccountApiTest {
 
         val accounts = response.body<ListTO<AccountTO>>()
         assertThat(accounts.items).hasSize(2)
-        assertThat(accounts.items.map { it.name }).containsExactlyInAnyOrder("Cash", "BET")
+        assertThat(accounts.items.map { it.name }).containsExactlyInAnyOrder(AccountName("Cash"), AccountName("BET"))
     }
 
     @Test
@@ -58,7 +59,7 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        val user = accountRepository.save(CreateCurrencyAccountCommand(userId, "Revolut", "RON"))
+        val user = accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("Revolut"), "RON"))
 
         val response = createJsonHttpClient().get("/bk-api/account/v1/accounts/${user.id}") {
             header(USER_ID_HEADER, userId)
@@ -67,7 +68,7 @@ class AccountApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val accountTO = response.body<AccountTO>()
         assertThat(accountTO).isNotNull
-        assertThat(accountTO.name).isEqualTo("Revolut")
+        assertThat(accountTO.name).isEqualTo(AccountName("Revolut"))
     }
 
     @Test
@@ -90,17 +91,17 @@ class AccountApiTest {
         val response = createJsonHttpClient().post("/bk-api/account/v1/accounts/currency") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
-            setBody(CreateCurrencyAccountTO("Revolut", "RON"))
+            setBody(CreateCurrencyAccountTO(AccountName("Revolut"), "RON"))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Created)
         val accountTO = response.body<AccountTO.Currency>()
         assertThat(accountTO).isNotNull
-        assertThat(accountTO.name).isEqualTo("Revolut")
+        assertThat(accountTO.name).isEqualTo(AccountName("Revolut"))
 
         val dbAccount = accountRepository.findById(userId, accountTO.id)
         assertThat(dbAccount).isNotNull
-        assertThat(dbAccount!!.name).isEqualTo("Revolut")
+        assertThat(dbAccount!!.name).isEqualTo(AccountName("Revolut"))
     }
 
     @Test
@@ -111,20 +112,20 @@ class AccountApiTest {
         val response = createJsonHttpClient().post("/bk-api/account/v1/accounts/instrument") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
-            setBody(CreateInstrumentAccountTO("S&P500", "EUR", "SXR8_DE"))
+            setBody(CreateInstrumentAccountTO(AccountName("S&P500"), "EUR", "SXR8_DE"))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Created)
         val accountTO = response.body<AccountTO.Instrument>()
         assertThat(accountTO).isNotNull
-        assertThat(accountTO.name).isEqualTo("S&P500")
+        assertThat(accountTO.name).isEqualTo(AccountName("S&P500"))
         assertThat(accountTO.symbol).isEqualTo("SXR8_DE")
         assertThat(accountTO.currency).isEqualTo("EUR")
 
         val dbAccount = accountRepository.findById(userId, accountTO.id)
                 as? Account.Instrument ?: error("Account is not an instrument")
         assertThat(dbAccount).isNotNull
-        assertThat(dbAccount.name).isEqualTo("S&P500")
+        assertThat(dbAccount.name).isEqualTo(AccountName("S&P500"))
         assertThat(dbAccount.currency).isEqualTo("EUR")
         assertThat(dbAccount.symbol).isEqualTo("SXR8_DE")
     }
@@ -134,12 +135,12 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        accountRepository.save(CreateCurrencyAccountCommand(userId, "BT", "EUR"))
+        accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("BT"), "EUR"))
 
         val response = createJsonHttpClient().post("/bk-api/account/v1/accounts/currency") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
-            setBody(CreateCurrencyAccountTO("BT", "RON"))
+            setBody(CreateCurrencyAccountTO(AccountName("BT"), "RON"))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Conflict)
@@ -150,7 +151,7 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        val account = accountRepository.save(CreateCurrencyAccountCommand(userId, "ING", "RON"))
+        val account = accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("ING"), "RON"))
 
         val response = createJsonHttpClient().delete("/bk-api/account/v1/accounts/${account.id}") {
             header(USER_ID_HEADER, userId)
@@ -170,23 +171,6 @@ class AccountApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
     }
-
-//    // TODO(Johann) could extract helpers to common-test
-//    private fun ApplicationTestBuilder.createJsonHttpClient() =
-//        createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
-//
-//    private fun ApplicationTestBuilder.configureEnvironment() {
-//        environment {
-//            config = MapApplicationConfig(
-//                "database.url" to PostgresContainerExtension.jdbcUrl,
-//                "database.user" to PostgresContainerExtension.username,
-//                "database.password" to PostgresContainerExtension.password
-//            )
-//        }
-//        application {
-//            module()
-//        }
-//    }
 
     private fun createAccountRepository() = AccountExposedRepository(
         database = Database.connect(

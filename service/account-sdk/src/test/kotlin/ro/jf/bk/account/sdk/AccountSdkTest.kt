@@ -18,6 +18,7 @@ import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.JsonSchemaBody.jsonSchema
 import org.mockserver.model.MediaType
+import ro.jf.bk.account.api.model.AccountName
 import ro.jf.bk.account.api.model.AccountTO
 import ro.jf.bk.account.api.model.CreateCurrencyAccountTO
 import ro.jf.bk.account.api.model.CreateInstrumentAccountTO
@@ -44,7 +45,7 @@ class AccountSdkTest {
     fun `test list accounts`(mockServerClient: MockServerClient): Unit = runBlocking {
         val userId = randomUUID()
         val accountId = randomUUID()
-        val accountName = "Cash"
+        val accountName = AccountName("Cash")
 
         mockServerClient
             .`when`(
@@ -62,7 +63,7 @@ class AccountSdkTest {
                             put("items", buildJsonArray {
                                 add(buildJsonObject {
                                     put("id", JsonPrimitive(accountId.toString()))
-                                    put("name", JsonPrimitive(accountName))
+                                    put("name", JsonPrimitive(accountName.value))
                                     put("type", JsonPrimitive("currency"))
                                     put("currency", JsonPrimitive("RON"))
                                 })
@@ -85,7 +86,7 @@ class AccountSdkTest {
     fun `test find account by id`(mockServerClient: MockServerClient): Unit = runBlocking {
         val userId = randomUUID()
         val accountId = randomUUID()
-        val accountName = "BT"
+        val accountName = AccountName("BT")
 
         mockServerClient
             .`when`(
@@ -101,7 +102,7 @@ class AccountSdkTest {
                     .withBody(
                         buildJsonObject {
                             put("id", JsonPrimitive(accountId.toString()))
-                            put("name", JsonPrimitive(accountName))
+                            put("name", JsonPrimitive(accountName.value))
                             put("type", JsonPrimitive("instrument"))
                             put("currency", JsonPrimitive("RON"))
                             put("symbol", JsonPrimitive("ICBETNETF"))
@@ -146,7 +147,7 @@ class AccountSdkTest {
     fun `test create currency account`(mockServerClient: MockServerClient): Unit = runBlocking {
         val userId = randomUUID()
         val accountId = randomUUID()
-        val accountName = "BT"
+        val accountName = AccountName("BT")
 
         mockServerClient
             .`when`(
@@ -162,7 +163,7 @@ class AccountSdkTest {
                                     "properties", buildJsonObject {
                                         put("name", buildJsonObject {
                                             put("type", JsonPrimitive("string"))
-                                            put("pattern", JsonPrimitive(accountName))
+                                            put("pattern", JsonPrimitive(accountName.value))
                                         })
                                         put("currency", buildJsonObject {
                                             put("type", JsonPrimitive("string"))
@@ -186,7 +187,7 @@ class AccountSdkTest {
                         buildJsonObject {
                             put("id", JsonPrimitive(accountId.toString()))
                             put("type", JsonPrimitive("currency"))
-                            put("name", JsonPrimitive(accountName))
+                            put("name", JsonPrimitive(accountName.value))
                             put("currency", JsonPrimitive("RON"))
                         }.toString()
                     )
@@ -204,7 +205,7 @@ class AccountSdkTest {
     fun `test create instrument account`(mockServerClient: MockServerClient): Unit = runBlocking {
         val userId = randomUUID()
         val accountId = randomUUID()
-        val accountName = "BT"
+        val accountName = AccountName("BT")
 
         mockServerClient
             .`when`(
@@ -220,7 +221,7 @@ class AccountSdkTest {
                                     "properties", buildJsonObject {
                                         put("name", buildJsonObject {
                                             put("type", JsonPrimitive("string"))
-                                            put("pattern", JsonPrimitive(accountName))
+                                            put("pattern", JsonPrimitive(accountName.value))
                                         })
                                         put("currency", buildJsonObject {
                                             put("type", JsonPrimitive("string"))
@@ -248,7 +249,7 @@ class AccountSdkTest {
                     .withBody(
                         buildJsonObject {
                             put("id", JsonPrimitive(accountId.toString()))
-                            put("name", JsonPrimitive(accountName))
+                            put("name", JsonPrimitive(accountName.value))
                             put("currency", JsonPrimitive("RON"))
                             put("symbol", JsonPrimitive("ICBETNETF"))
                             put("type", JsonPrimitive("instrument"))
