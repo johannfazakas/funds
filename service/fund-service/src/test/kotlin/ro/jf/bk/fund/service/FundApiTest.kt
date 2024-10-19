@@ -29,11 +29,9 @@ import ro.jf.bk.fund.api.model.CreateFundAccountTO
 import ro.jf.bk.fund.api.model.CreateFundTO
 import ro.jf.bk.fund.api.model.FundName
 import ro.jf.bk.fund.api.model.FundTO
-import ro.jf.bk.fund.service.adapter.persistence.FundExposedRepository
 import ro.jf.bk.fund.service.config.configureRouting
 import ro.jf.bk.fund.service.config.fundsAppModule
-import ro.jf.bk.fund.service.domain.command.CreateFundAccountCommand
-import ro.jf.bk.fund.service.domain.command.CreateFundCommand
+import ro.jf.bk.fund.service.persistence.FundRepository
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
@@ -50,11 +48,11 @@ class FundApiTest {
         val userId = randomUUID()
         val accountId = randomUUID()
         val fund = fundRepository.save(
-            CreateFundCommand(
-                userId,
+            userId,
+            CreateFundTO(
                 FundName("Expenses"),
                 listOf(
-                    CreateFundAccountCommand(accountId)
+                    CreateFundAccountTO(accountId)
                 )
             )
         )
@@ -80,11 +78,11 @@ class FundApiTest {
         val userId = randomUUID()
         val accountId = randomUUID()
         val fund = fundRepository.save(
-            CreateFundCommand(
-                userId,
+            userId,
+            CreateFundTO(
                 FundName("Savings"),
                 listOf(
-                    CreateFundAccountCommand(accountId)
+                    CreateFundAccountTO(accountId)
                 )
             )
         )
@@ -165,7 +163,7 @@ class FundApiTest {
     fun `test delete fund by id`() = testApplication {
         configureEnvironmentWithDB(appConfig) { testModule() }
         val userId = randomUUID()
-        val fund = fundRepository.save(CreateFundCommand(userId, FundName("Company"), listOf()))
+        val fund = fundRepository.save(userId, CreateFundTO(FundName("Company"), listOf()))
 
         val response = createJsonHttpClient().delete("/bk-api/fund/v1/funds/${fund.id}") {
             header(USER_ID_HEADER, userId)
@@ -186,7 +184,7 @@ class FundApiTest {
         configureRouting()
     }
 
-    private fun createFundRepository() = FundExposedRepository(
+    private fun createFundRepository() = FundRepository(
         database = Database.connect(
             url = PostgresContainerExtension.jdbcUrl,
             user = PostgresContainerExtension.username,

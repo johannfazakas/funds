@@ -1,4 +1,4 @@
-package ro.jf.bk.fund.service.adapter.web
+package ro.jf.bk.fund.service.web
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -8,13 +8,11 @@ import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
 import ro.jf.bk.commons.model.toListTO
 import ro.jf.bk.commons.service.routing.userId
-import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.bk.fund.api.model.CreateFundTO
-import ro.jf.bk.fund.service.adapter.mapper.toCommand
-import ro.jf.bk.fund.service.adapter.mapper.toTO
+import ro.jf.bk.fund.service.domain.Fund
 import ro.jf.bk.fund.service.domain.exception.AccountNotFoundException
-import ro.jf.bk.fund.service.domain.model.Fund
-import ro.jf.bk.fund.service.domain.port.FundService
+import ro.jf.bk.fund.service.mapper.toTO
+import ro.jf.bk.fund.service.service.FundService
 import java.util.*
 
 private val log = logger { }
@@ -42,7 +40,7 @@ fun Routing.fundApiRouting(fundService: FundService) {
             if (fundService.findByName(userId, request.name) != null)
                 return@post call.respond(HttpStatusCode.Conflict)
             try {
-                val fund = fundService.createFund(request.toCommand(userId))
+                val fund = fundService.createFund(userId, request)
                 call.respond(status = HttpStatusCode.Created, message = fund.toTO())
             } catch (e: AccountNotFoundException) {
                 log.warn(e) { "Failed to create fund $request for user $userId." }

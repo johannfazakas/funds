@@ -11,12 +11,11 @@ import org.koin.dsl.module
 import org.postgresql.ds.PGSimpleDataSource
 import ro.jf.bk.account.sdk.AccountSdk
 import ro.jf.bk.account.sdk.TransactionSdk
-import ro.jf.bk.fund.service.adapter.client.AccountSdkAdapter
-import ro.jf.bk.fund.service.adapter.client.TransactionSdkAdapter
-import ro.jf.bk.fund.service.adapter.persistence.FundExposedRepository
-import ro.jf.bk.fund.service.domain.port.*
-import ro.jf.bk.fund.service.domain.service.FundServiceImpl
-import ro.jf.bk.fund.service.domain.service.TransactionServiceImpl
+import ro.jf.bk.fund.service.persistence.FundRepository
+import ro.jf.bk.fund.service.service.AccountSdkAdapter
+import ro.jf.bk.fund.service.service.AccountTransactionSdkAdapter
+import ro.jf.bk.fund.service.service.FundService
+import ro.jf.bk.fund.service.service.TransactionService
 import java.sql.DriverManager
 import javax.sql.DataSource
 
@@ -48,7 +47,7 @@ val Application.fundsAppModule
                 }
             }
         }
-        single<FundRepository> { FundExposedRepository(get()) }
+        single<FundRepository> { FundRepository(get()) }
         single<AccountSdk> {
             AccountSdk(
                 environment.config.property("integration.account-service.base-url").getString(), get()
@@ -59,8 +58,8 @@ val Application.fundsAppModule
                 environment.config.property("integration.account-service.base-url").getString(), get()
             )
         }
-        single<AccountRepository> { AccountSdkAdapter(get()) }
-        single<TransactionRepository> { TransactionSdkAdapter(get()) }
-        single<FundService> { FundServiceImpl(get(), get()) }
-        single<TransactionService> { TransactionServiceImpl(get()) }
+        single<AccountSdkAdapter> { AccountSdkAdapter(get()) }
+        single<AccountTransactionSdkAdapter> { AccountTransactionSdkAdapter(get()) }
+        single<FundService> { FundService(get(), get()) }
+        single<TransactionService> { TransactionService(get()) }
     }

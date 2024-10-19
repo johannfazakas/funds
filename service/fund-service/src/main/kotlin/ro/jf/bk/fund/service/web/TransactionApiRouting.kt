@@ -1,4 +1,4 @@
-package ro.jf.bk.fund.service.adapter.web
+package ro.jf.bk.fund.service.web
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -7,9 +7,9 @@ import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
 import ro.jf.bk.commons.model.toListTO
 import ro.jf.bk.commons.service.routing.userId
-import ro.jf.bk.fund.service.adapter.mapper.toTO
-import ro.jf.bk.fund.service.domain.model.Transaction
-import ro.jf.bk.fund.service.domain.port.TransactionService
+import ro.jf.bk.fund.service.domain.Transaction
+import ro.jf.bk.fund.service.mapper.toTO
+import ro.jf.bk.fund.service.service.TransactionService
 import java.util.*
 
 private val log = logger { }

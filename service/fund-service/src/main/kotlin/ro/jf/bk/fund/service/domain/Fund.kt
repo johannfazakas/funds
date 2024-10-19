@@ -1,4 +1,4 @@
-package ro.jf.bk.fund.service.domain.model
+package ro.jf.bk.fund.service.domain
 
 import ro.jf.bk.fund.api.model.FundName
 import java.util.*

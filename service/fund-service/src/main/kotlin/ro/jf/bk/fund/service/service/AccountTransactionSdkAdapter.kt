@@ -1,20 +1,19 @@
-package ro.jf.bk.fund.service.adapter.client
+package ro.jf.bk.fund.service.service
 
+import ro.jf.bk.account.api.model.CreateTransactionTO
 import ro.jf.bk.account.api.model.RecordTO
 import ro.jf.bk.account.api.model.TransactionTO
 import ro.jf.bk.account.sdk.TransactionSdk
-import ro.jf.bk.fund.service.domain.command.CreateTransactionCommand
-import ro.jf.bk.fund.service.domain.model.Record
-import ro.jf.bk.fund.service.domain.model.Transaction
-import ro.jf.bk.fund.service.domain.port.TransactionRepository
+import ro.jf.bk.fund.service.domain.Record
+import ro.jf.bk.fund.service.domain.Transaction
 import java.util.*
 
-const val FUND_ID = "fundId"
+const val METADATA_FUND_ID = "fundId"
 
-class TransactionSdkAdapter(
+class AccountTransactionSdkAdapter(
     private val transactionSdk: TransactionSdk
-) : TransactionRepository {
-    override suspend fun listTransactions(userId: UUID): List<Transaction> {
+) {
+    suspend fun listTransactions(userId: UUID): List<Transaction> {
         return transactionSdk.listTransactions(userId)
             .map { transactionTo: TransactionTO ->
                 Transaction(
@@ -33,15 +32,15 @@ class TransactionSdkAdapter(
             }
     }
 
-    override suspend fun createTransaction(command: CreateTransactionCommand): Transaction {
+    suspend fun createTransaction(command: CreateTransactionTO): Transaction {
         TODO("Not yet implemented")
     }
 
-    override suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
+    suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
         return transactionSdk.deleteTransaction(userId, transactionId)
     }
 }
 
-private fun RecordTO.fundId(): UUID = metadata[FUND_ID]
+private fun RecordTO.fundId(): UUID = metadata[METADATA_FUND_ID]
     ?.let(UUID::fromString)
     ?: error("Fund id not found in metadata")

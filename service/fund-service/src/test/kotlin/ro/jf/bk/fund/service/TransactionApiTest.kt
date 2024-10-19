@@ -14,6 +14,7 @@ import org.koin.ktor.ext.get
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
+import ro.jf.bk.account.sdk.AccountSdk
 import ro.jf.bk.commons.model.ListTO
 import ro.jf.bk.commons.service.config.configureContentNegotiation
 import ro.jf.bk.commons.service.config.configureDatabaseMigration
@@ -26,19 +27,19 @@ import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.bk.fund.api.model.TransactionTO
 import ro.jf.bk.fund.service.config.configureRouting
 import ro.jf.bk.fund.service.config.fundsAppModule
-import ro.jf.bk.fund.service.domain.model.Record
-import ro.jf.bk.fund.service.domain.model.Transaction
-import ro.jf.bk.fund.service.domain.port.AccountRepository
-import ro.jf.bk.fund.service.domain.port.TransactionRepository
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
+import ro.jf.bk.account.api.model.RecordTO as AccountRecordTO
+import ro.jf.bk.account.api.model.TransactionTO as AccountTransactionTO
+import ro.jf.bk.account.sdk.TransactionSdk as AccountTransactionSdk
+
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(MockServerExtension::class)
 class TransactionApiTest {
-    private val transactionRepository: TransactionRepository = mock()
-    private val accountRepository: AccountRepository = mock()
+    private val accountTransactionSdk: AccountTransactionSdk = mock()
+    private val accountSdk: AccountSdk = mock()
 
     @Test
     fun `test list transactions`() = testApplication {
@@ -55,26 +56,26 @@ class TransactionApiTest {
         val rawTransactionTime = "2021-09-01T12:00:00"
         val transactionTime = LocalDateTime.parse(rawTransactionTime)
 
-        whenever(transactionRepository.listTransactions(userId)).thenReturn(
+        whenever(accountTransactionSdk.listTransactions(userId)).thenReturn(
             listOf(
-                Transaction(
+                AccountTransactionTO(
                     id = transactionId,
-                    userId = userId,
                     dateTime = transactionTime,
                     records = listOf(
-                        Record(
+                        AccountRecordTO(
                             id = record1Id,
                             accountId = account1Id,
                             amount = BigDecimal(100.25),
-                            fundId = fund1Id
+                            metadata = mapOf("fundId" to fund1Id.toString()),
                         ),
-                        Record(
+                        AccountRecordTO(
                             id = record2Id,
                             accountId = account2Id,
                             amount = BigDecimal(50.75),
-                            fundId = fund2Id
+                            metadata = mapOf("fundId" to fund2Id.toString()),
                         )
-                    )
+                    ),
+                    metadata = emptyMap()
                 )
             )
         )
@@ -111,7 +112,7 @@ class TransactionApiTest {
         val userId = randomUUID()
         val transactionId = randomUUID()
 
-        whenever(transactionRepository.deleteTransaction(userId, transactionId)).thenReturn(Unit)
+        whenever(accountTransactionSdk.deleteTransaction(userId, transactionId)).thenReturn(Unit)
 
         val response = createJsonHttpClient()
             .delete("/bk-api/fund/v1/transactions/$transactionId") {
@@ -119,13 +120,13 @@ class TransactionApiTest {
             }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
-        verify(transactionRepository).deleteTransaction(userId, transactionId)
+        verify(accountTransactionSdk).deleteTransaction(userId, transactionId)
     }
 
     private fun Application.testModule() {
         val fundsAppTestModule = module {
-            single<AccountRepository> { accountRepository }
-            single<TransactionRepository> { transactionRepository }
+            single<AccountSdk> { accountSdk }
+            single<AccountTransactionSdk> { accountTransactionSdk }
         }
         configureDependencies(fundsAppModule, fundsAppTestModule)
         configureContentNegotiation()
