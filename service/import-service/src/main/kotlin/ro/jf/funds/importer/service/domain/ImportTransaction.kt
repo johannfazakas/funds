@@ -1,4 +1,4 @@
-package ro.jf.funds.importer.service.domain.model
+package ro.jf.funds.importer.service.domain
 
 import kotlinx.datetime.LocalDateTime
 import java.math.BigDecimal

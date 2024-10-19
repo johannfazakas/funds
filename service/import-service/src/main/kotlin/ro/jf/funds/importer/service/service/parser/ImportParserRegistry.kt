@@ -1,6 +1,6 @@
-package ro.jf.funds.importer.service.domain.service.parser
+package ro.jf.funds.importer.service.service.parser
 
-import ro.jf.funds.importer.service.domain.model.ImportType
+import ro.jf.funds.importer.service.domain.ImportType
 
 class ImportParserRegistry(
     private val walletCsvImportParser: WalletCsvImportParser

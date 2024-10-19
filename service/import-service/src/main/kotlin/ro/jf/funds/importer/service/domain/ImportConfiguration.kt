@@ -1,4 +1,4 @@
-package ro.jf.funds.importer.service.domain.model
+package ro.jf.funds.importer.service.domain
 
 data class ImportConfiguration(
     val importType: ImportType,

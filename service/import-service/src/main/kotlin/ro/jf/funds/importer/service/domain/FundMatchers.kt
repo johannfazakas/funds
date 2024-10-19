@@ -1,6 +1,4 @@
-package ro.jf.funds.importer.service.domain.model
-
-import ro.jf.funds.importer.service.domain.exception.ImportDataException
+package ro.jf.funds.importer.service.domain
 
 data class FundMatchers(
     val matchers: List<FundMatcher>

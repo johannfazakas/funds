@@ -1,4 +1,4 @@
-package ro.jf.funds.importer.service.adapter.web
+package ro.jf.funds.importer.service.web
 
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -12,10 +12,10 @@ import ro.jf.bk.commons.model.ProblemTO
 import ro.jf.bk.commons.service.routing.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
-import ro.jf.funds.importer.service.adapter.mapper.toModel
-import ro.jf.funds.importer.service.adapter.mapper.toProblem
-import ro.jf.funds.importer.service.domain.exception.ImportException
-import ro.jf.funds.importer.service.domain.port.ImportService
+import ro.jf.funds.importer.service.domain.ImportException
+import ro.jf.funds.importer.service.service.ImportService
+import ro.jf.funds.importer.service.web.mapper.toModel
+import ro.jf.funds.importer.service.web.mapper.toProblem
 
 private val log = logger { }
 

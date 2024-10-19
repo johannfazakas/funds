@@ -9,12 +9,11 @@ import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import ro.jf.bk.account.sdk.AccountSdk
 import ro.jf.bk.fund.sdk.FundSdk
-import ro.jf.funds.importer.service.domain.port.ImportService
-import ro.jf.funds.importer.service.domain.service.ImportHandler
-import ro.jf.funds.importer.service.domain.service.ImportServiceImpl
-import ro.jf.funds.importer.service.domain.service.parser.CsvParser
-import ro.jf.funds.importer.service.domain.service.parser.ImportParserRegistry
-import ro.jf.funds.importer.service.domain.service.parser.WalletCsvImportParser
+import ro.jf.funds.importer.service.service.ImportHandler
+import ro.jf.funds.importer.service.service.ImportService
+import ro.jf.funds.importer.service.service.parser.CsvParser
+import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
+import ro.jf.funds.importer.service.service.parser.WalletCsvImportParser
 
 // TODO(Johann) should the rest be renamed to this pattern?
 val Application.importServiceDependenciesModule
@@ -44,5 +43,5 @@ val Application.importServiceDependenciesModule
             )
         }
         single<ImportHandler> { ImportHandler(get(), get()) }
-        single<ImportService> { ImportServiceImpl(get(), get()) }
+        single<ImportService> { ImportService(get(), get()) }
     }

@@ -1,4 +1,4 @@
-package ro.jf.funds.importer.service.domain.exception
+package ro.jf.funds.importer.service.domain
 
 sealed class ImportException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 

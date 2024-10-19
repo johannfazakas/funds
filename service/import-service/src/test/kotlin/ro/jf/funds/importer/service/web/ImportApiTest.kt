@@ -1,4 +1,4 @@
-package ro.jf.funds.importer.service.api
+package ro.jf.funds.importer.service.web
 
 import io.ktor.client.call.*
 import io.ktor.client.request.*

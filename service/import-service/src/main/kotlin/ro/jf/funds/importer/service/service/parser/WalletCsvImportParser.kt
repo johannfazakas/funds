@@ -1,13 +1,13 @@
-package ro.jf.funds.importer.service.domain.service.parser
+package ro.jf.funds.importer.service.service.parser
 
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
-import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.domain.model.FundMatcher
-import ro.jf.funds.importer.service.domain.model.ImportConfiguration
-import ro.jf.funds.importer.service.domain.model.ImportRecord
-import ro.jf.funds.importer.service.domain.model.ImportTransaction
+import ro.jf.funds.importer.service.domain.ImportDataException
+import ro.jf.funds.importer.service.domain.FundMatcher
+import ro.jf.funds.importer.service.domain.ImportConfiguration
+import ro.jf.funds.importer.service.domain.ImportRecord
+import ro.jf.funds.importer.service.domain.ImportTransaction
 
 private const val ACCOUNT_NAME_COLUMN = "account"
 private const val AMOUNT_COLUMN = "amount"

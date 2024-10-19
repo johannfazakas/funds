@@ -1,12 +1,9 @@
-package ro.jf.funds.importer.service.domain.service
+package ro.jf.funds.importer.service.service.parser
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.domain.model.*
-import ro.jf.funds.importer.service.domain.service.parser.CsvParser
-import ro.jf.funds.importer.service.domain.service.parser.WalletCsvImportParser
+import ro.jf.funds.importer.service.domain.*
 
 class WalletCsvImportParserTest {
     private val walletCsvImportParser = WalletCsvImportParser(CsvParser())
