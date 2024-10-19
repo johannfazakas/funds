@@ -3,11 +3,10 @@ package ro.jf.funds.importer.service.service.parser
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
-import ro.jf.funds.importer.service.domain.ImportDataException
-import ro.jf.funds.importer.service.domain.FundMatcher
-import ro.jf.funds.importer.service.domain.ImportConfiguration
-import ro.jf.funds.importer.service.domain.ImportRecord
-import ro.jf.funds.importer.service.domain.ImportTransaction
+import ro.jf.funds.importer.api.model.FundMatcherTO
+import ro.jf.funds.importer.api.model.FundMatcherTO.*
+import ro.jf.funds.importer.api.model.ImportConfigurationTO
+import ro.jf.funds.importer.service.domain.*
 
 private const val ACCOUNT_NAME_COLUMN = "account"
 private const val AMOUNT_COLUMN = "amount"
@@ -24,7 +23,7 @@ class WalletCsvImportParser(
     private val dateTimeFormat = LocalDateTime.Format { byUnicodePattern(DATE_FORMAT) }
 
     override fun parse(
-        importConfiguration: ImportConfiguration, files: List<String>
+        importConfiguration: ImportConfigurationTO, files: List<String>
     ): List<ImportTransaction> {
         return files
             .parse()
@@ -48,7 +47,7 @@ class WalletCsvImportParser(
     }
 
     private fun toTransaction(
-        importConfiguration: ImportConfiguration,
+        importConfiguration: ImportConfigurationTO,
         transactionId: String,
         csvRows: List<CsvRow>
     ): ImportTransaction {
@@ -59,7 +58,7 @@ class WalletCsvImportParser(
         )
     }
 
-    private fun toImportRecords(importConfiguration: ImportConfiguration, csvRow: CsvRow): List<ImportRecord> {
+    private fun toImportRecords(importConfiguration: ImportConfigurationTO, csvRow: CsvRow): List<ImportRecord> {
         val importAccountName = csvRow.getString(ACCOUNT_NAME_COLUMN)
         val accountName = importConfiguration.accountMatchers.getAccountName(importAccountName)
         val importType = csvRow.getString(LABEL_COLUMN)
@@ -68,10 +67,10 @@ class WalletCsvImportParser(
         val fundMatcher = importConfiguration.fundMatchers.getFundMatcher(importAccountName, importType)
 
         return when (fundMatcher) {
-            is FundMatcher.ByAccount, is FundMatcher.ByLabel, is FundMatcher.ByAccountLabel ->
+            is ByAccount, is ByLabel, is ByAccountLabel ->
                 listOf(ImportRecord(accountName, fundMatcher.fundName, currency, amount))
 
-            is FundMatcher.ByAccountLabelWithTransfer -> {
+            is ByAccountLabelWithTransfer -> {
                 listOf(
                     ImportRecord(accountName, fundMatcher.initialFundName, currency, amount),
                     ImportRecord(accountName, fundMatcher.initialFundName, currency, amount.negate()),

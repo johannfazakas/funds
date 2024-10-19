@@ -3,7 +3,11 @@ package ro.jf.funds.importer.service.service.parser
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import ro.jf.funds.importer.service.domain.*
+import ro.jf.funds.importer.api.model.AccountMatcherTO
+import ro.jf.funds.importer.api.model.FundMatcherTO
+import ro.jf.funds.importer.api.model.ImportConfigurationTO
+import ro.jf.funds.importer.api.model.ImportFileTypeTO
+import ro.jf.funds.importer.service.domain.ImportDataException
 
 class WalletCsvImportParserTest {
     private val walletCsvImportParser = WalletCsvImportParser(CsvParser())
@@ -13,10 +17,10 @@ class WalletCsvImportParserTest {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "-13.80", "Basic - Food", "2019-01-31 02:00:49")
         )
-        val importConfiguration = ImportConfiguration(
-            importType = ImportType.WALLET_CSV,
-            accountMatchers = AccountMatchers(AccountMatcher("ING old", "ING")),
-            fundMatchers = FundMatchers(FundMatcher.ByLabel("Basic - Food", "Expenses"))
+        val importConfiguration = ImportConfigurationTO(
+            fileType = ImportFileTypeTO.WALLET_CSV,
+            accountMatchers = listOf(AccountMatcherTO("ING old", "ING")),
+            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", "Expenses"))
         )
 
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
@@ -37,19 +41,17 @@ class WalletCsvImportParserTest {
             WalletCsvRowContent("ING old", "RON", "-400.00", "", "2019-01-31 02:00:49"),
             WalletCsvRowContent("Cash RON", "RON", "400.00", "", "2019-01-31 02:00:49")
         )
-        val importConfiguration = ImportConfiguration(
-            importType = ImportType.WALLET_CSV,
-            accountMatchers = AccountMatchers(
-                listOf(
-                    AccountMatcher("ING old", "ING"),
-                    AccountMatcher("Cash RON", "Cash")
-                )
+        val importConfiguration = ImportConfigurationTO(
+            fileType = ImportFileTypeTO.WALLET_CSV,
+            accountMatchers = listOf(
+                AccountMatcherTO("ING old", "ING"),
+                AccountMatcherTO("Cash RON", "Cash")
             ),
-            fundMatchers = FundMatchers(
-                FundMatcher.ByLabel("Basic - Food", "Expenses"),
-                FundMatcher.ByLabel("Basic - Food", "Income"),
-                FundMatcher.ByAccount("ING old", "Expenses"),
-                FundMatcher.ByAccount("Cash RON", "Expenses")
+            fundMatchers = listOf(
+                FundMatcherTO.ByLabel("Basic - Food", "Expenses"),
+                FundMatcherTO.ByLabel("Basic - Food", "Income"),
+                FundMatcherTO.ByAccount("ING old", "Expenses"),
+                FundMatcherTO.ByAccount("Cash RON", "Expenses")
             )
         )
 
@@ -72,13 +74,13 @@ class WalletCsvImportParserTest {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "6740.00", "Work Income", "2019-01-06 02:00:23")
         )
-        val importConfiguration = ImportConfiguration(
-            importType = ImportType.WALLET_CSV,
-            accountMatchers = AccountMatchers(
-                AccountMatcher("ING old", "ING")
+        val importConfiguration = ImportConfigurationTO(
+            fileType = ImportFileTypeTO.WALLET_CSV,
+            accountMatchers = listOf(
+                AccountMatcherTO("ING old", "ING")
             ),
-            fundMatchers = FundMatchers(
-                FundMatcher.ByAccountLabelWithTransfer("ING old", importLabel = "Work Income", "Work", "Expenses"),
+            fundMatchers = listOf(
+                FundMatcherTO.ByAccountLabelWithTransfer("ING old", importLabel = "Work Income", "Work", "Expenses"),
             )
         )
 
@@ -110,12 +112,12 @@ class WalletCsvImportParserTest {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "-13.80", "Basic - Food", "2019-01-31 02:00:49")
         )
-        val importConfiguration = ImportConfiguration(
-            importType = ImportType.WALLET_CSV,
-            accountMatchers = AccountMatchers(AccountMatcher("ING old", "ING")),
-            fundMatchers = FundMatchers(
-                FundMatcher.ByLabel("Basic - Food", "Expenses"),
-                FundMatcher.ByAccount("ING old", "Savings")
+        val importConfiguration = ImportConfigurationTO(
+            fileType = ImportFileTypeTO.WALLET_CSV,
+            accountMatchers = listOf(AccountMatcherTO("ING old", "ING")),
+            fundMatchers = listOf(
+                FundMatcherTO.ByLabel("Basic - Food", "Expenses"),
+                FundMatcherTO.ByAccount("ING old", "Savings")
             )
         )
 
@@ -130,10 +132,10 @@ class WalletCsvImportParserTest {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "-13.80", "Basic - Food", "2019-01-31 02:00:49")
         )
-        val importConfiguration = ImportConfiguration(
-            importType = ImportType.WALLET_CSV,
-            accountMatchers = AccountMatchers(AccountMatcher("ING new", "ING")),
-            fundMatchers = FundMatchers(FundMatcher.ByLabel("Basic - Food", "Expenses"))
+        val importConfiguration = ImportConfigurationTO(
+            fileType = ImportFileTypeTO.WALLET_CSV,
+            accountMatchers = listOf(AccountMatcherTO("ING new", "ING")),
+            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", "Expenses"))
         )
 
         assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
@@ -146,10 +148,10 @@ class WalletCsvImportParserTest {
         val fileContent = """
             account;category;currency;amount;ref_currency_amount;type;payment_type;payment_type_local;note;date;gps_latitude;gps_longitude;gps_accuracy_in_meters;warranty_in_month;transfer;payee;labels;envelope_id;custom_category
         """.trimIndent()
-        val importConfiguration = ImportConfiguration(
-            importType = ImportType.WALLET_CSV,
-            accountMatchers = AccountMatchers(AccountMatcher("ING old", "ING")),
-            fundMatchers = FundMatchers(FundMatcher.ByLabel("Basic - Food", "Expenses"))
+        val importConfiguration = ImportConfigurationTO(
+            fileType = ImportFileTypeTO.WALLET_CSV,
+            accountMatchers = listOf(AccountMatcherTO("ING old", "ING")),
+            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", "Expenses"))
         )
 
         assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
