@@ -14,7 +14,6 @@ import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
 import ro.jf.funds.importer.service.domain.ImportException
 import ro.jf.funds.importer.service.service.ImportService
-import ro.jf.funds.importer.service.web.mapper.toModel
 import ro.jf.funds.importer.service.web.mapper.toProblem
 
 private val log = logger { }
@@ -37,7 +36,7 @@ fun Routing.importApiRouting(
                 ?: return@post call.respond(HttpStatusCode.BadRequest, ProblemTO("Import configuration missing."))
 
             try {
-                importService.import(userId, importConfiguration.toModel(), rawFileParts)
+                importService.import(userId, importConfiguration, rawFileParts)
                 // TODO(Johann) should probably return something relevant from the service
                 call.respond(HttpStatusCode.OK, ImportResponse("Imported in service"))
             } catch (importException: ImportException) {

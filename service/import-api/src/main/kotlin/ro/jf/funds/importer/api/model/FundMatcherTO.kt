@@ -9,18 +9,20 @@ import kotlinx.serialization.json.JsonClassDiscriminator
 @JsonClassDiscriminator("type")
 @Serializable
 sealed class FundMatcherTO {
+    abstract val fundName: String
+
     @Serializable
     @SerialName("by_account")
     data class ByAccount(
         val importAccountName: String,
-        val fundName: String
+        override val fundName: String
     ) : FundMatcherTO()
 
     @Serializable
     @SerialName("by_label")
     data class ByLabel(
         val importLabel: String,
-        val fundName: String
+        override val fundName: String
     ) : FundMatcherTO()
 
     @Serializable
@@ -28,7 +30,7 @@ sealed class FundMatcherTO {
     data class ByAccountLabel(
         val importAccountName: String,
         val importLabel: String,
-        val fundName: String
+        override val fundName: String
     ) : FundMatcherTO()
 
     @Serializable
@@ -37,6 +39,6 @@ sealed class FundMatcherTO {
         val importAccountName: String,
         val importLabel: String,
         val initialFundName: String,
-        val fundName: String,
+        override val fundName: String,
     ) : FundMatcherTO()
 }

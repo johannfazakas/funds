@@ -1,12 +1,12 @@
 package ro.jf.funds.importer.service.service.parser
 
-import ro.jf.funds.importer.service.domain.ImportType
+import ro.jf.funds.importer.api.model.ImportFileTypeTO
 
 class ImportParserRegistry(
     private val walletCsvImportParser: WalletCsvImportParser
 ) {
-    operator fun get(importType: ImportType): ImportParser =
+    operator fun get(importType: ImportFileTypeTO): ImportParser =
         when (importType) {
-            ImportType.WALLET_CSV -> walletCsvImportParser
+            ImportFileTypeTO.WALLET_CSV -> walletCsvImportParser
         }
 }
