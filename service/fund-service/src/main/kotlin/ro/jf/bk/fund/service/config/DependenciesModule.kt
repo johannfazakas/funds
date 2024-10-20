@@ -10,12 +10,12 @@ import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import org.postgresql.ds.PGSimpleDataSource
 import ro.jf.bk.account.sdk.AccountSdk
-import ro.jf.bk.account.sdk.TransactionSdk
+import ro.jf.bk.account.sdk.AccountTransactionSdk
 import ro.jf.bk.fund.service.persistence.FundRepository
 import ro.jf.bk.fund.service.service.AccountSdkAdapter
-import ro.jf.bk.fund.service.service.AccountTransactionSdkAdapter
+import ro.jf.bk.fund.service.service.AccountTransactionAdapter
 import ro.jf.bk.fund.service.service.FundService
-import ro.jf.bk.fund.service.service.TransactionService
+import ro.jf.bk.fund.service.service.FundTransactionService
 import java.sql.DriverManager
 import javax.sql.DataSource
 
@@ -53,13 +53,13 @@ val Application.fundsAppModule
                 environment.config.property("integration.account-service.base-url").getString(), get()
             )
         }
-        single<TransactionSdk> {
-            TransactionSdk(
+        single<AccountTransactionSdk> {
+            AccountTransactionSdk(
                 environment.config.property("integration.account-service.base-url").getString(), get()
             )
         }
         single<AccountSdkAdapter> { AccountSdkAdapter(get()) }
-        single<AccountTransactionSdkAdapter> { AccountTransactionSdkAdapter(get()) }
+        single<AccountTransactionAdapter> { AccountTransactionAdapter(get()) }
         single<FundService> { FundService(get(), get()) }
-        single<TransactionService> { TransactionService(get()) }
+        single<FundTransactionService> { FundTransactionService(get()) }
     }
