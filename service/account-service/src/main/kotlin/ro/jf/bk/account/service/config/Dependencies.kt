@@ -5,14 +5,10 @@ import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
 import org.postgresql.ds.PGSimpleDataSource
-import ro.jf.bk.account.service.adapter.persistence.AccountExposedRepository
-import ro.jf.bk.account.service.adapter.persistence.TransactionExposedRepository
-import ro.jf.bk.account.service.domain.port.AccountRepository
-import ro.jf.bk.account.service.domain.port.AccountService
-import ro.jf.bk.account.service.domain.port.TransactionRepository
-import ro.jf.bk.account.service.domain.port.TransactionService
-import ro.jf.bk.account.service.domain.service.AccountServiceImpl
-import ro.jf.bk.account.service.domain.service.TransactionServiceImpl
+import ro.jf.bk.account.service.persistence.AccountRepository
+import ro.jf.bk.account.service.persistence.AccountTransactionRepository
+import ro.jf.bk.account.service.service.AccountService
+import ro.jf.bk.account.service.service.AccountTransactionService
 import java.sql.DriverManager
 import javax.sql.DataSource
 
@@ -34,10 +30,10 @@ fun Application.configureDependencies() {
                     environment.config.property("database.password").getString()
                 )
             }
-            single<AccountRepository> { AccountExposedRepository(get()) }
-            single<AccountService> { AccountServiceImpl(get()) }
-            single<TransactionRepository> { TransactionExposedRepository(get()) }
-            single<TransactionService> { TransactionServiceImpl(get()) }
+            single<AccountRepository> { AccountRepository(get()) }
+            single<AccountService> { AccountService(get()) }
+            single<AccountTransactionRepository> { AccountTransactionRepository(get()) }
+            single<AccountTransactionService> { AccountTransactionService(get()) }
         })
     }
 }

@@ -14,10 +14,8 @@ import ro.jf.bk.account.api.model.AccountName
 import ro.jf.bk.account.api.model.AccountTO
 import ro.jf.bk.account.api.model.CreateCurrencyAccountTO
 import ro.jf.bk.account.api.model.CreateInstrumentAccountTO
-import ro.jf.bk.account.service.adapter.persistence.AccountExposedRepository
-import ro.jf.bk.account.service.domain.command.CreateCurrencyAccountCommand
-import ro.jf.bk.account.service.domain.command.CreateInstrumentAccountCommand
-import ro.jf.bk.account.service.domain.model.Account
+import ro.jf.bk.account.service.persistence.AccountRepository
+import ro.jf.bk.account.service.domain.Account
 import ro.jf.bk.commons.model.ListTO
 import ro.jf.bk.commons.test.extension.PostgresContainerExtension
 import ro.jf.bk.commons.test.utils.configureEnvironmentWithDB
@@ -40,8 +38,8 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("Cash"), "RON"))
-        accountRepository.save(CreateInstrumentAccountCommand(userId, AccountName("BET"), "RON", "TVBETETF"))
+        accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("Cash"), "RON"))
+        accountRepository.save(userId, CreateInstrumentAccountTO(AccountName("BET"), "RON", "TVBETETF"))
 
         val response = createJsonHttpClient().get("/bk-api/account/v1/accounts") {
             header(USER_ID_HEADER, userId)
@@ -59,7 +57,7 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        val user = accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("Revolut"), "RON"))
+        val user = accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("Revolut"), "RON"))
 
         val response = createJsonHttpClient().get("/bk-api/account/v1/accounts/${user.id}") {
             header(USER_ID_HEADER, userId)
@@ -135,7 +133,7 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("BT"), "EUR"))
+        accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("BT"), "EUR"))
 
         val response = createJsonHttpClient().post("/bk-api/account/v1/accounts/currency") {
             contentType(ContentType.Application.Json)
@@ -151,7 +149,7 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        val account = accountRepository.save(CreateCurrencyAccountCommand(userId, AccountName("ING"), "RON"))
+        val account = accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("ING"), "RON"))
 
         val response = createJsonHttpClient().delete("/bk-api/account/v1/accounts/${account.id}") {
             header(USER_ID_HEADER, userId)
@@ -172,7 +170,7 @@ class AccountApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
     }
 
-    private fun createAccountRepository() = AccountExposedRepository(
+    private fun createAccountRepository() = AccountRepository(
         database = Database.connect(
             url = PostgresContainerExtension.jdbcUrl,
             user = PostgresContainerExtension.username,
