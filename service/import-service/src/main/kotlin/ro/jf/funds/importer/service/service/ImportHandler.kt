@@ -1,5 +1,7 @@
 package ro.jf.funds.importer.service.service
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import mu.KotlinLogging.logger
 import ro.jf.bk.account.api.model.AccountName
 import ro.jf.bk.account.sdk.AccountSdk
@@ -20,12 +22,13 @@ class ImportHandler(
     private val fundSdk: FundSdk,
     private val fundTransactionSdk: FundTransactionSdk
 ) {
-    suspend fun import(userId: UUID, importTransactions: List<ImportTransaction>) {
+    suspend fun import(userId: UUID, importTransactions: List<ImportTransaction>) = coroutineScope {
         log.info { "Handling import >> user = $userId items size = ${importTransactions.size}." }
 
         importTransactions
             .toTransactionRequests(createImportResourceContext(userId))
-            .forEach { fundTransactionSdk.createTransaction(userId, it) }
+            .map { request -> async { fundTransactionSdk.createTransaction(userId, request) } }
+            .forEach { it.await() }
     }
 
     private fun List<ImportTransaction>.toTransactionRequests(importResourceContext: ImportResourceContext): List<CreateFundTransactionTO> =
