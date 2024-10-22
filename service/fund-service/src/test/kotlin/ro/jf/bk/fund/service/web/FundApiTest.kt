@@ -45,7 +45,6 @@ class FundApiTest {
         configureEnvironmentWithDB(appConfig) { testModule() }
 
         val userId = randomUUID()
-        val accountId = randomUUID()
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
 
         val response = createJsonHttpClient().get("/bk-api/fund/v1/funds") {
@@ -65,7 +64,6 @@ class FundApiTest {
         configureEnvironmentWithDB(appConfig) { testModule() }
 
         val userId = randomUUID()
-        val accountId = randomUUID()
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Savings")))
 
         val response = createJsonHttpClient().get("/bk-api/fund/v1/funds/${fund.id}") {
