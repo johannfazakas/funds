@@ -1,11 +1,6 @@
 package ro.jf.funds.account.sdk
 
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -28,18 +23,7 @@ import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerExtension::class)
 class AccountSdkTest {
-    private val accountSdk = AccountSdk(
-        baseUrl = MockServerExtension.baseUrl,
-        httpClient = HttpClient(CIO) {
-            install(ContentNegotiation) {
-                json(Json {
-                    prettyPrint = true
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                })
-            }
-        }
-    )
+    private val accountSdk = AccountSdk(baseUrl = MockServerExtension.baseUrl)
 
     @Test
     fun `test list accounts`(mockServerClient: MockServerClient): Unit = runBlocking {

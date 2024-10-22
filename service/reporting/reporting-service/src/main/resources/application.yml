@@ -1,0 +1,9 @@
+ktor:
+  application:
+    modules:
+      - ro.jf.funds.reporting.service.ReportingServiceApplicationKt.module
+  deployment:
+    port: 5212
+integration:
+  fund-service:
+    base-url: "$FUND_BASE_URL:http://localhost:5253"

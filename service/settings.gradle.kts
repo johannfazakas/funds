@@ -29,4 +29,6 @@ include("import-api")
 include("import-sdk")
 include("import-service")
 
-include("reporting-api")
+include("reporting:reporting-api")
+include("reporting:reporting-sdk")
+include("reporting:reporting-service")
