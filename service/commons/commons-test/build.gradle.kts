@@ -12,8 +12,8 @@ dependencies {
     api(libs.kotlin.mockito)
     api(libs.assertj)
 
-    // TODO(Johann) is this required here?
     api(libs.exposed.core)
+    api(libs.flyway)
 
     api(libs.ktor.server.tests.jvm)
     api(libs.ktor.server.test.host)
@@ -26,6 +26,4 @@ dependencies {
     api(libs.testcontainers.jdbc)
     api(libs.mockserver.client)
 
-    // TODO(Johann) is this required here?
-    api(libs.flyway)
 }
