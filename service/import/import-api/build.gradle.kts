@@ -5,4 +5,6 @@ plugins {
 
 dependencies {
     api(project(":commons:commons-api"))
+    api(project(":account:account-api"))
+    api(project(":fund:fund-api"))
 }

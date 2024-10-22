@@ -1,3 +1,4 @@
+import io.ktor.plugin.features.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
@@ -7,13 +8,16 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":reporting:reporting-api"))
+    implementation(project(":import:import-api"))
     implementation(project(":commons:commons-service"))
+    implementation(project(":account:account-sdk"))
+    implementation(project(":fund:fund-sdk"))
+    implementation(libs.kotlin.csv)
     testImplementation(project(":commons:commons-test"))
 }
 
 application {
-    mainClass.set("ro.jf.funds.reporting.service.ReportingServiceApplicationKt")
+    mainClass.set("ro.jf.funds.importer.service.ImportServiceApplicationKt")
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
@@ -21,7 +25,7 @@ application {
 ktor {
     docker {
         jreVersion.set(JavaVersion.VERSION_17)
-        localImageName.set("funds/reporting-service")
+        localImageName.set("funds/import-service")
     }
 }
 

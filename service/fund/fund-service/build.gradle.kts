@@ -1,3 +1,4 @@
+import io.ktor.plugin.features.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
@@ -7,21 +8,23 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":reporting:reporting-api"))
+    implementation(project(":fund:fund-api"))
     implementation(project(":commons:commons-service"))
+    implementation(project(":account:account-sdk"))
     testImplementation(project(":commons:commons-test"))
 }
 
 application {
-    mainClass.set("ro.jf.funds.reporting.service.ReportingServiceApplicationKt")
+    mainClass.set("ro.jf.funds.fund.service.FundServiceApplicationKt")
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
 ktor {
+    // TODO(Johann) check build image & publish tasks dependencies
     docker {
         jreVersion.set(JavaVersion.VERSION_17)
-        localImageName.set("funds/reporting-service")
+        localImageName.set("funds/fund-service")
     }
 }
 
