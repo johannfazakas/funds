@@ -8,12 +8,17 @@ import io.ktor.server.application.*
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import ro.jf.bk.account.sdk.AccountSdk
+import ro.jf.bk.commons.service.environment.getStringProperty
 import ro.jf.bk.fund.sdk.FundSdk
+import ro.jf.bk.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.service.service.ImportHandler
 import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.service.parser.CsvParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
 import ro.jf.funds.importer.service.service.parser.WalletCsvImportParser
+
+private const val ACCOUNT_SERVICE_BASE_URL_PROPERTY = "integration.account-service.base-url"
+private const val FUND_SERVICE_BASE_URL_PROPERTY = "integration.fund-service.base-url"
 
 // TODO(Johann) should the rest be renamed to this pattern?
 val Application.importServiceDependenciesModule
@@ -33,15 +38,14 @@ val Application.importServiceDependenciesModule
         single<WalletCsvImportParser> { WalletCsvImportParser(get()) }
         single<ImportParserRegistry> { ImportParserRegistry(get()) }
         single<AccountSdk> {
-            AccountSdk(
-                baseUrl = environment.config.property("integration.account-service.base-url").getString(), get()
-            )
+            AccountSdk(environment.getStringProperty(ACCOUNT_SERVICE_BASE_URL_PROPERTY), get())
         }
         single<FundSdk> {
-            FundSdk(
-                baseUrl = environment.config.property("integration.fund-service.base-url").getString(), get()
-            )
+            FundSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
-        single<ImportHandler> { ImportHandler(get(), get()) }
+        single<FundTransactionSdk> {
+            FundTransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
+        }
+        single<ImportHandler> { ImportHandler(get(), get(), get()) }
         single<ImportService> { ImportService(get(), get()) }
     }

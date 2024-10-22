@@ -12,6 +12,8 @@ import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import ro.jf.bk.account.api.model.AccountName
 import ro.jf.bk.account.api.model.AccountTO
@@ -25,7 +27,9 @@ import ro.jf.bk.commons.test.utils.createJsonHttpClient
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.bk.fund.api.model.FundName
 import ro.jf.bk.fund.api.model.FundTO
+import ro.jf.bk.fund.api.model.FundTransactionTO
 import ro.jf.bk.fund.sdk.FundSdk
+import ro.jf.bk.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.service.config.configureRouting
 import ro.jf.funds.importer.service.config.importServiceDependenciesModule
@@ -35,6 +39,7 @@ import java.util.UUID.randomUUID
 class ImportApiTest {
     private val accountSdk: AccountSdk = mock()
     private val fundSdk: FundSdk = mock()
+    private val fundTransactionSdk: FundTransactionSdk = mock()
 
     @Test
     fun `test valid import`() = testApplication {
@@ -71,6 +76,7 @@ class ImportApiTest {
                 FundTO(randomUUID(), FundName("Work"), listOf())
             )
         )
+        whenever(fundTransactionSdk.createTransaction(eq(userId), any())).thenReturn(mock())
 
         val response = httpClient.post("/bk-api/import/v1/imports") {
             header(USER_ID_HEADER, userId.toString())
@@ -217,6 +223,7 @@ class ImportApiTest {
         val importAppTestModule = org.koin.dsl.module {
             single<AccountSdk> { accountSdk }
             single<FundSdk> { fundSdk }
+            single<FundTransactionSdk> { fundTransactionSdk }
         }
         configureDependencies(importServiceDependenciesModule, importAppTestModule)
         configureContentNegotiation()
