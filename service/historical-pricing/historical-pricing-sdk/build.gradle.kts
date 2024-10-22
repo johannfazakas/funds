@@ -1,9 +1,11 @@
+
 plugins {
     id("funds.kotlin-library-conventions")
 }
 
 dependencies {
-    api(project(":reporting:reporting-api"))
+    api(project(":historical-pricing:historical-pricing-api"))
     implementation(project(":commons:commons-sdk"))
-    testImplementation(project(":commons:commons-test"))
+
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

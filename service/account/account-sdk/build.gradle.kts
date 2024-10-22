@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    api(project(":reporting:reporting-api"))
     implementation(project(":commons:commons-sdk"))
+    api(project(":account:account-api"))
     testImplementation(project(":commons:commons-test"))
 }

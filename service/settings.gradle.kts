@@ -3,31 +3,30 @@ plugins {
 }
 rootProject.name = "funds"
 
-// TODO(Johann) could group modules in subfolders?
-include("commons")
-include("commons-service")
-include("commons-sdk")
-include("commons-test")
+include("commons:commons-api")
+include("commons:commons-service")
+include("commons:commons-sdk")
+include("commons:commons-test")
 
-include("historical-pricing-api")
-include("historical-pricing-sdk")
-include("historical-pricing-service")
+include("historical-pricing:historical-pricing-api")
+include("historical-pricing:historical-pricing-sdk")
+include("historical-pricing:historical-pricing-service")
 
-include("user-api")
-include("user-sdk")
-include("user-service")
+include("user:user-api")
+include("user:user-sdk")
+include("user:user-service")
 
-include("account-api")
-include("account-sdk")
-include("account-service")
+include("account:account-api")
+include("account:account-sdk")
+include("account:account-service")
 
-include("fund-api")
-include("fund-sdk")
-include("fund-service")
+include("fund:fund-api")
+include("fund:fund-sdk")
+include("fund:fund-service")
 
-include("import-api")
-include("import-sdk")
-include("import-service")
+include("import:import-api")
+include("import:import-sdk")
+include("import:import-service")
 
 include("reporting:reporting-api")
 include("reporting:reporting-sdk")

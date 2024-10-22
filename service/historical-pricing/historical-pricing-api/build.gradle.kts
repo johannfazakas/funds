@@ -1,6 +1,6 @@
 plugins {
     id("funds.kotlin-library-conventions")
-    alias(libs.plugins.kotlin.serialization)
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
 }
 
 dependencies {
