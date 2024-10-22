@@ -5,7 +5,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.user.api.UserServiceApi
 import ro.jf.funds.user.api.exception.UserApiException
 import ro.jf.funds.user.api.model.CreateUserTO
