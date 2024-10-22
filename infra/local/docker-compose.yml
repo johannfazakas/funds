@@ -46,6 +46,7 @@ services:
       - '5253:5253'
     environment:
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_fund
+      - ACCOUNT_BASE_URL=http://ff_account:5211
     depends_on:
       - postgres
 
@@ -54,3 +55,6 @@ services:
     container_name: ff_import
     ports:
       - '5207:5207'
+    environment:
+      - ACCOUNT_BASE_URL=http://ff_account:5211
+      - FUND_BASE_URL=http://ff_fund:5253
