@@ -7,7 +7,6 @@ data class Fund(
     val id: UUID,
     val userId: UUID,
     val name: FundName,
-    val accounts: List<FundAccount>
 )
 
 data class FundAccount(

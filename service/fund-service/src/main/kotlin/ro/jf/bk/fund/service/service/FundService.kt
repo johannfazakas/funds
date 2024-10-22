@@ -23,20 +23,10 @@ class FundService(
     }
 
     suspend fun createFund(userId: UUID, request: CreateFundTO): Fund {
-        validateAccountsExist(userId, request.accounts.map { it.accountId })
         return fundRepository.save(userId, request)
     }
 
     suspend fun deleteFund(userId: UUID, fundId: UUID) {
         return fundRepository.deleteById(userId, fundId)
-    }
-
-    private suspend fun validateAccountsExist(userId: UUID, accountIds: List<UUID>) {
-        accountIds.forEach { validateAccountExist(userId, it) }
-    }
-
-    private suspend fun validateAccountExist(userId: UUID, accountId: UUID) {
-        accountSdkAdapter.findById(userId, accountId)
-            ?: throw IllegalArgumentException("Account with id $accountId not found")
     }
 }

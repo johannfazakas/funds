@@ -25,7 +25,6 @@ import ro.jf.bk.commons.test.extension.PostgresContainerExtension
 import ro.jf.bk.commons.test.utils.configureEnvironmentWithDB
 import ro.jf.bk.commons.test.utils.createJsonHttpClient
 import ro.jf.bk.commons.web.USER_ID_HEADER
-import ro.jf.bk.fund.api.model.CreateFundAccountTO
 import ro.jf.bk.fund.api.model.CreateFundTO
 import ro.jf.bk.fund.api.model.FundName
 import ro.jf.bk.fund.api.model.FundTO
@@ -47,15 +46,7 @@ class FundApiTest {
 
         val userId = randomUUID()
         val accountId = randomUUID()
-        val fund = fundRepository.save(
-            userId,
-            CreateFundTO(
-                FundName("Expenses"),
-                listOf(
-                    CreateFundAccountTO(accountId)
-                )
-            )
-        )
+        val fund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
 
         val response = createJsonHttpClient().get("/bk-api/fund/v1/funds") {
             header(USER_ID_HEADER, userId)
@@ -67,8 +58,6 @@ class FundApiTest {
         assertThat(funds.items).hasSize(1)
         assertThat(funds.items.first().name).isEqualTo(FundName("Expenses"))
         assertThat(funds.items.first().id).isEqualTo(fund.id)
-        assertThat(funds.items.first().accounts).hasSize(1)
-        assertThat(funds.items.first().accounts.first().id).isEqualTo(accountId)
     }
 
     @Test
@@ -77,15 +66,7 @@ class FundApiTest {
 
         val userId = randomUUID()
         val accountId = randomUUID()
-        val fund = fundRepository.save(
-            userId,
-            CreateFundTO(
-                FundName("Savings"),
-                listOf(
-                    CreateFundAccountTO(accountId)
-                )
-            )
-        )
+        val fund = fundRepository.save(userId, CreateFundTO(FundName("Savings")))
 
         val response = createJsonHttpClient().get("/bk-api/fund/v1/funds/${fund.id}") {
             header(USER_ID_HEADER, userId)
@@ -96,12 +77,10 @@ class FundApiTest {
         assertThat(fundTO).isNotNull
         assertThat(fundTO.name).isEqualTo(FundName("Savings"))
         assertThat(fundTO.id).isEqualTo(fund.id)
-        assertThat(fundTO.accounts).hasSize(1)
-        assertThat(fundTO.accounts.first().id).isEqualTo(accountId)
     }
 
     @Test
-    fun `test create fund`(mockServerClient: MockServerClient) = testApplication {
+    fun `test create fund`(mockServerClient: MockServerClient): Unit = testApplication {
         configureEnvironmentWithDB(appConfig) { testModule() }
 
         val userId = randomUUID()
@@ -134,36 +113,25 @@ class FundApiTest {
         val response = createJsonHttpClient().post("/bk-api/fund/v1/funds") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
-            setBody(
-                CreateFundTO(
-                    FundName("Investment Portfolio"),
-                    listOf(
-                        CreateFundAccountTO(accountId)
-                    )
-                )
-            )
+            setBody(CreateFundTO(FundName("Investment Portfolio")))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Created)
         val fundTO = response.body<FundTO>()
         assertThat(fundTO).isNotNull
         assertThat(fundTO.name).isEqualTo(FundName("Investment Portfolio"))
-        assertThat(fundTO.accounts).hasSize(1)
-        assertThat(fundTO.accounts.first().id).isEqualTo(accountId)
 
         val dbFund = fundRepository.findById(userId, fundTO.id)
         assertThat(dbFund).isNotNull
         assertThat(dbFund!!.name).isEqualTo(FundName("Investment Portfolio"))
         assertThat(dbFund.userId).isEqualTo(userId)
-        assertThat(dbFund.accounts).hasSize(1)
-        assertThat(dbFund.accounts.first().id).isEqualTo(accountId)
     }
 
     @Test
     fun `test delete fund by id`() = testApplication {
         configureEnvironmentWithDB(appConfig) { testModule() }
         val userId = randomUUID()
-        val fund = fundRepository.save(userId, CreateFundTO(FundName("Company"), listOf()))
+        val fund = fundRepository.save(userId, CreateFundTO(FundName("Company")))
 
         val response = createJsonHttpClient().delete("/bk-api/fund/v1/funds/${fund.id}") {
             header(USER_ID_HEADER, userId)

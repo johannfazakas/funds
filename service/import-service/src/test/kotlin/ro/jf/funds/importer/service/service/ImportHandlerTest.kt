@@ -144,6 +144,5 @@ class ImportHandlerTest {
         FundTO(
             id = randomUUID(),
             name = FundName(name),
-            accounts = emptyList()
         )
 }

@@ -27,7 +27,6 @@ import ro.jf.bk.commons.test.utils.createJsonHttpClient
 import ro.jf.bk.commons.web.USER_ID_HEADER
 import ro.jf.bk.fund.api.model.FundName
 import ro.jf.bk.fund.api.model.FundTO
-import ro.jf.bk.fund.api.model.FundTransactionTO
 import ro.jf.bk.fund.sdk.FundSdk
 import ro.jf.bk.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.api.model.*
@@ -72,8 +71,8 @@ class ImportApiTest {
         )
         whenever(fundSdk.listFunds(userId)).thenReturn(
             listOf(
-                FundTO(randomUUID(), FundName("Expenses"), listOf()),
-                FundTO(randomUUID(), FundName("Work"), listOf())
+                FundTO(randomUUID(), FundName("Expenses")),
+                FundTO(randomUUID(), FundName("Work"))
             )
         )
         whenever(fundTransactionSdk.createTransaction(eq(userId), any())).thenReturn(mock())
