@@ -1,12 +1,7 @@
 package ro.jf.funds.fund.sdk
 // TODO(Johann) change base package
 
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -26,19 +21,7 @@ import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerExtension::class)
 class FundSdkTest {
-    private val fundSdk = FundSdk(
-        baseUrl = MockServerExtension.baseUrl,
-        // TODO(Johann) extract to commons test, or have a default client in the SDK. might be even better
-        httpClient = HttpClient(CIO) {
-            install(ContentNegotiation) {
-                json(Json {
-                    prettyPrint = true
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                })
-            }
-        }
-    )
+    private val fundSdk = FundSdk(baseUrl = MockServerExtension.baseUrl,)
 
     @Test
     fun `test list funds`(mockServerClient: MockServerClient): Unit = runBlocking {

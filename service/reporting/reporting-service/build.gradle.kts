@@ -7,13 +7,13 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":account-api"))
+    implementation(project(":reporting:reporting-api"))
     implementation(project(":commons-service"))
     testImplementation(project(":commons-test"))
 }
 
 application {
-    mainClass.set("ro.jf.funds.account.service.AccountServiceApplicationKt")
+    mainClass.set("ro.jf.funds.reporting.service.ReportingServiceApplicationKt")
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
@@ -21,7 +21,7 @@ application {
 ktor {
     docker {
         jreVersion.set(JavaVersion.VERSION_17)
-        localImageName.set("funds/account-service")
+        localImageName.set("funds/reporting-service")
     }
 }
 

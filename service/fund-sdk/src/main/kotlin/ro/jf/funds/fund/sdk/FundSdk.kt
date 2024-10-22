@@ -1,5 +1,4 @@
 package ro.jf.funds.fund.sdk
-// TODO(Johann) change package of all classes to ro.jf.funds.*
 
 import io.ktor.client.*
 import io.ktor.client.call.*
