@@ -23,7 +23,7 @@ application {
 ktor {
     // TODO(Johann) check build image & publish tasks dependencies
     docker {
-        jreVersion.set(JreVersion.JRE_17)
+        jreVersion.set(JavaVersion.VERSION_17)
         localImageName.set("funds/fund-service")
     }
 }

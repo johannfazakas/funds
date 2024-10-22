@@ -24,7 +24,7 @@ application {
 
 ktor {
     docker {
-        jreVersion.set(JreVersion.JRE_17)
+        jreVersion.set(JavaVersion.VERSION_17)
         localImageName.set("funds/import-service")
     }
 }

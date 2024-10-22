@@ -6,7 +6,7 @@ import ro.jf.bk.fund.api.model.FundName
 import java.math.BigDecimal
 
 data class ImportTransaction(
-    // TODO(Johann) should this be called a hash? How will it be used downstream?
+    // TODO(Johann) should this be called a hash? How will it be used downstream? Will it be?
     val transactionId: String,
     val dateTime: LocalDateTime,
     val records: List<ImportRecord>
