@@ -1,6 +1,6 @@
 package ro.jf.funds.importer.service.web.mapper
 
-import ro.jf.bk.commons.model.ProblemTO
+import ro.jf.funds.commons.model.ProblemTO
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import ro.jf.funds.importer.service.domain.exception.ImportException
 import ro.jf.funds.importer.service.domain.exception.ImportFormatException

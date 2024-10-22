@@ -2,7 +2,7 @@ import io.ktor.plugin.features.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
-    id("bookkeeper.kotlin-application-conventions")
+    id("funds.kotlin-application-conventions")
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.serialization)
 }

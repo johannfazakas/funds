@@ -1,7 +1,7 @@
 ktor:
   application:
     modules:
-      - ro.jf.bk.fund.service.FundServiceApplicationKt.module
+      - ro.jf.funds.fund.service.FundServiceApplicationKt.module
   deployment:
     port: 5253
 database:

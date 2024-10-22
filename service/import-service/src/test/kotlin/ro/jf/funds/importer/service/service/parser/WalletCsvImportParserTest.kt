@@ -3,8 +3,8 @@ package ro.jf.funds.importer.service.service.parser
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import ro.jf.bk.account.api.model.AccountName
-import ro.jf.bk.fund.api.model.FundName
+import ro.jf.funds.account.api.model.AccountName
+import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO

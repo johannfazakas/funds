@@ -1,7 +1,7 @@
 package ro.jf.funds.importer.api.model
 
 import kotlinx.serialization.Serializable
-import ro.jf.bk.account.api.model.AccountName
+import ro.jf.funds.account.api.model.AccountName
 
 @Serializable
 data class AccountMatcherTO(

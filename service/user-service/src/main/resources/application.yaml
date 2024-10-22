@@ -1,7 +1,7 @@
 ktor:
   application:
     modules:
-      - ro.jf.bk.user.service.UserServiceApplicationKt.module
+      - ro.jf.funds.user.service.UserServiceApplicationKt.module
   deployment:
     port: 5247
 database:

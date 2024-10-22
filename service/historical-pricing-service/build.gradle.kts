@@ -13,7 +13,7 @@ val poi_version: String by project
 
 plugins {
     // TODO(Johann) align service with others, use common versions
-    id("bookkeeper.kotlin-application-conventions")
+    id("funds.kotlin-application-conventions")
     id("io.ktor.plugin") version "2.3.12"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
 }
