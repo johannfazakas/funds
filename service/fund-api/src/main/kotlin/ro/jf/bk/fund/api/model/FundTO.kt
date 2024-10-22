@@ -9,12 +9,4 @@ data class FundTO(
     @Serializable(with = UUIDSerializer::class)
     val id: UUID,
     val name: FundName,
-    // TODO(Johann) not required actually, right?
-    val accounts: List<FundAccountTO>
-)
-
-@Serializable
-data class FundAccountTO(
-    @Serializable(with = UUIDSerializer::class)
-    val id: UUID
 )

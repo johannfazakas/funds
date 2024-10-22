@@ -79,8 +79,6 @@ class FundSdkTest {
         assertThat(funds).hasSize(1)
         assertThat(funds[0].id).isEqualTo(fundId)
         assertThat(funds[0].name).isEqualTo(FundName("Expenses"))
-        assertThat(funds[0].accounts).hasSize(1)
-        assertThat(funds[0].accounts[0].id).isEqualTo(accountId)
     }
 
     @Test
@@ -117,7 +115,5 @@ class FundSdkTest {
 
         assertThat(fund.id).isEqualTo(fundId)
         assertThat(fund.name).isEqualTo(FundName("Expenses"))
-        assertThat(fund.accounts).hasSize(1)
-        assertThat(fund.accounts[0].id).isEqualTo(accountId)
     }
 }
