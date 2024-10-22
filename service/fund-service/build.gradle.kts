@@ -2,7 +2,7 @@ import io.ktor.plugin.features.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
-    id("bookkeeper.kotlin-application-conventions")
+    id("funds.kotlin-application-conventions")
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.serialization)
 }
@@ -15,7 +15,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("ro.jf.bk.fund.service.FundServiceApplicationKt")
+    mainClass.set("ro.jf.funds.fund.service.FundServiceApplicationKt")
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }

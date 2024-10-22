@@ -1,8 +1,8 @@
 package ro.jf.funds.importer.service.domain
 
 import kotlinx.datetime.LocalDateTime
-import ro.jf.bk.account.api.model.AccountName
-import ro.jf.bk.fund.api.model.FundName
+import ro.jf.funds.account.api.model.AccountName
+import ro.jf.funds.fund.api.model.FundName
 import java.math.BigDecimal
 
 data class ImportTransaction(

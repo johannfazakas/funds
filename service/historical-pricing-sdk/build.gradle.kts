@@ -1,6 +1,6 @@
 
 plugins {
-    id("bookkeeper.kotlin-library-conventions")
+    id("funds.kotlin-library-conventions")
 }
 
 dependencies {

@@ -11,10 +11,10 @@ import org.mockserver.client.MockServerClient
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.bk.account.api.model.AccountName
-import ro.jf.bk.commons.test.extension.MockServerExtension
-import ro.jf.bk.commons.web.USER_ID_HEADER
-import ro.jf.bk.fund.api.model.FundName
+import ro.jf.funds.account.api.model.AccountName
+import ro.jf.funds.commons.test.extension.MockServerExtension
+import ro.jf.funds.commons.web.USER_ID_HEADER
+import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
