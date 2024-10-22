@@ -13,11 +13,11 @@ import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.user.api.model.CreateUserTO
 import ro.jf.funds.user.api.model.UserTO
 import ro.jf.funds.user.service.adapter.persistence.UserExposedRepository
 import ro.jf.funds.user.service.domain.command.CreateUserCommand
-import ro.jf.funds.user.service.extension.PostgresContainerExtension
 import java.util.UUID.randomUUID
 
 @ExtendWith(PostgresContainerExtension::class)

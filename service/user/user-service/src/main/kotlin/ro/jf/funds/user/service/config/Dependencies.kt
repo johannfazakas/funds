@@ -36,7 +36,7 @@ fun Application.configureDependencies() {
                 )
             }
             single<UserRepository> { UserExposedRepository(get()) }
-//            Johann!! is the HttpClient dependency needed? Historical Pricing could be used as an sdk.
+//            TODO(Johann)!! is the HttpClient dependency needed? Historical Pricing could be used as an sdk.
             single {
                 HttpClient(CIO) {
                     install(ContentNegotiation) {
