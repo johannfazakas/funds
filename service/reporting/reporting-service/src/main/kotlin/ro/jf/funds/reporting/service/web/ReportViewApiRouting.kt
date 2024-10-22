@@ -21,7 +21,7 @@ fun Routing.reportingViewApiRouting(
             val userId = call.userId()
             val request = call.receive<CreateReportViewTO>()
             log.info { "Create report view request for user $userId: $request" }
-            val response = CreateReportViewTaskTO.Completed(
+            val response: CreateReportViewTaskTO = CreateReportViewTaskTO.Completed(
                 taskId = randomUUID(),
                 report = ReportViewTO(
                     name = request.name,

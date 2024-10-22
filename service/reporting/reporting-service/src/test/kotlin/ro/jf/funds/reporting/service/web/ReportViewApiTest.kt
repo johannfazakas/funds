@@ -22,7 +22,7 @@ class ReportViewApiTest {
     private val expenseReportName = "Expense Report"
 
     @Test
-    fun `test valid import`() = testApplication {
+    fun `given create report view`() = testApplication {
         configureEnvironmentWithDB { module() }
 
         val httpClient = createJsonHttpClient()
@@ -40,13 +40,12 @@ class ReportViewApiTest {
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Accepted)
-        // TODO(Johann) investigate why serialization does not inject serial name type
-//        val createReportViewTaskTO = response.body<CreateReportViewTaskTO>()
-//        assertThat(createReportViewTaskTO.taskId).isNotNull
-//        assertThat(createReportViewTaskTO).isInstanceOf(CreateReportViewTaskTO.Completed::class.java)
-//        createReportViewTaskTO as CreateReportViewTaskTO.Completed
-//        assertThat(createReportViewTaskTO.report.name).isEqualTo(expenseReportName)
-//        assertThat(createReportViewTaskTO.report.fundId).isEqualTo(expenseFundId)
-//        assertThat(createReportViewTaskTO.report.type).isEqualTo(ReportViewTypeTO.EXPENSE)
+        val createReportViewTaskTO = response.body<CreateReportViewTaskTO>()
+        assertThat(createReportViewTaskTO.taskId).isNotNull
+        assertThat(createReportViewTaskTO).isInstanceOf(CreateReportViewTaskTO.Completed::class.java)
+        createReportViewTaskTO as CreateReportViewTaskTO.Completed
+        assertThat(createReportViewTaskTO.report.name).isEqualTo(expenseReportName)
+        assertThat(createReportViewTaskTO.report.fundId).isEqualTo(expenseFundId)
+        assertThat(createReportViewTaskTO.report.type).isEqualTo(ReportViewTypeTO.EXPENSE)
     }
 }
