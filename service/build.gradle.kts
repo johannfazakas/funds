@@ -19,12 +19,14 @@ subprojects {
     apply(plugin = "maven-publish")
     apply(plugin = "kotlin")
 
-    tasks.named("build") {
-        dependsOn(tasks.named("publishToMavenLocal"))
-    }
+    tasks.register("installLocal") {
+        group = "build"
+        description = "Build the artifact, publish it to local maven, create docker image in local registry"
 
-    tasks.named("build") {
-        dependsOn(tasks.named("test"))
+        dependsOn("build", "publishToMavenLocal")
+        if (tasks.findByName("publishImageToLocalRegistry") != null) {
+            dependsOn("publishImageToLocalRegistry")
+        }
     }
 
     publishing {
