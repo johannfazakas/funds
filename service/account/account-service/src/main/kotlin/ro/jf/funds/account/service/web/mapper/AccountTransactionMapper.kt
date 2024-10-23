@@ -18,5 +18,6 @@ fun AccountRecord.toTO() = AccountRecordTO(
     id = id,
     accountId = accountId,
     amount = amount,
+    unit = unit,
     metadata = metadata,
 )

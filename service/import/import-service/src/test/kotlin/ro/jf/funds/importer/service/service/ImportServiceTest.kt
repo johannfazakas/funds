@@ -8,11 +8,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
-import ro.jf.funds.importer.service.domain.*
+import ro.jf.funds.importer.service.domain.ImportTransaction
 import ro.jf.funds.importer.service.service.parser.ImportParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
-import ro.jf.funds.importer.service.service.ImportHandler
-import ro.jf.funds.importer.service.service.ImportService
 import java.util.UUID.randomUUID
 
 class ImportServiceTest {

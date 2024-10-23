@@ -14,14 +14,14 @@ import org.koin.ktor.ext.get
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
-import ro.jf.funds.fund.service.config.configureRouting
-import ro.jf.funds.fund.service.config.fundsAppModule
 import ro.jf.funds.account.api.model.AccountRecordTO
 import ro.jf.funds.account.api.model.AccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountRecordTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.account.sdk.AccountTransactionSdk
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.service.config.configureContentNegotiation
 import ro.jf.funds.commons.service.config.configureDatabaseMigration
 import ro.jf.funds.commons.service.config.configureDependencies
@@ -33,6 +33,8 @@ import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
+import ro.jf.funds.fund.service.config.configureRouting
+import ro.jf.funds.fund.service.config.fundsAppModule
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
@@ -60,11 +62,13 @@ class FundTransactionApiTest {
                         CreateAccountRecordTO(
                             accountId = companyAccountId,
                             amount = BigDecimal("-100.25"),
+                            unit = Currency.RON,
                             metadata = mapOf("fundId" to workFundId.toString())
                         ),
                         CreateAccountRecordTO(
                             accountId = personalAccountId,
                             amount = BigDecimal("100.25"),
+                            unit = Currency.RON,
                             metadata = mapOf("fundId" to expensesFundId.toString())
                         )
                     ),
@@ -80,12 +84,14 @@ class FundTransactionApiTest {
                         id = randomUUID(),
                         accountId = companyAccountId,
                         amount = BigDecimal("-100.25"),
+                        unit = Currency.RON,
                         metadata = mapOf("fundId" to workFundId.toString())
                     ),
                     AccountRecordTO(
                         id = randomUUID(),
                         accountId = personalAccountId,
                         amount = BigDecimal("100.25"),
+                        unit = Currency.RON,
                         metadata = mapOf("fundId" to expensesFundId.toString())
                     )
                 ),
@@ -104,11 +110,13 @@ class FundTransactionApiTest {
                             CreateFundRecordTO(
                                 fundId = workFundId,
                                 accountId = companyAccountId,
+                                unit = Currency.RON,
                                 amount = BigDecimal("-100.25"),
                             ),
                             CreateFundRecordTO(
                                 fundId = expensesFundId,
                                 accountId = personalAccountId,
+                                unit = Currency.RON,
                                 amount = BigDecimal("100.25"),
                             )
                         )
@@ -150,25 +158,29 @@ class FundTransactionApiTest {
         val transactionTime = LocalDateTime.parse(rawTransactionTime)
 
         whenever(accountTransactionSdk.listTransactions(userId)).thenReturn(
-            listOf(
-                AccountTransactionTO(
-                    id = transactionId,
-                    dateTime = transactionTime,
-                    records = listOf(
-                        AccountRecordTO(
-                            id = record1Id,
-                            accountId = account1Id,
-                            amount = BigDecimal(100.25),
-                            metadata = mapOf("fundId" to fund1Id.toString()),
+            ListTO(
+                listOf(
+                    AccountTransactionTO(
+                        id = transactionId,
+                        dateTime = transactionTime,
+                        records = listOf(
+                            AccountRecordTO(
+                                id = record1Id,
+                                accountId = account1Id,
+                                amount = BigDecimal(100.25),
+                                unit = Currency.RON,
+                                metadata = mapOf("fundId" to fund1Id.toString()),
+                            ),
+                            AccountRecordTO(
+                                id = record2Id,
+                                accountId = account2Id,
+                                amount = BigDecimal(50.75),
+                                unit = Currency.RON,
+                                metadata = mapOf("fundId" to fund2Id.toString()),
+                            )
                         ),
-                        AccountRecordTO(
-                            id = record2Id,
-                            accountId = account2Id,
-                            amount = BigDecimal(50.75),
-                            metadata = mapOf("fundId" to fund2Id.toString()),
-                        )
-                    ),
-                    metadata = emptyMap()
+                        metadata = emptyMap()
+                    )
                 )
             )
         )
@@ -180,7 +192,7 @@ class FundTransactionApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
 
-        val transactions = response.body<ro.jf.funds.commons.model.ListTO<FundTransactionTO>>()
+        val transactions = response.body<ListTO<FundTransactionTO>>()
         assertThat(transactions.items).hasSize(1)
         val transaction = transactions.items.first()
         assertThat(transaction.id).isEqualTo(transactionId)

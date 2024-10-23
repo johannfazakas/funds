@@ -1,12 +1,12 @@
 package ro.jf.funds.importer.service.service
 
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.sdk.AccountSdk
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
+import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
@@ -22,13 +22,12 @@ class ImportHandler(
     private val fundSdk: FundSdk,
     private val fundTransactionSdk: FundTransactionSdk
 ) {
-    suspend fun import(userId: UUID, importTransactions: List<ImportTransaction>) = coroutineScope {
+    suspend fun import(userId: UUID, importTransactions: List<ImportTransaction>) {
         log.info { "Handling import >> user = $userId items size = ${importTransactions.size}." }
 
-        importTransactions
+        val transactionRequests = importTransactions
             .toTransactionRequests(createImportResourceContext(userId))
-            .map { request -> async { fundTransactionSdk.createTransaction(userId, request) } }
-            .forEach { it.await() }
+        fundTransactionSdk.createTransactions(userId, CreateFundTransactionsTO(transactionRequests))
     }
 
     private fun List<ImportTransaction>.toTransactionRequests(importResourceContext: ImportResourceContext): List<CreateFundTransactionTO> =
@@ -46,7 +45,9 @@ class ImportHandler(
         CreateFundRecordTO(
             fundId = importResourceContext.getFundId(fundName),
             accountId = importResourceContext.getAccountId(accountName),
-            amount = amount
+            amount = amount,
+            // TODO(Johann) not actually, should revisit
+            unit = Currency.RON,
         )
 
     private suspend fun createImportResourceContext(userId: UUID) = ImportResourceContext(

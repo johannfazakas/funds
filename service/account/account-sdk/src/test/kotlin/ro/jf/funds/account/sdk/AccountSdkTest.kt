@@ -1,6 +1,7 @@
 package ro.jf.funds.account.sdk
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -15,8 +16,9 @@ import org.mockserver.model.JsonSchemaBody.jsonSchema
 import org.mockserver.model.MediaType
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
-import ro.jf.funds.account.api.model.CreateCurrencyAccountTO
-import ro.jf.funds.account.api.model.CreateInstrumentAccountTO
+import ro.jf.funds.account.api.model.CreateAccountTO
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Symbol
 import ro.jf.funds.commons.test.extension.MockServerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.util.UUID.randomUUID
@@ -48,8 +50,10 @@ class AccountSdkTest {
                                 add(buildJsonObject {
                                     put("id", JsonPrimitive(accountId.toString()))
                                     put("name", JsonPrimitive(accountName.value))
-                                    put("type", JsonPrimitive("currency"))
-                                    put("currency", JsonPrimitive("RON"))
+                                    put("unit", buildJsonObject {
+                                        put("type", JsonPrimitive("currency"))
+                                        put("value", JsonPrimitive("RON"))
+                                    })
                                 })
                             })
                         }.toString()
@@ -59,11 +63,11 @@ class AccountSdkTest {
         val accounts = accountSdk.listAccounts(userId)
 
         assertThat(accounts).hasSize(1)
-        assertThat(accounts.first()).isInstanceOf(AccountTO.Currency::class.java)
-        val currencyAccount = accounts.first() as AccountTO.Currency
+        assertThat(accounts.first()).isInstanceOf(AccountTO::class.java)
+        val currencyAccount = accounts.first()
         assertThat(currencyAccount.id).isEqualTo(accountId)
         assertThat(currencyAccount.name).isEqualTo(accountName)
-        assertThat(currencyAccount.currency).isEqualTo("RON")
+        assertThat(currencyAccount.unit).isEqualTo(Currency.RON)
     }
 
     @Test
@@ -88,21 +92,22 @@ class AccountSdkTest {
                             put("id", JsonPrimitive(accountId.toString()))
                             put("name", JsonPrimitive(accountName.value))
                             put("type", JsonPrimitive("instrument"))
-                            put("currency", JsonPrimitive("RON"))
-                            put("symbol", JsonPrimitive("ICBETNETF"))
+                            put("unit", buildJsonObject {
+                                put("type", JsonPrimitive("symbol"))
+                                put("value", JsonPrimitive("ICBETNETF"))
+                            })
                         }.toString()
                     )
             )
 
         val account = accountSdk.findAccountById(userId, accountId)
 
-        assertThat(account).isInstanceOf(AccountTO.Instrument::class.java)
-        val instrumentAccount = account as AccountTO.Instrument
+        assertThat(account).isInstanceOf(AccountTO::class.java)
+        val instrumentAccount = account as AccountTO
         assertThat(account).isNotNull
         assertThat(account.id).isEqualTo(accountId)
         assertThat(account.name).isEqualTo(accountName)
-        assertThat(instrumentAccount.currency).isEqualTo("RON")
-        assertThat(instrumentAccount.symbol).isEqualTo("ICBETNETF")
+        assertThat(instrumentAccount.unit).isEqualTo(Symbol("ICBETNETF"))
     }
 
     @Test
@@ -149,15 +154,11 @@ class AccountSdkTest {
                                             put("type", JsonPrimitive("string"))
                                             put("pattern", JsonPrimitive(accountName.value))
                                         })
-                                        put("currency", buildJsonObject {
-                                            put("type", JsonPrimitive("string"))
-                                            put("pattern", JsonPrimitive("RON"))
-                                        })
                                     }
                                 )
                                 put("required", buildJsonArray {
                                     add(JsonPrimitive("name"))
-                                    add(JsonPrimitive("currency"))
+                                    add(JsonPrimitive("unit"))
                                 })
                             }.toString()
                         )
@@ -172,83 +173,20 @@ class AccountSdkTest {
                             put("id", JsonPrimitive(accountId.toString()))
                             put("type", JsonPrimitive("currency"))
                             put("name", JsonPrimitive(accountName.value))
-                            put("currency", JsonPrimitive("RON"))
+                            put("unit", buildJsonObject {
+                                put("type", JsonPrimitive("currency"))
+                                put("value", JsonPrimitive("RON"))
+                            })
                         }.toString()
                     )
             )
 
-        val account = accountSdk.createAccount(userId, CreateCurrencyAccountTO(accountName, "RON"))
+        val account = accountSdk.createAccount(userId, CreateAccountTO(accountName, Currency.RON))
 
         assertThat(account).isNotNull
         assertThat(account.id).isEqualTo(accountId)
         assertThat(account.name).isEqualTo(accountName)
-        assertThat(account.currency).isEqualTo("RON")
-    }
-
-    @Test
-    fun `test create instrument account`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val userId = randomUUID()
-        val accountId = randomUUID()
-        val accountName = AccountName("BT")
-
-        mockServerClient
-            .`when`(
-                request()
-                    .withMethod("POST")
-                    .withPath("/bk-api/account/v1/accounts/instrument")
-                    .withHeader(Header(USER_ID_HEADER, userId.toString()))
-                    .withBody(
-                        jsonSchema(
-                            buildJsonObject {
-                                put("type", JsonPrimitive("object"))
-                                put(
-                                    "properties", buildJsonObject {
-                                        put("name", buildJsonObject {
-                                            put("type", JsonPrimitive("string"))
-                                            put("pattern", JsonPrimitive(accountName.value))
-                                        })
-                                        put("currency", buildJsonObject {
-                                            put("type", JsonPrimitive("string"))
-                                            put("pattern", JsonPrimitive("RON"))
-                                        })
-                                        put("symbol", buildJsonObject {
-                                            put("type", JsonPrimitive("string"))
-                                            put("pattern", JsonPrimitive("ICBETNETF"))
-                                        })
-                                    }
-                                )
-                                put("required", buildJsonArray {
-                                    add(JsonPrimitive("name"))
-                                    add(JsonPrimitive("currency"))
-                                    add(JsonPrimitive("symbol"))
-                                })
-                            }.toString()
-                        )
-                    )
-            )
-            .respond(
-                response()
-                    .withStatusCode(201)
-                    .withContentType(MediaType.APPLICATION_JSON)
-                    .withBody(
-                        buildJsonObject {
-                            put("id", JsonPrimitive(accountId.toString()))
-                            put("name", JsonPrimitive(accountName.value))
-                            put("currency", JsonPrimitive("RON"))
-                            put("symbol", JsonPrimitive("ICBETNETF"))
-                            put("type", JsonPrimitive("instrument"))
-                        }.toString()
-                    )
-            )
-
-        val account =
-            accountSdk.createAccount(userId, CreateInstrumentAccountTO(accountName, "RON", "ICBETNETF"))
-
-        assertThat(account).isNotNull
-        assertThat(account.id).isEqualTo(accountId)
-        assertThat(account.name).isEqualTo(accountName)
-        assertThat(account.currency).isEqualTo("RON")
-        assertThat(account.symbol).isEqualTo("ICBETNETF")
+        assertThat(account.unit).isEqualTo(Currency.RON)
     }
 
     @Test

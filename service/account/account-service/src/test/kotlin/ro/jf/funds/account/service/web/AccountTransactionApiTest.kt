@@ -1,4 +1,4 @@
-package ro.jf.funds.account.service
+package ro.jf.funds.account.service.web
 
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -12,8 +12,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import ro.jf.funds.account.api.model.*
+import ro.jf.funds.account.service.module
 import ro.jf.funds.account.service.persistence.AccountRepository
 import ro.jf.funds.account.service.persistence.AccountTransactionRepository
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironmentWithDB
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
@@ -22,7 +24,7 @@ import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
 @ExtendWith(PostgresContainerExtension::class)
-class AccountAccountTransactionApiTest {
+class AccountTransactionApiTest {
     private val database by lazy {
         Database.connect(
             url = PostgresContainerExtension.jdbcUrl,
@@ -44,19 +46,21 @@ class AccountAccountTransactionApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        val account1 = accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("Revolut"), "RON"))
-        val account2 = accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("BT"), "RON"))
+        val account1 = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
+        val account2 = accountRepository.save(userId, CreateAccountTO(AccountName("BT"), Currency.RON))
         val createTransactionRequest = CreateAccountTransactionTO(
             dateTime = LocalDateTime.parse("2021-09-01T12:00:00"),
             records = listOf(
                 CreateAccountRecordTO(
                     accountId = account1.id,
                     amount = BigDecimal("123.45"),
+                    unit = Currency.RON,
                     metadata = mapOf("externalId" to "record1")
                 ),
                 CreateAccountRecordTO(
                     accountId = account2.id,
                     amount = BigDecimal("-123.45"),
+                    unit = Currency.RON,
                     metadata = mapOf("externalId" to "record2")
                 )
             ),
@@ -90,8 +94,8 @@ class AccountAccountTransactionApiTest {
 
         val userId = randomUUID()
         val dateTime = LocalDateTime(2024, 7, 22, 9, 17)
-        val account1 = accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("Revolut"), "RON"))
-        val account2 = accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("BT"), "RON"))
+        val account1 = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
+        val account2 = accountRepository.save(userId, CreateAccountTO(AccountName("BT"), Currency.RON))
         transactionRepository.save(
             userId,
             CreateAccountTransactionTO(
@@ -100,11 +104,13 @@ class AccountAccountTransactionApiTest {
                     CreateAccountRecordTO(
                         accountId = account1.id,
                         amount = BigDecimal(100.0),
+                        unit = Currency.RON,
                         metadata = mapOf("externalId" to "record1")
                     ),
                     CreateAccountRecordTO(
                         accountId = account2.id,
                         amount = BigDecimal(-100.0),
+                        unit = Currency.RON,
                         metadata = mapOf("externalId" to "record2")
                     )
                 ),
@@ -119,6 +125,7 @@ class AccountAccountTransactionApiTest {
                     CreateAccountRecordTO(
                         accountId = account1.id,
                         amount = BigDecimal(50.123),
+                        unit = Currency.RON,
                         metadata = mapOf("externalId" to "record3")
                     ),
                 ),
@@ -150,8 +157,8 @@ class AccountAccountTransactionApiTest {
 
         val userId = randomUUID()
         val dateTime = LocalDateTime(2024, 7, 22, 9, 17)
-        val account1 = accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("Revolut"), "RON"))
-        val account2 = accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("BT"), "RON"))
+        val account1 = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
+        val account2 = accountRepository.save(userId, CreateAccountTO(AccountName("BT"), Currency.RON))
         val transaction = transactionRepository.save(
             userId = userId,
             CreateAccountTransactionTO(
@@ -160,11 +167,13 @@ class AccountAccountTransactionApiTest {
                     CreateAccountRecordTO(
                         accountId = account1.id,
                         amount = BigDecimal(100.0),
-                        metadata = mapOf("externalId" to "record1")
+                        unit = Currency.RON,
+                        metadata = mapOf("externalId" to "record1"),
                     ),
                     CreateAccountRecordTO(
                         accountId = account2.id,
                         amount = BigDecimal(-100.0),
+                        unit = Currency.RON,
                         metadata = mapOf("externalId" to "record2")
                     )
                 ),

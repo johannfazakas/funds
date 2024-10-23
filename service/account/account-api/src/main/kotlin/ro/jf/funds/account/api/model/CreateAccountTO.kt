@@ -1,16 +1,10 @@
 package ro.jf.funds.account.api.model
 
 import kotlinx.serialization.Serializable
+import ro.jf.funds.commons.model.FinancialUnit
 
 @Serializable
-data class CreateCurrencyAccountTO(
+data class CreateAccountTO(
     val name: AccountName,
-    val currency: String,
-)
-
-@Serializable
-data class CreateInstrumentAccountTO(
-    val name: AccountName,
-    val currency: String,
-    val symbol: String,
+    val unit: FinancialUnit,
 )

@@ -1,11 +1,9 @@
 package ro.jf.funds.fund.service.service
 
-import ro.jf.funds.account.api.model.AccountRecordTO
-import ro.jf.funds.account.api.model.AccountTransactionTO
-import ro.jf.funds.account.api.model.CreateAccountRecordTO
-import ro.jf.funds.account.api.model.CreateAccountTransactionTO
+import ro.jf.funds.account.api.model.*
 import ro.jf.funds.account.sdk.AccountTransactionSdk
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
+import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.service.domain.FundRecord
 import ro.jf.funds.fund.service.domain.FundTransaction
 import java.util.*
@@ -16,24 +14,36 @@ class AccountTransactionAdapter(
     private val accountTransactionSdk: AccountTransactionSdk
 ) {
     suspend fun listTransactions(userId: UUID): List<FundTransaction> {
-        return accountTransactionSdk.listTransactions(userId).map { it.toFundTransaction(userId) }
+        return accountTransactionSdk.listTransactions(userId).items.map { it.toFundTransaction(userId) }
     }
 
     suspend fun createTransaction(userId: UUID, request: CreateFundTransactionTO): FundTransaction {
-        val createAccountTransactionRequest = CreateAccountTransactionTO(
-            dateTime = request.dateTime,
-            records = request.records.map { record ->
+        val createAccountTransactionRequest = request.toAccountTransactionTO()
+        return accountTransactionSdk.createTransaction(userId, createAccountTransactionRequest)
+            .toFundTransaction(userId)
+    }
+
+    suspend fun createTransactions(userId: UUID, request: CreateFundTransactionsTO): List<FundTransaction> {
+        val createAccountTransactionRequest = CreateAccountTransactionsTO(
+            request.transactions.map { it.toAccountTransactionTO() }
+        )
+        return accountTransactionSdk.createTransactions(userId, createAccountTransactionRequest).items
+            .map { it.toFundTransaction(userId) }
+    }
+
+    private fun CreateFundTransactionTO.toAccountTransactionTO() =
+        CreateAccountTransactionTO(
+            dateTime = dateTime,
+            records = records.map { record ->
                 CreateAccountRecordTO(
                     accountId = record.accountId,
                     amount = record.amount,
+                    unit = record.unit,
                     metadata = mapOf(METADATA_FUND_ID to record.fundId.toString())
                 )
             },
             metadata = emptyMap()
         )
-        return accountTransactionSdk.createTransaction(userId, createAccountTransactionRequest)
-            .toFundTransaction(userId)
-    }
 
     suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
         return accountTransactionSdk.deleteTransaction(userId, transactionId)

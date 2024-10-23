@@ -10,10 +10,8 @@ import org.mockito.kotlin.whenever
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
-import ro.jf.funds.fund.api.model.CreateFundRecordTO
-import ro.jf.funds.fund.api.model.CreateFundTransactionTO
-import ro.jf.funds.fund.api.model.FundName
-import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.service.domain.ImportRecord
@@ -60,37 +58,42 @@ class ImportHandlerTest {
 
         importHandler.import(userId, importTransactions)
 
-        verify(fundTransactionSdk).createTransaction(
+        verify(fundTransactionSdk).createTransactions(
             userId,
-            CreateFundTransactionTO(
-                dateTime = transaction1DateTime,
-                records = listOf(
-                    CreateFundRecordTO(
-                        fundId = expensedFund.id,
-                        accountId = bankAccount.id,
-                        amount = BigDecimal("-100.00")
+            CreateFundTransactionsTO(listOf(
+                CreateFundTransactionTO(
+                    dateTime = transaction1DateTime,
+                    records = listOf(
+                        CreateFundRecordTO(
+                            fundId = expensedFund.id,
+                            accountId = bankAccount.id,
+                            amount = BigDecimal("-100.00"),
+                            unit = Currency.RON
+                        )
+                    )
+                ),
+                CreateFundTransactionTO(
+                    dateTime = transaction2DateTime,
+                    records = listOf(
+                        CreateFundRecordTO(
+                            fundId = incomeFund.id,
+                            accountId = companyAccount.id,
+                            amount = BigDecimal("-50.00"),
+                            unit = Currency.RON
+                        ),
+                        CreateFundRecordTO(
+                            fundId = expensedFund.id,
+                            accountId = cashAccount.id,
+                            amount = BigDecimal("50.00"),
+                            unit = Currency.RON
+                        ),
                     )
                 )
             )
-        )
-        verify(fundTransactionSdk).createTransaction(
-            userId,
-            CreateFundTransactionTO(
-                dateTime = transaction2DateTime,
-                records = listOf(
-                    CreateFundRecordTO(
-                        fundId = incomeFund.id,
-                        accountId = companyAccount.id,
-                        amount = BigDecimal("-50.00")
-                    ),
-                    CreateFundRecordTO(
-                        fundId = expensedFund.id,
-                        accountId = cashAccount.id,
-                        amount = BigDecimal("50.00")
-                    ),
-                )
+
             )
         )
+
     }
 
     @Test
@@ -133,11 +136,11 @@ class ImportHandlerTest {
             .hasMessage("Record fund not found: Expenses")
     }
 
-    private fun account(name: String): AccountTO.Currency =
-        AccountTO.Currency(
+    private fun account(name: String): AccountTO =
+        AccountTO(
             id = randomUUID(),
             name = AccountName(name),
-            currency = "RON"
+            unit = Currency.RON
         )
 
     private fun fund(name: String): FundTO =

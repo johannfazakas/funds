@@ -4,22 +4,20 @@ import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import ro.jf.funds.account.api.model.AccountName
-import ro.jf.funds.account.api.model.CreateCurrencyAccountTO
-import ro.jf.funds.account.api.model.CreateInstrumentAccountTO
+import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.account.service.domain.Account
+import ro.jf.funds.account.service.persistence.AccountTransactionRepository.AccountRecordTable
 import ro.jf.funds.commons.service.persistence.blockingTransaction
 import java.util.*
 
 class AccountRepository(
     private val database: Database
 ) {
-
     object AccountTable : UUIDTable("account") {
         val userId = uuid("user_id")
         val name = varchar("name", 50)
-        val type = varchar("type", 50)
-        val currency = varchar("currency", 50)
-        val symbol = varchar("symbol", 50).nullable()
+        val unitType = varchar("unit_type", 50)
+        val unit = varchar("unit", 50)
     }
 
     suspend fun list(userId: UUID): List<Account> = blockingTransaction {
@@ -42,36 +40,18 @@ class AccountRepository(
             .singleOrNull()
     }
 
-    suspend fun save(userId: UUID, command: CreateCurrencyAccountTO): Account.Currency = blockingTransaction {
+    suspend fun save(userId: UUID, command: CreateAccountTO): Account = blockingTransaction {
         AccountTable.insert {
-            it[type] = "currency"
             it[AccountTable.userId] = userId
             it[name] = command.name.value
-            it[currency] = command.currency
+            it[unitType] = command.unit.toUnitType()
+            it[unit] = command.unit.value
         }.let {
-            Account.Currency(
+            Account(
                 id = it[AccountTable.id].value,
                 userId = it[AccountTable.userId],
                 name = AccountName(it[AccountTable.name]),
-                currency = it[AccountTable.currency]
-            )
-        }
-    }
-
-    suspend fun save(userId: UUID, command: CreateInstrumentAccountTO): Account.Instrument = blockingTransaction {
-        AccountTable.insert {
-            it[type] = "instrument"
-            it[AccountTable.userId] = userId
-            it[name] = command.name.value
-            it[currency] = command.currency
-            it[symbol] = command.symbol
-        }.let {
-            Account.Instrument(
-                id = it[AccountTable.id].value,
-                userId = it[AccountTable.userId],
-                name = AccountName(it[AccountTable.name]),
-                currency = it[AccountTable.currency],
-                symbol = it[AccountTable.symbol] ?: error("Symbol is missing")
+                unit = toFinancialUnit(it[AccountTable.unitType], it[AccountTable.unit]),
             )
         }
     }
@@ -89,22 +69,10 @@ class AccountRepository(
     }
 
     private fun ResultRow.toModel() =
-        when (this[AccountTable.type]) {
-            "currency" -> Account.Currency(
-                id = this[AccountTable.id].value,
-                userId = this[AccountTable.userId],
-                name = AccountName(this[AccountTable.name]),
-                currency = this[AccountTable.currency],
-            )
-
-            "instrument" -> Account.Instrument(
-                id = this[AccountTable.id].value,
-                userId = this[AccountTable.userId],
-                name = AccountName(this[AccountTable.name]),
-                currency = this[AccountTable.currency],
-                symbol = this[AccountTable.symbol] ?: error("Symbol is missing")
-            )
-
-            else -> error("Unknown account type")
-        }
+        Account(
+            id = this[AccountTable.id].value,
+            userId = this[AccountTable.userId],
+            name = AccountName(this[AccountTable.name]),
+            unit = toFinancialUnit(this[AccountTable.unitType], this[AccountTable.unit]),
+        )
 }

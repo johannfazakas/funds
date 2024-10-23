@@ -8,8 +8,8 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.AccountApi
 import ro.jf.funds.account.api.exception.AccountApiException
 import ro.jf.funds.account.api.model.AccountTO
-import ro.jf.funds.account.api.model.CreateCurrencyAccountTO
-import ro.jf.funds.account.api.model.CreateInstrumentAccountTO
+import ro.jf.funds.account.api.model.CreateAccountTO
+import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.sdk.client.createHttpClient
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.util.*
@@ -31,9 +31,9 @@ class AccountSdk(
         }
         if (response.status != HttpStatusCode.OK) {
             log.warn { "Unexpected response on list accounts: $response" }
-            return emptyList()
+            throw response.body<AccountApiException>()
         }
-        val accounts = response.body<ro.jf.funds.commons.model.ListTO<AccountTO>>()
+        val accounts = response.body<ListTO<AccountTO>>()
         log.debug { "Retrieved accounts: $accounts" }
         return accounts.items
     }
@@ -56,13 +56,13 @@ class AccountSdk(
             }
 
             else -> {
-                log.warn { "Unexpected response on find account by id: $response" }
-                throw AccountApiException.Generic(response)
+                log.warn { "Error response on find account by id: $response" }
+                throw response.body<AccountApiException>()
             }
         }
     }
 
-    override suspend fun createAccount(userId: UUID, request: CreateCurrencyAccountTO): AccountTO.Currency {
+    override suspend fun createAccount(userId: UUID, request: CreateAccountTO): AccountTO {
         val response = httpClient.post("$baseUrl$BASE_PATH/accounts/currency") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -72,28 +72,10 @@ class AccountSdk(
         }
         return when (response.status) {
             HttpStatusCode.Created -> response.body()
-            HttpStatusCode.Conflict -> throw AccountApiException.AccountNameAlreadyExists(request.name)
             else -> {
                 log.warn { "Unexpected response on create currency account: $response" }
-                throw AccountApiException.Generic(response)
-            }
-        }
-    }
-
-    override suspend fun createAccount(userId: UUID, request: CreateInstrumentAccountTO): AccountTO.Instrument {
-        val response = httpClient.post("$baseUrl$BASE_PATH/accounts/instrument") {
-            headers {
-                append(USER_ID_HEADER, userId.toString())
-            }
-            contentType(ContentType.Application.Json)
-            setBody(request)
-        }
-        return when (response.status) {
-            HttpStatusCode.Created -> response.body()
-            HttpStatusCode.Conflict -> throw AccountApiException.AccountNameAlreadyExists(request.name)
-            else -> {
-                log.warn { "Unexpected response on create instrument account: $response" }
-                throw AccountApiException.Generic(response)
+                // TODO(Johann) could add something in commons for problem bodies
+                throw response.body<AccountApiException>()
             }
         }
     }
@@ -106,7 +88,7 @@ class AccountSdk(
         }
         if (response.status != HttpStatusCode.NoContent) {
             log.warn { "Unexpected response on delete account: $response" }
-            throw AccountApiException.Generic(response)
+            throw response.body<AccountApiException>()
         }
     }
 }

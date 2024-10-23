@@ -8,13 +8,13 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.model.ProblemTO
 import ro.jf.funds.commons.service.routing.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import ro.jf.funds.importer.service.domain.exception.ImportException
 import ro.jf.funds.importer.service.domain.exception.ImportFormatException
+import ro.jf.funds.importer.service.domain.exception.MissingImportConfigurationException
 import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.web.mapper.toProblem
 
@@ -35,7 +35,10 @@ fun Routing.importApiRouting(
             val rawFileParts = requestParts.rawFileParts()
 
             val importConfiguration: ImportConfigurationTO = requestParts.importConfigurationPart()
-                ?: return@post call.respond(HttpStatusCode.BadRequest, ProblemTO("Import configuration missing."))
+                ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    MissingImportConfigurationException("Missing import configuration").toProblem()
+                )
 
             try {
                 importService.import(userId, importConfiguration, rawFileParts)
@@ -46,6 +49,8 @@ fun Routing.importApiRouting(
                 val statusCode = when (importException) {
                     is ImportFormatException -> HttpStatusCode.BadRequest
                     is ImportDataException -> HttpStatusCode.BadRequest
+                    // TODO(Johann) this shouldn't be necessary
+                    else -> HttpStatusCode.InternalServerError
                 }
                 return@post call.respond(statusCode, importException.toProblem())
             }
