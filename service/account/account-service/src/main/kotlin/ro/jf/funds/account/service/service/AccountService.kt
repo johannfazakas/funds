@@ -1,8 +1,7 @@
 package ro.jf.funds.account.service.service
 
 import ro.jf.funds.account.api.model.AccountName
-import ro.jf.funds.account.api.model.CreateCurrencyAccountTO
-import ro.jf.funds.account.api.model.CreateInstrumentAccountTO
+import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.account.service.domain.Account
 import ro.jf.funds.account.service.persistence.AccountRepository
 import java.util.*
@@ -24,15 +23,8 @@ class AccountService(
 
     suspend fun createAccount(
         userId: UUID,
-        createAccountCommand: CreateCurrencyAccountTO
-    ): Account.Currency {
-        return accountRepository.save(userId, createAccountCommand)
-    }
-
-    suspend fun createAccount(
-        userId: UUID,
-        createAccountCommand: CreateInstrumentAccountTO
-    ): Account.Instrument {
+        createAccountCommand: CreateAccountTO
+    ): Account {
         return accountRepository.save(userId, createAccountCommand)
     }
 

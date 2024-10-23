@@ -6,3 +6,5 @@ class ImportFormatException(message: String, cause: Throwable? = null) : ImportE
 
 // TODO(Johann) could actually be more detailed?
 class ImportDataException(message: String, cause: Throwable? = null) : ImportException(message, cause)
+
+class MissingImportConfigurationException(message: String) : ImportException(message)

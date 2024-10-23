@@ -1,25 +1,13 @@
 package ro.jf.funds.account.service.domain
 
 import ro.jf.funds.account.api.model.AccountName
+import ro.jf.funds.commons.model.FinancialUnit
 import java.util.*
 
-sealed class Account {
-    abstract val id: UUID
-    abstract val userId: UUID
-    abstract val name: AccountName
 
-    data class Currency(
-        override val id: UUID,
-        override val userId: UUID,
-        override val name: AccountName,
-        val currency: String,
-    ) : Account()
-
-    data class Instrument(
-        override val id: UUID,
-        override val userId: UUID,
-        override val name: AccountName,
-        val currency: String,
-        val symbol: String
-    ) : Account()
-}
+data class Account(
+    val id: UUID,
+    val userId: UUID,
+    val name: AccountName,
+    val unit: FinancialUnit,
+)

@@ -33,7 +33,7 @@ fun Application.configureDependencies() {
             single<AccountRepository> { AccountRepository(get()) }
             single<AccountService> { AccountService(get()) }
             single<AccountTransactionRepository> { AccountTransactionRepository(get()) }
-            single<AccountTransactionService> { AccountTransactionService(get()) }
+            single<AccountTransactionService> { AccountTransactionService(get(), get()) }
         })
     }
 }

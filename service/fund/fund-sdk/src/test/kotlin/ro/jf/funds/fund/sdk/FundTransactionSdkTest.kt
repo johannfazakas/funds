@@ -18,6 +18,7 @@ import org.mockserver.model.Header
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.test.extension.MockServerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
@@ -87,7 +88,8 @@ class FundTransactionSdkTest {
                     CreateFundRecordTO(
                         accountId = accountId,
                         fundId = fundId,
-                        amount = BigDecimal(amount)
+                        amount = BigDecimal(amount),
+                        unit = Currency.RON
                     )
                 )
             )
@@ -149,9 +151,9 @@ class FundTransactionSdkTest {
 
         val transactions = fundTransactionSdk.listTransactions(userId)
 
-        assertThat(transactions).hasSize(1)
-        assertThat(transactions.first()).isInstanceOf(FundTransactionTO::class.java)
-        val transaction = transactions.first()
+        assertThat(transactions.items).hasSize(1)
+        assertThat(transactions.items.first()).isInstanceOf(FundTransactionTO::class.java)
+        val transaction = transactions.items.first()
         assertThat(transaction.id).isEqualTo(transactionId)
         assertThat(transaction.dateTime.toString()).isEqualTo(dateTime)
         assertThat(transaction.records).hasSize(1)

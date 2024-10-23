@@ -1,5 +1,4 @@
 package ro.jf.funds.fund.sdk
-// TODO(Johann) change base package
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
@@ -21,7 +20,7 @@ import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerExtension::class)
 class FundSdkTest {
-    private val fundSdk = FundSdk(baseUrl = MockServerExtension.baseUrl,)
+    private val fundSdk = FundSdk(baseUrl = MockServerExtension.baseUrl)
 
     @Test
     fun `test list funds`(mockServerClient: MockServerClient): Unit = runBlocking {

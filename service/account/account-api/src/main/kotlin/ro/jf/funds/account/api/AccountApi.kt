@@ -1,8 +1,7 @@
 package ro.jf.funds.account.api
 
 import ro.jf.funds.account.api.model.AccountTO
-import ro.jf.funds.account.api.model.CreateCurrencyAccountTO
-import ro.jf.funds.account.api.model.CreateInstrumentAccountTO
+import ro.jf.funds.account.api.model.CreateAccountTO
 import java.util.*
 
 interface AccountApi {
@@ -10,9 +9,7 @@ interface AccountApi {
 
     suspend fun findAccountById(userId: UUID, accountId: UUID): AccountTO?
 
-    suspend fun createAccount(userId: UUID, request: CreateCurrencyAccountTO): AccountTO.Currency
-
-    suspend fun createAccount(userId: UUID, request: CreateInstrumentAccountTO): AccountTO.Instrument
+    suspend fun createAccount(userId: UUID, request: CreateAccountTO): AccountTO
 
     suspend fun deleteAccountById(userId: UUID, accountId: UUID)
 }

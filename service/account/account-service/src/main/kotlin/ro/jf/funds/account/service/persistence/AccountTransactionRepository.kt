@@ -7,6 +7,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.javatime.datetime
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
+import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
 import ro.jf.funds.account.service.domain.AccountRecord
 import ro.jf.funds.account.service.domain.AccountTransaction
 import ro.jf.funds.account.service.persistence.AccountRepository.AccountTable
@@ -17,7 +18,6 @@ import java.util.*
 class AccountTransactionRepository(
     private val database: Database
 ) {
-
     object AccountTransactionTable : UUIDTable("transaction") {
         val userId = uuid("user_id")
         val dateTime = datetime("date_time")
@@ -29,6 +29,8 @@ class AccountTransactionRepository(
         val transactionId = uuid("transaction_id").references(AccountTransactionTable.id)
         val accountId = uuid("account_id").references(AccountTable.id)
         val amount = decimal("amount", 20, 8)
+        val unitType = varchar("unit_type", 50)
+        val unit = varchar("unit", 50)
         val metadata = jsonb(name = "metadata")
     }
 
@@ -48,6 +50,20 @@ class AccountTransactionRepository(
     }
 
     suspend fun save(userId: UUID, command: CreateAccountTransactionTO): AccountTransaction = blockingTransaction {
+        saveTransaction(userId, command)
+    }
+
+    suspend fun saveAll(
+        userId: UUID,
+        requests: CreateAccountTransactionsTO
+    ): List<AccountTransaction> = blockingTransaction {
+        requests.transactions.map { saveTransaction(userId, it) }
+    }
+
+    private fun saveTransaction(
+        userId: UUID,
+        command: CreateAccountTransactionTO
+    ): AccountTransaction {
         val transaction = AccountTransactionTable.insert {
             it[AccountTransactionTable.userId] = userId
             it[dateTime] = command.dateTime.toJavaLocalDateTime()
@@ -60,10 +76,12 @@ class AccountTransactionRepository(
                 it[AccountRecordTable.transactionId] = transactionId
                 it[accountId] = record.accountId
                 it[amount] = record.amount
+                it[unit] = record.unit.value
+                it[unitType] = record.unit.toUnitType()
                 it[metadata] = record.metadata
             }
         }
-        AccountTransaction(
+        return AccountTransaction(
             id = transactionId,
             userId = transaction[AccountTransactionTable.userId],
             dateTime = transaction[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
@@ -72,6 +90,7 @@ class AccountTransactionRepository(
                     id = it[AccountRecordTable.id].value,
                     accountId = it[AccountRecordTable.accountId],
                     amount = it[AccountRecordTable.amount],
+                    unit =  toFinancialUnit(it[AccountRecordTable.unitType], it[AccountRecordTable.unit]),
                     metadata = it[AccountRecordTable.metadata]
                 )
             },
@@ -102,6 +121,7 @@ class AccountTransactionRepository(
                 id = it[AccountRecordTable.id].value,
                 accountId = it[AccountRecordTable.accountId],
                 amount = it[AccountRecordTable.amount],
+                unit = toFinancialUnit(it[AccountRecordTable.unitType], it[AccountRecordTable.unit]),
                 metadata = it[AccountRecordTable.metadata]
             )
         }

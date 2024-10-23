@@ -19,9 +19,10 @@ import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.JsonSchemaBody.jsonSchema
 import org.mockserver.model.MediaType
+import ro.jf.funds.account.api.model.AccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountRecordTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
-import ro.jf.funds.account.api.model.AccountTransactionTO
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.test.extension.MockServerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.math.BigDecimal
@@ -100,6 +101,10 @@ class AccountTransactionSdkTest {
                                     put("id", JsonPrimitive(recordId1.toString()))
                                     put("accountId", JsonPrimitive(randomUUID().toString()))
                                     put("amount", JsonPrimitive(100.25))
+                                    put("unit", buildJsonObject {
+                                        put("type", JsonPrimitive("currency"))
+                                        put("value", JsonPrimitive("RON"))
+                                    })
                                     put("metadata", buildJsonObject {
                                         put("external_id", JsonPrimitive("1111"))
                                     })
@@ -108,6 +113,10 @@ class AccountTransactionSdkTest {
                                     put("id", JsonPrimitive(recordId2.toString()))
                                     put("accountId", JsonPrimitive(randomUUID().toString()))
                                     put("amount", JsonPrimitive(-100.25))
+                                    put("unit", buildJsonObject {
+                                        put("type", JsonPrimitive("currency"))
+                                        put("value", JsonPrimitive("RON"))
+                                    })
                                     put("metadata", buildJsonObject {
                                         put("external_id", JsonPrimitive("2222"))
                                     })
@@ -122,8 +131,8 @@ class AccountTransactionSdkTest {
         val createTransactionRequest = CreateAccountTransactionTO(
             dateTime = transactionDateTime,
             records = listOf(
-                CreateAccountRecordTO(randomUUID(), BigDecimal("100.25"), mapOf("external_id" to "1111")),
-                CreateAccountRecordTO(randomUUID(), BigDecimal("-100.25"), mapOf("external_id" to "2222"))
+                CreateAccountRecordTO(randomUUID(), BigDecimal("100.25"), Currency.RON, mapOf("external_id" to "1111")),
+                CreateAccountRecordTO(randomUUID(), BigDecimal("-100.25"), Currency.RON, mapOf("external_id" to "2222"))
             ),
             metadata = mapOf(
                 "key" to "value"
@@ -178,6 +187,10 @@ class AccountTransactionSdkTest {
                                             put("id", JsonPrimitive(recordId.toString()))
                                             put("accountId", JsonPrimitive(accountId.toString()))
                                             put("amount", JsonPrimitive(42.0))
+                                            put("unit", buildJsonObject {
+                                                put("type", JsonPrimitive("currency"))
+                                                put("value", JsonPrimitive("RON"))
+                                            })
                                             put("metadata", buildJsonObject {
                                                 put("external_id", JsonPrimitive("4321"))
                                             })
@@ -194,9 +207,9 @@ class AccountTransactionSdkTest {
 
         val transactions = accountTransactionSdk.listTransactions(userId)
 
-        assertThat(transactions).hasSize(1)
-        assertThat(transactions.first()).isInstanceOf(AccountTransactionTO::class.java)
-        val transaction = transactions.first()
+        assertThat(transactions.items).hasSize(1)
+        assertThat(transactions.items.first()).isInstanceOf(AccountTransactionTO::class.java)
+        val transaction = transactions.items.first()
         assertThat(transaction.id).isEqualTo(transactionId)
         assertThat(transaction.dateTime.toString()).isEqualTo(dateTime)
         assertThat(transaction.records).hasSize(1)

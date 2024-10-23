@@ -7,8 +7,10 @@ import io.ktor.http.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.AccountTransactionApi
 import ro.jf.funds.account.api.exception.AccountApiException
-import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.AccountTransactionTO
+import ro.jf.funds.account.api.model.CreateAccountTransactionTO
+import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
+import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.util.*
 
@@ -38,7 +40,27 @@ class AccountTransactionSdk(
         return accountTransaction
     }
 
-    override suspend fun listTransactions(userId: UUID): List<AccountTransactionTO> {
+    override suspend fun createTransactions(
+        userId: UUID,
+        request: CreateAccountTransactionsTO
+    ): ListTO<AccountTransactionTO> {
+        val response = httpClient.post("$baseUrl$BASE_PATH/transactions/batch") {
+            headers {
+                append(USER_ID_HEADER, userId.toString())
+            }
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+        if (response.status != HttpStatusCode.Created) {
+            log.warn { "Unexpected response on create transactions: $response" }
+            throw AccountApiException.Generic()
+        }
+        val transactions = response.body<ro.jf.funds.commons.model.ListTO<AccountTransactionTO>>()
+        log.debug { "Created account transactions: $transactions" }
+        return transactions
+    }
+
+    override suspend fun listTransactions(userId: UUID): ListTO<AccountTransactionTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -48,9 +70,9 @@ class AccountTransactionSdk(
             log.warn { "Unexpected response on list accounts: $response" }
             throw AccountApiException.Generic()
         }
-        val transactions = response.body<ro.jf.funds.commons.model.ListTO<AccountTransactionTO>>()
+        val transactions = response.body<ListTO<AccountTransactionTO>>()
         log.debug { "Retrieved transactions: $transactions" }
-        return transactions.items
+        return transactions
     }
 
     override suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {

@@ -6,8 +6,8 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.account.api.model.CreateCurrencyAccountTO
-import ro.jf.funds.account.api.model.CreateInstrumentAccountTO
+import ro.jf.funds.account.api.exception.AccountApiException
+import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.account.service.domain.Account
 import ro.jf.funds.account.service.service.AccountService
 import ro.jf.funds.account.service.web.mapper.toTO
@@ -30,26 +30,22 @@ fun Routing.accountApiRouting(accountService: AccountService) {
             val accountId = call.parameters["accountId"]?.let(UUID::fromString) ?: error("Account id is missing.")
             log.debug { "Get account by id $accountId for user id $userId." }
             val account = accountService.findAccountById(userId, accountId)
-                ?: return@get call.respond(HttpStatusCode.NotFound)
-            call.respond(account.toTO())
+                ?: return@get call.respond(HttpStatusCode.NotFound, AccountApiException.AccountNotFound(accountId))
+            call.respond(HttpStatusCode.OK, account.toTO())
         }
-        post("/currency") {
+        post {
             val userId = call.userId()
-            val request = call.receive<CreateCurrencyAccountTO>()
+            val request = call.receive<CreateAccountTO>()
             log.info { "Create currency account $request for user $userId." }
             if (accountService.findAccountByName(userId, request.name) != null)
                 return@post call.respond(HttpStatusCode.Conflict)
-            val account = accountService.createAccount(userId, request)
-            call.respond(status = HttpStatusCode.Created, message = account.toTO())
-        }
-        post("/instrument") {
-            val userId = call.userId()
-            val request = call.receive<CreateInstrumentAccountTO>()
-            log.info { "Create instrument account $request for user $userId." }
-            if (accountService.findAccountByName(userId, request.name) != null)
-                return@post call.respond(HttpStatusCode.Conflict)
-            val account = accountService.createAccount(userId, request)
-            call.respond(status = HttpStatusCode.Created, message = account.toTO())
+            try {
+                val account = accountService.createAccount(userId, request)
+                call.respond(status = HttpStatusCode.Created, message = account.toTO())
+            } catch (exception: AccountApiException.AccountNameAlreadyExists) {
+                log.warn { "Account name ${exception.accountName} already exists." }
+                call.respond(HttpStatusCode.Conflict, exception)
+            }
         }
         delete("/{accountId}") {
             val userId = call.userId()

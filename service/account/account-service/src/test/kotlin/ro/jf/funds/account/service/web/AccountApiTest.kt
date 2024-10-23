@@ -1,4 +1,4 @@
-package ro.jf.funds.account.service
+package ro.jf.funds.account.service.web
 
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -12,10 +12,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
-import ro.jf.funds.account.api.model.CreateCurrencyAccountTO
-import ro.jf.funds.account.api.model.CreateInstrumentAccountTO
+import ro.jf.funds.account.api.model.CreateAccountTO
+import ro.jf.funds.account.service.module
 import ro.jf.funds.account.service.persistence.AccountRepository
-import ro.jf.funds.account.service.domain.Account
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Symbol
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironmentWithDB
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
@@ -37,8 +38,8 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("Cash"), "RON"))
-        accountRepository.save(userId, CreateInstrumentAccountTO(AccountName("BET"), "RON", "TVBETETF"))
+        accountRepository.save(userId, CreateAccountTO(AccountName("Cash"), Currency.RON))
+        accountRepository.save(userId, CreateAccountTO(AccountName("BET"), Symbol("TVBETETF")))
 
         val response = createJsonHttpClient().get("/bk-api/account/v1/accounts") {
             header(USER_ID_HEADER, userId)
@@ -56,7 +57,7 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        val user = accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("Revolut"), "RON"))
+        val user = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
 
         val response = createJsonHttpClient().get("/bk-api/account/v1/accounts/${user.id}") {
             header(USER_ID_HEADER, userId)
@@ -85,14 +86,14 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        val response = createJsonHttpClient().post("/bk-api/account/v1/accounts/currency") {
+        val response = createJsonHttpClient().post("/bk-api/account/v1/accounts") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
-            setBody(CreateCurrencyAccountTO(AccountName("Revolut"), "RON"))
+            setBody(CreateAccountTO(AccountName("Revolut"), Currency.RON))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Created)
-        val accountTO = response.body<AccountTO.Currency>()
+        val accountTO = response.body<AccountTO>()
         assertThat(accountTO).isNotNull
         assertThat(accountTO.name).isEqualTo(AccountName("Revolut"))
 
@@ -106,25 +107,22 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        val response = createJsonHttpClient().post("/bk-api/account/v1/accounts/instrument") {
+        val response = createJsonHttpClient().post("/bk-api/account/v1/accounts") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
-            setBody(CreateInstrumentAccountTO(AccountName("S&P500"), "EUR", "SXR8_DE"))
+            setBody(CreateAccountTO(AccountName("S&P500"), Symbol("SXR8_DE")))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Created)
-        val accountTO = response.body<AccountTO.Instrument>()
+        val accountTO = response.body<AccountTO>()
         assertThat(accountTO).isNotNull
         assertThat(accountTO.name).isEqualTo(AccountName("S&P500"))
-        assertThat(accountTO.symbol).isEqualTo("SXR8_DE")
-        assertThat(accountTO.currency).isEqualTo("EUR")
+        assertThat(accountTO.unit).isEqualTo(Symbol("SXR8_DE"))
 
         val dbAccount = accountRepository.findById(userId, accountTO.id)
-                as? Account.Instrument ?: error("Account is not an instrument")
         assertThat(dbAccount).isNotNull
-        assertThat(dbAccount.name).isEqualTo(AccountName("S&P500"))
-        assertThat(dbAccount.currency).isEqualTo("EUR")
-        assertThat(dbAccount.symbol).isEqualTo("SXR8_DE")
+        assertThat(dbAccount?.name).isEqualTo(AccountName("S&P500"))
+        assertThat(dbAccount?.unit).isEqualTo(Symbol("SXR8_DE"))
     }
 
     @Test
@@ -132,12 +130,12 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("BT"), "EUR"))
+        accountRepository.save(userId, CreateAccountTO(AccountName("BT"), Currency.EUR))
 
-        val response = createJsonHttpClient().post("/bk-api/account/v1/accounts/currency") {
+        val response = createJsonHttpClient().post("/bk-api/account/v1/accounts") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
-            setBody(CreateCurrencyAccountTO(AccountName("BT"), "RON"))
+            setBody(CreateAccountTO(AccountName("BT"), Currency.RON))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Conflict)
@@ -148,7 +146,7 @@ class AccountApiTest {
         configureEnvironmentWithDB { module() }
 
         val userId = randomUUID()
-        val account = accountRepository.save(userId, CreateCurrencyAccountTO(AccountName("ING"), "RON"))
+        val account = accountRepository.save(userId, CreateAccountTO(AccountName("ING"), Currency.RON))
 
         val response = createJsonHttpClient().delete("/bk-api/account/v1/accounts/${account.id}") {
             header(USER_ID_HEADER, userId)
