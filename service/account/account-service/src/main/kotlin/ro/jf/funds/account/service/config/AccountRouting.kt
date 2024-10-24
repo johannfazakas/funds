@@ -8,7 +8,7 @@ import ro.jf.funds.account.service.service.AccountTransactionService
 import ro.jf.funds.account.service.web.accountApiRouting
 import ro.jf.funds.account.service.web.accountTransactionApiRouting
 
-fun Application.configureRouting() {
+fun Application.configureAccountRouting() {
     routing {
         accountApiRouting(get<AccountService>())
         accountTransactionApiRouting(get<AccountTransactionService>())

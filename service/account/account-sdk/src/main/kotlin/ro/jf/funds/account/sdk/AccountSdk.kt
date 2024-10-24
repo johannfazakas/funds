@@ -6,11 +6,11 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.AccountApi
-import ro.jf.funds.account.api.exception.AccountApiException
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.sdk.client.createHttpClient
+import ro.jf.funds.commons.sdk.client.toApiException
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.util.*
 
@@ -23,7 +23,7 @@ class AccountSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : AccountApi {
-    override suspend fun listAccounts(userId: UUID): List<AccountTO> {
+    override suspend fun listAccounts(userId: UUID): ListTO<AccountTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/accounts") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -31,11 +31,11 @@ class AccountSdk(
         }
         if (response.status != HttpStatusCode.OK) {
             log.warn { "Unexpected response on list accounts: $response" }
-            throw response.body<AccountApiException>()
+            throw response.toApiException()
         }
         val accounts = response.body<ListTO<AccountTO>>()
         log.debug { "Retrieved accounts: $accounts" }
-        return accounts.items
+        return accounts
     }
 
     override suspend fun findAccountById(userId: UUID, accountId: UUID): AccountTO? {
@@ -57,7 +57,7 @@ class AccountSdk(
 
             else -> {
                 log.warn { "Error response on find account by id: $response" }
-                throw response.body<AccountApiException>()
+                throw response.toApiException()
             }
         }
     }
@@ -74,8 +74,7 @@ class AccountSdk(
             HttpStatusCode.Created -> response.body()
             else -> {
                 log.warn { "Unexpected response on create currency account: $response" }
-                // TODO(Johann) could add something in commons for problem bodies
-                throw response.body<AccountApiException>()
+                throw throw response.toApiException()
             }
         }
     }
@@ -88,7 +87,7 @@ class AccountSdk(
         }
         if (response.status != HttpStatusCode.NoContent) {
             log.warn { "Unexpected response on delete account: $response" }
-            throw response.body<AccountApiException>()
+            throw response.toApiException()
         }
     }
 }

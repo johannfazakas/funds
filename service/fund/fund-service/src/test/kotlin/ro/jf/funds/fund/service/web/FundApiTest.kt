@@ -16,9 +16,6 @@ import org.mockserver.model.Header
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.fund.service.config.configureRouting
-import ro.jf.funds.fund.service.config.fundsAppModule
-import ro.jf.funds.fund.service.persistence.FundRepository
 import ro.jf.funds.commons.service.config.configureContentNegotiation
 import ro.jf.funds.commons.service.config.configureDatabaseMigration
 import ro.jf.funds.commons.service.config.configureDependencies
@@ -30,6 +27,10 @@ import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.fund.service.config.configureFundErrorHandling
+import ro.jf.funds.fund.service.config.configureFundRouting
+import ro.jf.funds.fund.service.config.fundDependencies
+import ro.jf.funds.fund.service.persistence.FundRepository
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
@@ -143,10 +144,11 @@ class FundApiTest {
     )
 
     private fun Application.testModule() {
-        configureDependencies(fundsAppModule)
+        configureDependencies(fundDependencies)
+        configureFundErrorHandling()
         configureContentNegotiation()
         configureDatabaseMigration(get<DataSource>())
-        configureRouting()
+        configureFundRouting()
     }
 
     private fun createFundRepository() = FundRepository(

@@ -6,8 +6,9 @@ import org.koin.ktor.ext.get
 import ro.jf.funds.commons.service.config.configureContentNegotiation
 import ro.jf.funds.commons.service.config.configureDatabaseMigration
 import ro.jf.funds.commons.service.config.configureDependencies
-import ro.jf.funds.fund.service.config.configureRouting
-import ro.jf.funds.fund.service.config.fundsAppModule
+import ro.jf.funds.fund.service.config.configureFundErrorHandling
+import ro.jf.funds.fund.service.config.configureFundRouting
+import ro.jf.funds.fund.service.config.fundDependencies
 import javax.sql.DataSource
 
 fun main(args: Array<String>) {
@@ -15,8 +16,9 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    configureDependencies(fundsAppModule)
+    configureDependencies(fundDependencies)
     configureContentNegotiation()
+    configureFundErrorHandling()
     configureDatabaseMigration(get<DataSource>())
-    configureRouting()
+    configureFundRouting()
 }

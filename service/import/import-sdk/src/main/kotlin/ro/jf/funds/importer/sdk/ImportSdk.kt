@@ -9,13 +9,12 @@ import io.ktor.http.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.model.ProblemTO
-import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.sdk.client.createHttpClient
+import ro.jf.funds.commons.sdk.client.toApiException
+import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.importer.api.ImportApi
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
-import ro.jf.funds.importer.api.model.exception.ImportApiException
 import java.io.File
 import java.util.*
 
@@ -59,13 +58,7 @@ class ImportSdk(
         }
         return when (response.status) {
             HttpStatusCode.Created -> response.body<ImportResponse>()
-            HttpStatusCode.BadRequest -> throw ImportApiException.FormatException(
-                response.body<ProblemTO>().let { it.detail ?: it.title })
-
-            HttpStatusCode.UnprocessableEntity -> throw ImportApiException.DataException(
-                response.body<ProblemTO>().let { it.detail ?: it.title })
-
-            else -> throw ImportApiException.Generic("Unexpected response on import: $response")
+            else -> throw response.toApiException()
         }
     }
 }

@@ -6,7 +6,6 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.account.api.exception.AccountApiException
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
 import ro.jf.funds.account.service.domain.AccountTransaction
@@ -24,31 +23,15 @@ fun Routing.accountTransactionApiRouting(transactionService: AccountTransactionS
             val userId = call.userId()
             val request = call.receive<CreateAccountTransactionTO>()
             log.debug { "Create transaction $request for user $userId." }
-            try {
-                val transaction = transactionService.createTransaction(userId, request)
-                call.respond(HttpStatusCode.Created, transaction.toTO())
-            } catch (exception: AccountApiException.AccountNotFound) {
-                log.warn(exception) { "Account not found." }
-                call.respond(HttpStatusCode.UnprocessableEntity, exception)
-            } catch (exception: AccountApiException.AccountRecordCurrencyMismatch) {
-                log.warn(exception) { "Account record currency mismatch." }
-                call.respond(HttpStatusCode.UnprocessableEntity, exception)
-            }
+            val transaction = transactionService.createTransaction(userId, request)
+            call.respond(HttpStatusCode.Created, transaction.toTO())
         }
         post("/batch") {
             val userId = call.userId()
             val request = call.receive<CreateAccountTransactionsTO>()
             log.debug { "Create ${request.transactions.size} transactions for user $userId." }
-            try {
-                val transactions = transactionService.createTransactions(userId, request)
-                call.respond(transactions.toListTO(AccountTransaction::toTO))
-            } catch (exception: AccountApiException.AccountNotFound) {
-                log.warn(exception) { "Account not found." }
-                call.respond(HttpStatusCode.UnprocessableEntity, exception)
-            } catch (exception: AccountApiException.AccountRecordCurrencyMismatch) {
-                log.warn(exception) { "Account record currency mismatch." }
-                call.respond(HttpStatusCode.UnprocessableEntity, exception)
-            }
+            val transactions = transactionService.createTransactions(userId, request)
+            call.respond(transactions.toListTO(AccountTransaction::toTO))
         }
         get {
             val userId = call.userId()

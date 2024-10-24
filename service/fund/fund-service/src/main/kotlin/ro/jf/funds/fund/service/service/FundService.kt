@@ -8,7 +8,6 @@ import java.util.*
 
 class FundService(
     private val fundRepository: FundRepository,
-    private val accountSdkAdapter: ro.jf.funds.fund.service.service.AccountSdkAdapter
 ) {
     suspend fun listFunds(userId: UUID): List<Fund> {
         return fundRepository.list(userId)

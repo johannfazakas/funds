@@ -1,9 +1,9 @@
 package ro.jf.funds.account.service.service
 
-import ro.jf.funds.account.api.exception.AccountApiException
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
 import ro.jf.funds.account.service.domain.Account
+import ro.jf.funds.account.service.domain.AccountServiceException
 import ro.jf.funds.account.service.domain.AccountTransaction
 import ro.jf.funds.account.service.persistence.AccountRepository
 import ro.jf.funds.account.service.persistence.AccountTransactionRepository
@@ -35,12 +35,12 @@ class AccountTransactionService(
         val accountsById = getAccounts(userId, requests).associateBy { it.id }
         requests.asSequence()
             .flatMap { it.records }
-            .forEach {
-                val account = accountsById[it.accountId]
-                    ?: throw AccountApiException.AccountNotFound(it.accountId)
-                if (it.unit != account.unit) {
-                    throw AccountApiException.AccountRecordCurrencyMismatch(
-                        account.id, account.name, account.unit, it.unit
+            .forEach { record ->
+                val account = accountsById[record.accountId]
+                    ?: throw AccountServiceException.RecordAccountNotFound(record.accountId)
+                if (record.unit != account.unit) {
+                    throw AccountServiceException.AccountRecordCurrencyMismatch(
+                        account.id, account.name, account.unit, record.unit
                     )
                 }
             }

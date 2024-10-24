@@ -11,6 +11,7 @@ dependencies {
     api(libs.ktor.serialization.kotlinx.json)
     api(libs.ktor.server.netty)
     api(libs.ktor.server.yaml)
+    api(libs.ktor.server.status.pages)
 
     api(libs.ktor.client.core)
     api(libs.ktor.client.cio)

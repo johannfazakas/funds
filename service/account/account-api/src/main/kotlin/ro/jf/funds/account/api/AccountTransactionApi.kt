@@ -8,7 +8,11 @@ import java.util.*
 
 interface AccountTransactionApi {
     suspend fun createTransaction(userId: UUID, request: CreateAccountTransactionTO): AccountTransactionTO
-    suspend fun createTransactions(userId: UUID, request: CreateAccountTransactionsTO): ListTO<AccountTransactionTO>
+    suspend fun createTransactions(
+        userId: UUID,
+        request: CreateAccountTransactionsTO
+    ): ListTO<AccountTransactionTO>
+
     suspend fun listTransactions(userId: UUID): ListTO<AccountTransactionTO>
     suspend fun deleteTransaction(userId: UUID, transactionId: UUID)
 }

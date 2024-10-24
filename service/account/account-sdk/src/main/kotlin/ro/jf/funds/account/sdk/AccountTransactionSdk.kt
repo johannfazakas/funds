@@ -3,14 +3,15 @@ package ro.jf.funds.account.sdk
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.AccountTransactionApi
-import ro.jf.funds.account.api.exception.AccountApiException
 import ro.jf.funds.account.api.model.AccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
 import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.sdk.client.toApiException
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.util.*
 
@@ -23,8 +24,11 @@ class AccountTransactionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient
 ) : AccountTransactionApi {
-    override suspend fun createTransaction(userId: UUID, request: CreateAccountTransactionTO): AccountTransactionTO {
-        val response = httpClient.post("$baseUrl$BASE_PATH/transactions") {
+    override suspend fun createTransaction(
+        userId: UUID,
+        request: CreateAccountTransactionTO
+    ): AccountTransactionTO {
+        val response: HttpResponse = httpClient.post("$baseUrl$BASE_PATH/transactions") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }
@@ -33,7 +37,7 @@ class AccountTransactionSdk(
         }
         if (response.status != HttpStatusCode.Created) {
             log.warn { "Unexpected response on create transaction: $response" }
-            throw AccountApiException.Generic()
+            throw response.toApiException()
         }
         val accountTransaction = response.body<AccountTransactionTO>()
         log.debug { "Created account transaction: $accountTransaction" }
@@ -53,7 +57,7 @@ class AccountTransactionSdk(
         }
         if (response.status != HttpStatusCode.Created) {
             log.warn { "Unexpected response on create transactions: $response" }
-            throw AccountApiException.Generic()
+            throw response.toApiException()
         }
         val transactions = response.body<ro.jf.funds.commons.model.ListTO<AccountTransactionTO>>()
         log.debug { "Created account transactions: $transactions" }
@@ -68,7 +72,7 @@ class AccountTransactionSdk(
         }
         if (response.status != HttpStatusCode.OK) {
             log.warn { "Unexpected response on list accounts: $response" }
-            throw AccountApiException.Generic()
+            throw response.toApiException()
         }
         val transactions = response.body<ListTO<AccountTransactionTO>>()
         log.debug { "Retrieved transactions: $transactions" }
@@ -83,7 +87,7 @@ class AccountTransactionSdk(
         }
         if (!response.status.isSuccess()) {
             log.warn { "Unexpected response on delete transaction: $response" }
-            throw AccountApiException.Generic()
+            throw response.toApiException()
         }
     }
 }

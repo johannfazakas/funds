@@ -9,16 +9,16 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import org.postgresql.ds.PGSimpleDataSource
-import ro.jf.funds.fund.service.persistence.FundRepository
-import ro.jf.funds.fund.service.service.AccountSdkAdapter
-import ro.jf.funds.fund.service.service.AccountTransactionAdapter
-import ro.jf.funds.fund.service.service.FundTransactionService
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.account.sdk.AccountTransactionSdk
+import ro.jf.funds.fund.service.persistence.FundRepository
+import ro.jf.funds.fund.service.service.AccountTransactionAdapter
+import ro.jf.funds.fund.service.service.FundService
+import ro.jf.funds.fund.service.service.FundTransactionService
 import java.sql.DriverManager
 import javax.sql.DataSource
 
-val Application.fundsAppModule
+val Application.fundDependencies
     get() = module {
         single<DataSource> {
             PGSimpleDataSource().apply {
@@ -57,13 +57,7 @@ val Application.fundsAppModule
                 environment.config.property("integration.account-service.base-url").getString(), get()
             )
         }
-        single<AccountSdkAdapter> { AccountSdkAdapter(get()) }
         single<AccountTransactionAdapter> { AccountTransactionAdapter(get()) }
-        single<ro.jf.funds.fund.service.service.FundService> {
-            ro.jf.funds.fund.service.service.FundService(
-                get(),
-                get()
-            )
-        }
+        single<FundService> { FundService(get()) }
         single<FundTransactionService> { FundTransactionService(get()) }
     }

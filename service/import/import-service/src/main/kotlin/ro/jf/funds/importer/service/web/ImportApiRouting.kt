@@ -11,12 +11,8 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.commons.service.routing.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportResponse
-import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.domain.exception.ImportException
-import ro.jf.funds.importer.service.domain.exception.ImportFormatException
 import ro.jf.funds.importer.service.domain.exception.MissingImportConfigurationException
 import ro.jf.funds.importer.service.service.ImportService
-import ro.jf.funds.importer.service.web.mapper.toProblem
 
 private val log = logger { }
 
@@ -35,35 +31,19 @@ fun Routing.importApiRouting(
             val rawFileParts = requestParts.rawFileParts()
 
             val importConfiguration: ImportConfigurationTO = requestParts.importConfigurationPart()
-                ?: return@post call.respond(
-                    HttpStatusCode.BadRequest,
-                    MissingImportConfigurationException("Missing import configuration").toProblem()
-                )
-
-            try {
-                importService.import(userId, importConfiguration, rawFileParts)
-                // TODO(Johann) should probably return something relevant from the service
-                call.respond(HttpStatusCode.Created, ImportResponse("Imported in service"))
-            } catch (importException: ImportException) {
-                log.warn(importException) { "Error importing for user $userId." }
-                val statusCode = when (importException) {
-                    is ImportFormatException -> HttpStatusCode.BadRequest
-                    is ImportDataException -> HttpStatusCode.BadRequest
-                    // TODO(Johann) this shouldn't be necessary
-                    else -> HttpStatusCode.InternalServerError
-                }
-                return@post call.respond(statusCode, importException.toProblem())
-            }
+            importService.import(userId, importConfiguration, rawFileParts)
+            call.respond(HttpStatusCode.Created, ImportResponse("Imported in service"))
         }
     }
 }
 
-private fun List<PartData>.importConfigurationPart(): ImportConfigurationTO? {
+private fun List<PartData>.importConfigurationPart(): ImportConfigurationTO {
     return this
         .mapNotNull { it as? PartData.FormItem }
         .firstOrNull { it.name == "configuration" }
         ?.value
         ?.let { json -> Json.decodeFromString<ImportConfigurationTO>(json) }
+        ?: throw MissingImportConfigurationException("Missing import configuration")
 }
 
 private fun List<PartData>.rawFileParts(): List<String> {

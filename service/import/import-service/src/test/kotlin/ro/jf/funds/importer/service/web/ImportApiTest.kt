@@ -19,8 +19,9 @@ import org.mockito.kotlin.whenever
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
+import ro.jf.funds.commons.error.ErrorTO
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.ProblemTO
+import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.service.config.configureContentNegotiation
 import ro.jf.funds.commons.service.config.configureDependencies
 import ro.jf.funds.commons.test.extension.MockServerExtension
@@ -32,8 +33,9 @@ import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.api.model.*
-import ro.jf.funds.importer.service.config.configureRouting
-import ro.jf.funds.importer.service.config.importServiceDependenciesModule
+import ro.jf.funds.importer.service.config.configureImportErrorHandling
+import ro.jf.funds.importer.service.config.configureImportRouting
+import ro.jf.funds.importer.service.config.importDependencies
 import java.io.File
 import java.util.UUID.randomUUID
 
@@ -67,14 +69,18 @@ class ImportApiTest {
             )
         )
         whenever(accountSdk.listAccounts(userId)).thenReturn(
-            listOf(
-                AccountTO(randomUUID(), AccountName("ING"), Currency.RON),
+            ListTO(
+                listOf(
+                    AccountTO(randomUUID(), AccountName("ING"), Currency.RON),
+                )
             )
         )
         whenever(fundSdk.listFunds(userId)).thenReturn(
-            listOf(
-                FundTO(randomUUID(), FundName("Expenses")),
-                FundTO(randomUUID(), FundName("Work"))
+            ListTO(
+                listOf(
+                    FundTO(randomUUID(), FundName("Expenses")),
+                    FundTO(randomUUID(), FundName("Work"))
+                )
             )
         )
         whenever(fundTransactionSdk.createTransaction(eq(userId), any())).thenReturn(mock())
@@ -99,7 +105,6 @@ class ImportApiTest {
         assertThat(responseBody.response).isNotEmpty()
     }
 
-    // TODO(Johann) we have a Problem
     @Test
     @Disabled("Fails due to erroneous problem serialization / deserialization")
     fun `test invalid import with missing configuration`(): Unit = testApplication {
@@ -122,7 +127,7 @@ class ImportApiTest {
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
-        val responseBody = response.body<ProblemTO>()
+        val responseBody = response.body<ErrorTO>()
         assertThat(responseBody.title).isEqualTo("Import configuration missing.")
     }
 
@@ -169,7 +174,7 @@ class ImportApiTest {
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
-        val responseBody = response.body<ProblemTO>()
+        val responseBody = response.body<ErrorTO>()
         assertThat(responseBody.title).isEqualTo("Invalid import format")
     }
 
@@ -216,7 +221,7 @@ class ImportApiTest {
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
-        val responseBody = response.body<ProblemTO>()
+        val responseBody = response.body<ErrorTO>()
         assertThat(responseBody.title).isEqualTo("Invalid import data")
     }
 
@@ -232,8 +237,9 @@ class ImportApiTest {
             single<FundSdk> { fundSdk }
             single<FundTransactionSdk> { fundTransactionSdk }
         }
-        configureDependencies(importServiceDependenciesModule, importAppTestModule)
+        configureDependencies(importDependencies, importAppTestModule)
+        configureImportErrorHandling()
         configureContentNegotiation()
-        configureRouting()
+        configureImportRouting()
     }
 }

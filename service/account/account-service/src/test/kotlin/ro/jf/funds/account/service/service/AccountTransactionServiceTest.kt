@@ -7,12 +7,12 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
-import ro.jf.funds.account.api.exception.AccountApiException
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.CreateAccountRecordTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
 import ro.jf.funds.account.service.domain.Account
+import ro.jf.funds.account.service.domain.AccountServiceException
 import ro.jf.funds.account.service.domain.AccountTransaction
 import ro.jf.funds.account.service.persistence.AccountRepository
 import ro.jf.funds.account.service.persistence.AccountTransactionRepository
@@ -60,7 +60,7 @@ class AccountTransactionServiceTest {
         whenever(accountTransactionRepository.save(userId, transactionRequest)).thenReturn(expectedTransaction)
 
         assertThatThrownBy { runBlocking { accountTransactionService.createTransaction(userId, transactionRequest) } }
-            .isInstanceOf(AccountApiException.AccountRecordCurrencyMismatch::class.java)
+            .isInstanceOf(AccountServiceException.AccountRecordCurrencyMismatch::class.java)
     }
 
     @Test
@@ -102,6 +102,6 @@ class AccountTransactionServiceTest {
             .thenReturn(listOf(expectedTransaction1, expectedTransaction2))
 
         assertThatThrownBy { runBlocking { accountTransactionService.createTransactions(userId, batchRequest) } }
-            .isInstanceOf(AccountApiException.AccountNotFound::class.java)
+            .isInstanceOf(AccountServiceException.RecordAccountNotFound::class.java)
     }
 }
