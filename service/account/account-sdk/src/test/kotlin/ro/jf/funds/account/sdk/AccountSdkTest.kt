@@ -62,9 +62,9 @@ class AccountSdkTest {
 
         val accounts = accountSdk.listAccounts(userId)
 
-        assertThat(accounts).hasSize(1)
-        assertThat(accounts.first()).isInstanceOf(AccountTO::class.java)
-        val currencyAccount = accounts.first()
+        assertThat(accounts.items).hasSize(1)
+        assertThat(accounts.items.first()).isInstanceOf(AccountTO::class.java)
+        val currencyAccount = accounts.items.first()
         assertThat(currencyAccount.id).isEqualTo(accountId)
         assertThat(currencyAccount.name).isEqualTo(accountName)
         assertThat(currencyAccount.unit).isEqualTo(Currency.RON)

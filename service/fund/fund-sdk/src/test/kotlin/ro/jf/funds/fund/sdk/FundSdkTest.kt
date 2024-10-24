@@ -58,9 +58,9 @@ class FundSdkTest {
 
         val funds = fundSdk.listFunds(userId)
 
-        assertThat(funds).hasSize(1)
-        assertThat(funds[0].id).isEqualTo(fundId)
-        assertThat(funds[0].name).isEqualTo(FundName("Expenses"))
+        assertThat(funds.items).hasSize(1)
+        assertThat(funds.items[0].id).isEqualTo(fundId)
+        assertThat(funds.items[0].name).isEqualTo(FundName("Expenses"))
     }
 
     @Test

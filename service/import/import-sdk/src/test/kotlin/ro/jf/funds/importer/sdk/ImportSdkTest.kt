@@ -5,7 +5,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockserver.client.MockServerClient
@@ -13,6 +12,7 @@ import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
 import ro.jf.funds.account.api.model.AccountName
+import ro.jf.funds.commons.error.ApiException
 import ro.jf.funds.commons.test.extension.MockServerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.FundName
@@ -20,7 +20,6 @@ import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
-import ro.jf.funds.importer.api.model.exception.ImportApiException
 import java.io.File
 import java.util.UUID.randomUUID
 
@@ -73,9 +72,6 @@ class ImportSdkTest {
         assertThat(response.response).isEqualTo("success")
     }
 
-
-    //    TODO(Johann) fails due to erroneous problem serialization / deserialization
-    @Disabled
     @Test
     fun `given import failed due to client format error should retrieve response`(mockServerClient: MockServerClient): Unit =
         runBlocking {
@@ -114,12 +110,10 @@ class ImportSdkTest {
                 )
 
             assertThatThrownBy { runBlocking { importSdk.import(userId, importConfiguration, files) } }
-                .isInstanceOf(ImportApiException.FormatException::class.java)
-                .hasMessage("Specific problem detail")
+                .isInstanceOf(ApiException::class.java)
+                .extracting("statusCode").isEqualTo(400)
         }
 
-//    TODO(Johann) fails due to erroneous problem serialization / deserialization
-    @Disabled
     @Test
     fun `given import failed due to client data error should retrieve response`(mockServerClient: MockServerClient): Unit =
         runBlocking {
@@ -158,7 +152,7 @@ class ImportSdkTest {
                 )
 
             assertThatThrownBy { runBlocking { importSdk.import(userId, importConfiguration, files) } }
-                .isInstanceOf(ImportApiException.DataException::class.java)
-                .hasMessage("Specific problem detail")
+                .isInstanceOf(ApiException::class.java)
+                .extracting("statusCode").isEqualTo(422)
         }
 }

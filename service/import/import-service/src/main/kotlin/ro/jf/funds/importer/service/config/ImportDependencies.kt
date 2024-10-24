@@ -20,9 +20,9 @@ import ro.jf.funds.importer.service.service.parser.WalletCsvImportParser
 private const val ACCOUNT_SERVICE_BASE_URL_PROPERTY = "integration.account-service.base-url"
 private const val FUND_SERVICE_BASE_URL_PROPERTY = "integration.fund-service.base-url"
 
-// TODO(Johann) should the rest be renamed to this pattern?
-val Application.importServiceDependenciesModule
+val Application.importDependencies
     get() = module {
+        // TODO(Johann) might be extracted as commons client
         single<HttpClient> {
             HttpClient(CIO) {
                 install(ContentNegotiation) {

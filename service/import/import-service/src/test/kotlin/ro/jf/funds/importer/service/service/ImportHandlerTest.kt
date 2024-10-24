@@ -11,6 +11,7 @@ import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
@@ -53,43 +54,44 @@ class ImportHandlerTest {
         val companyAccount = account("Company")
         val expensedFund = fund("Expenses")
         val incomeFund = fund("Income")
-        whenever(accountSdk.listAccounts(userId)).thenReturn(listOf(cashAccount, bankAccount, companyAccount))
-        whenever(fundSdk.listFunds(userId)).thenReturn(listOf(expensedFund, incomeFund))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, bankAccount, companyAccount))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
 
         importHandler.import(userId, importTransactions)
 
         verify(fundTransactionSdk).createTransactions(
             userId,
-            CreateFundTransactionsTO(listOf(
-                CreateFundTransactionTO(
-                    dateTime = transaction1DateTime,
-                    records = listOf(
-                        CreateFundRecordTO(
-                            fundId = expensedFund.id,
-                            accountId = bankAccount.id,
-                            amount = BigDecimal("-100.00"),
-                            unit = Currency.RON
+            CreateFundTransactionsTO(
+                listOf(
+                    CreateFundTransactionTO(
+                        dateTime = transaction1DateTime,
+                        records = listOf(
+                            CreateFundRecordTO(
+                                fundId = expensedFund.id,
+                                accountId = bankAccount.id,
+                                amount = BigDecimal("-100.00"),
+                                unit = Currency.RON
+                            )
+                        )
+                    ),
+                    CreateFundTransactionTO(
+                        dateTime = transaction2DateTime,
+                        records = listOf(
+                            CreateFundRecordTO(
+                                fundId = incomeFund.id,
+                                accountId = companyAccount.id,
+                                amount = BigDecimal("-50.00"),
+                                unit = Currency.RON
+                            ),
+                            CreateFundRecordTO(
+                                fundId = expensedFund.id,
+                                accountId = cashAccount.id,
+                                amount = BigDecimal("50.00"),
+                                unit = Currency.RON
+                            ),
                         )
                     )
-                ),
-                CreateFundTransactionTO(
-                    dateTime = transaction2DateTime,
-                    records = listOf(
-                        CreateFundRecordTO(
-                            fundId = incomeFund.id,
-                            accountId = companyAccount.id,
-                            amount = BigDecimal("-50.00"),
-                            unit = Currency.RON
-                        ),
-                        CreateFundRecordTO(
-                            fundId = expensedFund.id,
-                            accountId = cashAccount.id,
-                            amount = BigDecimal("50.00"),
-                            unit = Currency.RON
-                        ),
-                    )
                 )
-            )
 
             )
         )
@@ -108,8 +110,8 @@ class ImportHandlerTest {
                 )
             )
         )
-        whenever(accountSdk.listAccounts(userId)).thenReturn(listOf(account("Cash RON")))
-        whenever(fundSdk.listFunds(userId)).thenReturn(listOf(fund("Expenses")))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account("Cash RON")))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(fund("Expenses")))
 
         assertThatThrownBy { runBlocking { importHandler.import(userId, importTransactions) } }
             .isInstanceOf(ImportDataException::class.java)
@@ -128,8 +130,8 @@ class ImportHandlerTest {
                 )
             )
         )
-        whenever(accountSdk.listAccounts(userId)).thenReturn(listOf(account("Revolut")))
-        whenever(fundSdk.listFunds(userId)).thenReturn(listOf(fund("Investments")))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account("Revolut")))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(fund("Investments")))
 
         assertThatThrownBy { runBlocking { importHandler.import(userId, importTransactions) } }
             .isInstanceOf(ImportDataException::class.java)

@@ -10,7 +10,6 @@ import ro.jf.funds.commons.model.toListTO
 import ro.jf.funds.commons.service.routing.userId
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.service.domain.Fund
-import ro.jf.funds.fund.service.domain.exception.AccountNotFoundException
 import ro.jf.funds.fund.service.mapper.toTO
 import java.util.*
 
@@ -38,13 +37,8 @@ fun Routing.fundApiRouting(fundService: ro.jf.funds.fund.service.service.FundSer
             log.info { "Create fund $request for user $userId." }
             if (fundService.findByName(userId, request.name) != null)
                 return@post call.respond(HttpStatusCode.Conflict)
-            try {
-                val fund = fundService.createFund(userId, request)
-                call.respond(status = HttpStatusCode.Created, message = fund.toTO())
-            } catch (e: AccountNotFoundException) {
-                log.warn(e) { "Failed to create fund $request for user $userId." }
-                call.respond(HttpStatusCode.Conflict)
-            }
+            val fund = fundService.createFund(userId, request)
+            call.respond(status = HttpStatusCode.Created, message = fund.toTO())
         }
         delete("/{fundId}") {
             val userId = call.userId()

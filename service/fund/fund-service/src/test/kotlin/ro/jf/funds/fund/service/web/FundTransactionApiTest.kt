@@ -33,8 +33,9 @@ import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
-import ro.jf.funds.fund.service.config.configureRouting
-import ro.jf.funds.fund.service.config.fundsAppModule
+import ro.jf.funds.fund.service.config.configureFundErrorHandling
+import ro.jf.funds.fund.service.config.configureFundRouting
+import ro.jf.funds.fund.service.config.fundDependencies
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
@@ -233,9 +234,10 @@ class FundTransactionApiTest {
             single<AccountSdk> { accountSdk }
             single<AccountTransactionSdk> { accountTransactionSdk }
         }
-        configureDependencies(fundsAppModule, fundsAppTestModule)
+        configureDependencies(fundDependencies, fundsAppTestModule)
+        configureFundErrorHandling()
         configureContentNegotiation()
         configureDatabaseMigration(get<DataSource>())
-        configureRouting()
+        configureFundRouting()
     }
 }

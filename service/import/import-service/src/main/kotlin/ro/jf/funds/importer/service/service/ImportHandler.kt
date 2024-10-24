@@ -2,12 +2,10 @@ package ro.jf.funds.importer.service.service
 
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.AccountName
+import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.fund.api.model.CreateFundRecordTO
-import ro.jf.funds.fund.api.model.CreateFundTransactionTO
-import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
-import ro.jf.funds.fund.api.model.FundName
+import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.service.domain.ImportRecord
@@ -51,14 +49,17 @@ class ImportHandler(
         )
 
     private suspend fun createImportResourceContext(userId: UUID) = ImportResourceContext(
-        accountSdk.listAccounts(userId).associate { it.name to it.id },
-        fundSdk.listFunds(userId).associate { it.name to it.id }
+        accountSdk.listAccounts(userId).items,
+        fundSdk.listFunds(userId).items
     )
 
-    private data class ImportResourceContext(
-        private val accountIdByName: Map<AccountName, UUID>,
-        private val fundIdByName: Map<FundName, UUID>
+    private class ImportResourceContext(
+        accounts: List<AccountTO>,
+        funds: List<FundTO>
     ) {
+        private val accountIdByName: Map<AccountName, UUID> = accounts.associate { it.name to it.id }
+        private val fundIdByName: Map<FundName, UUID> = funds.associate { it.name to it.id }
+
         fun getAccountId(accountName: AccountName) = accountIdByName[accountName]
             ?: throw ImportDataException("Record account not found: $accountName")
 

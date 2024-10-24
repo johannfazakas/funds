@@ -5,7 +5,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ListTO<T>(
     val items: List<T>
-)
+) {
+    companion object {
+        fun <T> of(vararg items: T) = ListTO(items.toList())
+    }
+}
 
 fun <T> List<T>.toListTO() = ro.jf.funds.commons.model.ListTO(this)
 
