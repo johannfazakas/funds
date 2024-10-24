@@ -59,7 +59,7 @@ class AccountTransactionSdk(
             log.warn { "Unexpected response on create transactions: $response" }
             throw response.toApiException()
         }
-        val transactions = response.body<ro.jf.funds.commons.model.ListTO<AccountTransactionTO>>()
+        val transactions = response.body<ListTO<AccountTransactionTO>>()
         log.debug { "Created account transactions: $transactions" }
         return transactions
     }

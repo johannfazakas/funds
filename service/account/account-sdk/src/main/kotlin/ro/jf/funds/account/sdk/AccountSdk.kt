@@ -63,7 +63,7 @@ class AccountSdk(
     }
 
     override suspend fun createAccount(userId: UUID, request: CreateAccountTO): AccountTO {
-        val response = httpClient.post("$baseUrl$BASE_PATH/accounts/currency") {
+        val response = httpClient.post("$baseUrl$BASE_PATH/accounts") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }

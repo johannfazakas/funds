@@ -10,7 +10,6 @@ import io.ktor.server.testing.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
@@ -106,7 +105,6 @@ class ImportApiTest {
     }
 
     @Test
-    @Disabled("Fails due to erroneous problem serialization / deserialization")
     fun `test invalid import with missing configuration`(): Unit = testApplication {
         configureEnvironmentWithDB(appConfig) { testModule() }
 
@@ -128,12 +126,10 @@ class ImportApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
         val responseBody = response.body<ErrorTO>()
-        assertThat(responseBody.title).isEqualTo("Import configuration missing.")
+        assertThat(responseBody.title).isEqualTo("Missing import configuration")
     }
 
-    // TODO(Johann) we have a Problem
     @Test
-    @Disabled("Fails due to erroneous problem serialization / deserialization")
     fun `test invalid import with bad csv file`(): Unit = testApplication {
         configureEnvironmentWithDB(appConfig) { testModule() }
 
@@ -175,12 +171,10 @@ class ImportApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
         val responseBody = response.body<ErrorTO>()
-        assertThat(responseBody.title).isEqualTo("Invalid import format")
+        assertThat(responseBody.title).isEqualTo("Import format error")
     }
 
-    // TODO(Johann) we have a Problem
     @Test
-    @Disabled("Fails due to erroneous problem serialization / deserialization")
     fun `test invalid import with missing account matcher`() = testApplication {
         configureEnvironmentWithDB(appConfig) { testModule() }
 
@@ -220,9 +214,9 @@ class ImportApiTest {
             ))
         }
 
-        assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+        assertThat(response.status).isEqualTo(HttpStatusCode.UnprocessableEntity)
         val responseBody = response.body<ErrorTO>()
-        assertThat(responseBody.title).isEqualTo("Invalid import data")
+        assertThat(responseBody.title).isEqualTo("Import data error")
     }
 
     // TODO(Johann) not required, right?

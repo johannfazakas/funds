@@ -142,7 +142,7 @@ class AccountSdkTest {
             .`when`(
                 request()
                     .withMethod("POST")
-                    .withPath("/bk-api/account/v1/accounts/currency")
+                    .withPath("/bk-api/account/v1/accounts")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
                     .withBody(
                         jsonSchema(
