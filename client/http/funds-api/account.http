@@ -12,15 +12,15 @@ BK_USER_ID: {{user-id}}
 DELETE {{account_host}}/bk-api/account/v1/accounts/{{account-id}}
 BK_USER_ID: {{user-id}}
 
-### Create Instrument Account
-POST {{account_host}}/bk-api/account/v1/accounts/instrument
+### Create Account
+POST {{account_host}}/bk-api/account/v1/accounts
 BK_USER_ID: {{user-id}}
 Content-Type: application/json
 
 {
   "name": "S&P 500",
-  "currency": "RON",
-  "symbol": "SXR8_DE"
+  "unitType": "symbol",
+  "unit": "USD"
 }
 
 ### Create Currency Account

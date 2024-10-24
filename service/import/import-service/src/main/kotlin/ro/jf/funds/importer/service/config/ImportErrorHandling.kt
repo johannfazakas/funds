@@ -21,7 +21,7 @@ fun Application.configureImportErrorHandling() {
             when (cause) {
                 is ImportServiceException -> {
                     logger.warn(cause) { "Application error on ${call.request.httpMethod} ${call.request.path()}" }
-                    call.respond(cause.toStatusCode(), cause.toProblem())
+                    call.respond(cause.toStatusCode(), cause.toError())
                 }
 
                 else -> {
@@ -39,7 +39,7 @@ fun ImportServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is MissingImportConfigurationException -> HttpStatusCode.BadRequest
 }
 
-fun ImportServiceException.toProblem(): ErrorTO {
+fun ImportServiceException.toError(): ErrorTO {
     return when (this) {
         is ImportDataException -> ErrorTO(
             title = "Import data error",
