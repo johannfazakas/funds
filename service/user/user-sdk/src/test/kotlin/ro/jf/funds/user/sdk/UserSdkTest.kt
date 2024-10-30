@@ -8,16 +8,16 @@ import org.mockserver.client.MockServerClient
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.test.extension.MockServerExtension
+import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.user.api.exception.UserApiException
 import java.util.UUID.randomUUID
 import kotlin.test.assertFailsWith
 
 
-@ExtendWith(MockServerExtension::class)
+@ExtendWith(MockServerContainerExtension::class)
 class UserSdkTest {
     private val userSdk = UserSdk(
-        baseUrl = MockServerExtension.baseUrl
+        baseUrl = MockServerContainerExtension.baseUrl
     )
 
     @Test

@@ -1,7 +1,6 @@
 package ro.jf.funds.account.sdk
 
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -19,13 +18,13 @@ import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Symbol
-import ro.jf.funds.commons.test.extension.MockServerExtension
+import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.util.UUID.randomUUID
 
-@ExtendWith(MockServerExtension::class)
+@ExtendWith(MockServerContainerExtension::class)
 class AccountSdkTest {
-    private val accountSdk = AccountSdk(baseUrl = MockServerExtension.baseUrl)
+    private val accountSdk = AccountSdk(baseUrl = MockServerContainerExtension.baseUrl)
 
     @Test
     fun `test list accounts`(mockServerClient: MockServerClient): Unit = runBlocking {

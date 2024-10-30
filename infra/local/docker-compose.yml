@@ -15,7 +15,7 @@ services:
 
   kafka:
     image: bitnami/kafka:3.3.2
-    container_name: kafka
+    container_name: ff_kafka
     ports:
       - "9092:9092"
     environment:

@@ -19,7 +19,7 @@ import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.test.extension.MockServerExtension
+import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
@@ -27,10 +27,10 @@ import ro.jf.funds.fund.api.model.FundTransactionTO
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
-@ExtendWith(MockServerExtension::class)
+@ExtendWith(MockServerContainerExtension::class)
 class FundTransactionSdkTest {
     private val fundTransactionSdk = FundTransactionSdk(
-        baseUrl = MockServerExtension.baseUrl,
+        baseUrl = MockServerContainerExtension.baseUrl,
         httpClient = HttpClient(CIO) {
             install(ContentNegotiation) {
                 json(Json {

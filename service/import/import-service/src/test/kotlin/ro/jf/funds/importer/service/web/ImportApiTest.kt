@@ -23,7 +23,7 @@ import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.service.config.configureContentNegotiation
 import ro.jf.funds.commons.service.config.configureDependencies
-import ro.jf.funds.commons.test.extension.MockServerExtension
+import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironmentWithDB
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
 import ro.jf.funds.commons.web.USER_ID_HEADER
@@ -221,8 +221,8 @@ class ImportApiTest {
 
     // TODO(Johann) not required, right?
     private val appConfig = MapApplicationConfig(
-        "integration.account-service.base-url" to MockServerExtension.baseUrl,
-        "integration.fund-service.base-url" to MockServerExtension.baseUrl
+        "integration.account-service.base-url" to MockServerContainerExtension.baseUrl,
+        "integration.fund-service.base-url" to MockServerContainerExtension.baseUrl
     )
 
     private fun Application.testModule() {
