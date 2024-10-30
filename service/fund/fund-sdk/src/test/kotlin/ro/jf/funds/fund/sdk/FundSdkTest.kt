@@ -12,15 +12,15 @@ import org.mockserver.model.Header
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.test.extension.MockServerExtension
+import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
 import java.util.UUID.randomUUID
 
-@ExtendWith(MockServerExtension::class)
+@ExtendWith(MockServerContainerExtension::class)
 class FundSdkTest {
-    private val fundSdk = FundSdk(baseUrl = MockServerExtension.baseUrl)
+    private val fundSdk = FundSdk(baseUrl = MockServerContainerExtension.baseUrl)
 
     @Test
     fun `test list funds`(mockServerClient: MockServerClient): Unit = runBlocking {

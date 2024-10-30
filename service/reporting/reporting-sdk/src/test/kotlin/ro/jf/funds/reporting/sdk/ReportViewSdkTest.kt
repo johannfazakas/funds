@@ -10,16 +10,16 @@ import org.mockserver.client.MockServerClient
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.test.extension.MockServerExtension
+import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.CreateReportViewTaskTO
 import ro.jf.funds.reporting.api.model.ReportViewTypeTO
 import java.util.UUID.randomUUID
 
-@ExtendWith(MockServerExtension::class)
+@ExtendWith(MockServerContainerExtension::class)
 class ReportViewSdkTest {
-    private val reportViewSdk = ReportViewSdk(baseUrl = MockServerExtension.baseUrl)
+    private val reportViewSdk = ReportViewSdk(baseUrl = MockServerContainerExtension.baseUrl)
 
     val userId = randomUUID()
     val taskId = randomUUID()

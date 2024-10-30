@@ -24,6 +24,6 @@ dependencies {
     api(libs.testcontainers.mockserver)
     api(libs.testcontainers.postgresql)
     api(libs.testcontainers.jdbc)
+    api(libs.testcontainers.kafka)
     api(libs.mockserver.client)
-
 }

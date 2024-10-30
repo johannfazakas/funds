@@ -13,7 +13,7 @@ import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.commons.error.ApiException
-import ro.jf.funds.commons.test.extension.MockServerExtension
+import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.AccountMatcherTO
@@ -23,9 +23,9 @@ import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import java.io.File
 import java.util.UUID.randomUUID
 
-@ExtendWith(MockServerExtension::class)
+@ExtendWith(MockServerContainerExtension::class)
 class ImportSdkTest {
-    private val importSdk = ImportSdk(baseUrl = MockServerExtension.baseUrl)
+    private val importSdk = ImportSdk(baseUrl = MockServerContainerExtension.baseUrl)
 
     @Test
     fun `given import successful should retrieve response`(mockServerClient: MockServerClient): Unit = runBlocking {

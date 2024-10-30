@@ -28,19 +28,17 @@ object PostgresContainerExtension : BeforeAllCallback, AfterAllCallback {
         .withReuse(true)
 
     private val runningContainer: PostgreSQLContainer<*>
-        get() = container.also { ensurePostgresRunning() }
+        get() = container.apply { ensureRunning() }
 
-    private fun ensurePostgresRunning() {
-        container
-            .takeIf { !it.isRunning }
-            ?.apply {
-                start()
-                log.info("Started mock postgres @${jdbcUrl}")
-            }
+    private fun PostgreSQLContainer<*>.ensureRunning() {
+        if (!this.isRunning) {
+            start()
+            log.info { "Started postgres @${this.jdbcUrl}" }
+        }
     }
 
     override fun beforeAll(context: ExtensionContext) {
-        ensurePostgresRunning()
+        container.ensureRunning()
         migrateDB()
     }
 

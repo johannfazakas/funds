@@ -23,15 +23,15 @@ import ro.jf.funds.account.api.model.AccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountRecordTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.test.extension.MockServerExtension
+import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
-@ExtendWith(MockServerExtension::class)
+@ExtendWith(MockServerContainerExtension::class)
 class AccountTransactionSdkTest {
     private val accountTransactionSdk = AccountTransactionSdk(
-        baseUrl = MockServerExtension.baseUrl,
+        baseUrl = MockServerContainerExtension.baseUrl,
         httpClient = HttpClient(CIO) {
             install(ContentNegotiation) {
                 json(Json {

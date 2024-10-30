@@ -13,4 +13,6 @@ dependencies {
     api(libs.ktor.client.json)
     api(libs.ktor.client.content.negotiation)
     api(libs.ktor.serialization.kotlinx.json)
+
+    api(libs.kafka.clients)
 }

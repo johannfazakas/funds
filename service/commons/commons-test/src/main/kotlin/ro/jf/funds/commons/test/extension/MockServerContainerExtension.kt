@@ -9,19 +9,19 @@ import org.testcontainers.utility.DockerImageName
 private val log = logger { }
 
 
-object MockServerExtension : BeforeAllCallback, AfterEachCallback, ParameterResolver {
+object MockServerContainerExtension : BeforeAllCallback, AfterEachCallback, ParameterResolver {
     val client: MockServerClient
         get() = runningContainer.run { MockServerClient(host, serverPort) }
     val baseUrl: String
         get() = runningContainer.run { "http://$host:$serverPort" }
 
-    private val container: org.testcontainers.containers.MockServerContainer =
+    private val container: MockServerContainer =
         DockerImageName.parse("mockserver/mockserver")
             .withTag("mockserver-${MockServerClient::class.java.getPackage().implementationVersion}")
             .let(::MockServerContainer)
             .apply { withReuse(true) }
 
-    private val runningContainer: org.testcontainers.containers.MockServerContainer
+    private val runningContainer: MockServerContainer
         get() = container.also { ensureMockServerRunning() }
 
     override fun beforeAll(extensionContext: ExtensionContext) {

@@ -19,7 +19,7 @@ import org.mockserver.model.MediaType
 import ro.jf.funds.commons.service.config.configureContentNegotiation
 import ro.jf.funds.commons.service.config.configureDatabaseMigration
 import ro.jf.funds.commons.service.config.configureDependencies
-import ro.jf.funds.commons.test.extension.MockServerExtension
+import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironmentWithDB
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
@@ -35,7 +35,7 @@ import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
-@ExtendWith(MockServerExtension::class)
+@ExtendWith(MockServerContainerExtension::class)
 class FundApiTest {
 
     private val fundRepository = createFundRepository()
@@ -140,7 +140,7 @@ class FundApiTest {
     }
 
     private val appConfig = MapApplicationConfig(
-        "integration.account-service.base-url" to MockServerExtension.baseUrl
+        "integration.account-service.base-url" to MockServerContainerExtension.baseUrl
     )
 
     private fun Application.testModule() {
