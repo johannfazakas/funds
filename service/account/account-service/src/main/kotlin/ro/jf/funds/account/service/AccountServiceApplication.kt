@@ -5,6 +5,7 @@ import io.ktor.server.netty.*
 import org.koin.ktor.ext.get
 import ro.jf.funds.account.service.config.accountDependencies
 import ro.jf.funds.account.service.config.configureAccountErrorHandling
+import ro.jf.funds.account.service.config.configureAccountEventHandling
 import ro.jf.funds.account.service.config.configureAccountRouting
 import ro.jf.funds.commons.service.config.configureContentNegotiation
 import ro.jf.funds.commons.service.config.configureDatabaseMigration
@@ -22,4 +23,5 @@ fun Application.module() {
     configureContentNegotiation()
     configureDatabaseMigration(get<DataSource>())
     configureAccountRouting()
+    configureAccountEventHandling()
 }
