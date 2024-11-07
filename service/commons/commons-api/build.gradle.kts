@@ -7,6 +7,8 @@ dependencies {
     api(libs.kotlinx.serialization.json)
     api(libs.kotlinx.datetime)
 
+    api(libs.ktor.server.core)
+
     // TODO(Johann) not ideal to add this here
     api(libs.kafka.clients)
 

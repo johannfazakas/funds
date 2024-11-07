@@ -15,6 +15,8 @@ dependencies {
     api(libs.exposed.core)
     api(libs.flyway)
 
+    api(libs.kafka.clients)
+
     api(libs.ktor.server.tests.jvm)
     api(libs.ktor.server.test.host)
     implementation(libs.ktor.server.content.negotiation)

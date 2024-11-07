@@ -8,7 +8,7 @@ import io.ktor.server.application.*
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import ro.jf.funds.account.sdk.AccountSdk
-import ro.jf.funds.commons.service.environment.getStringProperty
+import ro.jf.funds.commons.config.getStringProperty
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.service.service.ImportHandler
