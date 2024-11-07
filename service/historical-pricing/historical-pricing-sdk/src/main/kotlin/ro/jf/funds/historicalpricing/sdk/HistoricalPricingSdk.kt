@@ -8,7 +8,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import ro.jf.funds.historicalpricing.api.model.*
-import ro.jf.funds.historicalpricing.api.model.*
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5231"
 

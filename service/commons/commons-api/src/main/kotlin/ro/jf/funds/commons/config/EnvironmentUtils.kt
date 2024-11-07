@@ -1,4 +1,4 @@
-package ro.jf.funds.commons.service.environment
+package ro.jf.funds.commons.config
 
 import io.ktor.server.application.*
 

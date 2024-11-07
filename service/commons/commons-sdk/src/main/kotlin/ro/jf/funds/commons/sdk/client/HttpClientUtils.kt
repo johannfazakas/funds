@@ -11,6 +11,7 @@ import kotlinx.serialization.json.Json
 import ro.jf.funds.commons.error.ApiException
 import ro.jf.funds.commons.error.ErrorTO
 
+// TODO(Johann) move to single commons lib
 fun createHttpClient() = HttpClient(CIO) {
     install(ContentNegotiation) {
         json(Json {
