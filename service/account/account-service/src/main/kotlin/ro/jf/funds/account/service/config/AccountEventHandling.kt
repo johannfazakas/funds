@@ -16,21 +16,35 @@ fun Application.configureAccountEventHandling() {
     val producerProperties by inject<ProducerProperties>()
     val accountTransactionService by inject<AccountTransactionService>()
 
+    val transactionsBatchCreateResponseProducer = createResponseProducer<GenericResponse>(
+        producerProperties,
+        Topic("local.funds.account.transactions-response")
+    )
+
+    val transactionsBatchCreateRequestConsumer = createRequestConsumer<CreateAccountTransactionsTO>(
+        consumerProperties,
+        Topic("local.funds.account.transactions-request")
+    ) {
+        logger.info { "Received create account transactions request $it" }
+        accountTransactionService.createTransactions(it.userId, it.payload)
+        transactionsBatchCreateResponseProducer.send(it.userId, it.correlationId, GenericResponse.Success)
+    }
 
     logger.info { "Configuring account event handling" }
     environment.monitor.subscribe(ApplicationStarted) {
-        val transactionsBatchCreateResponseProducer = createResponseProducer<GenericResponse>(
-            producerProperties,
-            Topic("local.funds.account.transactions-response")
-        )
+        transactionsBatchCreateRequestConsumer.consume()
+//
+//        consumeRequests<CreateAccountTransactionsTO>(
+//            consumerProperties,
+//            Topic("local.funds.account.transactions-request")
+//        ) { request ->
+//            logger.info { "Received create account transactions request $request" }
+//            accountTransactionService.createTransactions(request.userId, request.payload)
+//            transactionsBatchCreateResponseProducer.send(request.userId, request.correlationId, GenericResponse.Success)
+//        }
+    }
 
-        consumeRequests<CreateAccountTransactionsTO>(
-            consumerProperties,
-            Topic("local.funds.account.transactions-request")
-        ) { request ->
-            logger.info { "Received create account transactions request $request" }
-            accountTransactionService.createTransactions(request.userId, request.payload)
-            transactionsBatchCreateResponseProducer.send(request.userId, request.correlationId, GenericResponse.Success)
-        }
+    environment.monitor.subscribe(ApplicationStopped) {
+        transactionsBatchCreateRequestConsumer.close()
     }
 }

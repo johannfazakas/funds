@@ -83,7 +83,7 @@ class AccountTransactionsConsumerTest {
     private suspend fun account(name: AccountName): Account =
         accountRepository.save(userId, CreateAccountTO(name, Currency.RON))
 
-    private suspend fun createAccountTransactionsTO(account: Account, amount: BigDecimal): CreateAccountTransactionsTO =
+    private fun createAccountTransactionsTO(account: Account, amount: BigDecimal): CreateAccountTransactionsTO =
         CreateAccountTransactionsTO(
             transactions = listOf(
                 CreateAccountTransactionTO(

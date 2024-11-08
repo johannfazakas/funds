@@ -1,6 +1,7 @@
 package ro.jf.funds.commons.event
 
 import io.ktor.server.application.*
+import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
@@ -18,40 +19,45 @@ import java.util.*
 private const val KAFKA_BOOTSTRAP_SERVERS_PROPERTY = "kafka.bootstrapServers"
 private const val KAFKA_GROUP_ID_PROPERTY = "kafka.groupId"
 
-// TODO(Johann) should this be instead a class instantiated with a handler function argument?
-inline fun <reified T> consumeEvents(
-    properties: ConsumerProperties, topic: Topic, crossinline handler: (Event<T>) -> Unit
-) {
-    consumeRecords(properties, topic) { handler(it.asEvent()) }
+inline fun <reified T> createEventConsumer(
+    properties: ConsumerProperties, topic: Topic, noinline handler: suspend (Event<T>) -> Unit
+): Consumer {
+    return Consumer(properties, topic, { handler(it.asEvent()) })
 }
 
-inline fun <reified T> consumeRequests(
-    properties: ConsumerProperties, topic: Topic, crossinline handler: suspend (RpcRequest<T>) -> Unit
-) {
-    consumeRecords(properties, topic) { handler(it.asRequest()) }
+inline fun <reified T> createRequestConsumer(
+    properties: ConsumerProperties, topic: Topic, noinline handler: suspend (RpcRequest<T>) -> Unit
+): Consumer {
+    return Consumer(properties, topic, { handler(it.asRequest()) })
 }
 
-inline fun <reified T> consumeResponses(
-    properties: ConsumerProperties, topic: Topic, crossinline handler: (RpcResponse<T>) -> Unit
-) {
-    consumeRecords(properties, topic) { handler(it.asResponse()) }
+inline fun <reified T> createResponseConsumer(
+    properties: ConsumerProperties, topic: Topic, noinline handler: suspend (RpcResponse<T>) -> Unit
+): Consumer {
+    return Consumer(properties, topic, { handler(it.asResponse()) })
 }
 
-fun consumeRecords(
+class Consumer(
     properties: ConsumerProperties,
-    topic: Topic,
-    handler: suspend (ConsumerRecord<String, String>) -> Unit
-) {
-    val consumer = createConsumer(properties)
-    consumer.subscribe(listOf(topic.value))
+    private val topic: Topic,
+    private val handler: suspend (ConsumerRecord<String, String>) -> Unit
+) : Closeable {
+    private val consumer = createConsumer(properties)
 
-    CoroutineScope(Dispatchers.IO).launch {
-        while (isActive) {
-            val records = consumer.poll(Duration.ofMillis(500))
-            records.forEach {
-                handler.invoke(it)
+    fun consume() {
+        consumer.subscribe(listOf(topic.value))
+        CoroutineScope(Dispatchers.IO).launch {
+            while (isActive) {
+                val records = consumer.poll(Duration.ofMillis(500))
+                records.forEach {
+                    handler.invoke(it)
+                }
             }
         }
+    }
+
+    override fun close() {
+        consumer.close()
     }
 }
 
@@ -72,7 +78,7 @@ fun ConsumerRecord<String, String>.correlationId(): UUID = UUID.fromString(heade
 
 fun ConsumerRecord<String, String>.header(key: String): String = headers().lastHeader(key).value().let(::String)
 
-// TODO(Johann) could add another layer to do things like createEventConsumer which would poll Event records?
+// TODO(Johann) could add another layer to do things like createEventConsumer which would poll Event records? or it might be available only for test purposes
 fun createConsumer(properties: ConsumerProperties): KafkaConsumer<String, String> {
     return KafkaConsumer(Properties().also {
         it[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = properties.bootstrapServers

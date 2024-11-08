@@ -13,6 +13,7 @@ import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 fun ApplicationTestBuilder.createJsonHttpClient() =
     createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
 
+// TODO(Johann) shouldn't be needed, right?
 fun ApplicationTestBuilder.configureEnvironmentWithDB(
     configuration: ApplicationConfig = MapApplicationConfig(),
     module: Application.() -> Unit
