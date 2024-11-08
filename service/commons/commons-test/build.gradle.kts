@@ -3,6 +3,9 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":commons:commons-api"))
+
+    // TODO(Johann) a lot of these deps are not required anymore as commons-api was added
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.kotlinx.serialization.json)
