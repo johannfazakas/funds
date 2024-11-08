@@ -26,7 +26,7 @@ import java.util.UUID.randomUUID
 @ExtendWith(PostgresContainerExtension::class)
 class AccountApiTest {
 
-    private val accountRepository = createAccountRepository()
+    private val accountRepository = AccountRepository(PostgresContainerExtension.connection)
 
     @AfterEach
     fun tearDown() = runBlocking {
@@ -166,12 +166,4 @@ class AccountApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
     }
-
-    private fun createAccountRepository() = AccountRepository(
-        database = Database.connect(
-            url = PostgresContainerExtension.jdbcUrl,
-            user = PostgresContainerExtension.username,
-            password = PostgresContainerExtension.password
-        )
-    )
 }

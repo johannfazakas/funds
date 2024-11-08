@@ -2,6 +2,7 @@ package ro.jf.funds.commons.test.extension
 
 import mu.KotlinLogging.logger
 import org.flywaydb.core.Flyway
+import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.ExtensionContext
@@ -11,6 +12,14 @@ import org.testcontainers.utility.DockerImageName
 private val log = logger {}
 
 object PostgresContainerExtension : BeforeAllCallback, AfterAllCallback {
+    private val dockerImageName = DockerImageName.parse("postgres:15.2")
+    // container will be reused on local if you have `testcontainers.reuse.enable=true` in ~/.testcontainers.properties
+    private val container = PostgreSQLContainer(dockerImageName)
+        .withDatabaseName("user_db")
+        .withUsername("mock")
+        .withPassword("mock")
+        .withReuse(true)
+
     val jdbcUrl: String
         get() = runningContainer.jdbcUrl
     val username: String
@@ -18,14 +27,11 @@ object PostgresContainerExtension : BeforeAllCallback, AfterAllCallback {
     val password: String
         get() = runningContainer.password
 
-    private val dockerImageName = DockerImageName.parse("postgres:15.2")
-
-    // container will be reused on local if you have `testcontainers.reuse.enable=true` in ~/.testcontainers.properties
-    private val container = PostgreSQLContainer(dockerImageName)
-        .withDatabaseName("user_db")
-        .withUsername("mock")
-        .withPassword("mock")
-        .withReuse(true)
+    val connection: Database = Database.connect(
+        url = jdbcUrl,
+        user = username,
+        password = password
+    )
 
     private val runningContainer: PostgreSQLContainer<*>
         get() = container.apply { ensureRunning() }

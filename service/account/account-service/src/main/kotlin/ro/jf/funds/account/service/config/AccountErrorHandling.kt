@@ -16,6 +16,7 @@ fun Application.configureAccountErrorHandling() {
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             when (cause) {
+                // TODO(Johann) could something be extracted so it is also compatible with event error handling?
                 is AccountServiceException -> {
                     logger.warn(cause) { "Application error on ${call.request.httpMethod} ${call.request.path()}" }
                     call.respond(cause.toStatusCode(), cause.toProblem())

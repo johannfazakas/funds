@@ -15,8 +15,8 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
     configureDependencies(historicalPricingDependencies)
+    // TODO(Johann) how about db migration?
     configureContentNegotiation()
-
     configureRouting(
         instrumentService = get<ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentService>(),
         currencyService = get<CurrencyService>()
