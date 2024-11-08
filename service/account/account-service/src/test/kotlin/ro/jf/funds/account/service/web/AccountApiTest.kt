@@ -3,10 +3,10 @@ package ro.jf.funds.account.service.web
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
-import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -18,8 +18,10 @@ import ro.jf.funds.account.service.persistence.AccountRepository
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Symbol
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
-import ro.jf.funds.commons.test.utils.configureEnvironmentWithDB
+import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
+import ro.jf.funds.commons.test.utils.dbConfig
+import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.util.UUID.randomUUID
 
@@ -35,7 +37,7 @@ class AccountApiTest {
 
     @Test
     fun `test list accounts`() = testApplication {
-        configureEnvironmentWithDB { module() }
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         accountRepository.save(userId, CreateAccountTO(AccountName("Cash"), Currency.RON))
@@ -54,7 +56,7 @@ class AccountApiTest {
 
     @Test
     fun `test get account by id`() = testApplication {
-        configureEnvironmentWithDB { module() }
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val user = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
@@ -71,7 +73,7 @@ class AccountApiTest {
 
     @Test
     fun `test get account by id when missing`() = testApplication {
-        configureEnvironmentWithDB { module() }
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val response = createJsonHttpClient().get("/bk-api/account/v1/accounts/${randomUUID()}") {
@@ -83,7 +85,7 @@ class AccountApiTest {
 
     @Test
     fun `test create currency account`() = testApplication {
-        configureEnvironmentWithDB { module() }
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val response = createJsonHttpClient().post("/bk-api/account/v1/accounts") {
@@ -104,7 +106,7 @@ class AccountApiTest {
 
     @Test
     fun `test create instrument account`() = testApplication {
-        configureEnvironmentWithDB { module() }
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val response = createJsonHttpClient().post("/bk-api/account/v1/accounts") {
@@ -127,7 +129,7 @@ class AccountApiTest {
 
     @Test
     fun `test create account with duplicate name`() = testApplication {
-        configureEnvironmentWithDB { module() }
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         accountRepository.save(userId, CreateAccountTO(AccountName("BT"), Currency.EUR))
@@ -143,7 +145,7 @@ class AccountApiTest {
 
     @Test
     fun `test delete account by id`() = testApplication {
-        configureEnvironmentWithDB { module() }
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val account = accountRepository.save(userId, CreateAccountTO(AccountName("ING"), Currency.RON))
@@ -158,7 +160,7 @@ class AccountApiTest {
 
     @Test
     fun `test delete not existing user by id`() = testApplication {
-        configureEnvironmentWithDB { module() }
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val response = createJsonHttpClient().delete("/bk-api/account/v1/accounts/${randomUUID()}") {
             header(USER_ID_HEADER, randomUUID())

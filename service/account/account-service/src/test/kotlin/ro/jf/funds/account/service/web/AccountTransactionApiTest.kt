@@ -3,6 +3,7 @@ package ro.jf.funds.account.service.web
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
@@ -17,8 +18,7 @@ import ro.jf.funds.account.service.persistence.AccountRepository
 import ro.jf.funds.account.service.persistence.AccountTransactionRepository
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
-import ro.jf.funds.commons.test.utils.configureEnvironmentWithDB
-import ro.jf.funds.commons.test.utils.createJsonHttpClient
+import ro.jf.funds.commons.test.utils.*
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
@@ -43,7 +43,7 @@ class AccountTransactionApiTest {
 
     @Test
     fun `test create transaction`(): Unit = testApplication {
-        configureEnvironmentWithDB { module() }
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val account1 = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
@@ -90,7 +90,7 @@ class AccountTransactionApiTest {
 
     @Test
     fun `test list transactions`() = testApplication {
-        configureEnvironmentWithDB { module() }
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val dateTime = LocalDateTime(2024, 7, 22, 9, 17)
@@ -153,7 +153,7 @@ class AccountTransactionApiTest {
 
     @Test
     fun `test delete transaction`() = testApplication {
-        configureEnvironmentWithDB { module() }
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val dateTime = LocalDateTime(2024, 7, 22, 9, 17)
