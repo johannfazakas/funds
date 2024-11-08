@@ -9,6 +9,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
+import ro.jf.funds.account.api.event.ACCOUNT_DOMAIN
+import ro.jf.funds.account.api.event.CREATE_ACCOUNT_TRANSACTIONS_REQUEST
+import ro.jf.funds.account.api.event.CREATE_ACCOUNT_TRANSACTIONS_RESPONSE
 import ro.jf.funds.account.api.model.*
 import ro.jf.funds.account.service.domain.Account
 import ro.jf.funds.account.service.module
@@ -22,6 +25,7 @@ import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.test.utils.kafkaConfig
+import ro.jf.funds.commons.test.utils.testTopicSupplier
 import java.math.BigDecimal
 import java.time.Duration
 import java.util.UUID.randomUUID
@@ -32,6 +36,11 @@ import java.util.concurrent.TimeUnit
 class AccountTransactionsConsumerTest {
     private val accountRepository = AccountRepository(PostgresContainerExtension.connection)
     private val accountTransactionRepository = AccountTransactionRepository(PostgresContainerExtension.connection)
+
+    private val createTransactionsResponseTopic =
+        testTopicSupplier.getTopic(ACCOUNT_DOMAIN, CREATE_ACCOUNT_TRANSACTIONS_RESPONSE)
+    private val createTransactionsRequestTopic =
+        testTopicSupplier.getTopic(ACCOUNT_DOMAIN, CREATE_ACCOUNT_TRANSACTIONS_REQUEST)
 
     private val userId = randomUUID()
     private val correlationId = randomUUID()
@@ -51,11 +60,11 @@ class AccountTransactionsConsumerTest {
         val createAccountTransactionsTO = createAccountTransactionsTO(account, BigDecimal("100.0"))
 
         val consumer = createConsumer(ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer"))
-        // TODO(Johann) abstract topics
-        consumer.subscribe(listOf("local.funds.account.transactions-response"))
+
+        consumer.subscribe(listOf(createTransactionsResponseTopic.value))
         val producer = createRequestProducer<CreateAccountTransactionsTO>(
             ProducerProperties(KafkaContainerExtension.bootstrapServers, "test-producer"),
-            Topic("local.funds.account.transactions-request")
+            Topic(createTransactionsRequestTopic.value)
         )
 
         producer.send(userId, correlationId, createAccountTransactionsTO)
