@@ -8,33 +8,22 @@ import io.ktor.server.application.*
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
-import org.postgresql.ds.PGSimpleDataSource
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.account.sdk.AccountTransactionSdk
+import ro.jf.funds.commons.persistence.getDataSource
+import ro.jf.funds.commons.persistence.getDbConnection
 import ro.jf.funds.fund.service.persistence.FundRepository
 import ro.jf.funds.fund.service.service.AccountTransactionAdapter
 import ro.jf.funds.fund.service.service.FundService
 import ro.jf.funds.fund.service.service.FundTransactionService
-import java.sql.DriverManager
+import java.sql.Connection
 import javax.sql.DataSource
 
 val Application.fundDependencies
     get() = module {
-        single<DataSource> {
-            PGSimpleDataSource().apply {
-                setURL(environment.config.property("database.url").getString())
-                user = environment.config.property("database.user").getString()
-                password = environment.config.property("database.password").getString()
-            }
-        }
+        single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
-        single {
-            DriverManager.getConnection(
-                environment.config.property("database.url").getString(),
-                environment.config.property("database.user").getString(),
-                environment.config.property("database.password").getString()
-            )
-        }
+        single<Connection> { environment.getDbConnection() }
         single<HttpClient> {
             HttpClient(CIO) {
                 install(ContentNegotiation) {
