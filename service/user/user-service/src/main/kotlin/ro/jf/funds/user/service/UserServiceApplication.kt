@@ -3,10 +3,11 @@ package ro.jf.funds.user.service
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
 import org.koin.ktor.ext.get
-import ro.jf.funds.user.service.config.configureDependencies
-import ro.jf.funds.user.service.config.configureRouting
-import ro.jf.funds.user.service.config.configureSerialization
-import ro.jf.funds.user.service.config.migrateDatabase
+import ro.jf.funds.commons.service.config.configureContentNegotiation
+import ro.jf.funds.commons.service.config.configureDependencies
+import ro.jf.funds.user.service.config.configureUserRouting
+import ro.jf.funds.user.service.config.configureUserMigration
+import ro.jf.funds.user.service.config.userDependencies
 import javax.sql.DataSource
 
 fun main(args: Array<String>) {
@@ -14,8 +15,9 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    configureDependencies()
-    configureSerialization()
-    migrateDatabase(get<DataSource>())
-    configureRouting()
+    configureDependencies(userDependencies)
+    configureContentNegotiation()
+    // TODO(Johann) is this required? how is it done in fund/account service?
+    configureUserMigration(get<DataSource>())
+    configureUserRouting()
 }

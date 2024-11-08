@@ -3,9 +3,10 @@ package ro.jf.funds.historicalpricing.service
 import io.ktor.server.application.*
 import io.ktor.server.netty.*
 import org.koin.ktor.ext.get
-import ro.jf.funds.historicalpricing.service.config.configureDependencyInjection
+import ro.jf.funds.commons.service.config.configureContentNegotiation
+import ro.jf.funds.commons.service.config.configureDependencies
 import ro.jf.funds.historicalpricing.service.config.configureRouting
-import ro.jf.funds.historicalpricing.service.config.configureSerialization
+import ro.jf.funds.historicalpricing.service.config.historicalPricingDependencies
 import ro.jf.funds.historicalpricing.service.domain.service.currency.CurrencyService
 
 fun main(args: Array<String>) {
@@ -13,8 +14,8 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    configureDependencyInjection()
-    configureSerialization()
+    configureDependencies(historicalPricingDependencies)
+    configureContentNegotiation()
 
     configureRouting(
         instrumentService = get<ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentService>(),

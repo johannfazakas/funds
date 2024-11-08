@@ -9,7 +9,8 @@ dependencies {
 
     api(libs.ktor.server.core)
 
-    // TODO(Johann) not ideal to add this here
+    api(libs.postgresql)
+
     api(libs.kafka.clients)
 
     api(libs.kotlin.logging)

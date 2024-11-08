@@ -6,7 +6,7 @@ import org.koin.ktor.ext.get
 import ro.jf.funds.user.service.adapter.web.userApiRouting
 import ro.jf.funds.user.service.domain.port.UserRepository
 
-fun Application.configureRouting() {
+fun Application.configureUserRouting() {
     routing {
         userApiRouting(get<UserRepository>())
     }
