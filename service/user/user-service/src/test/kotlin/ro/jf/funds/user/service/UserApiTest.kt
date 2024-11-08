@@ -23,7 +23,7 @@ import java.util.UUID.randomUUID
 @ExtendWith(PostgresContainerExtension::class)
 class UserApiTest {
 
-    private val userRepository = createUserRepository()
+    private val userRepository = UserExposedRepository(PostgresContainerExtension.connection)
 
     @AfterEach
     fun tearDown() = runBlocking {
@@ -151,12 +151,4 @@ class UserApiTest {
             module()
         }
     }
-
-    private fun createUserRepository() = UserExposedRepository(
-        database = Database.connect(
-            url = PostgresContainerExtension.jdbcUrl,
-            user = PostgresContainerExtension.username,
-            password = PostgresContainerExtension.password
-        )
-    )
 }
