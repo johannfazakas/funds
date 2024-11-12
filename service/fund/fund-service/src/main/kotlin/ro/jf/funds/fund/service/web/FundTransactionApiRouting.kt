@@ -32,13 +32,6 @@ fun Routing.fundTransactionApiRouting(fundTransactionService: FundTransactionSer
             val transaction = fundTransactionService.createTransaction(userId, request)
             call.respond(HttpStatusCode.Created, transaction.toTO())
         }
-        post("/batch") {
-            val userId = call.userId()
-            val requests = call.receive<CreateFundTransactionsTO>()
-            log.debug { "Create for user id $userId transactions $requests." }
-            val transactions = fundTransactionService.createTransactions(userId, requests)
-            call.respond(HttpStatusCode.Created, transactions.map(FundTransaction::toTO))
-        }
         delete("/{transactionId}") {
             val userId = call.userId()
             val transactionId =

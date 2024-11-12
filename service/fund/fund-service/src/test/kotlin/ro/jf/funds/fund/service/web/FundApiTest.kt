@@ -19,10 +19,10 @@ import org.mockserver.model.MediaType
 import ro.jf.funds.commons.service.config.configureContentNegotiation
 import ro.jf.funds.commons.service.config.configureDatabaseMigration
 import ro.jf.funds.commons.service.config.configureDependencies
+import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
-import ro.jf.funds.commons.test.utils.configureEnvironmentWithDB
-import ro.jf.funds.commons.test.utils.createJsonHttpClient
+import ro.jf.funds.commons.test.utils.*
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
@@ -36,13 +36,14 @@ import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(MockServerContainerExtension::class)
+@ExtendWith(KafkaContainerExtension::class)
 class FundApiTest {
 
     private val fundRepository = createFundRepository()
 
     @Test
     fun `test list funds`() = testApplication {
-        configureEnvironmentWithDB(appConfig) { testModule() }
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, appConfig)
 
         val userId = randomUUID()
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
@@ -61,7 +62,7 @@ class FundApiTest {
 
     @Test
     fun `test get fund by id`() = testApplication {
-        configureEnvironmentWithDB(appConfig) { testModule() }
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, appConfig)
 
         val userId = randomUUID()
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Savings")))
@@ -79,7 +80,7 @@ class FundApiTest {
 
     @Test
     fun `test create fund`(mockServerClient: MockServerClient): Unit = testApplication {
-        configureEnvironmentWithDB(appConfig) { testModule() }
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, appConfig)
 
         val userId = randomUUID()
         val accountId = randomUUID()
@@ -127,7 +128,7 @@ class FundApiTest {
 
     @Test
     fun `test delete fund by id`() = testApplication {
-        configureEnvironmentWithDB(appConfig) { testModule() }
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, appConfig)
         val userId = randomUUID()
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Company")))
 

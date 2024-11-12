@@ -12,6 +12,7 @@ import ro.jf.funds.account.api.AccountTransactionAsyncApi
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
 import java.util.*
 
+// TODO(Johann) it could completely not be needed after all, generic request producer might be enough
 class AccountTransactionAsyncSdk(
     // TODO(Johann) could be replaced by kafka producer
     private val bootstrapServers: String,

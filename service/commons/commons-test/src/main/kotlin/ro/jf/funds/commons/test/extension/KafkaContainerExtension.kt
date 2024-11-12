@@ -3,7 +3,7 @@ package ro.jf.funds.commons.test.extension
 import mu.KotlinLogging.logger
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.admin.RemoveMembersFromConsumerGroupOptions
-import org.junit.jupiter.api.extension.AfterAllCallback
+import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.testcontainers.containers.KafkaContainer
@@ -12,8 +12,8 @@ import java.util.*
 
 private val log = logger { }
 
-object KafkaContainerExtension : BeforeAllCallback, AfterAllCallback {
-    private val dockerImage = DockerImageName.parse("confluentinc/cp-kafka:7.4.0")
+object KafkaContainerExtension : BeforeAllCallback, AfterEachCallback {
+    private val dockerImage = DockerImageName.parse("confluentinc/cp-kafka:7.7.1")
     private val container = KafkaContainer(dockerImage)
         .withReuse(true)
 
@@ -31,7 +31,7 @@ object KafkaContainerExtension : BeforeAllCallback, AfterAllCallback {
         container.ensureRunning()
     }
 
-    override fun afterAll(context: ExtensionContext) {
+    override fun afterEach(context: ExtensionContext) {
         container.reset()
     }
 
@@ -44,18 +44,23 @@ object KafkaContainerExtension : BeforeAllCallback, AfterAllCallback {
 
     private fun KafkaContainer.reset() {
         log.info { "Resetting kafka @${this.bootstrapServers}" }
-        adminClient.listConsumerGroups().all().get().map { it.groupId() }.let { consumerGroupIds ->
-            adminClient.describeConsumerGroups(consumerGroupIds).all().get().let { consumerGroupsById ->
-                consumerGroupsById
-                    .filter { it.value.members().isNotEmpty() }
-                    .forEach {
-                        adminClient.removeMembersFromConsumerGroup(it.key, RemoveMembersFromConsumerGroupOptions()).all().get()
-                    }
+        try {
+            adminClient.listConsumerGroups().all().get().map { it.groupId() }.let { consumerGroupIds ->
+                adminClient.describeConsumerGroups(consumerGroupIds).all().get().let { consumerGroupsById ->
+                    consumerGroupsById
+                        .filter { it.value.members().isNotEmpty() }
+                        .forEach {
+                            adminClient.removeMembersFromConsumerGroup(it.key, RemoveMembersFromConsumerGroupOptions())
+                                .all().get()
+                        }
+                }
+                adminClient.deleteConsumerGroups(consumerGroupIds).all().get()
             }
-            adminClient.deleteConsumerGroups(consumerGroupIds).all().get()
-        }
-        adminClient.listTopics().names().get().let { topics ->
-            adminClient.deleteTopics(topics).all().get()
+            adminClient.listTopics().names().get().let { topics ->
+                adminClient.deleteTopics(topics).all().get()
+            }
+        } catch (e: Exception) {
+            log.warn(e) { "Failed to completely reset kafka @${this.bootstrapServers}" }
         }
     }
 }

@@ -7,11 +7,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import ro.jf.funds.account.api.model.AccountRecordTO
-import ro.jf.funds.account.api.model.AccountTransactionTO
-import ro.jf.funds.account.api.model.CreateAccountRecordTO
-import ro.jf.funds.account.api.model.CreateAccountTransactionTO
+import ro.jf.funds.account.api.model.*
 import ro.jf.funds.account.sdk.AccountTransactionSdk
+import ro.jf.funds.commons.event.RequestProducer
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
@@ -21,7 +19,9 @@ import java.util.UUID.randomUUID
 
 class FundTransactionServiceTest {
     private val accountTransactionSdk: AccountTransactionSdk = mock()
-    private val accountTransactionAdapter = AccountTransactionAdapter(accountTransactionSdk)
+    private val accountTransactionsRequestProducer = mock<RequestProducer<CreateAccountTransactionsTO>>()
+    private val accountTransactionAdapter =
+        AccountTransactionAdapter(accountTransactionSdk, accountTransactionsRequestProducer)
     private val fundTransactionService = FundTransactionService(accountTransactionAdapter)
 
     @Test

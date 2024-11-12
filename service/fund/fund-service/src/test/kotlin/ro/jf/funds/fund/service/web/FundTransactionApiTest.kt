@@ -25,10 +25,10 @@ import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.service.config.configureContentNegotiation
 import ro.jf.funds.commons.service.config.configureDatabaseMigration
 import ro.jf.funds.commons.service.config.configureDependencies
+import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
-import ro.jf.funds.commons.test.utils.configureEnvironmentWithDB
-import ro.jf.funds.commons.test.utils.createJsonHttpClient
+import ro.jf.funds.commons.test.utils.*
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
@@ -42,13 +42,14 @@ import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(MockServerContainerExtension::class)
+@ExtendWith(KafkaContainerExtension::class)
 class FundTransactionApiTest {
     private val accountTransactionSdk: AccountTransactionSdk = mock()
     private val accountSdk: AccountSdk = mock()
 
     @Test
     fun `test create transaction`(): Unit = testApplication {
-        configureEnvironmentWithDB { testModule() }
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val userId = randomUUID()
         val companyAccountId = randomUUID()
         val personalAccountId = randomUUID()
@@ -145,7 +146,7 @@ class FundTransactionApiTest {
 
     @Test
     fun `test list transactions`() = testApplication {
-        configureEnvironmentWithDB { testModule() }
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val transactionId = randomUUID()
@@ -213,7 +214,7 @@ class FundTransactionApiTest {
 
     @Test
     fun `test remove transaction`() = testApplication {
-        configureEnvironmentWithDB { testModule() }
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val transactionId = randomUUID()

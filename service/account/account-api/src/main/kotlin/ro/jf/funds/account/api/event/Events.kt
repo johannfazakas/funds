@@ -5,6 +5,6 @@ import ro.jf.funds.commons.event.EventType
 
 val ACCOUNT_DOMAIN = Domain("account")
 
-val CREATE_ACCOUNT_TRANSACTIONS_REQUEST = EventType("transactions-request")
+val ACCOUNT_TRANSACTIONS_REQUEST = EventType("transactions-request")
 
-val CREATE_ACCOUNT_TRANSACTIONS_RESPONSE = EventType("transactions-response")
+val ACCOUNT_TRANSACTIONS_RESPONSE = EventType("transactions-response")

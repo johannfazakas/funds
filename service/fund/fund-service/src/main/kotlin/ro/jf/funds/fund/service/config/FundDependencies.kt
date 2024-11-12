@@ -8,8 +8,13 @@ import io.ktor.server.application.*
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
+import ro.jf.funds.account.api.event.ACCOUNT_DOMAIN
+import ro.jf.funds.account.api.event.ACCOUNT_TRANSACTIONS_REQUEST
+import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.account.sdk.AccountTransactionSdk
+import ro.jf.funds.commons.config.getEnvironmentProperty
+import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.commons.persistence.getDbConnection
 import ro.jf.funds.fund.service.persistence.FundRepository
@@ -36,6 +41,13 @@ val Application.fundDependencies
             }
         }
         single<FundRepository> { FundRepository(get()) }
+        // TODO(Johann) common kafka stuff could be extracted as koin module
+        single<TopicSupplier> { TopicSupplier(environment.getEnvironmentProperty()) }
+        single<ConsumerProperties> { ConsumerProperties.fromEnv(environment) }
+        single<ProducerProperties> { ProducerProperties.fromEnv(environment) }
+        single<RequestProducer<CreateAccountTransactionsTO>> {
+            createRequestProducer(get(), get<TopicSupplier>().topic(ACCOUNT_DOMAIN, ACCOUNT_TRANSACTIONS_REQUEST))
+        }
         single<AccountSdk> {
             AccountSdk(
                 environment.config.property("integration.account-service.base-url").getString(), get()
@@ -46,7 +58,7 @@ val Application.fundDependencies
                 environment.config.property("integration.account-service.base-url").getString(), get()
             )
         }
-        single<AccountTransactionAdapter> { AccountTransactionAdapter(get()) }
+        single<AccountTransactionAdapter> { AccountTransactionAdapter(get(), get()) }
         single<FundService> { FundService(get()) }
         single<FundTransactionService> { FundTransactionService(get()) }
     }
