@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import ro.jf.funds.account.api.event.ACCOUNT_DOMAIN
-import ro.jf.funds.account.api.event.CREATE_ACCOUNT_TRANSACTIONS_REQUEST
-import ro.jf.funds.account.api.event.CREATE_ACCOUNT_TRANSACTIONS_RESPONSE
+import ro.jf.funds.account.api.event.ACCOUNT_TRANSACTIONS_REQUEST
+import ro.jf.funds.account.api.event.ACCOUNT_TRANSACTIONS_RESPONSE
 import ro.jf.funds.account.api.model.*
 import ro.jf.funds.account.service.domain.Account
 import ro.jf.funds.account.service.module
@@ -33,14 +33,14 @@ import java.util.concurrent.TimeUnit
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(KafkaContainerExtension::class)
-class AccountTransactionsConsumerTest {
+class AccountTransactionsEventHandlingTest {
     private val accountRepository = AccountRepository(PostgresContainerExtension.connection)
     private val accountTransactionRepository = AccountTransactionRepository(PostgresContainerExtension.connection)
 
-    private val createTransactionsResponseTopic =
-        testTopicSupplier.getTopic(ACCOUNT_DOMAIN, CREATE_ACCOUNT_TRANSACTIONS_RESPONSE)
     private val createTransactionsRequestTopic =
-        testTopicSupplier.getTopic(ACCOUNT_DOMAIN, CREATE_ACCOUNT_TRANSACTIONS_REQUEST)
+        testTopicSupplier.topic(ACCOUNT_DOMAIN, ACCOUNT_TRANSACTIONS_REQUEST)
+    private val createTransactionsResponseTopic =
+        testTopicSupplier.topic(ACCOUNT_DOMAIN, ACCOUNT_TRANSACTIONS_RESPONSE)
 
     private val userId = randomUUID()
     private val correlationId = randomUUID()
@@ -59,7 +59,7 @@ class AccountTransactionsConsumerTest {
         val account = account(AccountName("Cash"))
         val createAccountTransactionsTO = createAccountTransactionsTO(account, BigDecimal("100.0"))
 
-        val consumer = createConsumer(ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer"))
+        val consumer = createKafkaConsumer(ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer"))
 
         consumer.subscribe(listOf(createTransactionsResponseTopic.value))
         val producer = createRequestProducer<CreateAccountTransactionsTO>(

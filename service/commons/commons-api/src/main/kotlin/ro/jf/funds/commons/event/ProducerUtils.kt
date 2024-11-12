@@ -66,7 +66,7 @@ open class GenericProducer<T>(
     private val topic: Topic,
     clazz: Class<T>
 ) {
-    protected val kafkaProducer = createProducer(producerProperties)
+    protected val kafkaProducer = createKafkaProducer(producerProperties)
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -85,7 +85,7 @@ open class GenericProducer<T>(
     }
 }
 
-fun createProducer(properties: ProducerProperties): KafkaProducer<String, String> {
+fun createKafkaProducer(properties: ProducerProperties): KafkaProducer<String, String> {
     return KafkaProducer(Properties().also {
         it[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = properties.bootstrapServers
         it[ProducerConfig.CLIENT_ID_CONFIG] = properties.clientId

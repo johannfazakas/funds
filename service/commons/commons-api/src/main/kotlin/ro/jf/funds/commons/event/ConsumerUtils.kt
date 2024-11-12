@@ -2,10 +2,7 @@ package ro.jf.funds.commons.event
 
 import io.ktor.server.application.*
 import io.ktor.utils.io.core.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -37,16 +34,18 @@ inline fun <reified T> createResponseConsumer(
     return Consumer(properties, topic, { handler(it.asResponse()) })
 }
 
+// TODO(Johann) if handlers could be attached separately, maybe Consumers could be injected
 class Consumer(
     properties: ConsumerProperties,
     private val topic: Topic,
     private val handler: suspend (ConsumerRecord<String, String>) -> Unit
 ) : Closeable {
-    private val consumer = createConsumer(properties)
+    private val consumer = createKafkaConsumer(properties)
+    private lateinit var consumerJob: Job
 
     fun consume() {
         consumer.subscribe(listOf(topic.value))
-        CoroutineScope(Dispatchers.IO).launch {
+        consumerJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 val records = consumer.poll(Duration.ofMillis(500))
                 records.forEach {
@@ -57,6 +56,7 @@ class Consumer(
     }
 
     override fun close() {
+        consumerJob.cancel()
         consumer.close()
     }
 }
@@ -79,7 +79,8 @@ fun ConsumerRecord<String, String>.correlationId(): UUID = UUID.fromString(heade
 fun ConsumerRecord<String, String>.header(key: String): String = headers().lastHeader(key).value().let(::String)
 
 // TODO(Johann) could add another layer to do things like createEventConsumer which would poll Event records? or it might be available only for test purposes
-fun createConsumer(properties: ConsumerProperties): KafkaConsumer<String, String> {
+// TODO(Johann) should this be private?
+fun createKafkaConsumer(properties: ConsumerProperties): KafkaConsumer<String, String> {
     return KafkaConsumer(Properties().also {
         it[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = properties.bootstrapServers
         it[ConsumerConfig.GROUP_ID_CONFIG] = properties.groupId

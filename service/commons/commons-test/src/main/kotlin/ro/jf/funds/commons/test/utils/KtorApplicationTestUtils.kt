@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import ro.jf.funds.commons.event.TopicSupplier
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
+import java.util.UUID.randomUUID
 
 private const val TEST_ENVIRONMENT = "test"
 
@@ -56,7 +57,7 @@ val dbConfig
 val kafkaConfig
     get() = MapApplicationConfig(
         "kafka.bootstrapServers" to KafkaContainerExtension.bootstrapServers,
-        "kafka.groupId" to "test-group-id",
+        "kafka.groupId" to "test-group-id-${randomUUID()}",
         "kafka.clientId" to "test-client-id",
     )
 

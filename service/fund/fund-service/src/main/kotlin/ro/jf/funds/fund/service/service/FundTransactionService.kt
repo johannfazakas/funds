@@ -6,7 +6,7 @@ import ro.jf.funds.fund.service.domain.FundTransaction
 import java.util.*
 
 class FundTransactionService(
-    private val accountTransactionAdapter: AccountTransactionAdapter
+    private val accountTransactionAdapter: AccountTransactionAdapter,
 ) {
     suspend fun listTransactions(userId: UUID): List<FundTransaction> {
         return accountTransactionAdapter.listTransactions(userId)
@@ -17,9 +17,9 @@ class FundTransactionService(
         return accountTransactionAdapter.createTransaction(userId, request)
     }
 
-    suspend fun createTransactions(userId: UUID, request: CreateFundTransactionsTO): List<FundTransaction> {
+    suspend fun createTransactions(userId: UUID, correlationId: UUID, request: CreateFundTransactionsTO) {
         // TODO(Johann) should validate fund existence here? otherwise where?
-        return accountTransactionAdapter.createTransactions(userId, request)
+        return accountTransactionAdapter.createTransactions(userId, correlationId, request)
     }
 
     suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {

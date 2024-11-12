@@ -13,7 +13,7 @@ value class EventType(val value: String)
 private const val APPLICATION_NAME = "funds"
 
 class TopicSupplier(val environment: String) {
-    fun getTopic(domain: Domain, eventType: EventType): Topic {
+    fun topic(domain: Domain, eventType: EventType): Topic {
         return Topic("$environment.$APPLICATION_NAME.$environment.${domain.value}.${eventType.value}")
     }
 }
