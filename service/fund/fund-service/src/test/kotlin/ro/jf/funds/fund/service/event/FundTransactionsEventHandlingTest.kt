@@ -82,14 +82,14 @@ class FundTransactionsEventHandlingTest {
         createAccountTransactionsConsumer.subscribe(listOf(createAccountTransactionsRequestTopic.value))
 
         val producer =
-            createRequestProducer<CreateFundTransactionsTO>(producerProperties, createFundTransactionsRequestTopic)
+            createProducer<CreateFundTransactionsTO>(producerProperties, createFundTransactionsRequestTopic)
 
-        producer.send(userId, correlationId, createFundTransactionsTO)
+        producer.send(Event(userId, createFundTransactionsTO, correlationId, userId.toString()))
 
         await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             val createAccountTransactionsRequest =
                 createAccountTransactionsConsumer.poll(Duration.ofSeconds(1)).toList()
-                    .map { it.asRequest<CreateAccountTransactionsTO>() }
+                    .map { it.asEvent<CreateAccountTransactionsTO>() }
                     .firstOrNull { it.correlationId == correlationId }
             assertThat(createAccountTransactionsRequest).isNotNull
             assertThat(createAccountTransactionsRequest!!.userId).isEqualTo(userId)
@@ -124,14 +124,19 @@ class FundTransactionsEventHandlingTest {
         createFundTransactionsResponseConsumer.subscribe(listOf(createFundTransactionsResponseTopic.value))
 
         val createAccountTransactionsResponseProducer =
-            createResponseProducer<GenericResponse>(producerProperties, createAccountTransactionsResponseTopic)
+            createProducer<GenericResponse>(producerProperties, createAccountTransactionsResponseTopic)
 
-        createAccountTransactionsResponseProducer.send(userId, correlationId, GenericResponse.Success)
+        createAccountTransactionsResponseProducer.send(Event(
+            userId,
+            GenericResponse.Success,
+            correlationId,
+            userId.toString()
+        ))
 
         await().atMost(Duration.ofSeconds(10)).untilAsserted {
             val createFundTransactionsResponse =
                 createFundTransactionsResponseConsumer.poll(Duration.ofSeconds(1)).toList()
-                    .map { it.asResponse<GenericResponse>() }
+                    .map { it.asEvent<GenericResponse>() }
                     .firstOrNull { it.correlationId == correlationId }
             assertThat(createFundTransactionsResponse).isNotNull
             assertThat(createFundTransactionsResponse!!.userId).isEqualTo(userId)

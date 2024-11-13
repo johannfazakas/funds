@@ -62,16 +62,16 @@ class AccountTransactionsEventHandlingTest {
         val consumer = createKafkaConsumer(ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer"))
         consumer.subscribe(listOf(createTransactionsResponseTopic.value))
 
-        val producer = createRequestProducer<CreateAccountTransactionsTO>(
+        val producer = createProducer<CreateAccountTransactionsTO>(
             ProducerProperties(KafkaContainerExtension.bootstrapServers, "test-producer"),
             createTransactionsRequestTopic
         )
 
-        producer.send(userId, correlationId, createAccountTransactionsTO)
+        producer.send(Event(userId, createAccountTransactionsTO, correlationId, userId.toString()))
 
         await().atMost(10, TimeUnit.SECONDS).untilAsserted {
             val records = consumer.poll(Duration.ofSeconds(1))
-            val response = records.toList().map { it.asResponse<GenericResponse>() }
+            val response = records.toList().map { it.asEvent<GenericResponse>() }
                 .firstOrNull { it.correlationId == correlationId }
             assertThat(response).isNotNull
             assertThat(response!!.payload).isInstanceOf(GenericResponse.Success::class.java)
