@@ -16,29 +16,64 @@ import java.util.*
 private const val KAFKA_BOOTSTRAP_SERVERS_PROPERTY = "kafka.bootstrapServers"
 private const val KAFKA_GROUP_ID_PROPERTY = "kafka.groupId"
 
-inline fun <reified T> createEventConsumer(
-    properties: ConsumerProperties, topic: Topic, noinline handler: suspend (Event<T>) -> Unit
-): Consumer {
-    return Consumer(properties, topic, { handler(it.asEvent()) })
+interface Handler<T> {
+    suspend fun handle(event: T)
 }
 
-inline fun <reified T> createRequestConsumer(
-    properties: ConsumerProperties, topic: Topic, noinline handler: suspend (RpcRequest<T>) -> Unit
-): Consumer {
-    return Consumer(properties, topic, { handler(it.asRequest()) })
+abstract class RequestHandler<T> : Handler<RpcRequest<T>>
+abstract class ResponseHandler<T> : Handler<RpcResponse<T>>
+abstract class EventHandler<T> : Handler<Event<T>>
+
+class EventConsumer<T>(
+    properties: ConsumerProperties,
+    topic: Topic,
+    handler: EventHandler<T>,
+    mapper: (ConsumerRecord<String, String>) -> Event<T>
+) : Consumer<Event<T>>(properties, topic, handler, mapper) {
+    companion object {
+        inline fun <reified T> createEventConsumer(
+            properties: ConsumerProperties, topic: Topic, handler: EventHandler<T>
+        ): EventConsumer<T> {
+            return EventConsumer(properties, topic, handler, { it.asEvent() })
+        }
+    }
 }
 
-inline fun <reified T> createResponseConsumer(
-    properties: ConsumerProperties, topic: Topic, noinline handler: suspend (RpcResponse<T>) -> Unit
-): Consumer {
-    return Consumer(properties, topic, { handler(it.asResponse()) })
+class RequestConsumer<T>(
+    properties: ConsumerProperties,
+    topic: Topic,
+    handler: RequestHandler<T>,
+    mapper: (ConsumerRecord<String, String>) -> RpcRequest<T>
+) : Consumer<RpcRequest<T>>(properties, topic, handler, mapper) {
+    companion object {
+        inline fun <reified T> createRequestConsumer(
+            properties: ConsumerProperties, topic: Topic, handler: RequestHandler<T>
+        ): RequestConsumer<T> {
+            return RequestConsumer(properties, topic, handler, { it.asRequest() })
+        }
+    }
 }
 
-// TODO(Johann) if handlers could be attached separately, maybe Consumers could be injected
-class Consumer(
+class ResponseConsumer<T>(
+    properties: ConsumerProperties,
+    topic: Topic,
+    handler: ResponseHandler<T>,
+    mapper: (ConsumerRecord<String, String>) -> RpcResponse<T>
+) : Consumer<RpcResponse<T>>(properties, topic, handler, mapper) {
+    companion object {
+        inline fun <reified T> createResponseConsumer(
+            properties: ConsumerProperties, topic: Topic, handler: ResponseHandler<T>
+        ): ResponseConsumer<T> {
+            return ResponseConsumer(properties, topic, handler, { it.asResponse() })
+        }
+    }
+}
+
+open class Consumer<T>(
     properties: ConsumerProperties,
     private val topic: Topic,
-    private val handler: suspend (ConsumerRecord<String, String>) -> Unit
+    private val handler: Handler<T>,
+    private val mapper: (ConsumerRecord<String, String>) -> T
 ) : Closeable {
     private val consumer = createKafkaConsumer(properties)
     private lateinit var consumerJob: Job
@@ -49,7 +84,7 @@ class Consumer(
             while (isActive) {
                 val records = consumer.poll(Duration.ofMillis(500))
                 records.forEach {
-                    handler.invoke(it)
+                    handler.handle(mapper(it))
                 }
             }
         }
@@ -103,4 +138,3 @@ data class ConsumerProperties(
         }
     }
 }
-
