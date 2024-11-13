@@ -1,4 +1,4 @@
-package ro.jf.funds.commons.sdk.client
+package ro.jf.funds.commons.web
 
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -11,7 +11,6 @@ import kotlinx.serialization.json.Json
 import ro.jf.funds.commons.error.ApiException
 import ro.jf.funds.commons.error.ErrorTO
 
-// TODO(Johann) move to single commons lib
 fun createHttpClient() = HttpClient(CIO) {
     install(ContentNegotiation) {
         json(Json {

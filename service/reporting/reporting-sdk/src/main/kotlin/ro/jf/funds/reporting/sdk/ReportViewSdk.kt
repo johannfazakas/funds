@@ -6,7 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.sdk.client.createHttpClient
+import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.reporting.api.ReportViewApi
 import ro.jf.funds.reporting.api.exception.ReportingApiException

@@ -16,15 +16,14 @@ fun Application.configureAccountErrorHandling() {
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             when (cause) {
-                // TODO(Johann) could something be extracted so it is also compatible with event error handling?
                 is AccountServiceException -> {
                     logger.warn(cause) { "Application error on ${call.request.httpMethod} ${call.request.path()}" }
-                    call.respond(cause.toStatusCode(), cause.toProblem())
+                    call.respond(cause.toStatusCode(), cause.toError())
                 }
 
                 else -> {
                     logger.error(cause) { "Unexpected error on ${call.request.httpMethod} ${call.request.path()}" }
-                    call.respond(HttpStatusCode.InternalServerError, ErrorTO.internal(cause))
+                    call.respond(HttpStatusCode.InternalServerError, cause.toError())
                 }
             }
         }
@@ -39,7 +38,14 @@ fun AccountServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is AccountRecordCurrencyMismatch -> HttpStatusCode.UnprocessableEntity
 }
 
-fun AccountServiceException.toProblem(): ErrorTO {
+fun Throwable.toError(): ErrorTO {
+    return when (this) {
+        is AccountServiceException -> (this as AccountServiceException).toError()
+        else -> ErrorTO.internal(this)
+    }
+}
+
+fun AccountServiceException.toError(): ErrorTO {
     return when (this) {
         is AccountNameAlreadyExists -> ErrorTO(
             title = "Account name already exists",
@@ -67,4 +73,3 @@ fun AccountServiceException.toProblem(): ErrorTO {
         )
     }
 }
-

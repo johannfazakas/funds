@@ -5,7 +5,6 @@ rootProject.name = "funds"
 
 include("commons:commons-api")
 include("commons:commons-service")
-include("commons:commons-sdk")
 include("commons:commons-test")
 
 include("historical-pricing:historical-pricing-api")

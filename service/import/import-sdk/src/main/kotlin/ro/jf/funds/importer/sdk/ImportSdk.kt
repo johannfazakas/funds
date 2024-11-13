@@ -9,8 +9,8 @@ import io.ktor.http.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.sdk.client.createHttpClient
-import ro.jf.funds.commons.sdk.client.toApiException
+import ro.jf.funds.commons.web.createHttpClient
+import ro.jf.funds.commons.web.toApiException
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.importer.api.ImportApi
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
