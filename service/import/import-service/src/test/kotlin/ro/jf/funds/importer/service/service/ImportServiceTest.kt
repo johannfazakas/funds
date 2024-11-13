@@ -4,10 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.mockito.kotlin.*
 import ro.jf.funds.commons.event.Event
 import ro.jf.funds.commons.event.Producer
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
@@ -21,7 +18,7 @@ import ro.jf.funds.importer.service.service.parser.ImportParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
 import java.util.UUID.randomUUID
 
-class ImportServiceTest {
+class startImportServiceTest {
     private val importParserRegistry = mock<ImportParserRegistry>()
     private val importParser = mock<ImportParser>()
     private val importFundMapper = mock<ImportFundMapper>()
@@ -35,7 +32,7 @@ class ImportServiceTest {
     private val importTaskId = randomUUID()
 
     @Test
-    fun `should parse and handle import files`(): Unit = runBlocking {
+    fun `should produce fund transactions request`(): Unit = runBlocking {
         val importType = ImportFileTypeTO.WALLET_CSV
         val configuration = ImportConfigurationTO(importType, emptyList(), emptyList())
         val importFiles = listOf("fileContent1", "fileContent2")
@@ -48,7 +45,10 @@ class ImportServiceTest {
         whenever(importFundMapper.mapToFundTransactions(userId, importTaskId, importItems))
             .thenReturn(fundTransactions)
 
-        importService.import(userId, configuration, importFiles)
+        val importTask = importService.startImport(userId, configuration, importFiles)
+
+        assertThat(importTask.taskId).isEqualTo(importTaskId)
+        assertThat(importTask.status).isEqualTo(ImportTaskTO.Status.IN_PROGRESS)
 
         val eventCaptor = argumentCaptor<Event<CreateFundTransactionsTO>>()
         verify(createFundTransactionsProducer, times(1)).send(eventCaptor.capture())
@@ -56,5 +56,26 @@ class ImportServiceTest {
         assertThat(eventCaptor.firstValue.correlationId).isEqualTo(importTaskId)
         assertThat(eventCaptor.firstValue.payload.transactions).isEqualTo(fundTransactions)
         assertThat(eventCaptor.firstValue.key).isEqualTo(userId.toString())
+    }
+
+    @Test
+    fun `should retrieve failed task on parse exception`(): Unit = runBlocking {
+        val importType = ImportFileTypeTO.WALLET_CSV
+        val configuration = ImportConfigurationTO(importType, emptyList(), emptyList())
+        val importFiles = listOf("fileContent1", "fileContent2")
+        whenever(importParserRegistry[importType]).thenReturn(importParser)
+        whenever(importParser.parse(configuration, importFiles)).thenThrow(RuntimeException("parse error"))
+        whenever(importTaskRepository.save(userId, ImportTaskTO.Status.IN_PROGRESS))
+            .thenReturn(ImportTaskTO(importTaskId, ImportTaskTO.Status.IN_PROGRESS))
+        whenever(importTaskRepository.update(eq(userId), any<ImportTaskTO>()))
+            .thenAnswer { invocation -> invocation.getArgument(1) }
+
+        val importTask = importService.startImport(userId, configuration, importFiles)
+
+        assertThat(importTask.taskId).isEqualTo(importTaskId)
+        assertThat(importTask.status).isEqualTo(ImportTaskTO.Status.FAILED)
+        assertThat(importTask.reason).isEqualTo("parse error")
+
+        verify(createFundTransactionsProducer, never()).send(any())
     }
 }

@@ -19,12 +19,23 @@ class ImportService(
     private val importFundMapper: ImportFundMapper,
     private val createFundTransactionsProducer: Producer<CreateFundTransactionsTO>
 ) {
-    suspend fun import(userId: UUID, configuration: ImportConfigurationTO, files: List<String>) {
+    suspend fun startImport(userId: UUID, configuration: ImportConfigurationTO, files: List<String>): ImportTaskTO {
         log.info { "Importing files >> user = $userId configuration = $configuration files count = ${files.size}." }
         val importTask = importTaskRepository.save(userId, ImportTaskTO.Status.IN_PROGRESS)
-        val importItems = importParserRegistry[configuration.fileType].parse(configuration, files)
-        val fundTransactions = importFundMapper.mapToFundTransactions(userId, importTask.taskId, importItems)
-        createFundTransactionsProducer
-            .send(Event(userId, CreateFundTransactionsTO(fundTransactions), importTask.taskId))
+        return try {
+            val importItems = importParserRegistry[configuration.fileType].parse(configuration, files)
+            val fundTransactions = importFundMapper.mapToFundTransactions(userId, importTask.taskId, importItems)
+            createFundTransactionsProducer
+                .send(Event(userId, CreateFundTransactionsTO(fundTransactions), importTask.taskId))
+            importTask
+        } catch (e: Exception) {
+            log.warn(e) { "Error while importing files >> user = $userId configuration = $configuration files = $files." }
+            importTaskRepository
+                .update(userId, importTask.copy(status = ImportTaskTO.Status.FAILED, reason = e.message))
+        }
+    }
+
+    suspend fun getImportStatus(userId: UUID, taskId: UUID): ImportTaskTO? {
+        return importTaskRepository.findById(userId, taskId)
     }
 }

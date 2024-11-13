@@ -14,7 +14,7 @@ import ro.jf.funds.commons.web.toApiException
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.importer.api.ImportApi
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
-import ro.jf.funds.importer.api.model.ImportResponse
+import ro.jf.funds.importer.api.model.ImportTaskTO
 import java.io.File
 import java.util.*
 
@@ -30,7 +30,7 @@ class ImportSdk(
         userId: UUID,
         importConfiguration: ImportConfigurationTO,
         csvFile: File
-    ): ImportResponse {
+    ): ImportTaskTO {
         return import(userId, importConfiguration, listOf(csvFile))
     }
 
@@ -38,7 +38,7 @@ class ImportSdk(
         userId: UUID,
         importConfiguration: ImportConfigurationTO,
         csvFiles: List<File>
-    ): ImportResponse {
+    ): ImportTaskTO {
         log.info { "Importing CSV files ${csvFiles.map { it.name }} for user $userId." }
         val response: HttpResponse = httpClient.post("$baseUrl/bk-api/import/v1/imports") {
             header(USER_ID_HEADER, userId.toString())
@@ -57,7 +57,7 @@ class ImportSdk(
             ))
         }
         return when (response.status) {
-            HttpStatusCode.Created -> response.body<ImportResponse>()
+            HttpStatusCode.Created -> response.body<ImportTaskTO>()
             else -> throw response.toApiException()
         }
     }
