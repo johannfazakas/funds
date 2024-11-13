@@ -60,11 +60,11 @@ class AccountTransactionsEventHandlingTest {
         val createAccountTransactionsTO = createAccountTransactionsTO(account, BigDecimal("100.0"))
 
         val consumer = createKafkaConsumer(ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer"))
-
         consumer.subscribe(listOf(createTransactionsResponseTopic.value))
+
         val producer = createRequestProducer<CreateAccountTransactionsTO>(
             ProducerProperties(KafkaContainerExtension.bootstrapServers, "test-producer"),
-            Topic(createTransactionsRequestTopic.value)
+            createTransactionsRequestTopic
         )
 
         producer.send(userId, correlationId, createAccountTransactionsTO)
