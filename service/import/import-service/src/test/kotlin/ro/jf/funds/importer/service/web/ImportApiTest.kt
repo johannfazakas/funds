@@ -11,6 +11,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.koin.ktor.ext.get
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -22,10 +24,14 @@ import ro.jf.funds.commons.error.ErrorTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.service.config.configureContentNegotiation
+import ro.jf.funds.commons.service.config.configureDatabaseMigration
 import ro.jf.funds.commons.service.config.configureDependencies
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
-import ro.jf.funds.commons.test.utils.configureEnvironmentWithDB
+import ro.jf.funds.commons.test.extension.PostgresContainerExtension
+import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
+import ro.jf.funds.commons.test.utils.dbConfig
+import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
@@ -37,7 +43,9 @@ import ro.jf.funds.importer.service.config.configureImportRouting
 import ro.jf.funds.importer.service.config.importDependencies
 import java.io.File
 import java.util.UUID.randomUUID
+import javax.sql.DataSource
 
+@ExtendWith(PostgresContainerExtension::class)
 class ImportApiTest {
     private val accountSdk: AccountSdk = mock()
     private val fundSdk: FundSdk = mock()
@@ -45,7 +53,7 @@ class ImportApiTest {
 
     @Test
     fun `test valid import`() = testApplication {
-        configureEnvironmentWithDB(appConfig) { testModule() }
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
@@ -106,7 +114,7 @@ class ImportApiTest {
 
     @Test
     fun `test invalid import with missing configuration`(): Unit = testApplication {
-        configureEnvironmentWithDB(appConfig) { testModule() }
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
@@ -131,7 +139,7 @@ class ImportApiTest {
 
     @Test
     fun `test invalid import with bad csv file`(): Unit = testApplication {
-        configureEnvironmentWithDB(appConfig) { testModule() }
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
@@ -176,7 +184,7 @@ class ImportApiTest {
 
     @Test
     fun `test invalid import with missing account matcher`() = testApplication {
-        configureEnvironmentWithDB(appConfig) { testModule() }
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
@@ -234,6 +242,7 @@ class ImportApiTest {
         configureDependencies(importDependencies, importAppTestModule)
         configureImportErrorHandling()
         configureContentNegotiation()
+        configureDatabaseMigration(get<DataSource>())
         configureImportRouting()
     }
 }
