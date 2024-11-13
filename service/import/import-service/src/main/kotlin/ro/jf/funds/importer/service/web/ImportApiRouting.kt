@@ -10,9 +10,9 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.service.routing.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
-import ro.jf.funds.importer.api.model.ImportResponse
 import ro.jf.funds.importer.service.domain.exception.MissingImportConfigurationException
 import ro.jf.funds.importer.service.service.ImportService
+import java.util.*
 
 private val log = logger { }
 
@@ -31,10 +31,28 @@ fun Routing.importApiRouting(
             val rawFileParts = requestParts.rawFileParts()
 
             val importConfiguration: ImportConfigurationTO = requestParts.importConfigurationPart()
-            importService.import(userId, importConfiguration, rawFileParts)
-            call.respond(HttpStatusCode.Created, ImportResponse("Imported in service"))
+            val importTask = importService.startImport(userId, importConfiguration, rawFileParts)
+            call.respond(HttpStatusCode.Accepted, importTask)
         }
     }
+
+    route("/bk-api/import/v1/imports/{importTaskId}") {
+        get {
+            val userId = call.userId()
+            val taskId = call.parameters["taskId"]?.let(UUID::fromString)
+                ?: throw IllegalArgumentException("Missing taskId")
+            log.info { "Import status request for user $userId and task $taskId." }
+
+            val importTask = importService.getImportStatus(userId, taskId)
+            if (importTask == null) {
+                call.respond(HttpStatusCode.NotFound)
+            } else {
+                call.respond(HttpStatusCode.OK, importTask)
+            }
+        }
+    }
+
+
 }
 
 private fun List<PartData>.importConfigurationPart(): ImportConfigurationTO {

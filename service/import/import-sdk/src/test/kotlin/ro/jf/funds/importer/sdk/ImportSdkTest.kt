@@ -16,16 +16,14 @@ import ro.jf.funds.commons.error.ApiException
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.FundName
-import ro.jf.funds.importer.api.model.AccountMatcherTO
-import ro.jf.funds.importer.api.model.FundMatcherTO
-import ro.jf.funds.importer.api.model.ImportConfigurationTO
-import ro.jf.funds.importer.api.model.ImportFileTypeTO
+import ro.jf.funds.importer.api.model.*
 import java.io.File
 import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerContainerExtension::class)
 class ImportSdkTest {
     private val importSdk = ImportSdk(baseUrl = MockServerContainerExtension.baseUrl)
+    private val importTaskId = randomUUID()
 
     @Test
     fun `given import successful should retrieve response`(mockServerClient: MockServerClient): Unit = runBlocking {
@@ -57,7 +55,8 @@ class ImportSdkTest {
                     .withContentType(MediaType.APPLICATION_JSON)
                     .withBody(
                         buildJsonObject {
-                            put("response", JsonPrimitive("success"))
+                            put("taskId", JsonPrimitive(importTaskId.toString()))
+                            put("status", JsonPrimitive(ImportTaskTO.Status.IN_PROGRESS.name))
                         }.toString()
                     )
             )
@@ -69,7 +68,8 @@ class ImportSdkTest {
         )
 
         assertThat(response).isNotNull
-        assertThat(response.response).isEqualTo("success")
+        assertThat(response.taskId).isEqualTo(importTaskId)
+        assertThat(response.status).isEqualTo(ImportTaskTO.Status.IN_PROGRESS)
     }
 
     @Test
