@@ -15,17 +15,23 @@ import java.util.*
 
 private val log = logger { }
 
-class ImportHandler(
+class ImportFundMapper(
     private val accountSdk: AccountSdk,
     private val fundSdk: FundSdk,
     private val fundTransactionSdk: FundTransactionSdk
 ) {
-    suspend fun import(userId: UUID, importTransactions: List<ImportTransaction>) {
+    suspend fun mapToFundTransactions(
+        userId: UUID,
+        importTaskId: UUID,
+        importTransactions: List<ImportTransaction>
+    ): List<CreateFundTransactionTO> {
         log.info { "Handling import >> user = $userId items size = ${importTransactions.size}." }
 
         val transactionRequests = importTransactions
             .toTransactionRequests(createImportResourceContext(userId))
-        fundTransactionSdk.createTransactions(userId, CreateFundTransactionsTO(transactionRequests))
+        val transactions = CreateFundTransactionsTO(transactionRequests)
+        fundTransactionSdk.createTransactions(userId, transactions)
+        return transactionRequests
     }
 
     private fun List<ImportTransaction>.toTransactionRequests(importResourceContext: ImportResourceContext): List<CreateFundTransactionTO> =

@@ -2,17 +2,20 @@ package ro.jf.funds.importer.service.service
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.fund.api.model.*
+import ro.jf.funds.fund.api.model.CreateFundRecordTO
+import ro.jf.funds.fund.api.model.CreateFundTransactionTO
+import ro.jf.funds.fund.api.model.FundName
+import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.service.domain.ImportRecord
@@ -21,14 +24,15 @@ import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
-class ImportHandlerTest {
+class ImportFundMapperTest {
     private val accountSdk = mock<AccountSdk>()
     private val fundSdk = mock<FundSdk>()
     private val fundTransactionSdk = mock<FundTransactionSdk>()
-    private val importHandler = ImportHandler(accountSdk, fundSdk, fundTransactionSdk)
+    private val importFundMapper = ImportFundMapper(accountSdk, fundSdk, fundTransactionSdk)
+    private val importTaskId = randomUUID()
 
     @Test
-    fun `should handle import transactions`(): Unit = runBlocking {
+    fun `should map import transactions`(): Unit = runBlocking {
         val userId = randomUUID()
         val transaction1DateTime = LocalDateTime.parse("2024-07-22T09:17:00")
         val transaction2DateTime = LocalDateTime.parse("2024-07-22T09:18:00")
@@ -57,45 +61,38 @@ class ImportHandlerTest {
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, bankAccount, companyAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
 
-        importHandler.import(userId, importTransactions)
+        val fundTransactions = importFundMapper.mapToFundTransactions(userId, importTaskId, importTransactions)
 
-        verify(fundTransactionSdk).createTransactions(
-            userId,
-            CreateFundTransactionsTO(
-                listOf(
-                    CreateFundTransactionTO(
-                        dateTime = transaction1DateTime,
-                        records = listOf(
-                            CreateFundRecordTO(
-                                fundId = expensedFund.id,
-                                accountId = bankAccount.id,
-                                amount = BigDecimal("-100.00"),
-                                unit = Currency.RON
-                            )
-                        )
-                    ),
-                    CreateFundTransactionTO(
-                        dateTime = transaction2DateTime,
-                        records = listOf(
-                            CreateFundRecordTO(
-                                fundId = incomeFund.id,
-                                accountId = companyAccount.id,
-                                amount = BigDecimal("-50.00"),
-                                unit = Currency.RON
-                            ),
-                            CreateFundRecordTO(
-                                fundId = expensedFund.id,
-                                accountId = cashAccount.id,
-                                amount = BigDecimal("50.00"),
-                                unit = Currency.RON
-                            ),
-                        )
+        assertThat(fundTransactions).containsExactlyInAnyOrder(
+            CreateFundTransactionTO(
+                dateTime = transaction1DateTime,
+                records = listOf(
+                    CreateFundRecordTO(
+                        fundId = expensedFund.id,
+                        accountId = bankAccount.id,
+                        amount = BigDecimal("-100.00"),
+                        unit = Currency.RON
                     )
                 )
-
+            ),
+            CreateFundTransactionTO(
+                dateTime = transaction2DateTime,
+                records = listOf(
+                    CreateFundRecordTO(
+                        fundId = incomeFund.id,
+                        accountId = companyAccount.id,
+                        amount = BigDecimal("-50.00"),
+                        unit = Currency.RON
+                    ),
+                    CreateFundRecordTO(
+                        fundId = expensedFund.id,
+                        accountId = cashAccount.id,
+                        amount = BigDecimal("50.00"),
+                        unit = Currency.RON
+                    ),
+                )
             )
         )
-
     }
 
     @Test
@@ -113,7 +110,15 @@ class ImportHandlerTest {
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account("Cash RON")))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(fund("Expenses")))
 
-        assertThatThrownBy { runBlocking { importHandler.import(userId, importTransactions) } }
+        assertThatThrownBy {
+            runBlocking {
+                importFundMapper.mapToFundTransactions(
+                    userId,
+                    importTaskId,
+                    importTransactions
+                )
+            }
+        }
             .isInstanceOf(ImportDataException::class.java)
             .hasMessage("Record account not found: Revolut")
     }
@@ -133,7 +138,15 @@ class ImportHandlerTest {
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account("Revolut")))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(fund("Investments")))
 
-        assertThatThrownBy { runBlocking { importHandler.import(userId, importTransactions) } }
+        assertThatThrownBy {
+            runBlocking {
+                importFundMapper.mapToFundTransactions(
+                    userId,
+                    importTaskId,
+                    importTransactions
+                )
+            }
+        }
             .isInstanceOf(ImportDataException::class.java)
             .hasMessage("Record fund not found: Expenses")
     }

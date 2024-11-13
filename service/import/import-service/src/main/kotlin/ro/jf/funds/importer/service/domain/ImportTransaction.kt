@@ -3,9 +3,8 @@ package ro.jf.funds.importer.service.domain
 import kotlinx.datetime.LocalDateTime
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.fund.api.model.FundName
-import java.math.BigDecimal
-
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
+import java.math.BigDecimal
 
 data class ImportTransaction(
     // TODO(Johann) should this be called a hash? How will it be used downstream? Will it be?
