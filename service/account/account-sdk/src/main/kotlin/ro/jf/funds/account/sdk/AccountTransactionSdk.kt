@@ -11,7 +11,7 @@ import ro.jf.funds.account.api.model.AccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
 import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.sdk.client.toApiException
+import ro.jf.funds.commons.web.toApiException
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.util.*
 
