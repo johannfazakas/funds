@@ -2,7 +2,8 @@ package ro.jf.funds.fund.service.service
 
 import ro.jf.funds.account.api.model.*
 import ro.jf.funds.account.sdk.AccountTransactionSdk
-import ro.jf.funds.commons.event.RequestProducer
+import ro.jf.funds.commons.event.Event
+import ro.jf.funds.commons.event.Producer
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.service.domain.FundRecord
@@ -13,7 +14,7 @@ const val METADATA_FUND_ID = "fundId"
 
 class AccountTransactionAdapter(
     private val accountTransactionSdk: AccountTransactionSdk,
-    private val accountTransactionsRequestProducer: RequestProducer<CreateAccountTransactionsTO>
+    private val accountTransactionsRequestProducer: Producer<CreateAccountTransactionsTO>
 ) {
     suspend fun listTransactions(userId: UUID): List<FundTransaction> {
         return accountTransactionSdk.listTransactions(userId).items.map { it.toFundTransaction(userId) }
@@ -29,7 +30,8 @@ class AccountTransactionAdapter(
         val createAccountTransactionRequest = CreateAccountTransactionsTO(
             request.transactions.map { it.toAccountTransactionTO() }
         )
-        return accountTransactionsRequestProducer.send(userId, correlationId, createAccountTransactionRequest)
+        val event = Event(userId, createAccountTransactionRequest, correlationId, userId.toString())
+        return accountTransactionsRequestProducer.send(event)
     }
 
     private fun CreateFundTransactionTO.toAccountTransactionTO() =

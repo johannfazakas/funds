@@ -9,7 +9,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import ro.jf.funds.account.api.model.*
 import ro.jf.funds.account.sdk.AccountTransactionSdk
-import ro.jf.funds.commons.event.RequestProducer
+import ro.jf.funds.commons.event.Producer
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
@@ -19,7 +19,7 @@ import java.util.UUID.randomUUID
 
 class FundTransactionServiceTest {
     private val accountTransactionSdk: AccountTransactionSdk = mock()
-    private val accountTransactionsRequestProducer = mock<RequestProducer<CreateAccountTransactionsTO>>()
+    private val accountTransactionsRequestProducer = mock<Producer<CreateAccountTransactionsTO>>()
     private val accountTransactionAdapter =
         AccountTransactionAdapter(accountTransactionSdk, accountTransactionsRequestProducer)
     private val fundTransactionService = FundTransactionService(accountTransactionAdapter)

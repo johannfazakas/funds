@@ -17,56 +17,15 @@ import java.util.*
 private const val KAFKA_BOOTSTRAP_SERVERS_PROPERTY = "kafka.bootstrapServers"
 private const val KAFKA_CLIENT_ID_PROPERTY = "kafka.clientId"
 
-inline fun <reified T> createEventProducer(producerProperties: ProducerProperties, topic: Topic): EventProducer<T> =
-    EventProducer(producerProperties, topic, T::class.java)
+inline fun <reified T> createProducer(properties: ProducerProperties, topic: Topic): Producer<T> =
+    Producer(properties, topic, T::class.java)
 
-inline fun <reified T> createResponseProducer(
-    producerProperties: ProducerProperties,
-    topic: Topic
-): ResponseProducer<T> =
-    ResponseProducer(producerProperties, topic, T::class.java)
-
-inline fun <reified T> createRequestProducer(producerProperties: ProducerProperties, topic: Topic): RequestProducer<T> =
-    RequestProducer(producerProperties, topic, T::class.java)
-
-class EventProducer<T>(
-    producerProperties: ProducerProperties, topic: Topic, clazz: Class<T>
-) : GenericProducer<T>(producerProperties, topic, clazz) {
-    suspend fun send(userId: UUID, event: T) {
-        super.send(userId.toString(), event, mapOf(USER_ID_HEADER to userId.toString()))
-    }
-}
-
-class RequestProducer<T>(
-    producerProperties: ProducerProperties, topic: Topic, clazz: Class<T>
-) : GenericProducer<T>(producerProperties, topic, clazz) {
-    suspend fun send(userId: UUID, correlationId: UUID, request: T) {
-        val headers = mapOf(
-            USER_ID_HEADER to userId.toString(),
-            CORRELATION_ID_HEADER to correlationId.toString()
-        )
-        super.send(userId.toString(), request, headers)
-    }
-}
-
-class ResponseProducer<T>(
-    producerProperties: ProducerProperties, topic: Topic, clazz: Class<T>
-) : GenericProducer<T>(producerProperties, topic, clazz) {
-    suspend fun send(userId: UUID, correlationId: UUID, response: T) {
-        val headers = mapOf(
-            USER_ID_HEADER to userId.toString(),
-            CORRELATION_ID_HEADER to correlationId.toString()
-        )
-        super.send(userId.toString(), response, headers)
-    }
-}
-
-open class GenericProducer<T>(
+open class Producer<T>(
     producerProperties: ProducerProperties,
     private val topic: Topic,
     clazz: Class<T>
 ) {
-    protected val kafkaProducer = createKafkaProducer(producerProperties)
+    private val kafkaProducer = createKafkaProducer(producerProperties)
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -75,7 +34,15 @@ open class GenericProducer<T>(
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    suspend fun send(key: String, payload: T, headers: Map<String, String> = emptyMap()) {
+    suspend fun send(event: Event<T>) {
+        val headers = mutableMapOf(USER_ID_HEADER to event.userId.toString())
+        if (event.correlationId != null) {
+            headers[CORRELATION_ID_HEADER] = event.correlationId.toString()
+        }
+        send(event.key, event.payload, headers)
+    }
+
+    private suspend fun send(key: String, payload: T, headers: Map<String, String> = emptyMap()) {
         val value = json.encodeToString(serializable, payload)
         val producerRecord = ProducerRecord(topic.value, key, value)
         headers.forEach { (k, v) -> producerRecord.headers().add(k, v.toByteArray()) }

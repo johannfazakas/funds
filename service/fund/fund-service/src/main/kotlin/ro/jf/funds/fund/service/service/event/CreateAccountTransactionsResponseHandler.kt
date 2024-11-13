@@ -1,18 +1,17 @@
 package ro.jf.funds.fund.service.service.event
 
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.event.ResponseHandler
-import ro.jf.funds.commons.event.ResponseProducer
-import ro.jf.funds.commons.event.RpcResponse
+import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.model.GenericResponse
 
 private val log = logger { }
 
 class CreateAccountTransactionsResponseHandler(
-    private val createFundTransactionsResponseProducer: ResponseProducer<GenericResponse>
-) : ResponseHandler<GenericResponse>() {
-    override suspend fun handle(event: RpcResponse<GenericResponse>) {
+    private val createFundTransactionsResponseProducer: Producer<GenericResponse>
+) : Handler<GenericResponse> {
+    override suspend fun handle(event: Event<GenericResponse>) {
         log.info { "Received create account transactions response $event" }
-        createFundTransactionsResponseProducer.send(event.userId, event.correlationId, event.payload)
+        val event = Event(event.userId, event.payload, event.correlationId, event.userId.toString())
+        createFundTransactionsResponseProducer.send(event)
     }
 }

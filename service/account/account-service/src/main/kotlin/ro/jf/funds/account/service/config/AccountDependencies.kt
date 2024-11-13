@@ -15,7 +15,6 @@ import ro.jf.funds.account.service.service.AccountTransactionService
 import ro.jf.funds.account.service.service.event.CreateAccountTransactionsRequestHandler
 import ro.jf.funds.commons.config.getEnvironmentProperty
 import ro.jf.funds.commons.event.*
-import ro.jf.funds.commons.event.RequestConsumer.Companion.createRequestConsumer
 import ro.jf.funds.commons.model.GenericResponse
 import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.commons.persistence.getDbConnection
@@ -36,14 +35,14 @@ val Application.accountDependencies
         single<AccountTransactionRepository> { AccountTransactionRepository(get()) }
         single<AccountTransactionService> { AccountTransactionService(get(), get()) }
         single<TopicSupplier> { TopicSupplier(environment.getEnvironmentProperty()) }
-        single<ResponseProducer<GenericResponse>>(CREATE_ACCOUNT_TRANSACTIONS_RESPONSE_PRODUCER) {
-            createResponseProducer(get(), get<TopicSupplier>().topic(ACCOUNT_DOMAIN, ACCOUNT_TRANSACTIONS_RESPONSE))
+        single<Producer<GenericResponse>>(CREATE_ACCOUNT_TRANSACTIONS_RESPONSE_PRODUCER) {
+            createProducer(get(), get<TopicSupplier>().topic(ACCOUNT_DOMAIN, ACCOUNT_TRANSACTIONS_RESPONSE))
         }
         single<CreateAccountTransactionsRequestHandler> {
             CreateAccountTransactionsRequestHandler(get(), get(CREATE_ACCOUNT_TRANSACTIONS_RESPONSE_PRODUCER))
         }
-        single<RequestConsumer<CreateAccountTransactionsTO>> {
-            createRequestConsumer(
+        single<Consumer<CreateAccountTransactionsTO>> {
+            createConsumer(
                 get(),
                 get<TopicSupplier>().topic(ACCOUNT_DOMAIN, ACCOUNT_TRANSACTIONS_REQUEST),
                 get<CreateAccountTransactionsRequestHandler>()
