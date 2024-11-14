@@ -51,7 +51,7 @@ class ImportSdkTest {
             )
             .respond(
                 response()
-                    .withStatusCode(201)
+                    .withStatusCode(202)
                     .withContentType(MediaType.APPLICATION_JSON)
                     .withBody(
                         buildJsonObject {

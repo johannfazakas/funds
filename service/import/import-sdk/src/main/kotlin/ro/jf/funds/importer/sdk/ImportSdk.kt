@@ -9,9 +9,9 @@ import io.ktor.http.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
+import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
-import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.importer.api.ImportApi
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
@@ -57,7 +57,18 @@ class ImportSdk(
             ))
         }
         return when (response.status) {
-            HttpStatusCode.Created -> response.body<ImportTaskTO>()
+            HttpStatusCode.Accepted -> response.body<ImportTaskTO>()
+            else -> throw response.toApiException()
+        }
+    }
+
+    override suspend fun getImportTask(userId: UUID, taskId: UUID): ImportTaskTO {
+        log.info { "Getting import task $taskId for user $userId." }
+        val response: HttpResponse = httpClient.get("$baseUrl/bk-api/import/v1/imports/$taskId") {
+            header(USER_ID_HEADER, userId.toString())
+        }
+        return when (response.status) {
+            HttpStatusCode.OK -> response.body<ImportTaskTO>()
             else -> throw response.toApiException()
         }
     }
