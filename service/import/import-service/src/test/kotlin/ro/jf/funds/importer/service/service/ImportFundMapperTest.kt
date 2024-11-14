@@ -17,7 +17,6 @@ import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.service.domain.ImportRecord
 import ro.jf.funds.importer.service.domain.ImportTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
@@ -27,8 +26,7 @@ import java.util.UUID.randomUUID
 class ImportFundMapperTest {
     private val accountSdk = mock<AccountSdk>()
     private val fundSdk = mock<FundSdk>()
-    private val fundTransactionSdk = mock<FundTransactionSdk>()
-    private val importFundMapper = ImportFundMapper(accountSdk, fundSdk, fundTransactionSdk)
+    private val importFundMapper = ImportFundMapper(accountSdk, fundSdk)
 
     @Test
     fun `should map import transactions`(): Unit = runBlocking {
