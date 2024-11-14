@@ -24,7 +24,7 @@ class ImportService(
         val importTask = importTaskRepository.save(userId, ImportTaskTO.Status.IN_PROGRESS)
         return try {
             val importItems = importParserRegistry[configuration.fileType].parse(configuration, files)
-            val fundTransactions = importFundMapper.mapToFundTransactions(userId, importTask.taskId, importItems)
+            val fundTransactions = importFundMapper.mapToFundTransactions(userId, importItems)
             createFundTransactionsProducer
                 .send(Event(userId, CreateFundTransactionsTO(fundTransactions), importTask.taskId))
             importTask
@@ -35,7 +35,15 @@ class ImportService(
         }
     }
 
-    suspend fun getImportStatus(userId: UUID, taskId: UUID): ImportTaskTO? {
+    suspend fun getImport(userId: UUID, taskId: UUID): ImportTaskTO? {
         return importTaskRepository.findById(userId, taskId)
+    }
+
+    suspend fun completeImport(userId: UUID, taskId: UUID) {
+        importTaskRepository.update(userId, ImportTaskTO(taskId, ImportTaskTO.Status.COMPLETED))
+    }
+
+    suspend fun failImport(userId: UUID, taskId: UUID, reason: String?) {
+        importTaskRepository.update(userId, ImportTaskTO(taskId, ImportTaskTO.Status.FAILED, reason))
     }
 }

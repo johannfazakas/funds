@@ -1,8 +1,15 @@
 package ro.jf.funds.commons.event
 
-// TODO(Johann) make this buildable from different segments
+private const val APPLICATION_NAME = "funds"
+
 @JvmInline
-value class Topic(val value: String)
+value class Topic(val value: String) {
+    companion object {
+        fun create(environment: String, domain: Domain, eventType: EventType): Topic {
+            return Topic("$environment.$APPLICATION_NAME.$environment.${domain.value}.${eventType.value}")
+        }
+    }
+}
 
 @JvmInline
 value class Domain(val value: String)
@@ -10,10 +17,9 @@ value class Domain(val value: String)
 @JvmInline
 value class EventType(val value: String)
 
-private const val APPLICATION_NAME = "funds"
 
 class TopicSupplier(val environment: String) {
     fun topic(domain: Domain, eventType: EventType): Topic {
-        return Topic("$environment.$APPLICATION_NAME.$environment.${domain.value}.${eventType.value}")
+        return Topic.create(environment, domain, eventType)
     }
 }

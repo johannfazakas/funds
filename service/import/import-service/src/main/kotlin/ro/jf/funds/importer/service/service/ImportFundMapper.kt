@@ -22,7 +22,6 @@ class ImportFundMapper(
 ) {
     suspend fun mapToFundTransactions(
         userId: UUID,
-        importTaskId: UUID,
         importTransactions: List<ImportTransaction>
     ): List<CreateFundTransactionTO> {
         log.info { "Handling import >> user = $userId items size = ${importTransactions.size}." }

@@ -16,20 +16,6 @@ private const val TEST_ENVIRONMENT = "test"
 fun ApplicationTestBuilder.createJsonHttpClient() =
     createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
 
-// TODO(Johann) shouldn't be needed, right?
-fun ApplicationTestBuilder.configureEnvironmentWithDB(
-    configuration: ApplicationConfig = MapApplicationConfig(),
-    module: Application.() -> Unit
-) {
-    environment {
-        config = dbConfig.mergeWith(configuration)
-    }
-    application {
-        module()
-    }
-}
-
-// could use this one in all the tests
 fun ApplicationTestBuilder.configureEnvironment(
     module: Application.() -> Unit,
     vararg configs: ApplicationConfig,

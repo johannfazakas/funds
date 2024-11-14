@@ -40,7 +40,7 @@ fun AccountServiceException.toStatusCode(): HttpStatusCode = when (this) {
 
 fun Throwable.toError(): ErrorTO {
     return when (this) {
-        is AccountServiceException -> (this as AccountServiceException).toError()
+        is AccountServiceException -> this.toError()
         else -> ErrorTO.internal(this)
     }
 }

@@ -29,7 +29,6 @@ class ImportFundMapperTest {
     private val fundSdk = mock<FundSdk>()
     private val fundTransactionSdk = mock<FundTransactionSdk>()
     private val importFundMapper = ImportFundMapper(accountSdk, fundSdk, fundTransactionSdk)
-    private val importTaskId = randomUUID()
 
     @Test
     fun `should map import transactions`(): Unit = runBlocking {
@@ -61,7 +60,7 @@ class ImportFundMapperTest {
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, bankAccount, companyAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
 
-        val fundTransactions = importFundMapper.mapToFundTransactions(userId, importTaskId, importTransactions)
+        val fundTransactions = importFundMapper.mapToFundTransactions(userId, importTransactions)
 
         assertThat(fundTransactions).containsExactlyInAnyOrder(
             CreateFundTransactionTO(
@@ -114,7 +113,6 @@ class ImportFundMapperTest {
             runBlocking {
                 importFundMapper.mapToFundTransactions(
                     userId,
-                    importTaskId,
                     importTransactions
                 )
             }
@@ -142,7 +140,6 @@ class ImportFundMapperTest {
             runBlocking {
                 importFundMapper.mapToFundTransactions(
                     userId,
-                    importTaskId,
                     importTransactions
                 )
             }
