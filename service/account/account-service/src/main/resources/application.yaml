@@ -10,6 +10,6 @@ database:
   user: postgres
   password: pass
 kafka:
-  bootstrapServers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:29092"
-  groupId: account-service
-  clientId: account-service
+  bootstrap-servers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:29092"
+  group-id: account-service
+  client-id: account-service

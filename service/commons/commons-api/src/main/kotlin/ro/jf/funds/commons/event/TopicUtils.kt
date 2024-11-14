@@ -6,7 +6,7 @@ private const val APPLICATION_NAME = "funds"
 value class Topic(val value: String) {
     companion object {
         fun create(environment: String, domain: Domain, eventType: EventType): Topic {
-            return Topic("$environment.$APPLICATION_NAME.$environment.${domain.value}.${eventType.value}")
+            return Topic("$environment.$APPLICATION_NAME.${domain.value}.${eventType.value}")
         }
     }
 }
