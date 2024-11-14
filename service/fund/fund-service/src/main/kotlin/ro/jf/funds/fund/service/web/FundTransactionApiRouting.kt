@@ -7,9 +7,8 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.toListTO
-import ro.jf.funds.commons.service.routing.userId
+import ro.jf.funds.commons.web.userId
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
-import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.service.domain.FundTransaction
 import ro.jf.funds.fund.service.mapper.toTO
 import ro.jf.funds.fund.service.service.FundTransactionService

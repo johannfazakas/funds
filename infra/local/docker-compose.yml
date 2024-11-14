@@ -18,14 +18,15 @@ services:
     container_name: ff_kafka
     ports:
       - "9092:9092"
+      - "29092:29092"
     environment:
       - KAFKA_CFG_NODE_ID=0
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://ff_kafka:9092,EXTERNAL://localhost:29092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
     volumes:
       - ./volumes/kafka/data:/bitnami/kafka
 
@@ -44,6 +45,8 @@ services:
     container_name: ff_historical_pricing
     ports:
       - '5231:5231'
+    depends_on:
+      - postgres
 
   account-service:
     image: funds/account-service:latest
@@ -52,8 +55,10 @@ services:
       - '5211:5211'
     environment:
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_account
+      - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
     depends_on:
       - postgres
+      - kafka
 
   fund-service:
     image: funds/fund-service:latest
@@ -63,8 +68,10 @@ services:
     environment:
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_fund
       - ACCOUNT_BASE_URL=http://ff_account:5211
+      - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
     depends_on:
       - postgres
+      - kafka
 
   import-service:
     image: funds/import-service:latest
@@ -74,3 +81,8 @@ services:
     environment:
       - ACCOUNT_BASE_URL=http://ff_account:5211
       - FUND_BASE_URL=http://ff_fund:5253
+      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_import
+      - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
+    depends_on:
+      - postgres
+      - kafka

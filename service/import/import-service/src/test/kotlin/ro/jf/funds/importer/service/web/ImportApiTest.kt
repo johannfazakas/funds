@@ -22,9 +22,9 @@ import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.error.ErrorTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.service.config.configureContentNegotiation
-import ro.jf.funds.commons.service.config.configureDatabaseMigration
-import ro.jf.funds.commons.service.config.configureDependencies
+import ro.jf.funds.commons.config.configureContentNegotiation
+import ro.jf.funds.commons.config.configureDatabaseMigration
+import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.createJsonHttpClient

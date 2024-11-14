@@ -4,6 +4,7 @@ ktor:
       - ro.jf.funds.user.service.UserServiceApplicationKt.module
   deployment:
     port: 5247
+environment: "$ENVIRONMENT:local"
 database:
   url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/ff_user"
   user: postgres

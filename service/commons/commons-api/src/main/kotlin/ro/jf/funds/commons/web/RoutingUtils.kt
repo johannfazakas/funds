@@ -1,7 +1,6 @@
-package ro.jf.funds.commons.service.routing
+package ro.jf.funds.commons.web
 
 import io.ktor.server.application.*
-import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.util.*
 
 fun ApplicationCall.userId(): UUID {

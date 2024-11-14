@@ -4,11 +4,12 @@ ktor:
       - ro.jf.funds.account.service.AccountServiceApplicationKt.module
   deployment:
     port: 5211
+environment: "$ENVIRONMENT:local"
 database:
   url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/ff_account"
   user: postgres
   password: pass
 kafka:
-  bootstrapServers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:9092"
+  bootstrapServers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:29092"
   groupId: account-service
   clientId: account-service

@@ -1,4 +1,4 @@
-package ro.jf.funds.commons.service.config
+package ro.jf.funds.commons.config
 
 import io.ktor.server.application.*
 import org.koin.core.module.Module
