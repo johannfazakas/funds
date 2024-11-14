@@ -44,7 +44,7 @@ fun Routing.importApiRouting(
     route("/bk-api/import/v1/imports/{importTaskId}") {
         get {
             val userId = call.userId()
-            val taskId = call.parameters["taskId"]?.let(UUID::fromString)
+            val taskId = call.parameters["importTaskId"]?.let(UUID::fromString)
                 ?: throw IllegalArgumentException("Missing taskId")
             log.info { "Import status request for user $userId and task $taskId." }
 

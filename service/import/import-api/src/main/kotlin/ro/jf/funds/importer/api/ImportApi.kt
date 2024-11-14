@@ -8,4 +8,5 @@ import java.util.*
 interface ImportApi {
     suspend fun import(userId: UUID, importConfiguration: ImportConfigurationTO, csvFile: File): ImportTaskTO
     suspend fun import(userId: UUID, importConfiguration: ImportConfigurationTO, csvFiles: List<File>): ImportTaskTO
+    suspend fun getImportTask(userId: UUID, taskId: UUID): ImportTaskTO
 }
