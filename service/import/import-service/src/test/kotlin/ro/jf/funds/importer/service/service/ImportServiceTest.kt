@@ -42,7 +42,7 @@ class startImportServiceTest {
         whenever(importTaskRepository.save(userId, ImportTaskTO.Status.IN_PROGRESS))
             .thenReturn(ImportTaskTO(importTaskId, ImportTaskTO.Status.IN_PROGRESS))
         val fundTransactions = mock<List<CreateFundTransactionTO>>()
-        whenever(importFundMapper.mapToFundTransactions(userId, importTaskId, importItems))
+        whenever(importFundMapper.mapToFundTransactions(userId, importItems))
             .thenReturn(fundTransactions)
 
         val importTask = importService.startImport(userId, configuration, importFiles)

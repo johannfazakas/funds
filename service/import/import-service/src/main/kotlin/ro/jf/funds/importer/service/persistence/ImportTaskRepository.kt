@@ -51,6 +51,10 @@ class ImportTaskRepository(
         importTask
     }
 
+    suspend fun deleteAll(): Unit = blockingTransaction {
+        ImportTaskTable.deleteAll()
+    }
+
     private fun Query.toImportTasks(): List<ImportTaskTO> = this
         .groupBy { it[ImportTaskTable.id].value }
         .map { (_, rows) -> rows.toImportTask() }

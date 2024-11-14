@@ -30,6 +30,7 @@ open class Producer<T>(
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+
     val serializable = serializer(clazz) as KSerializer<T>
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)

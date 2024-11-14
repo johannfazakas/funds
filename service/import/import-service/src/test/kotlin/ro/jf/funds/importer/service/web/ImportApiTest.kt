@@ -5,12 +5,10 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.ktor.ext.get
@@ -27,7 +25,6 @@ import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.service.config.configureContentNegotiation
 import ro.jf.funds.commons.service.config.configureDatabaseMigration
 import ro.jf.funds.commons.service.config.configureDependencies
-import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
@@ -40,6 +37,7 @@ import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.service.config.configureImportErrorHandling
+import ro.jf.funds.importer.service.config.configureImportEventHandling
 import ro.jf.funds.importer.service.config.configureImportRouting
 import ro.jf.funds.importer.service.config.importDependencies
 import java.io.File
@@ -52,7 +50,6 @@ class ImportApiTest {
     private val fundSdk: FundSdk = mock()
     private val fundTransactionSdk: FundTransactionSdk = mock()
 
-    // TODO(Johann) set default logging level to INFO? For less noisier tests?
     @Test
     fun `test valid import`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
@@ -140,9 +137,7 @@ class ImportApiTest {
         assertThat(responseBody.title).isEqualTo("Missing import configuration")
     }
 
-    // TODO(Johann) fix this problem
     @Test
-    @Disabled
     fun `test invalid import with bad csv file`(): Unit = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
@@ -183,13 +178,12 @@ class ImportApiTest {
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
-        val responseBody = response.body<ErrorTO>()
-        assertThat(responseBody.title).isEqualTo("Import format error")
+        val responseBody = response.body<ImportTaskTO>()
+        assertThat(responseBody.status).isEqualTo(ImportTaskTO.Status.FAILED)
+        assertThat(responseBody.reason).isNotEmpty()
     }
 
-    // TODO(Johann) fix this problem
     @Test
-    @Disabled
     fun `test invalid import with missing account matcher`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
@@ -229,16 +223,11 @@ class ImportApiTest {
             ))
         }
 
-        assertThat(response.status).isEqualTo(HttpStatusCode.UnprocessableEntity)
-        val responseBody = response.body<ErrorTO>()
-        assertThat(responseBody.title).isEqualTo("Import data error")
+        assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+        val responseBody = response.body<ImportTaskTO>()
+        assertThat(responseBody.status).isEqualTo(ImportTaskTO.Status.FAILED)
+        assertThat(responseBody.reason).isNotEmpty()
     }
-
-    // TODO(Johann) not required, right?
-    private val appConfig = MapApplicationConfig(
-        "integration.account-service.base-url" to MockServerContainerExtension.baseUrl,
-        "integration.fund-service.base-url" to MockServerContainerExtension.baseUrl
-    )
 
     private fun Application.testModule() {
         val importAppTestModule = org.koin.dsl.module {
@@ -250,6 +239,7 @@ class ImportApiTest {
         configureImportErrorHandling()
         configureContentNegotiation()
         configureDatabaseMigration(get<DataSource>())
+        configureImportEventHandling()
         configureImportRouting()
     }
 }

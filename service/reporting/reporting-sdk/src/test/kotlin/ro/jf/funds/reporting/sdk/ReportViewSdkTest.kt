@@ -27,7 +27,6 @@ class ReportViewSdkTest {
 
     @Test
     fun `given create report view`(mockServerClient: MockServerClient): Unit = runBlocking {
-
         mockServerClient
             .`when`(
                 request()

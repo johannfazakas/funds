@@ -11,7 +11,7 @@ class CreateAccountTransactionsResponseHandler(
 ) : Handler<GenericResponse> {
     override suspend fun handle(event: Event<GenericResponse>) {
         log.info { "Received create account transactions response $event" }
-        val event = Event(event.userId, event.payload, event.correlationId, event.userId.toString())
-        createFundTransactionsResponseProducer.send(event)
+        val response = Event(event.userId, event.payload, event.correlationId, event.userId.toString())
+        createFundTransactionsResponseProducer.send(response)
     }
 }

@@ -10,6 +10,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.service.routing.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
+import ro.jf.funds.importer.api.model.ImportTaskTO
 import ro.jf.funds.importer.service.domain.exception.MissingImportConfigurationException
 import ro.jf.funds.importer.service.service.ImportService
 import java.util.*
@@ -32,7 +33,11 @@ fun Routing.importApiRouting(
 
             val importConfiguration: ImportConfigurationTO = requestParts.importConfigurationPart()
             val importTask = importService.startImport(userId, importConfiguration, rawFileParts)
-            call.respond(HttpStatusCode.Accepted, importTask)
+            val statusCode = when (importTask.status) {
+                ImportTaskTO.Status.FAILED -> HttpStatusCode.BadRequest
+                else -> HttpStatusCode.Accepted
+            }
+            call.respond(statusCode, importTask)
         }
     }
 
@@ -43,7 +48,7 @@ fun Routing.importApiRouting(
                 ?: throw IllegalArgumentException("Missing taskId")
             log.info { "Import status request for user $userId and task $taskId." }
 
-            val importTask = importService.getImportStatus(userId, taskId)
+            val importTask = importService.getImport(userId, taskId)
             if (importTask == null) {
                 call.respond(HttpStatusCode.NotFound)
             } else {
