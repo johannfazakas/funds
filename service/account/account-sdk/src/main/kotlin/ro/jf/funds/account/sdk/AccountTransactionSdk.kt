@@ -9,10 +9,9 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.AccountTransactionApi
 import ro.jf.funds.account.api.model.AccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
-import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
 import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.web.toApiException
 import ro.jf.funds.commons.web.USER_ID_HEADER
+import ro.jf.funds.commons.web.toApiException
 import java.util.*
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5211"
@@ -42,26 +41,6 @@ class AccountTransactionSdk(
         val accountTransaction = response.body<AccountTransactionTO>()
         log.debug { "Created account transaction: $accountTransaction" }
         return accountTransaction
-    }
-
-    override suspend fun createTransactions(
-        userId: UUID,
-        request: CreateAccountTransactionsTO
-    ): ListTO<AccountTransactionTO> {
-        val response = httpClient.post("$baseUrl$BASE_PATH/transactions/batch") {
-            headers {
-                append(USER_ID_HEADER, userId.toString())
-            }
-            contentType(ContentType.Application.Json)
-            setBody(request)
-        }
-        if (response.status != HttpStatusCode.Created) {
-            log.warn { "Unexpected response on create transactions: $response" }
-            throw response.toApiException()
-        }
-        val transactions = response.body<ListTO<AccountTransactionTO>>()
-        log.debug { "Created account transactions: $transactions" }
-        return transactions
     }
 
     override suspend fun listTransactions(userId: UUID): ListTO<AccountTransactionTO> {

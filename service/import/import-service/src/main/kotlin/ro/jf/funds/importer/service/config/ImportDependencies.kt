@@ -60,7 +60,7 @@ val Application.importDependencies: Module
             single<FundTransactionSdk> {
                 FundTransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
             }
-            single<ImportFundMapper> { ImportFundMapper(get(), get(), get()) }
+            single<ImportFundMapper> { ImportFundMapper(get(), get()) }
             single<ImportService> { ImportService(get(), get(), get(), get()) }
 
             single<ConsumerProperties> { ConsumerProperties.fromEnv(environment) }

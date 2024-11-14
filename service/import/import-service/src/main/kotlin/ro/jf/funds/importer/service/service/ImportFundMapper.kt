@@ -5,9 +5,11 @@ import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.fund.api.model.*
+import ro.jf.funds.fund.api.model.CreateFundRecordTO
+import ro.jf.funds.fund.api.model.CreateFundTransactionTO
+import ro.jf.funds.fund.api.model.FundName
+import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.service.domain.ImportRecord
 import ro.jf.funds.importer.service.domain.ImportTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
@@ -18,7 +20,6 @@ private val log = logger { }
 class ImportFundMapper(
     private val accountSdk: AccountSdk,
     private val fundSdk: FundSdk,
-    private val fundTransactionSdk: FundTransactionSdk
 ) {
     suspend fun mapToFundTransactions(
         userId: UUID,
@@ -28,8 +29,6 @@ class ImportFundMapper(
 
         val transactionRequests = importTransactions
             .toTransactionRequests(createImportResourceContext(userId))
-        val transactions = CreateFundTransactionsTO(transactionRequests)
-        fundTransactionSdk.createTransactions(userId, transactions)
         return transactionRequests
     }
 

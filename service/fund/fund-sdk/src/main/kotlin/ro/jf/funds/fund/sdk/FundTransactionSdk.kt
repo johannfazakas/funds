@@ -6,11 +6,10 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.web.toApiException
 import ro.jf.funds.commons.web.USER_ID_HEADER
+import ro.jf.funds.commons.web.toApiException
 import ro.jf.funds.fund.api.FundTransactionApi
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
-import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
 import java.util.*
 
@@ -35,26 +34,6 @@ class FundTransactionSdk(
         val fundTransaction = response.body<FundTransactionTO>()
         log.debug { "Created fund transaction: $fundTransaction" }
         return fundTransaction
-    }
-
-    override suspend fun createTransactions(
-        userId: UUID,
-        transactions: CreateFundTransactionsTO
-    ): ListTO<FundTransactionTO> {
-        val response = httpClient.post("$baseUrl$BASE_PATH/transactions/batch") {
-            headers {
-                append(USER_ID_HEADER, userId.toString())
-            }
-            contentType(ContentType.Application.Json)
-            setBody(transactions)
-        }
-        if (response.status != HttpStatusCode.Created) {
-            log.warn { "Unexpected response on create transactions: $response" }
-            throw response.toApiException()
-        }
-        val createdTransactions = response.body<ListTO<FundTransactionTO>>()
-        log.debug { "Created ${createdTransactions.items.size} fund transactions." }
-        return createdTransactions
     }
 
     override suspend fun listTransactions(userId: UUID): ListTO<FundTransactionTO> {
