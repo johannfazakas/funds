@@ -4,10 +4,15 @@ ktor:
       - ro.jf.funds.importer.service.ImportServiceApplicationKt.module
   deployment:
     port: 5207
+environment: "$ENVIRONMENT:local"
+database:
+  url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/ff_import"
+  user: postgres
+  password: pass
 kafka:
-  bootstrapServers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:9092"
-  groupId: import-service
-  clientId: import-service
+  bootstrap-servers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:29092"
+  group-id: import-service
+  client-id: import-service
 integration:
   account-service:
     base-url: "$ACCOUNT_BASE_URL:http://localhost:5211"

@@ -16,9 +16,9 @@ import org.mockserver.model.Header
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.service.config.configureContentNegotiation
-import ro.jf.funds.commons.service.config.configureDatabaseMigration
-import ro.jf.funds.commons.service.config.configureDependencies
+import ro.jf.funds.commons.config.configureContentNegotiation
+import ro.jf.funds.commons.config.configureDatabaseMigration
+import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension

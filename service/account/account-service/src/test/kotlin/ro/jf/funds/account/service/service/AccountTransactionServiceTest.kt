@@ -65,7 +65,6 @@ class AccountTransactionServiceTest {
 
     @Test
     fun `given create batch transactions`(): Unit = runBlocking {
-        // TODO(Johann) might add a "value" class for BigDecimal also
         val recordRequest1 = CreateAccountRecordTO(cashAccount.id, BigDecimal("42.50"), Currency.RON)
         val recordRequest2 = CreateAccountRecordTO(incomeAccount.id, BigDecimal("-42.50"), Currency.RON)
         val recordRequest3 = CreateAccountRecordTO(cashAccount.id, BigDecimal("12.50"), Currency.RON)

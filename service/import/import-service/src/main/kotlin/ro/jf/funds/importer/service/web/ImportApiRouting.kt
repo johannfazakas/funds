@@ -8,7 +8,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.service.routing.userId
+import ro.jf.funds.commons.web.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
 import ro.jf.funds.importer.service.domain.exception.MissingImportConfigurationException

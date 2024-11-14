@@ -11,7 +11,7 @@ import ro.jf.funds.account.service.domain.Account
 import ro.jf.funds.account.service.service.AccountService
 import ro.jf.funds.account.service.web.mapper.toTO
 import ro.jf.funds.commons.model.toListTO
-import ro.jf.funds.commons.service.routing.userId
+import ro.jf.funds.commons.web.userId
 import java.util.*
 
 private val log = logger { }

@@ -6,7 +6,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.service.routing.userId
+import ro.jf.funds.commons.web.userId
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.CreateReportViewTaskTO
 import ro.jf.funds.reporting.api.model.ReportViewTO

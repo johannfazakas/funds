@@ -4,14 +4,15 @@ ktor:
       - ro.jf.funds.fund.service.FundServiceApplicationKt.module
   deployment:
     port: 5253
+environment: "$ENVIRONMENT:local"
 database:
   url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/ff_fund"
   user: postgres
   password: pass
 kafka:
-  bootstrapServers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:9092"
-  groupId: fund-service
-  clientId: fund-service
+  bootstrap-servers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:29092"
+  group-id: fund-service
+  client-id: fund-service
 
 integration:
   account-service:
