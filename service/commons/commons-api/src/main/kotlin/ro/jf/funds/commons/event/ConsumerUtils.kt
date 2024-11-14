@@ -1,18 +1,13 @@
 package ro.jf.funds.commons.event
 
-import io.ktor.server.application.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
-import ro.jf.funds.commons.config.getStringProperty
 import java.time.Duration
 import java.util.*
-
-private const val KAFKA_BOOTSTRAP_SERVERS_PROPERTY = "kafka.bootstrapServers"
-private const val KAFKA_GROUP_ID_PROPERTY = "kafka.groupId"
 
 interface Handler<T> {
     suspend fun handle(event: Event<T>)
@@ -56,18 +51,4 @@ fun createKafkaConsumer(properties: ConsumerProperties): KafkaConsumer<String, S
         it[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
     })
-}
-
-data class ConsumerProperties(
-    val bootstrapServers: String,
-    val groupId: String
-) {
-    companion object {
-        fun fromEnv(config: ApplicationEnvironment): ConsumerProperties {
-            return ConsumerProperties(
-                bootstrapServers = config.getStringProperty(KAFKA_BOOTSTRAP_SERVERS_PROPERTY),
-                groupId = config.getStringProperty(KAFKA_GROUP_ID_PROPERTY)
-            )
-        }
-    }
 }

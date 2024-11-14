@@ -42,9 +42,9 @@ val dbConfig
 
 val kafkaConfig
     get() = MapApplicationConfig(
-        "kafka.bootstrapServers" to KafkaContainerExtension.bootstrapServers,
-        "kafka.groupId" to "test-group-id-${randomUUID()}",
-        "kafka.clientId" to "test-client-id",
+        "kafka.bootstrap-servers" to KafkaContainerExtension.bootstrapServers,
+        "kafka.group-id" to "test-group-id-${randomUUID()}",
+        "kafka.client-id" to "test-client-id",
     )
 
 val testTopicSupplier by lazy { TopicSupplier(TEST_ENVIRONMENT) }
