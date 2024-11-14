@@ -22,24 +22,29 @@ import javax.sql.DataSource
 
 val CREATE_ACCOUNT_TRANSACTIONS_RESPONSE_PRODUCER = StringQualifier("CreateAccountTransactionsResponse")
 
-val Application.accountDependencies
+val Application.accountDependencyModules
+    get() = arrayOf(
+        accountDatabaseDependencies,
+        accountKafkaDependencies,
+        accountServiceDependencies,
+    )
+
+val Application.accountDatabaseDependencies
     get() = module {
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
         single { environment.getDbConnection() }
+        single<AccountRepository> { AccountRepository(get()) }
+        single<AccountTransactionRepository> { AccountTransactionRepository(get()) }
+    }
+
+val Application.accountKafkaDependencies
+    get() = module {
         single<TopicSupplier> { TopicSupplier(environment.getEnvironmentProperty()) }
         single<ConsumerProperties> { ConsumerProperties.fromEnv(environment) }
         single<ProducerProperties> { ProducerProperties.fromEnv(environment) }
-        single<AccountRepository> { AccountRepository(get()) }
-        single<AccountService> { AccountService(get()) }
-        single<AccountTransactionRepository> { AccountTransactionRepository(get()) }
-        single<AccountTransactionService> { AccountTransactionService(get(), get()) }
-        single<TopicSupplier> { TopicSupplier(environment.getEnvironmentProperty()) }
         single<Producer<GenericResponse>>(CREATE_ACCOUNT_TRANSACTIONS_RESPONSE_PRODUCER) {
             createProducer(get(), get<TopicSupplier>().topic(ACCOUNT_DOMAIN, ACCOUNT_TRANSACTIONS_RESPONSE))
-        }
-        single<CreateAccountTransactionsRequestHandler> {
-            CreateAccountTransactionsRequestHandler(get(), get(CREATE_ACCOUNT_TRANSACTIONS_RESPONSE_PRODUCER))
         }
         single<Consumer<CreateAccountTransactionsTO>> {
             createConsumer(
@@ -47,5 +52,14 @@ val Application.accountDependencies
                 get<TopicSupplier>().topic(ACCOUNT_DOMAIN, ACCOUNT_TRANSACTIONS_REQUEST),
                 get<CreateAccountTransactionsRequestHandler>()
             )
+        }
+    }
+
+val Application.accountServiceDependencies
+    get() = module {
+        single<AccountService> { AccountService(get()) }
+        single<AccountTransactionService> { AccountTransactionService(get(), get()) }
+        single<CreateAccountTransactionsRequestHandler> {
+            CreateAccountTransactionsRequestHandler(get(), get(CREATE_ACCOUNT_TRANSACTIONS_RESPONSE_PRODUCER))
         }
     }

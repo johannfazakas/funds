@@ -10,5 +10,5 @@ database:
   password: pass
 kafka:
   bootstrapServers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:9092"
-  groupId: "account-service"
-  clientId: "account-service"
+  groupId: account-service
+  clientId: account-service

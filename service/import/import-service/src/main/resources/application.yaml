@@ -4,6 +4,10 @@ ktor:
       - ro.jf.funds.importer.service.ImportServiceApplicationKt.module
   deployment:
     port: 5207
+kafka:
+  bootstrapServers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:9092"
+  groupId: import-service
+  clientId: import-service
 integration:
   account-service:
     base-url: "$ACCOUNT_BASE_URL:http://localhost:5211"

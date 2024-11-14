@@ -7,7 +7,6 @@ import io.ktor.server.testing.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import ro.jf.funds.commons.test.utils.configureEnvironment
-import ro.jf.funds.commons.test.utils.configureEnvironmentWithDB
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.web.USER_ID_HEADER
