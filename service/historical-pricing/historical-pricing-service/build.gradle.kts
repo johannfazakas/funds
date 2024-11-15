@@ -1,4 +1,3 @@
-import io.ktor.plugin.features.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 // TODO(Johann) remove these, use common versions from libs/toml
