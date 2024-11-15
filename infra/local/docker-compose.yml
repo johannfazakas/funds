@@ -45,6 +45,8 @@ services:
     container_name: ff_historical_pricing
     ports:
       - '5231:5231'
+    environment:
+      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_historical_pricing
     depends_on:
       - postgres
 

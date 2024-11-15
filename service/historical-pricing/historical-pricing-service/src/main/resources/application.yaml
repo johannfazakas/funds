@@ -1,10 +1,10 @@
 ktor:
-    application:
-        modules:
-            - ro.jf.funds.historicalpricing.service.HistoricalPricingApplicationKt.module
-    deployment:
-        port: 5231
+  application:
+    modules:
+      - ro.jf.funds.historicalpricing.service.HistoricalPricingApplicationKt.module
+  deployment:
+    port: 5231
 database:
-    url: "jdbc:postgresql://localhost:5438/bk_historical_pricing"
-    user: postgres
-    password: pass
+  url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/bk_historical_pricing"
+  user: postgres
+  password: pass
