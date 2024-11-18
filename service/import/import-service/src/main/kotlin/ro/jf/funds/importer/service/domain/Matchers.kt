@@ -2,6 +2,7 @@ package ro.jf.funds.importer.service.domain
 
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.importer.api.model.AccountMatcherTO
+import ro.jf.funds.importer.api.model.ExchangeMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 
@@ -20,5 +21,14 @@ fun FundMatcherTO.matches(importAccountName: String, importLabel: String): Boole
         is FundMatcherTO.ByLabel -> this.importLabel == importLabel
         is FundMatcherTO.ByAccountLabel -> this.importAccountName == importAccountName && this.importLabel == importLabel
         is FundMatcherTO.ByAccountLabelWithTransfer -> this.importAccountName == importAccountName && this.importLabel == importLabel
+    }
+}
+
+fun List<ExchangeMatcherTO>.getExchangeMatcher(importLabel: String): ExchangeMatcherTO? =
+    firstOrNull { it.matches(importLabel) }
+
+fun ExchangeMatcherTO.matches(importLabel: String): Boolean {
+    return when (this) {
+        is ExchangeMatcherTO.ByLabel -> this.label == importLabel
     }
 }

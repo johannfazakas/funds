@@ -7,18 +7,17 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.*
 import ro.jf.funds.commons.event.Event
 import ro.jf.funds.commons.event.Producer
-import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
-import ro.jf.funds.importer.service.domain.ImportTransaction
+import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
 import ro.jf.funds.importer.service.service.parser.ImportParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
 import java.util.UUID.randomUUID
 
-class startImportServiceTest {
+class ImportServiceTest {
     private val importParserRegistry = mock<ImportParserRegistry>()
     private val importParser = mock<ImportParser>()
     private val importFundMapper = mock<ImportFundMapper>()
@@ -37,12 +36,12 @@ class startImportServiceTest {
         val configuration = ImportConfigurationTO(importType, emptyList(), emptyList())
         val importFiles = listOf("fileContent1", "fileContent2")
         whenever(importParserRegistry[importType]).thenReturn(importParser)
-        val importItems = mock<List<ImportTransaction>>()
+        val importItems = mock<List<ImportParsedTransaction>>()
         whenever(importParser.parse(configuration, importFiles)).thenReturn(importItems)
         whenever(importTaskRepository.save(userId, ImportTaskTO.Status.IN_PROGRESS))
             .thenReturn(ImportTaskTO(importTaskId, ImportTaskTO.Status.IN_PROGRESS))
-        val fundTransactions = mock<List<CreateFundTransactionTO>>()
-        whenever(importFundMapper.mapToFundTransactions(userId, importItems))
+        val fundTransactions = mock<CreateFundTransactionsTO>()
+        whenever(importFundMapper.mapToFundRequest(userId, importItems))
             .thenReturn(fundTransactions)
 
         val importTask = importService.startImport(userId, configuration, importFiles)
@@ -54,7 +53,7 @@ class startImportServiceTest {
         verify(createFundTransactionsProducer, times(1)).send(eventCaptor.capture())
         assertThat(eventCaptor.firstValue.userId).isEqualTo(userId)
         assertThat(eventCaptor.firstValue.correlationId).isEqualTo(importTaskId)
-        assertThat(eventCaptor.firstValue.payload.transactions).isEqualTo(fundTransactions)
+        assertThat(eventCaptor.firstValue.payload).isEqualTo(fundTransactions)
         assertThat(eventCaptor.firstValue.key).isEqualTo(userId.toString())
     }
 

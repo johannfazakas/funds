@@ -12,19 +12,19 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.ktor.ext.get
-import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
-import ro.jf.funds.commons.error.ErrorTO
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
+import ro.jf.funds.commons.error.ErrorTO
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
@@ -35,6 +35,7 @@ import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.service.config.configureImportErrorHandling
 import ro.jf.funds.importer.service.config.configureImportEventHandling
@@ -48,6 +49,7 @@ import javax.sql.DataSource
 class ImportApiTest {
     private val accountSdk: AccountSdk = mock()
     private val fundSdk: FundSdk = mock()
+    private val historicalPricingSdk: HistoricalPricingSdk = mock()
     private val fundTransactionSdk: FundTransactionSdk = mock()
 
     @Test
@@ -234,6 +236,7 @@ class ImportApiTest {
             single<AccountSdk> { accountSdk }
             single<FundSdk> { fundSdk }
             single<FundTransactionSdk> { fundTransactionSdk }
+            single<HistoricalPricingSdk> { historicalPricingSdk }
         }
         configureDependencies(importDependencies, importAppTestModule)
         configureImportErrorHandling()

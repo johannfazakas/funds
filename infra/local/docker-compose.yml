@@ -83,6 +83,7 @@ services:
     environment:
       - ACCOUNT_BASE_URL=http://ff_account:5211
       - FUND_BASE_URL=http://ff_fund:5253
+      - HISTORICAL_PRICING_BASE_URL=http://ff_historical_pricing:5231
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_import
       - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
     depends_on:

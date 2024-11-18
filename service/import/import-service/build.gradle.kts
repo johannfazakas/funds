@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":commons:commons-service"))
     implementation(project(":account:account-sdk"))
     implementation(project(":fund:fund-sdk"))
+    implementation(project(":historical-pricing:historical-pricing-sdk"))
     implementation(libs.kotlin.csv)
     testImplementation(project(":commons:commons-test"))
 }

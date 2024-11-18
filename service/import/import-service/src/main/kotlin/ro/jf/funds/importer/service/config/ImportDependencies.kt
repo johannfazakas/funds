@@ -20,6 +20,7 @@ import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_RESPONSE
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
 import ro.jf.funds.importer.service.service.ImportFundMapper
 import ro.jf.funds.importer.service.service.ImportService
@@ -32,6 +33,7 @@ import javax.sql.DataSource
 
 private const val ACCOUNT_SERVICE_BASE_URL_PROPERTY = "integration.account-service.base-url"
 private const val FUND_SERVICE_BASE_URL_PROPERTY = "integration.fund-service.base-url"
+private const val HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY = "integration.historical-pricing-service.base-url"
 
 val CREATE_FUND_TRANSACTIONS_RESPONSE_CONSUMER = StringQualifier("CreateFundTransactionsResponse")
 
@@ -60,7 +62,10 @@ val Application.importDependencies: Module
             single<FundTransactionSdk> {
                 FundTransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
             }
-            single<ImportFundMapper> { ImportFundMapper(get(), get()) }
+            single<HistoricalPricingSdk> {
+                HistoricalPricingSdk(environment.getStringProperty(HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY))
+            }
+            single<ImportFundMapper> { ImportFundMapper(get(), get(), get()) }
             single<ImportService> { ImportService(get(), get(), get(), get()) }
 
             single<ConsumerProperties> { ConsumerProperties.fromEnv(environment) }

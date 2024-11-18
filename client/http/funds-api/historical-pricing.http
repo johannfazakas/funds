@@ -48,13 +48,12 @@ POST http://localhost:5231/api/historical-pricing/currencies/convert
 Content-type: application/json
 
 {
-  "sourceCurrency": "RON",
-  "targetCurrency": "EUR",
+  "sourceCurrency": "EUR",
+  "targetCurrency": "RON",
   "dates": [
-    "2023-01-01",
-    "2023-05-07",
-    "2024-02-03",
-    "2024-03-05",
-    "2024-04-06"
+    "2019-01-01",
+    "2019-04-01",
+    "2019-04-30",
+    "2020-01-01"
   ]
 }

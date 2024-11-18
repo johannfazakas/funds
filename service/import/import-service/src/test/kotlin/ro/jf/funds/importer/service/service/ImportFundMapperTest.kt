@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
@@ -17,8 +18,9 @@ import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.importer.service.domain.ImportRecord
-import ro.jf.funds.importer.service.domain.ImportTransaction
+import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
+import ro.jf.funds.importer.service.domain.ImportParsedRecord
+import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
@@ -26,27 +28,34 @@ import java.util.UUID.randomUUID
 class ImportFundMapperTest {
     private val accountSdk = mock<AccountSdk>()
     private val fundSdk = mock<FundSdk>()
-    private val importFundMapper = ImportFundMapper(accountSdk, fundSdk)
+    private val historicalPricingSdk = mock<HistoricalPricingSdk>()
+    private val importFundMapper = ImportFundMapper(accountSdk, fundSdk, historicalPricingSdk)
+
+    val userId = randomUUID()
 
     @Test
     fun `should map import transactions`(): Unit = runBlocking {
-        val userId = randomUUID()
         val transaction1DateTime = LocalDateTime.parse("2024-07-22T09:17:00")
         val transaction2DateTime = LocalDateTime.parse("2024-07-22T09:18:00")
-        val importTransactions = listOf(
-            ImportTransaction(
+        val importParsedTransactions = listOf(
+            ImportParsedTransaction(
                 transactionId = "transaction-1",
                 dateTime = transaction1DateTime,
                 records = listOf(
-                    ImportRecord(AccountName("Revolut"), FundName("Expenses"), "RON", BigDecimal("-100.00"))
+                    ImportParsedRecord(
+                        AccountName("Revolut"),
+                        FundName("Expenses"),
+                        Currency.RON,
+                        BigDecimal("-100.00")
+                    )
                 )
             ),
-            ImportTransaction(
+            ImportParsedTransaction(
                 transactionId = "transaction-2",
                 dateTime = transaction2DateTime,
                 records = listOf(
-                    ImportRecord(AccountName("Company"), FundName("Income"), "RON", BigDecimal("-50.00")),
-                    ImportRecord(AccountName("Cash RON"), FundName("Expenses"), "RON", BigDecimal("50.00"))
+                    ImportParsedRecord(AccountName("Company"), FundName("Income"), Currency.RON, BigDecimal("-50.00")),
+                    ImportParsedRecord(AccountName("Cash RON"), FundName("Expenses"), Currency.RON, BigDecimal("50.00"))
                 )
             )
         )
@@ -58,9 +67,9 @@ class ImportFundMapperTest {
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, bankAccount, companyAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
 
-        val fundTransactions = importFundMapper.mapToFundTransactions(userId, importTransactions)
+        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
 
-        assertThat(fundTransactions).containsExactlyInAnyOrder(
+        assertThat(fundTransactions.transactions).containsExactlyInAnyOrder(
             CreateFundTransactionTO(
                 dateTime = transaction1DateTime,
                 records = listOf(
@@ -93,14 +102,83 @@ class ImportFundMapperTest {
     }
 
     @Test
+    @Disabled("Not implemented yet")
+    // TODO(Johann) make this green
+    fun `should map exchange transaction`(): Unit = runBlocking {
+        val dateTime = LocalDateTime(2019, 4, 23, 21, 45)
+        val importParsedTransactions = listOf(
+            ImportParsedTransaction(
+                transactionId = "transaction-1",
+                dateTime = dateTime,
+                records = listOf(
+                    ImportParsedRecord(
+                        AccountName("Cash EUR"),
+                        FundName("Expenses"),
+                        Currency.EUR,
+                        "-1.89".toBigDecimal()
+                    ),
+                    ImportParsedRecord(
+                        AccountName("Cash RON"),
+                        FundName("Expenses"),
+                        Currency.RON,
+                        "-1434.00".toBigDecimal()
+                    ),
+                    ImportParsedRecord(
+                        AccountName("Cash EUR"),
+                        FundName("Expenses"),
+                        Currency.EUR,
+                        "301.24".toBigDecimal()
+                    )
+                )
+            )
+        )
+        val eurAccount = account("Cash EUR", Currency.EUR)
+        val ronAccount = account("Cash RON", Currency.RON)
+        val expensedFund = fund("Expenses")
+
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(eurAccount, ronAccount))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
+
+        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
+
+        assertThat(fundTransactions.transactions).hasSize(1)
+        assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(dateTime)
+        assertThat(fundTransactions.transactions[0].records).containsExactlyInAnyOrder(
+            CreateFundRecordTO(
+                fundId = expensedFund.id,
+                accountId = eurAccount.id,
+                amount = "-1.89".toBigDecimal(),
+                unit = Currency.EUR
+            ),
+            CreateFundRecordTO(
+                fundId = expensedFund.id,
+                accountId = ronAccount.id,
+                amount = "-1434.00".toBigDecimal(),
+                unit = Currency.RON
+            ),
+            CreateFundRecordTO(
+                fundId = expensedFund.id,
+                accountId = eurAccount.id,
+                amount = "301.24".toBigDecimal(),
+                unit = Currency.EUR
+            )
+        )
+    }
+
+    @Test
     fun `should throw data exception when account not found`(): Unit = runBlocking {
         val userId = randomUUID()
-        val importTransactions = listOf(
-            ImportTransaction(
+        val importParsedTransactions = listOf(
+            ImportParsedTransaction(
                 transactionId = "transaction-1",
                 dateTime = LocalDateTime(2024, 7, 22, 9, 17),
                 records = listOf(
-                    ImportRecord(AccountName("Revolut"), FundName("Expenses"), "RON", BigDecimal("-100.00"))
+                    ImportParsedRecord(
+                        AccountName("Revolut"),
+                        FundName("Expenses"),
+                        Currency.RON,
+                        BigDecimal("-100.00")
+                    )
                 )
             )
         )
@@ -109,9 +187,9 @@ class ImportFundMapperTest {
 
         assertThatThrownBy {
             runBlocking {
-                importFundMapper.mapToFundTransactions(
+                importFundMapper.mapToFundRequest(
                     userId,
-                    importTransactions
+                    importParsedTransactions
                 )
             }
         }
@@ -122,12 +200,17 @@ class ImportFundMapperTest {
     @Test
     fun `should throw data exception when fund not found`(): Unit = runBlocking {
         val userId = randomUUID()
-        val importTransactions = listOf(
-            ImportTransaction(
+        val importParsedTransactions = listOf(
+            ImportParsedTransaction(
                 transactionId = "transaction-1",
                 dateTime = LocalDateTime(2024, 7, 22, 9, 17),
                 records = listOf(
-                    ImportRecord(AccountName("Revolut"), FundName("Expenses"), "RON", BigDecimal("-100.00"))
+                    ImportParsedRecord(
+                        AccountName("Revolut"),
+                        FundName("Expenses"),
+                        Currency.RON,
+                        BigDecimal("-100.00")
+                    )
                 )
             )
         )
@@ -136,9 +219,9 @@ class ImportFundMapperTest {
 
         assertThatThrownBy {
             runBlocking {
-                importFundMapper.mapToFundTransactions(
+                importFundMapper.mapToFundRequest(
                     userId,
-                    importTransactions
+                    importParsedTransactions
                 )
             }
         }
@@ -146,11 +229,11 @@ class ImportFundMapperTest {
             .hasMessage("Record fund not found: Expenses")
     }
 
-    private fun account(name: String): AccountTO =
+    private fun account(name: String, currency: Currency = Currency.RON): AccountTO =
         AccountTO(
             id = randomUUID(),
             name = AccountName(name),
-            unit = Currency.RON
+            unit = currency
         )
 
     private fun fund(name: String): FundTO =

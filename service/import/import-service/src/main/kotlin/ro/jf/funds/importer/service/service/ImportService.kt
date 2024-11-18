@@ -24,9 +24,8 @@ class ImportService(
         val importTask = importTaskRepository.save(userId, ImportTaskTO.Status.IN_PROGRESS)
         return try {
             val importItems = importParserRegistry[configuration.fileType].parse(configuration, files)
-            val fundTransactions = importFundMapper.mapToFundTransactions(userId, importItems)
-            createFundTransactionsProducer
-                .send(Event(userId, CreateFundTransactionsTO(fundTransactions), importTask.taskId))
+            val fundTransactions = importFundMapper.mapToFundRequest(userId, importItems)
+            createFundTransactionsProducer.send(Event(userId, fundTransactions, importTask.taskId))
             importTask
         } catch (e: Exception) {
             log.warn(e) { "Error while importing files >> user = $userId configuration = $configuration files = $files." }

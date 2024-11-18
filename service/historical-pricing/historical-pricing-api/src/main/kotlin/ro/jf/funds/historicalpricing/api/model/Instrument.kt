@@ -2,6 +2,7 @@ package ro.jf.funds.historicalpricing.api.model
 
 import kotlinx.serialization.Serializable
 
+// TODO(Johann) this should be removed, there's already one in commons
 @Serializable
 enum class Instrument(val symbol: String, val mainCurrency: Currency, val source: HistoricalPriceSource) {
     SXR8_DE("SXR8.DE", Currency.EUR, HistoricalPriceSource.YAHOO),
