@@ -1,18 +1,17 @@
 package ro.jf.funds.importer.service.service
 
-import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Symbol
-import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
-import ro.jf.funds.fund.api.model.FundName
-import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.commons.model.FinancialUnit
+import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
-import ro.jf.funds.importer.service.domain.*
+import ro.jf.funds.importer.service.domain.ImportParsedRecord
+import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import java.math.BigDecimal
 import java.util.*
@@ -39,44 +38,76 @@ class ImportFundMapper(
     private fun List<ImportParsedTransaction>.toFundTransactions(importResourceContext: ImportResourceContext): List<ImportFundTransaction> =
         map { it.toTransactionRequest(importResourceContext) }
 
-    private fun ImportParsedTransaction.toTransactionRequest(importResourceContext: ImportResourceContext): ImportFundTransaction =
-        when {
-            isSimpleTransactionRequest(importResourceContext) -> {
-                toSimpleTransactionRequest(importResourceContext)
+    private fun ImportParsedTransaction.toTransactionRequest(importResourceContext: ImportResourceContext): ImportFundTransaction {
+        val type = ImportFundTransaction.Type.entries.firstOrNull {
+            it.matcher(importResourceContext)(this)
+        } ?: throw ImportDataException("Unrecognized transaction type: $this")
+        return when (type) {
+            ImportFundTransaction.Type.SINGLE_RECORD -> toSingleRecordFundTransaction(importResourceContext)
+            ImportFundTransaction.Type.TRANSFER -> toTransferFundTransaction(importResourceContext)
+        }
+    }
+
+    private fun ImportFundTransaction.Type.matcher(importResourceContext: ImportResourceContext): (ImportParsedTransaction) -> Boolean {
+        return when (this) {
+            ImportFundTransaction.Type.SINGLE_RECORD -> { transaction ->
+                transaction.records.size == 1 && transaction.records.first()
+                    .let { importResourceContext.getAccount(it.accountName).unit is Currency }
             }
 
-            else -> {
-                throw ImportDataException("Unrecognized transaction type: $this")
+            ImportFundTransaction.Type.TRANSFER -> { transaction ->
+                val financialUnits = transaction.records
+                    .map { importResourceContext.getAccount(it.accountName) }
+                    .map { it.unit }
+                    .toSet()
+                // TODO(Johann) should also check if the amounts are opposite
+                transaction.records.size == 2 && financialUnits.size == 1
             }
         }
+    }
 
-    private fun ImportParsedTransaction.toSimpleTransactionRequest(importResourceContext: ImportResourceContext): ImportFundTransaction =
-        // TODO will have to handle currency transformations
-        ImportFundTransaction(
+    private fun ImportParsedTransaction.toSingleRecordFundTransaction(
+        importResourceContext: ImportResourceContext
+    ): ImportFundTransaction {
+        return ImportFundTransaction(
             dateTime = dateTime,
-            // TODO(Johann) not exactly
             type = ImportFundTransaction.Type.SINGLE_RECORD,
             records = records.map { record ->
-                record.toRecordRequest(importResourceContext)
+                record.toImportCurrencyFundRecord(importResourceContext)
             }
         )
+    }
+
+    private fun ImportParsedTransaction.toTransferFundTransaction(
+        importResourceContext: ImportResourceContext
+    ): ImportFundTransaction {
+        return ImportFundTransaction(
+            dateTime = dateTime,
+            type = ImportFundTransaction.Type.TRANSFER,
+            records = records.map { record ->
+                record.toImportCurrencyFundRecord(importResourceContext)
+            }
+        )
+    }
+
+    private fun ImportParsedRecord.toImportCurrencyFundRecord(
+        importResourceContext: ImportResourceContext
+    ): ImportFundRecord {
+        val account = importResourceContext.getAccount(accountName)
+        return ImportFundRecord(
+            fundId = importResourceContext.getFundId(fundName),
+            accountId = account.id,
+            amount = if (unit == account.unit) {
+                amount
+            } else {
+                throw ImportDataException("Currency conversion not supported yet for single record fund transaction")
+            },
+            unit = importResourceContext.getAccount(accountName).unit as Currency,
+        )
+    }
 
     // TODO(Johann) all this currency exchange should be extracted to some historical pricing adapter maybe
     // TODO(Johann) should also have some historical pricing local caching
-    private fun ImportParsedRecord.amountInEur(date: LocalDate): BigDecimal {
-        return when (unit) {
-            is Currency -> when (unit) {
-                Currency.EUR -> amount
-                else -> historicalPricingSdk.convertCurrency(
-                    sourceCurrency = unit.toHistoricalPricingCurrency(),
-                    targetCurrency = HPCurrency.EUR,
-                    date = date
-                ).price * amount
-            }
-
-            is Symbol -> throw ImportDataException("Instrument symbols not supported yet")
-        }
-    }
 
     private fun Currency.toHistoricalPricingCurrency(): HPCurrency {
         return when (this) {
@@ -85,26 +116,6 @@ class ImportFundMapper(
             else -> throw ImportDataException("Currency not supported: $this")
         }
     }
-
-    private fun ImportParsedTransaction.isCurrencyExchangeTransaction(importResourceContext: ImportResourceContext): Boolean {
-        val accounts = records.map { it.accountName }.toSet()
-        val financialUnits = records.map { importResourceContext.getAccount(it.accountName).unit }
-        return financialUnits.all { it is Currency } && financialUnits.toSet().size == 2 && accounts.size == 2 && records.size <= 3
-    }
-
-    private fun ImportParsedTransaction.isSimpleTransactionRequest(importResourceContext: ImportResourceContext): Boolean {
-        val financialUnits = records.map { importResourceContext.getAccount(it.accountName).unit }
-        return financialUnits.all { it is Currency } && financialUnits.toSet().size == 1
-    }
-
-    private fun ImportParsedRecord.toRecordRequest(importResourceContext: ImportResourceContext) =
-        ImportFundRecord(
-            fundId = importResourceContext.getFundId(fundName),
-            accountId = importResourceContext.getAccount(accountName).id,
-            amount = amount,
-            // TODO(Johann) not actually, should revisit
-            unit = Currency.RON,
-        )
 
     private suspend fun createImportResourceContext(userId: UUID) = ImportResourceContext(
         accountSdk.listAccounts(userId).items,
@@ -123,5 +134,44 @@ class ImportFundMapper(
 
         fun getFundId(fundName: FundName) = fundIdByName[fundName]
             ?: throw ImportDataException("Record fund not found: $fundName")
+    }
+
+
+    fun List<ImportFundTransaction>.toRequest(): CreateFundTransactionsTO =
+        CreateFundTransactionsTO(map { it.toRequest() })
+
+    data class ImportFundTransaction(
+        val dateTime: LocalDateTime,
+        val type: Type,
+        val records: List<ImportFundRecord>
+    ) {
+        enum class Type {
+            SINGLE_RECORD,
+            TRANSFER,
+            // TODO(Johann) add EXCHANGE type
+        }
+
+        fun toRequest(): CreateFundTransactionTO {
+            return CreateFundTransactionTO(
+                dateTime = dateTime,
+                records = records.map { it.toRequest() }
+            )
+        }
+    }
+
+    data class ImportFundRecord(
+        val fundId: UUID,
+        val accountId: UUID,
+        val amount: BigDecimal,
+        val unit: FinancialUnit
+    ) {
+        fun toRequest(): CreateFundRecordTO {
+            return CreateFundRecordTO(
+                fundId = fundId,
+                accountId = accountId,
+                amount = amount,
+                unit = unit
+            )
+        }
     }
 }

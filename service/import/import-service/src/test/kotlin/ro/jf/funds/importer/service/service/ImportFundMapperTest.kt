@@ -34,13 +34,12 @@ class ImportFundMapperTest {
     val userId = randomUUID()
 
     @Test
-    fun `should map import transactions`(): Unit = runBlocking {
-        val transaction1DateTime = LocalDateTime.parse("2024-07-22T09:17:00")
-        val transaction2DateTime = LocalDateTime.parse("2024-07-22T09:18:00")
+    fun `should map single record import transactions`(): Unit = runBlocking {
+        val transactionDateTime = LocalDateTime.parse("2024-07-22T09:17:00")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionId = "transaction-1",
-                dateTime = transaction1DateTime,
+                dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
                         AccountName("Revolut"),
@@ -49,10 +48,39 @@ class ImportFundMapperTest {
                         BigDecimal("-100.00")
                     )
                 )
-            ),
+            )
+        )
+        val cashAccount = account("Cash RON")
+        val bankAccount = account("Revolut")
+        val companyAccount = account("Company")
+        val expensedFund = fund("Expenses")
+        val incomeFund = fund("Income")
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, bankAccount, companyAccount))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
+
+        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
+
+        assertThat(fundTransactions.transactions).containsExactlyInAnyOrder(
+            CreateFundTransactionTO(
+                dateTime = transactionDateTime,
+                records = listOf(
+                    CreateFundRecordTO(
+                        fundId = expensedFund.id,
+                        accountId = bankAccount.id,
+                        amount = BigDecimal("-100.00"),
+                        unit = Currency.RON
+                    )
+                )
+            )
+        )
+    }
+    @Test
+    fun `should map transfer import transactions`(): Unit = runBlocking {
+        val transactionDateTime = LocalDateTime.parse("2024-07-22T09:18:00")
+        val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionId = "transaction-2",
-                dateTime = transaction2DateTime,
+                dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(AccountName("Company"), FundName("Income"), Currency.RON, BigDecimal("-50.00")),
                     ImportParsedRecord(AccountName("Cash RON"), FundName("Expenses"), Currency.RON, BigDecimal("50.00"))
@@ -71,18 +99,7 @@ class ImportFundMapperTest {
 
         assertThat(fundTransactions.transactions).containsExactlyInAnyOrder(
             CreateFundTransactionTO(
-                dateTime = transaction1DateTime,
-                records = listOf(
-                    CreateFundRecordTO(
-                        fundId = expensedFund.id,
-                        accountId = bankAccount.id,
-                        amount = BigDecimal("-100.00"),
-                        unit = Currency.RON
-                    )
-                )
-            ),
-            CreateFundTransactionTO(
-                dateTime = transaction2DateTime,
+                dateTime = transactionDateTime,
                 records = listOf(
                     CreateFundRecordTO(
                         fundId = incomeFund.id,
