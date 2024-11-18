@@ -1,14 +1,14 @@
 package ro.jf.funds.importer.service.service.parser
 
+import org.apache.commons.lang3.StringUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import ro.jf.funds.account.api.model.AccountName
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.fund.api.model.FundName
-import ro.jf.funds.importer.api.model.AccountMatcherTO
-import ro.jf.funds.importer.api.model.FundMatcherTO
-import ro.jf.funds.importer.api.model.ImportConfigurationTO
-import ro.jf.funds.importer.api.model.ImportFileTypeTO
+import ro.jf.funds.importer.api.model.*
+import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 
 class WalletCsvImportParserTest {
@@ -22,7 +22,8 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
-            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")))
+            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses"))),
+            exchangeMatchers = emptyList()
         )
 
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
@@ -33,7 +34,7 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[0].records).hasSize(1)
         assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Expenses"))
-        assertThat(importTransactions[0].records[0].currency).isEqualTo("RON")
+        assertThat(importTransactions[0].records[0].unit).isEqualTo(Currency.RON)
         assertThat(importTransactions[0].records[0].amount).isEqualTo("-13.80".toBigDecimal())
     }
 
@@ -54,7 +55,8 @@ class WalletCsvImportParserTest {
                 FundMatcherTO.ByLabel("Basic - Food", FundName("Income")),
                 FundMatcherTO.ByAccount("ING old", FundName("Expenses")),
                 FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
-            )
+            ),
+            exchangeMatchers = emptyList()
         )
 
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
@@ -64,11 +66,44 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-31T02:00:49")
         assertThat(importTransactions[0].records).hasSize(2)
         assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
-        assertThat(importTransactions[0].records[0].currency).isEqualTo("RON")
+        assertThat(importTransactions[0].records[0].unit).isEqualTo(Currency.RON)
         assertThat(importTransactions[0].records[0].amount).isEqualTo("-400.00".toBigDecimal())
         assertThat(importTransactions[0].records[1].accountName).isEqualTo(AccountName("Cash"))
-        assertThat(importTransactions[0].records[1].currency).isEqualTo("RON")
+        assertThat(importTransactions[0].records[1].unit).isEqualTo(Currency.RON)
         assertThat(importTransactions[0].records[1].amount).isEqualTo("400.00".toBigDecimal())
+    }
+
+    @Test
+    fun `should parse currency exchange transfer`() {
+        val fileContent = generateFileContent(
+            WalletCsvRowContent("Euro", "EUR", "-1.89", "Exchange", "2019-04-23 21:45:02", "exchange"),
+            WalletCsvRowContent("Cash RON", "RON", "-1434.00", "Exchange", "2019-04-23 21:45:49", "exchange"),
+            WalletCsvRowContent("Euro", "EUR", "301.24", "Exchange", "2019-04-23 21:45:49", "exchange"),
+        )
+        val importConfiguration = ImportConfigurationTO(
+            fileType = ImportFileTypeTO.WALLET_CSV,
+            accountMatchers = listOf(
+                AccountMatcherTO("Euro", AccountName("Cash EUR")),
+                AccountMatcherTO("Cash RON", AccountName("Cash RON"))
+            ),
+            fundMatchers = listOf(
+                FundMatcherTO.ByAccount("Euro", FundName("Expenses")),
+                FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
+            ),
+            exchangeMatchers = listOf(ExchangeMatcherTO.ByLabel("Exchange"))
+        )
+
+        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+
+        assertThat(importTransactions).hasSize(1)
+        assertThat(importTransactions[0].transactionId).isNotNull()
+        assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-04-23T21:45:02")
+        assertThat(importTransactions[0].records).hasSize(3)
+        assertThat(importTransactions[0].records).containsExactlyInAnyOrder(
+            ImportParsedRecord(AccountName("Cash EUR"), FundName("Expenses"), Currency.EUR, "-1.89".toBigDecimal()),
+            ImportParsedRecord(AccountName("Cash RON"), FundName("Expenses"), Currency.RON, "-1434.00".toBigDecimal()),
+            ImportParsedRecord(AccountName("Cash EUR"), FundName("Expenses"), Currency.EUR, "301.24".toBigDecimal())
+        )
     }
 
     @Test
@@ -82,8 +117,14 @@ class WalletCsvImportParserTest {
                 AccountMatcherTO("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByAccountLabelWithTransfer("ING old", importLabel = "Work Income", FundName("Work"), FundName("Expenses")),
-            )
+                FundMatcherTO.ByAccountLabelWithTransfer(
+                    "ING old",
+                    importLabel = "Work Income",
+                    FundName("Work"),
+                    FundName("Expenses")
+                ),
+            ),
+            exchangeMatchers = emptyList()
         )
 
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
@@ -95,17 +136,17 @@ class WalletCsvImportParserTest {
 
         assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Work"))
-        assertThat(importTransactions[0].records[0].currency).isEqualTo("RON")
+        assertThat(importTransactions[0].records[0].unit).isEqualTo(Currency.RON)
         assertThat(importTransactions[0].records[0].amount).isEqualTo("6740.00".toBigDecimal())
 
         assertThat(importTransactions[0].records[1].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[0].records[1].fundName).isEqualTo(FundName("Work"))
-        assertThat(importTransactions[0].records[1].currency).isEqualTo("RON")
+        assertThat(importTransactions[0].records[1].unit).isEqualTo(Currency.RON)
         assertThat(importTransactions[0].records[1].amount).isEqualTo("-6740.00".toBigDecimal())
 
         assertThat(importTransactions[0].records[2].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[0].records[2].fundName).isEqualTo(FundName("Expenses"))
-        assertThat(importTransactions[0].records[2].currency).isEqualTo("RON")
+        assertThat(importTransactions[0].records[2].unit).isEqualTo(Currency.RON)
         assertThat(importTransactions[0].records[2].amount).isEqualTo("6740.00".toBigDecimal())
     }
 
@@ -120,7 +161,8 @@ class WalletCsvImportParserTest {
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
                 FundMatcherTO.ByAccount("ING old", FundName("Savings"))
-            )
+            ),
+            exchangeMatchers = emptyList()
         )
 
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
@@ -137,7 +179,8 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(AccountMatcherTO("ING new", AccountName("ING"))),
-            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")))
+            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses"))),
+            exchangeMatchers = emptyList()
         )
 
         assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
@@ -153,7 +196,8 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
-            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")))
+            fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses"))),
+            exchangeMatchers = emptyList()
         )
 
         assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
@@ -166,15 +210,16 @@ class WalletCsvImportParserTest {
         val currency: String,
         val amount: String,
         val label: String,
-        val date: String
+        val date: String,
+        val note: String = StringUtils.EMPTY
     )
 
     private fun generateFileContent(vararg rowContent: WalletCsvRowContent): String {
         val header = """
             account;category;currency;amount;ref_currency_amount;type;payment_type;payment_type_local;note;date;gps_latitude;gps_longitude;gps_accuracy_in_meters;warranty_in_month;transfer;payee;labels;envelope_id;custom_category
         """.trimIndent()
-        val rows = rowContent.joinToString("\n") { (accountName, currency, amount, label, date) ->
-            "$accountName;Groceries;$currency;$amount;$amount;Expenses;TRANSFER;Bank transfer;Cumparare POS SEREDEF SRL DEP RO CLUJ-NAPOCA;$date;;;;0;false;;$label;1000;false"
+        val rows = rowContent.joinToString("\n") { (accountName, currency, amount, label, date, note) ->
+            "$accountName;Groceries;$currency;$amount;$amount;Expenses;TRANSFER;Bank transfer;$note;$date;;;;0;false;;$label;1000;false"
         }
         return "$header\n$rows"
     }

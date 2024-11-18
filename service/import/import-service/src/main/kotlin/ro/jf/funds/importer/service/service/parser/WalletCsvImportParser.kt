@@ -1,8 +1,12 @@
 package ro.jf.funds.importer.service.service.parser
 
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
+import kotlinx.datetime.toInstant
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.importer.api.model.ExchangeMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO.*
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.service.domain.*
@@ -24,10 +28,10 @@ class WalletCsvImportParser(
 
     override fun parse(
         importConfiguration: ImportConfigurationTO, files: List<String>
-    ): List<ImportTransaction> {
+    ): List<ImportParsedTransaction> {
         return files
             .parse()
-            .groupBy { it.transactionId() }
+            .groupBy { it.transactionId(importConfiguration.exchangeMatchers) }
             .map { (transactionId, csvRows) -> toTransaction(importConfiguration, transactionId, csvRows) }
     }
 
@@ -38,27 +42,35 @@ class WalletCsvImportParser(
         return rawImportItems
     }
 
-    private fun CsvRow.transactionId(): String {
-        return listOf(
-            this.getString(NOTE_COLUMN),
-            this.getBigDecimal(AMOUNT_COLUMN).abs(),
-            this.getString(DATE_COLUMN)
-        ).hashCode().toString()
+    private fun CsvRow.transactionId(exchangeMatchers: List<ExchangeMatcherTO>): String {
+        return when (exchangeMatchers.getExchangeMatcher(getString(LABEL_COLUMN))) {
+            is ExchangeMatcherTO.ByLabel -> listOf(
+                this.getDateTime(DATE_COLUMN, dateTimeFormat).inWholeMinutes(),
+            ).hashCode().toString()
+
+            null -> listOf(
+                this.getString(NOTE_COLUMN),
+                this.getBigDecimal(AMOUNT_COLUMN).abs(),
+                this.getString(DATE_COLUMN)
+            ).hashCode().toString()
+        }
     }
+
+    private fun LocalDateTime.inWholeMinutes(): Long = this.toInstant(TimeZone.UTC).epochSeconds / 60
 
     private fun toTransaction(
         importConfiguration: ImportConfigurationTO,
         transactionId: String,
         csvRows: List<CsvRow>
-    ): ImportTransaction {
-        return ImportTransaction(
+    ): ImportParsedTransaction {
+        return ImportParsedTransaction(
             transactionId = transactionId,
-            dateTime = csvRows.first().getDateTime(DATE_COLUMN, dateTimeFormat),
+            dateTime = csvRows.minOf { it.getDateTime(DATE_COLUMN, dateTimeFormat) },
             records = csvRows.flatMap { csvRow -> toImportRecords(importConfiguration, csvRow) }
         )
     }
 
-    private fun toImportRecords(importConfiguration: ImportConfigurationTO, csvRow: CsvRow): List<ImportRecord> {
+    private fun toImportRecords(importConfiguration: ImportConfigurationTO, csvRow: CsvRow): List<ImportParsedRecord> {
         val importAccountName = csvRow.getString(ACCOUNT_NAME_COLUMN)
         val accountName = importConfiguration.accountMatchers.getAccountName(importAccountName)
         val importType = csvRow.getString(LABEL_COLUMN)
@@ -68,13 +80,13 @@ class WalletCsvImportParser(
 
         return when (fundMatcher) {
             is ByAccount, is ByLabel, is ByAccountLabel ->
-                listOf(ImportRecord(accountName, fundMatcher.fundName, currency, amount))
+                listOf(ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount))
 
             is ByAccountLabelWithTransfer -> {
                 listOf(
-                    ImportRecord(accountName, fundMatcher.initialFundName, currency, amount),
-                    ImportRecord(accountName, fundMatcher.initialFundName, currency, amount.negate()),
-                    ImportRecord(accountName, fundMatcher.fundName, currency, amount)
+                    ImportParsedRecord(accountName, fundMatcher.initialFundName, Currency(currency), amount),
+                    ImportParsedRecord(accountName, fundMatcher.initialFundName, Currency(currency), amount.negate()),
+                    ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount)
                 )
             }
         }

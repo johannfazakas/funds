@@ -16,6 +16,7 @@ class HistoricalPricingSdk(
 ) {
     private val httpClient = OkHttpClient()
 
+    // TODO(Johann) remove this currency from the api
     fun convertInstrument(instrument: Instrument, currency: Currency, date: LocalDate): HistoricalPrice {
         val historicalPrices = convertInstrument(instrument, currency, listOf(date))
         require(historicalPrices.size == 1) { "Expected 1 historical price, but got ${historicalPrices.size}" }
