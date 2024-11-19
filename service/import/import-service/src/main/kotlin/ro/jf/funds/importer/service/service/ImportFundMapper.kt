@@ -1,5 +1,6 @@
 package ro.jf.funds.importer.service.service
 
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.AccountName
@@ -9,20 +10,18 @@ import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import java.math.BigDecimal
 import java.util.*
-import ro.jf.funds.historicalpricing.api.model.Currency as HPCurrency
 
 private val log = logger { }
 
 class ImportFundMapper(
     private val accountSdk: AccountSdk,
     private val fundSdk: FundSdk,
-    private val historicalPricingSdk: HistoricalPricingSdk,
+    private val historicalPricingAdapter: HistoricalPricingAdapter,
 ) {
     suspend fun mapToFundRequest(
         userId: UUID,
@@ -35,10 +34,10 @@ class ImportFundMapper(
         return transactionRequests.toRequest()
     }
 
-    private fun List<ImportParsedTransaction>.toFundTransactions(importResourceContext: ImportResourceContext): List<ImportFundTransaction> =
+    private suspend fun List<ImportParsedTransaction>.toFundTransactions(importResourceContext: ImportResourceContext): List<ImportFundTransaction> =
         map { it.toTransactionRequest(importResourceContext) }
 
-    private fun ImportParsedTransaction.toTransactionRequest(importResourceContext: ImportResourceContext): ImportFundTransaction {
+    private suspend fun ImportParsedTransaction.toTransactionRequest(importResourceContext: ImportResourceContext): ImportFundTransaction {
         val type = ImportFundTransaction.Type.entries.firstOrNull {
             it.matcher(importResourceContext)(this)
         } ?: throw ImportDataException("Unrecognized transaction type: $this")
@@ -56,41 +55,42 @@ class ImportFundMapper(
             }
 
             ImportFundTransaction.Type.TRANSFER -> { transaction ->
-                val financialUnits = transaction.records
-                    .map { importResourceContext.getAccount(it.accountName) }
-                    .map { it.unit }
-                    .toSet()
-                // TODO(Johann) should also check if the amounts are opposite
-                transaction.records.size == 2 && financialUnits.size == 1
+                val accounts = transaction.records.map { importResourceContext.getAccount(it.accountName) }
+                val targetCurrencies = accounts.map { it.unit }.toSet()
+                val sourceCurrencies = transaction.records.map { it.unit }.toSet()
+                transaction.records.size == 2 &&
+                        targetCurrencies.size == 1 && sourceCurrencies.size == 1 &&
+                        transaction.records.sumOf { it.amount }.compareTo(BigDecimal.ZERO) == 0
             }
         }
     }
 
-    private fun ImportParsedTransaction.toSingleRecordFundTransaction(
+    private suspend fun ImportParsedTransaction.toSingleRecordFundTransaction(
         importResourceContext: ImportResourceContext
     ): ImportFundTransaction {
         return ImportFundTransaction(
             dateTime = dateTime,
             type = ImportFundTransaction.Type.SINGLE_RECORD,
             records = records.map { record ->
-                record.toImportCurrencyFundRecord(importResourceContext)
+                record.toImportCurrencyFundRecord(dateTime.date, importResourceContext)
             }
         )
     }
 
-    private fun ImportParsedTransaction.toTransferFundTransaction(
+    private suspend fun ImportParsedTransaction.toTransferFundTransaction(
         importResourceContext: ImportResourceContext
     ): ImportFundTransaction {
         return ImportFundTransaction(
             dateTime = dateTime,
             type = ImportFundTransaction.Type.TRANSFER,
             records = records.map { record ->
-                record.toImportCurrencyFundRecord(importResourceContext)
+                record.toImportCurrencyFundRecord(dateTime.date, importResourceContext)
             }
         )
     }
 
-    private fun ImportParsedRecord.toImportCurrencyFundRecord(
+    private suspend fun ImportParsedRecord.toImportCurrencyFundRecord(
+        date: LocalDate,
         importResourceContext: ImportResourceContext
     ): ImportFundRecord {
         val account = importResourceContext.getAccount(accountName)
@@ -100,22 +100,17 @@ class ImportFundMapper(
             amount = if (unit == account.unit) {
                 amount
             } else {
-                throw ImportDataException("Currency conversion not supported yet for single record fund transaction")
+                historicalPricingAdapter.convertCurrency(
+                    sourceCurrency = unit as Currency,
+                    targetCurrency = account.unit as Currency,
+                    date = date
+                ) * amount
             },
             unit = importResourceContext.getAccount(accountName).unit as Currency,
         )
     }
 
-    // TODO(Johann) all this currency exchange should be extracted to some historical pricing adapter maybe
     // TODO(Johann) should also have some historical pricing local caching
-
-    private fun Currency.toHistoricalPricingCurrency(): HPCurrency {
-        return when (this) {
-            Currency.RON -> HPCurrency.RON
-            Currency.EUR -> HPCurrency.EUR
-            else -> throw ImportDataException("Currency not supported: $this")
-        }
-    }
 
     private suspend fun createImportResourceContext(userId: UUID) = ImportResourceContext(
         accountSdk.listAccounts(userId).items,
@@ -135,7 +130,6 @@ class ImportFundMapper(
         fun getFundId(fundName: FundName) = fundIdByName[fundName]
             ?: throw ImportDataException("Record fund not found: $fundName")
     }
-
 
     fun List<ImportFundTransaction>.toRequest(): CreateFundTransactionsTO =
         CreateFundTransactionsTO(map { it.toRequest() })
