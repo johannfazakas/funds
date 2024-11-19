@@ -22,6 +22,7 @@ import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
+import ro.jf.funds.importer.service.service.HistoricalPricingAdapter
 import ro.jf.funds.importer.service.service.ImportFundMapper
 import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.service.event.CreateFundTransactionsResponseHandler
@@ -65,6 +66,7 @@ val Application.importDependencies: Module
             single<HistoricalPricingSdk> {
                 HistoricalPricingSdk(environment.getStringProperty(HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY))
             }
+            single<HistoricalPricingAdapter> { HistoricalPricingAdapter(get()) }
             single<ImportFundMapper> { ImportFundMapper(get(), get(), get()) }
             single<ImportService> { ImportService(get(), get(), get(), get()) }
 

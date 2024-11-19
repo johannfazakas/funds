@@ -18,20 +18,20 @@ import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import java.math.BigDecimal
+import java.util.*
 import java.util.UUID.randomUUID
 
 class ImportFundMapperTest {
     private val accountSdk = mock<AccountSdk>()
     private val fundSdk = mock<FundSdk>()
-    private val historicalPricingSdk = mock<HistoricalPricingSdk>()
-    private val importFundMapper = ImportFundMapper(accountSdk, fundSdk, historicalPricingSdk)
+    private val historicalPricingAdapter = mock<HistoricalPricingAdapter>()
+    private val importFundMapper = ImportFundMapper(accountSdk, fundSdk, historicalPricingAdapter)
 
-    val userId = randomUUID()
+    private val userId: UUID = randomUUID()
 
     @Test
     fun `should map single record import transactions`(): Unit = runBlocking {
@@ -50,13 +50,10 @@ class ImportFundMapperTest {
                 )
             )
         )
-        val cashAccount = account("Cash RON")
         val bankAccount = account("Revolut")
-        val companyAccount = account("Company")
         val expensedFund = fund("Expenses")
-        val incomeFund = fund("Income")
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, bankAccount, companyAccount))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(bankAccount))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
 
         val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
 
@@ -74,6 +71,42 @@ class ImportFundMapperTest {
             )
         )
     }
+
+    @Test
+    fun `should map single record import transactions with currency conversion`(): Unit = runBlocking {
+        val transactionDateTime = LocalDateTime.parse("2024-07-22T09:17:00")
+        val importParsedTransactions = listOf(
+            ImportParsedTransaction(
+                transactionId = "transaction-1",
+                dateTime = transactionDateTime,
+                records = listOf(
+                    ImportParsedRecord(
+                        AccountName("Revolut"),
+                        FundName("Expenses"),
+                        Currency.RON,
+                        BigDecimal("-100.00")
+                    )
+                )
+            )
+        )
+        val bankAccount = account("Revolut", Currency.EUR)
+        val expensedFund = fund("Expenses")
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(bankAccount))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
+        whenever(historicalPricingAdapter.convertCurrency(Currency.RON, Currency.EUR, transactionDateTime.date))
+            .thenReturn(BigDecimal("5.00"))
+
+        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
+
+        assertThat(fundTransactions.transactions).hasSize(1)
+        assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(transactionDateTime)
+        assertThat(fundTransactions.transactions[0].records).hasSize(1)
+
+        val record = fundTransactions.transactions[0].records.first()
+        assertThat(record.amount).isEqualByComparingTo(BigDecimal("-500.00"))
+        assertThat(record.unit).isEqualTo(Currency.EUR)
+    }
+
     @Test
     fun `should map transfer import transactions`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:18:00")
@@ -88,11 +121,10 @@ class ImportFundMapperTest {
             )
         )
         val cashAccount = account("Cash RON")
-        val bankAccount = account("Revolut")
         val companyAccount = account("Company")
         val expensedFund = fund("Expenses")
         val incomeFund = fund("Income")
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, bankAccount, companyAccount))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, companyAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
 
         val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
@@ -116,6 +148,43 @@ class ImportFundMapperTest {
                 )
             )
         )
+    }
+
+    @Test
+    fun `should map transfer import transactions with currency conversion`(): Unit = runBlocking {
+        val transactionDateTime = LocalDateTime.parse("2024-07-22T09:18:00")
+        val importParsedTransactions = listOf(
+            ImportParsedTransaction(
+                transactionId = "transaction-2",
+                dateTime = transactionDateTime,
+                records = listOf(
+                    ImportParsedRecord(AccountName("Company"), FundName("Income"), Currency.RON, BigDecimal("-50.00")),
+                    ImportParsedRecord(AccountName("Cash RON"), FundName("Expenses"), Currency.RON, BigDecimal("50.00"))
+                )
+            )
+        )
+        whenever(historicalPricingAdapter.convertCurrency(Currency.RON, Currency.EUR, transactionDateTime.date))
+            .thenReturn(BigDecimal("5.00"))
+        val cashAccount = account("Cash RON", Currency.EUR)
+        val companyAccount = account("Company", Currency.EUR)
+        val expensedFund = fund("Expenses")
+        val incomeFund = fund("Income")
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, companyAccount))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
+
+        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
+
+        assertThat(fundTransactions.transactions).hasSize(1)
+        assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(transactionDateTime)
+        assertThat(fundTransactions.transactions[0].records).hasSize(2)
+
+        val companyRecord = fundTransactions.transactions[0].records.first { it.accountId == companyAccount.id }
+        val cashRecord = fundTransactions.transactions[0].records.first { it.accountId == cashAccount.id }
+
+        assertThat(companyRecord.amount).isEqualByComparingTo(BigDecimal("-250.00"))
+        assertThat(companyRecord.unit).isEqualTo(Currency.EUR)
+        assertThat(cashRecord.amount).isEqualByComparingTo(BigDecimal("250.00"))
+        assertThat(cashRecord.unit).isEqualTo(Currency.EUR)
     }
 
     @Test
