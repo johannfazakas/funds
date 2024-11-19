@@ -84,5 +84,6 @@ class CreateFundTransactionsResponseHandlerTest {
         get() = MapApplicationConfig(
             "integration.account-service.base-url" to "localhost:8765",
             "integration.fund-service.base-url" to "localhost:8765",
+            "integration.historical-pricing-service.base-url" to "localhost:8765",
         )
 }

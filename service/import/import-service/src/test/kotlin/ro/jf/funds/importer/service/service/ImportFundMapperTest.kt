@@ -18,6 +18,7 @@ import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
+import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
@@ -75,6 +76,7 @@ class ImportFundMapperTest {
     @Test
     fun `should map single record import transactions with currency conversion`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:17:00")
+        val transactionDate = transactionDateTime.date
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionId = "transaction-1",
@@ -93,8 +95,8 @@ class ImportFundMapperTest {
         val expensedFund = fund("Expenses")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(bankAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
-        whenever(historicalPricingAdapter.convertCurrency(Currency.RON, Currency.EUR, transactionDateTime.date))
-            .thenReturn(BigDecimal("5.00"))
+        whenever(historicalPricingAdapter.convertCurrencies(Currency.RON, Currency.EUR, listOf(transactionDate)))
+            .thenReturn(listOf(HistoricalPrice(transactionDate, BigDecimal("5.00"))))
 
         val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
 
@@ -153,6 +155,7 @@ class ImportFundMapperTest {
     @Test
     fun `should map transfer import transactions with currency conversion`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:18:00")
+        val transactionDate = transactionDateTime.date
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionId = "transaction-2",
@@ -163,8 +166,8 @@ class ImportFundMapperTest {
                 )
             )
         )
-        whenever(historicalPricingAdapter.convertCurrency(Currency.RON, Currency.EUR, transactionDateTime.date))
-            .thenReturn(BigDecimal("5.00"))
+        whenever(historicalPricingAdapter.convertCurrencies(Currency.RON, Currency.EUR, listOf(transactionDate)))
+            .thenReturn(listOf(HistoricalPrice(transactionDate, BigDecimal("5.00"))))
         val cashAccount = account("Cash RON", Currency.EUR)
         val companyAccount = account("Company", Currency.EUR)
         val expensedFund = fund("Expenses")
