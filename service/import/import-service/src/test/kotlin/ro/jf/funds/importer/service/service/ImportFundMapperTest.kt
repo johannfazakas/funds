@@ -191,6 +191,55 @@ class ImportFundMapperTest {
     }
 
     @Test
+    fun `should map transaction with implicit transfer`(): Unit = runBlocking {
+        val transactionDateTime = LocalDateTime.parse("2024-07-22T09:18:00")
+        val importParsedTransactions = listOf(
+            ImportParsedTransaction(
+                transactionId = "transaction-id",
+                dateTime = transactionDateTime,
+                records = listOf(
+                    ImportParsedRecord(
+                        AccountName("BT RON"), FundName("Income"), Currency.RON, BigDecimal("50.00")
+                    ),
+                    ImportParsedRecord(
+                        AccountName("BT RON"), FundName("Income"), Currency.RON, BigDecimal("-50.00")
+                    ),
+                    ImportParsedRecord(
+                        AccountName("BT RON"), FundName("Expenses"), Currency.RON, BigDecimal("50.00")
+                    ),
+                )
+            )
+        )
+        val account = account("BT RON", Currency.RON)
+        val expensedFund = fund("Expenses")
+        val incomeFund = fund("Income")
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
+
+        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
+
+        assertThat(fundTransactions.transactions).hasSize(1)
+        assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(transactionDateTime)
+        val records = fundTransactions.transactions[0].records
+        assertThat(records).hasSize(3)
+
+        val passThroughPositiveRecord =
+            records.first { it.fundId == incomeFund.id && it.amount > BigDecimal.ZERO }
+        assertThat(passThroughPositiveRecord.amount).isEqualByComparingTo(BigDecimal("50.00"))
+        assertThat(passThroughPositiveRecord.unit).isEqualTo(Currency.RON)
+
+        val passThroughNegativeRecord =
+            records.first { it.fundId == incomeFund.id && it.amount < BigDecimal.ZERO }
+        assertThat(passThroughNegativeRecord.amount).isEqualByComparingTo(BigDecimal("-50.00"))
+        assertThat(passThroughNegativeRecord.unit).isEqualTo(Currency.RON)
+
+        val targetRecord = records
+            .first { it.fundId == expensedFund.id && it.accountId == account.id }
+        assertThat(targetRecord.amount).isEqualByComparingTo(BigDecimal("50.00"))
+        assertThat(targetRecord.unit).isEqualTo(Currency.RON)
+    }
+
+    @Test
     @Disabled("Not implemented yet")
     // TODO(Johann) make this green
     fun `should map exchange transaction`(): Unit = runBlocking {

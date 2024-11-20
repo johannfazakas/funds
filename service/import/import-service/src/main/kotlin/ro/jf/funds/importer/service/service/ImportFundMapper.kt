@@ -13,8 +13,7 @@ import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.service.ImportFundMapper.ImportFundTransaction.Type.SINGLE_RECORD
-import ro.jf.funds.importer.service.service.ImportFundMapper.ImportFundTransaction.Type.TRANSFER
+import ro.jf.funds.importer.service.service.ImportFundMapper.ImportFundTransaction.Type.*
 import java.math.BigDecimal
 import java.util.*
 
@@ -45,6 +44,7 @@ class ImportFundMapper(
         return when (type) {
             SINGLE_RECORD -> toSingleRecordFundTransaction(importResourceContext, conversionContext)
             TRANSFER -> toTransferFundTransaction(importResourceContext, conversionContext)
+            IMPLICIT_TRANSFER -> toImplicitTransferFundTransaction(importResourceContext, conversionContext)
         }
     }
 
@@ -73,6 +73,19 @@ class ImportFundMapper(
                         targetCurrencies.all { it is Currency } && sourceCurrencies.all { it is Currency } &&
                         transaction.records.sumOf { it.amount }.compareTo(BigDecimal.ZERO) == 0
             }
+
+            IMPLICIT_TRANSFER -> { transaction ->
+                val sourceCurrencies = transaction.records.map { it.unit }.distinct()
+                val accountIds =
+                    transaction.records.map { importResourceContext.getAccount(it.accountName).id }.distinct()
+                val recordsByFund = transaction.records.groupBy { it.fundName }
+                val passThroughRecords = recordsByFund.values.firstOrNull { it.size == 2 }
+                val principalRecord = recordsByFund.values.firstOrNull { it.size == 1 }
+                transaction.records.size == 3 && sourceCurrencies.size == 1 && accountIds.size == 1 &&
+                        recordsByFund.size == 2 && passThroughRecords?.size == 2 && principalRecord?.size == 1 &&
+                        passThroughRecords.sumOf { it.amount }.compareTo(BigDecimal.ZERO) == 0 &&
+                        passThroughRecords.any { it.amount.compareTo(principalRecord.first().amount) == 0 }
+            }
         }
     }
 
@@ -96,6 +109,19 @@ class ImportFundMapper(
         return ImportFundTransaction(
             dateTime = dateTime,
             type = TRANSFER,
+            records = records.map { record ->
+                record.toImportCurrencyFundRecord(dateTime.date, importResourceContext, conversionContext)
+            }
+        )
+    }
+
+    private fun ImportParsedTransaction.toImplicitTransferFundTransaction(
+        importResourceContext: ImportResourceContext,
+        conversionContext: ConversionContext
+    ): ImportFundTransaction {
+        return ImportFundTransaction(
+            dateTime = dateTime,
+            type = IMPLICIT_TRANSFER,
             records = records.map { record ->
                 record.toImportCurrencyFundRecord(dateTime.date, importResourceContext, conversionContext)
             }
@@ -196,6 +222,8 @@ class ImportFundMapper(
     private fun List<ImportFundTransaction>.toRequest(): CreateFundTransactionsTO =
         CreateFundTransactionsTO(map { it.toRequest() })
 
+    // TODO(Johann) is this class actually needed? It only has an extra type
+    // TODO(Johann) could all the types be extracted as a strategy or something similar?
     data class ImportFundTransaction(
         val dateTime: LocalDateTime,
         val type: Type,
@@ -204,6 +232,7 @@ class ImportFundMapper(
         enum class Type {
             SINGLE_RECORD,
             TRANSFER,
+            IMPLICIT_TRANSFER,
             // TODO(Johann) add EXCHANGE type
         }
 
