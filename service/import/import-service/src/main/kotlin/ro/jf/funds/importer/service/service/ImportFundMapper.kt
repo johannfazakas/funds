@@ -30,25 +30,72 @@ class ImportFundMapper(
     ): CreateFundTransactionsTO {
         log.info { "Handling import >> user = $userId items size = ${parsedTransactions.size}." }
         val importResourceContext = createImportResourceContext(userId)
-        val conversionContext = createConversionContext(importResourceContext, parsedTransactions)
-        return parsedTransactions
-            .map { it.toTransactionRequest(importResourceContext, conversionContext) }
-            .toRequest()
+        return parsedTransactions.toFundTransactions(importResourceContext).toRequest()
     }
 
-    private fun ImportParsedTransaction.toTransactionRequest(
-        importResourceContext: ImportResourceContext,
-        conversionContext: ConversionContext
-    ): ImportFundTransaction {
-        val type: ImportFundTransaction.Type = resolveTransactionType(importResourceContext)
-        return when (type) {
-            SINGLE_RECORD -> toSingleRecordFundTransaction(importResourceContext, conversionContext)
-            TRANSFER -> toTransferFundTransaction(importResourceContext, conversionContext)
-            IMPLICIT_TRANSFER -> toImplicitTransferFundTransaction(importResourceContext, conversionContext)
+    private suspend fun List<ImportParsedTransaction>.toFundTransactions(
+        importResourceContext: ImportResourceContext
+    ): List<ImportFundTransaction> {
+        val parsedTransactionsToType =
+            this.map { it to it.resolveTransactionType(importResourceContext) }
+        val requiredConversions = parsedTransactionsToType
+            .flatMap { (transaction, type) ->
+                transaction.getRequiredConversions(type, importResourceContext)
+            }
+            .toSet()
+        val conversionContext = createConversionContext(requiredConversions)
+
+        return parsedTransactionsToType.map { (transaction, type) ->
+            when (type) {
+                SINGLE_RECORD -> transaction.toSingleRecordFundTransaction(importResourceContext, conversionContext)
+                TRANSFER -> transaction.toTransferFundTransaction(importResourceContext, conversionContext)
+                IMPLICIT_TRANSFER -> transaction.toImplicitTransferFundTransaction(
+                    importResourceContext,
+                    conversionContext
+                )
+
+                EXCHANGE -> transaction.toExchangeFundTransaction(importResourceContext, conversionContext)
+            }
         }
     }
 
-    private fun ImportParsedTransaction.resolveTransactionType(importResourceContext: ImportResourceContext): ImportFundTransaction.Type {
+    private fun ImportParsedTransaction.getRequiredConversions(
+        type: ImportFundTransaction.Type, importResourceContext: ImportResourceContext,
+    ): List<ConversionRequest> {
+        val importConversions = records
+            .map { record ->
+                ConversionRequest(
+                    date = dateTime.date,
+                    currencyPair = CurrencyPair(
+                        sourceCurrency = record.unit as Currency,
+                        targetCurrency = importResourceContext.getAccount(record.accountName).unit as Currency
+                    )
+                )
+            }
+            .filter { conversion -> conversion.currencyPair.sourceCurrency != conversion.currencyPair.targetCurrency }
+        return when (type) {
+            SINGLE_RECORD, TRANSFER, IMPLICIT_TRANSFER -> importConversions
+
+            EXCHANGE -> {
+                val targetCurrency = records
+                    .filter { it.amount > BigDecimal.ZERO }
+                    .map { importResourceContext.getAccount(it.accountName).unit }
+                    .first()
+                val sourceCurrency = records
+                    .map { importResourceContext.getAccount(it.accountName).unit }
+                    .first { it != targetCurrency }
+                val conversionRequest = ConversionRequest(
+                    date = dateTime.date,
+                    currencyPair = CurrencyPair(sourceCurrency as Currency, targetCurrency as Currency)
+                )
+                importConversions + conversionRequest
+            }
+        }
+    }
+
+    private fun ImportParsedTransaction.resolveTransactionType(
+        importResourceContext: ImportResourceContext
+    ): ImportFundTransaction.Type {
         return ImportFundTransaction.Type.entries
             .map { type -> type to type.matcher(importResourceContext) }
             .filter { (_, matcher) -> matcher.invoke(this) }
@@ -57,7 +104,9 @@ class ImportFundMapper(
             ?: throw ImportDataException("Unrecognized transaction type: $this")
     }
 
-    private fun ImportFundTransaction.Type.matcher(importResourceContext: ImportResourceContext): (ImportParsedTransaction) -> Boolean {
+    private fun ImportFundTransaction.Type.matcher(
+        importResourceContext: ImportResourceContext
+    ): (ImportParsedTransaction) -> Boolean {
         return when (this) {
             SINGLE_RECORD -> { transaction ->
                 transaction.records.size == 1 && transaction.records.first()
@@ -85,6 +134,17 @@ class ImportFundMapper(
                         recordsByFund.size == 2 && passThroughRecords?.size == 2 && principalRecord?.size == 1 &&
                         passThroughRecords.sumOf { it.amount }.compareTo(BigDecimal.ZERO) == 0 &&
                         passThroughRecords.any { it.amount.compareTo(principalRecord.first().amount) == 0 }
+            }
+
+            EXCHANGE -> { transaction ->
+                val recordsByAccountNames = transaction.records.associateBy { it.accountName }
+                val accountCurrencies =
+                    transaction.records.map { importResourceContext.getAccount(it.accountName) }.map { it.unit }
+                        .distinct()
+                val positiveRecords = transaction.records.filter { it.amount > BigDecimal.ZERO }
+
+                transaction.records.size in 2..3 && positiveRecords.size == 1 &&
+                        recordsByAccountNames.size == 2 && accountCurrencies.size == 2 && accountCurrencies.all { it is Currency }
             }
         }
     }
@@ -150,6 +210,13 @@ class ImportFundMapper(
         )
     }
 
+    private fun ImportParsedTransaction.toExchangeFundTransaction(
+        importResourceContext: ImportResourceContext,
+        conversionContext: ConversionContext
+    ): ImportFundTransaction {
+        TODO("Not yet implemented")
+    }
+
     private suspend fun createImportResourceContext(userId: UUID) = ImportResourceContext(
         accountSdk.listAccounts(userId).items,
         fundSdk.listFunds(userId).items
@@ -170,53 +237,63 @@ class ImportFundMapper(
     }
 
     private suspend fun createConversionContext(
-        importResourceContext: ImportResourceContext,
-        parsedTransactions: List<ImportParsedTransaction>,
+        requests: Set<ConversionRequest>
     ): ConversionContext {
-        return parsedTransactions
-            .asSequence()
-            .flatMap { transaction ->
-                transaction.records.map {
-                    Conversion(
-                        it.unit as Currency,
-                        importResourceContext.getAccount(it.accountName).unit as Currency
-                    ) to transaction.dateTime.date
-                }
-            }
-            .filter { (conversion, date) -> conversion.sourceCurrency != conversion.targetCurrency }
-            .groupBy({ (conversion, _) -> conversion }) { (_, date) -> date }
-            .map { (conversion, dates) -> conversion to dates.toSet() }
-            .associate { (conversion, dates) ->
+        // TODO(Johann) could be simplified, or written more nicely
+        val conversions = requests
+            .groupBy(ConversionRequest::currencyPair) { it }
+            .mapValues { (currencyPair, requests) ->
+                val dates = requests.map { it.date }.toList()
                 val historicalPrices = historicalPricingAdapter.convertCurrencies(
-                    sourceCurrency = conversion.sourceCurrency,
-                    targetCurrency = conversion.targetCurrency,
-                    dates = dates.toList()
+                    sourceCurrency = currencyPair.sourceCurrency,
+                    targetCurrency = currencyPair.targetCurrency,
+                    dates = dates
                 )
                 val missingDates = dates - (historicalPrices.map { it.date }.toSet())
                 if (missingDates.isNotEmpty()) {
-                    throw ImportDataException("Missing historical prices for conversion: $conversion on dates: $missingDates")
+                    throw ImportDataException("Missing historical prices for conversion: $currencyPair on dates: $missingDates")
                 }
-                conversion to historicalPrices.associate { it.date to it.price }
+                historicalPrices
             }
-            .let { ConversionContext(it) }
+            .flatMap { (currencyPair, historicalPrices) ->
+                historicalPrices.map {
+                    ConversionRequest(
+                        date = it.date,
+                        currencyPair = currencyPair
+                    ) to it.price
+                }
+            }
+            .toMap()
+        return ConversionContext(conversions)
     }
 
     private class ConversionContext(
-        private val conversions: Map<Conversion, Map<LocalDate, BigDecimal>>
+        private val conversions: Map<ConversionRequest, BigDecimal>
     ) {
+        fun getConversionRate(
+            request: ConversionRequest
+        ): BigDecimal {
+            return conversions[request]
+                ?: throw ImportDataException("Missing historical price for conversion: $request")
+        }
+
         fun getConversionRate(
             sourceCurrency: Currency,
             targetCurrency: Currency,
             date: LocalDate
         ): BigDecimal {
-            return conversions[Conversion(sourceCurrency, targetCurrency)]?.get(date)
-                ?: throw ImportDataException("Missing historical price for conversion: $sourceCurrency -> $targetCurrency on date: $date")
+            return getConversionRate(ConversionRequest(date, CurrencyPair(sourceCurrency, targetCurrency)))
         }
     }
 
-    private data class Conversion(
+    private data class ConversionRequest(
+        val date: LocalDate,
+        val currencyPair: CurrencyPair
+    )
+
+    private data class CurrencyPair(
         val sourceCurrency: Currency,
-        val targetCurrency: Currency
+        val targetCurrency: Currency,
     )
 
     private fun List<ImportFundTransaction>.toRequest(): CreateFundTransactionsTO =
@@ -233,6 +310,7 @@ class ImportFundMapper(
             SINGLE_RECORD,
             TRANSFER,
             IMPLICIT_TRANSFER,
+            EXCHANGE,
             // TODO(Johann) add EXCHANGE type
         }
 
