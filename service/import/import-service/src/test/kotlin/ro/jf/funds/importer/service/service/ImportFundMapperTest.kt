@@ -243,29 +243,20 @@ class ImportFundMapperTest {
     @Disabled("Not implemented yet")
     // TODO(Johann) make this green
     fun `should map exchange transaction`(): Unit = runBlocking {
-        val dateTime = LocalDateTime(2019, 4, 23, 21, 45)
+        val dateTime = LocalDateTime.parse("2024-07-22T09:18:00")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionId = "transaction-1",
                 dateTime = dateTime,
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("Cash EUR"),
-                        FundName("Expenses"),
-                        Currency.EUR,
-                        "-1.89".toBigDecimal()
+                        AccountName("Cash EUR"), FundName("Expenses"), Currency.EUR, "-1.89".toBigDecimal()
                     ),
                     ImportParsedRecord(
-                        AccountName("Cash RON"),
-                        FundName("Expenses"),
-                        Currency.RON,
-                        "-1434.00".toBigDecimal()
+                        AccountName("Cash RON"), FundName("Expenses"), Currency.RON, "-1434.00".toBigDecimal()
                     ),
                     ImportParsedRecord(
-                        AccountName("Cash EUR"),
-                        FundName("Expenses"),
-                        Currency.EUR,
-                        "301.24".toBigDecimal()
+                        AccountName("Cash EUR"), FundName("Expenses"), Currency.EUR, "301.24".toBigDecimal()
                     )
                 )
             )
