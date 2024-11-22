@@ -22,7 +22,7 @@ import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.service.conversion.converter.*
+import ro.jf.funds.importer.service.service.conversion.strategy.*
 import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID

@@ -1,26 +1,35 @@
-package ro.jf.funds.importer.service.service.conversion.converter
+package ro.jf.funds.importer.service.service.conversion.strategy
 
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ConversionRequest
+import ro.jf.funds.importer.service.service.conversion.ImportFundConverter
 import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction
+import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction.Type.TRANSFER
+import ro.jf.funds.importer.service.service.conversion.getRequiredImportConversions
+import ro.jf.funds.importer.service.service.conversion.toImportCurrencyFundRecord
 import java.math.BigDecimal
 import java.util.*
 
-class SingleRecordFundConverter : ImportFundConverter {
-    override fun getType() = ImportFundTransaction.Type.SINGLE_RECORD
-
+class TransferFundConverter : ImportFundConverter {
     override fun matches(
         transaction: ImportParsedTransaction,
         resolveAccount: ImportParsedRecord.() -> AccountTO,
     ): Boolean {
-        if (transaction.records.size != 1) {
+        if (transaction.records.size != 2) {
             return false
         }
-        val singleRecord = transaction.records.first()
-        return singleRecord.unit is Currency && singleRecord.resolveAccount().unit is Currency
+        val sourceUnits = transaction.records.map { it.unit }
+        if (sourceUnits[0] != sourceUnits[1] || sourceUnits.any { it !is Currency }) {
+            return false
+        }
+        val targetUnits = transaction.records.map { it.resolveAccount() }.map { it.unit }
+        if (targetUnits[0] != targetUnits[1] || targetUnits.any { it !is Currency }) {
+            return false
+        }
+        return transaction.records.sumOf { it.amount }.compareTo(BigDecimal.ZERO) == 0
     }
 
     override fun getRequiredConversions(
@@ -38,7 +47,7 @@ class SingleRecordFundConverter : ImportFundConverter {
     ): ImportFundTransaction {
         return ImportFundTransaction(
             dateTime = transaction.dateTime,
-            type = ImportFundTransaction.Type.SINGLE_RECORD,
+            type = TRANSFER,
             records = transaction.records.map { record ->
                 record.toImportCurrencyFundRecord(
                     transaction.dateTime.date,

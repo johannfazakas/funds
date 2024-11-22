@@ -9,7 +9,7 @@ import ro.jf.funds.importer.service.service.conversion.ImportFundConversionServi
 data class ImportFundTransaction(
     val dateTime: LocalDateTime,
     val type: Type,
-    val records: List<ImportFundRecord>
+    val records: List<ImportFundRecord>,
 ) {
     enum class Type {
         SINGLE_RECORD,

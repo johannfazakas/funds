@@ -25,7 +25,8 @@ import ro.jf.funds.importer.service.persistence.ImportTaskRepository
 import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.service.conversion.HistoricalPricingAdapter
 import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService
-import ro.jf.funds.importer.service.service.conversion.converter.*
+import ro.jf.funds.importer.service.service.conversion.ImportFundConverterRegistry
+import ro.jf.funds.importer.service.service.conversion.strategy.*
 import ro.jf.funds.importer.service.service.event.CreateFundTransactionsResponseHandler
 import ro.jf.funds.importer.service.service.parser.CsvParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry

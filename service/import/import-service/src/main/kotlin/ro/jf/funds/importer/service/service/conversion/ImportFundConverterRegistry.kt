@@ -1,7 +1,10 @@
-package ro.jf.funds.importer.service.service.conversion.converter
+package ro.jf.funds.importer.service.service.conversion
 
-import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction
 import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction.Type.*
+import ro.jf.funds.importer.service.service.conversion.strategy.ExchangeSingleFundConverter
+import ro.jf.funds.importer.service.service.conversion.strategy.ImplicitTransferFundConverter
+import ro.jf.funds.importer.service.service.conversion.strategy.SingleRecordFundConverter
+import ro.jf.funds.importer.service.service.conversion.strategy.TransferFundConverter
 
 // TODO(Johann) is there a way to inject all beans by type in a list in koin? like in Spring?
 class ImportFundConverterRegistry(

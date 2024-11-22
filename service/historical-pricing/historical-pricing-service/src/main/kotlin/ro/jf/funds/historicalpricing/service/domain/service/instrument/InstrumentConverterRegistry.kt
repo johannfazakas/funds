@@ -7,5 +7,5 @@ class InstrumentConverterRegistry(
     private val instrumentConverterBySource: Map<HistoricalPriceSource, ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentConverter>
 ) {
     fun getConverter(instrument: Instrument): ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentConverter =
-        instrumentConverterBySource[instrument.source] ?: error("No converter found for instrument $instrument")
+        instrumentConverterBySource[instrument.source] ?: error("No strategy found for instrument $instrument")
 }
