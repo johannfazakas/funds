@@ -6,13 +6,15 @@ import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ConversionRequest
 import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction
+import java.math.BigDecimal
+import java.util.*
 
 class SingleRecordFundConverter : ImportFundConverter {
     override fun getType() = ImportFundTransaction.Type.SINGLE_RECORD
 
     override fun matches(
         transaction: ImportParsedTransaction,
-        resolveAccount: ImportParsedRecord.() -> AccountTO
+        resolveAccount: ImportParsedRecord.() -> AccountTO,
     ): Boolean {
         if (transaction.records.size != 1) {
             return false
@@ -23,8 +25,27 @@ class SingleRecordFundConverter : ImportFundConverter {
 
     override fun getRequiredConversions(
         transaction: ImportParsedTransaction,
-        resolveAccount: ImportParsedRecord.() -> AccountTO
+        resolveAccount: ImportParsedRecord.() -> AccountTO,
     ): List<ConversionRequest> {
         return transaction.getRequiredImportConversions { resolveAccount() }
+    }
+
+    override fun mapToFundTransaction(
+        transaction: ImportParsedTransaction,
+        resolveFundId: ImportParsedRecord.() -> UUID,
+        resolveAccount: ImportParsedRecord.() -> AccountTO,
+        resolveConversionRate: ConversionRequest.() -> BigDecimal,
+    ): ImportFundTransaction {
+        return ImportFundTransaction(
+            dateTime = transaction.dateTime,
+            type = ImportFundTransaction.Type.SINGLE_RECORD,
+            records = transaction.records.map { record ->
+                record.toImportCurrencyFundRecord(
+                    transaction.dateTime.date,
+                    record.resolveFundId(),
+                    record.resolveAccount()
+                ) { resolveConversionRate() }
+            }
+        )
     }
 }

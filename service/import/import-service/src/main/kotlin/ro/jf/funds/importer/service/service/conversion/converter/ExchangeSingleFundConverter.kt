@@ -9,13 +9,14 @@ import ro.jf.funds.importer.service.service.conversion.ImportFundConversionServi
 import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.CurrencyPair
 import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction
 import java.math.BigDecimal
+import java.util.*
 
 class ExchangeSingleFundConverter : ImportFundConverter {
     override fun getType() = ImportFundTransaction.Type.EXCHANGE
 
     override fun matches(
         transaction: ImportParsedTransaction,
-        resolveAccount: ImportParsedRecord.() -> AccountTO
+        resolveAccount: ImportParsedRecord.() -> AccountTO,
     ): Boolean {
         if (transaction.records.size !in 2..3) {
             return false
@@ -38,7 +39,7 @@ class ExchangeSingleFundConverter : ImportFundConverter {
 
     override fun getRequiredConversions(
         transaction: ImportParsedTransaction,
-        resolveAccount: ImportParsedRecord.() -> AccountTO
+        resolveAccount: ImportParsedRecord.() -> AccountTO,
     ): List<ConversionRequest> {
         val importConversions = transaction.getRequiredImportConversions { resolveAccount() }
         val targetCurrency = transaction.records
@@ -53,5 +54,14 @@ class ExchangeSingleFundConverter : ImportFundConverter {
             currencyPair = CurrencyPair(sourceCurrency as Currency, targetCurrency as Currency)
         )
         return importConversions + conversionRequest
+    }
+
+    override fun mapToFundTransaction(
+        transaction: ImportParsedTransaction,
+        resolveFundId: ImportParsedRecord.() -> UUID,
+        resolveAccount: ImportParsedRecord.() -> AccountTO,
+        resolveConversionRate: ConversionRequest.() -> BigDecimal,
+    ): ImportFundTransaction {
+        TODO("Not yet implemented")
     }
 }

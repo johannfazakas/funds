@@ -5,6 +5,8 @@ import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ConversionRequest
 import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction
+import java.math.BigDecimal
+import java.util.*
 
 interface ImportFundConverter {
     // TODO(Johann) is this actually needed? if yes, how about the registry matching. currently, the same rule is duplicated.
@@ -19,4 +21,11 @@ interface ImportFundConverter {
         transaction: ImportParsedTransaction,
         resolveAccount: ImportParsedRecord.() -> AccountTO
     ): List<ConversionRequest>
+
+    fun mapToFundTransaction(
+        transaction: ImportParsedTransaction,
+        resolveFundId: ImportParsedRecord.() -> UUID,
+        resolveAccount: ImportParsedRecord.() -> AccountTO,
+        resolveConversionRate: ConversionRequest.() -> BigDecimal
+    ): ImportFundTransaction
 }

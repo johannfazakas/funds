@@ -12,10 +12,8 @@ import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction.Type.*
 import ro.jf.funds.importer.service.service.conversion.converter.ImportFundConverterRegistry
 import java.math.BigDecimal
 import java.util.*
@@ -40,6 +38,7 @@ class ImportFundConversionService(
     private suspend fun List<ImportParsedTransaction>.toFundTransactions(
         importResourceContext: ImportResourceContext
     ): List<ImportFundTransaction> {
+        // TODO(Johann) this surely can be written more nicely
         val parsedTransactionsToType =
             this.map { it to it.resolveTransactionType(importResourceContext) }
         val requiredConversions = parsedTransactionsToType
@@ -54,16 +53,13 @@ class ImportFundConversionService(
         val conversionContext = createConversionContext(requiredConversions)
 
         return parsedTransactionsToType.map { (transaction, type) ->
-            when (type) {
-                SINGLE_RECORD -> transaction.toSingleRecordFundTransaction(importResourceContext, conversionContext)
-                TRANSFER -> transaction.toTransferFundTransaction(importResourceContext, conversionContext)
-                IMPLICIT_TRANSFER -> transaction.toImplicitTransferFundTransaction(
-                    importResourceContext,
-                    conversionContext
-                )
-
-                EXCHANGE -> transaction.toExchangeFundTransaction(importResourceContext, conversionContext)
-            }
+            val converter = converterRegistry[type]
+            converter.mapToFundTransaction(
+                transaction,
+                { importResourceContext.getFundId(fundName) },
+                { importResourceContext.getAccount(accountName) },
+                { conversionContext.getConversionRate(this) }
+            )
         }
     }
 
@@ -75,74 +71,6 @@ class ImportFundConversionService(
             .firstOrNull { it.matches(this, { importResourceContext.getAccount(accountName) }) }
             ?.getType()
             ?: throw ImportDataException("Unrecognized transaction type: $this")
-    }
-
-    private fun ImportParsedTransaction.toSingleRecordFundTransaction(
-        importResourceContext: ImportResourceContext,
-        conversionContext: ConversionContext
-    ): ImportFundTransaction {
-        return ImportFundTransaction(
-            dateTime = dateTime,
-            type = SINGLE_RECORD,
-            records = records.map { record ->
-                record.toImportCurrencyFundRecord(dateTime.date, importResourceContext, conversionContext)
-            }
-        )
-    }
-
-    private fun ImportParsedTransaction.toTransferFundTransaction(
-        importResourceContext: ImportResourceContext,
-        conversionContext: ConversionContext
-    ): ImportFundTransaction {
-        return ImportFundTransaction(
-            dateTime = dateTime,
-            type = TRANSFER,
-            records = records.map { record ->
-                record.toImportCurrencyFundRecord(dateTime.date, importResourceContext, conversionContext)
-            }
-        )
-    }
-
-    private fun ImportParsedTransaction.toImplicitTransferFundTransaction(
-        importResourceContext: ImportResourceContext,
-        conversionContext: ConversionContext
-    ): ImportFundTransaction {
-        return ImportFundTransaction(
-            dateTime = dateTime,
-            type = IMPLICIT_TRANSFER,
-            records = records.map { record ->
-                record.toImportCurrencyFundRecord(dateTime.date, importResourceContext, conversionContext)
-            }
-        )
-    }
-
-    private fun ImportParsedRecord.toImportCurrencyFundRecord(
-        date: LocalDate,
-        importResourceContext: ImportResourceContext,
-        conversionContext: ConversionContext
-    ): ImportFundRecord {
-        val account = importResourceContext.getAccount(accountName)
-        return ImportFundRecord(
-            fundId = importResourceContext.getFundId(fundName),
-            accountId = account.id,
-            amount = if (unit == account.unit) {
-                amount
-            } else {
-                conversionContext.getConversionRate(
-                    sourceCurrency = unit as Currency,
-                    targetCurrency = account.unit as Currency,
-                    date = date
-                ) * amount
-            },
-            unit = importResourceContext.getAccount(accountName).unit as Currency,
-        )
-    }
-
-    private fun ImportParsedTransaction.toExchangeFundTransaction(
-        importResourceContext: ImportResourceContext,
-        conversionContext: ConversionContext
-    ): ImportFundTransaction {
-        TODO("Not yet implemented")
     }
 
     private suspend fun createImportResourceContext(userId: UUID) = ImportResourceContext(
