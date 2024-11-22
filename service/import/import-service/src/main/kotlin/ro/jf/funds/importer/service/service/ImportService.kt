@@ -8,6 +8,7 @@ import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
+import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
 import java.util.*
 
@@ -16,7 +17,7 @@ private val log = logger { }
 class ImportService(
     private val importTaskRepository: ImportTaskRepository,
     private val importParserRegistry: ImportParserRegistry,
-    private val importFundMapper: ImportFundMapper,
+    private val importFundConversionService: ImportFundConversionService,
     private val createFundTransactionsProducer: Producer<CreateFundTransactionsTO>
 ) {
     suspend fun startImport(userId: UUID, configuration: ImportConfigurationTO, files: List<String>): ImportTaskTO {
@@ -24,7 +25,7 @@ class ImportService(
         val importTask = importTaskRepository.save(userId, ImportTaskTO.Status.IN_PROGRESS)
         return try {
             val importItems = importParserRegistry[configuration.fileType].parse(configuration, files)
-            val fundTransactions = importFundMapper.mapToFundRequest(userId, importItems)
+            val fundTransactions = importFundConversionService.mapToFundRequest(userId, importItems)
             createFundTransactionsProducer.send(Event(userId, fundTransactions, importTask.taskId))
             importTask
         } catch (e: Exception) {

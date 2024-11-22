@@ -22,9 +22,10 @@ import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
-import ro.jf.funds.importer.service.service.HistoricalPricingAdapter
-import ro.jf.funds.importer.service.service.ImportFundMapper
 import ro.jf.funds.importer.service.service.ImportService
+import ro.jf.funds.importer.service.service.conversion.HistoricalPricingAdapter
+import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService
+import ro.jf.funds.importer.service.service.conversion.converter.*
 import ro.jf.funds.importer.service.service.event.CreateFundTransactionsResponseHandler
 import ro.jf.funds.importer.service.service.parser.CsvParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
@@ -67,7 +68,12 @@ val Application.importDependencies: Module
                 HistoricalPricingSdk(environment.getStringProperty(HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY))
             }
             single<HistoricalPricingAdapter> { HistoricalPricingAdapter(get()) }
-            single<ImportFundMapper> { ImportFundMapper(get(), get(), get()) }
+            single<SingleRecordFundConverter> { SingleRecordFundConverter() }
+            single<TransferFundConverter> { TransferFundConverter() }
+            single<ImplicitTransferFundConverter> { ImplicitTransferFundConverter() }
+            single<ExchangeSingleFundConverter> { ExchangeSingleFundConverter() }
+            single<ImportFundConverterRegistry> { ImportFundConverterRegistry(get(), get(), get(), get()) }
+            single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get(), get()) }
             single<ImportService> { ImportService(get(), get(), get(), get()) }
 
             single<ConsumerProperties> { ConsumerProperties.fromEnv(environment) }
