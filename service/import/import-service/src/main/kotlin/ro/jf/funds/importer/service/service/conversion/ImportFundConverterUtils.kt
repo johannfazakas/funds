@@ -1,4 +1,4 @@
-package ro.jf.funds.importer.service.service.conversion.converter
+package ro.jf.funds.importer.service.service.conversion
 
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.account.api.model.AccountTO

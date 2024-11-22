@@ -1,4 +1,4 @@
-package ro.jf.funds.importer.service.service.conversion.converter
+package ro.jf.funds.importer.service.service.conversion.strategy
 
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
@@ -7,13 +7,13 @@ import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ConversionRequest
 import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.CurrencyPair
+import ro.jf.funds.importer.service.service.conversion.ImportFundConverter
 import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction
+import ro.jf.funds.importer.service.service.conversion.getRequiredImportConversions
 import java.math.BigDecimal
 import java.util.*
 
 class ExchangeSingleFundConverter : ImportFundConverter {
-    override fun getType() = ImportFundTransaction.Type.EXCHANGE
-
     override fun matches(
         transaction: ImportParsedTransaction,
         resolveAccount: ImportParsedRecord.() -> AccountTO,
