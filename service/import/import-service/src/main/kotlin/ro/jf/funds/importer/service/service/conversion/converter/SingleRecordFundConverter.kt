@@ -4,6 +4,7 @@ import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
+import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ConversionRequest
 import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction
 
 class SingleRecordFundConverter : ImportFundConverter {
@@ -18,5 +19,12 @@ class SingleRecordFundConverter : ImportFundConverter {
         }
         val singleRecord = transaction.records.first()
         return singleRecord.unit is Currency && singleRecord.resolveAccount().unit is Currency
+    }
+
+    override fun getRequiredConversions(
+        transaction: ImportParsedTransaction,
+        resolveAccount: ImportParsedRecord.() -> AccountTO
+    ): List<ConversionRequest> {
+        return transaction.getRequiredImportConversions { resolveAccount() }
     }
 }
