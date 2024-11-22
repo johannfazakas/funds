@@ -44,7 +44,11 @@ class ImportFundConversionService(
             this.map { it to it.resolveTransactionType(importResourceContext) }
         val requiredConversions = parsedTransactionsToType
             .flatMap { (transaction, type) ->
-                transaction.getRequiredConversions(type, importResourceContext)
+                converterRegistry[type].getRequiredConversions(transaction) {
+                    importResourceContext.getAccount(
+                        accountName
+                    )
+                }
             }
             .toSet()
         val conversionContext = createConversionContext(requiredConversions)
@@ -63,40 +67,6 @@ class ImportFundConversionService(
         }
     }
 
-    private fun ImportParsedTransaction.getRequiredConversions(
-        type: ImportFundTransaction.Type, importResourceContext: ImportResourceContext,
-    ): List<ConversionRequest> {
-        val importConversions = records
-            .map { record ->
-                ConversionRequest(
-                    date = dateTime.date,
-                    currencyPair = CurrencyPair(
-                        sourceCurrency = record.unit as Currency,
-                        targetCurrency = importResourceContext.getAccount(record.accountName).unit as Currency
-                    )
-                )
-            }
-            .filter { conversion -> conversion.currencyPair.sourceCurrency != conversion.currencyPair.targetCurrency }
-        return when (type) {
-            SINGLE_RECORD, TRANSFER, IMPLICIT_TRANSFER -> importConversions
-
-            EXCHANGE -> {
-                val targetCurrency = records
-                    .filter { it.amount > BigDecimal.ZERO }
-                    .map { importResourceContext.getAccount(it.accountName).unit }
-                    .first()
-                val sourceCurrency = records
-                    .map { importResourceContext.getAccount(it.accountName).unit }
-                    .first { it != targetCurrency }
-                val conversionRequest = ConversionRequest(
-                    date = dateTime.date,
-                    currencyPair = CurrencyPair(sourceCurrency as Currency, targetCurrency as Currency)
-                )
-                importConversions + conversionRequest
-            }
-        }
-    }
-
     // TODO(Johann) could actually retrieve the converter instance
     private fun ImportParsedTransaction.resolveTransactionType(
         importResourceContext: ImportResourceContext
@@ -105,51 +75,6 @@ class ImportFundConversionService(
             .firstOrNull { it.matches(this, { importResourceContext.getAccount(accountName) }) }
             ?.getType()
             ?: throw ImportDataException("Unrecognized transaction type: $this")
-    }
-
-    private fun ImportFundTransaction.Type.matcher(
-        importResourceContext: ImportResourceContext
-    ): (ImportParsedTransaction) -> Boolean {
-        return when (this) {
-            SINGLE_RECORD -> { transaction ->
-                transaction.records.size == 1 && transaction.records.first()
-                    .let { importResourceContext.getAccount(it.accountName).unit is Currency }
-            }
-
-            TRANSFER -> { transaction ->
-                val accounts = transaction.records.map { importResourceContext.getAccount(it.accountName) }
-                val targetCurrencies = accounts.map { it.unit }.toSet()
-                val sourceCurrencies = transaction.records.map { it.unit }.toSet()
-                transaction.records.size == 2 &&
-                        targetCurrencies.size == 1 && sourceCurrencies.size == 1 &&
-                        targetCurrencies.all { it is Currency } && sourceCurrencies.all { it is Currency } &&
-                        transaction.records.sumOf { it.amount }.compareTo(BigDecimal.ZERO) == 0
-            }
-
-            IMPLICIT_TRANSFER -> { transaction ->
-                val sourceCurrencies = transaction.records.map { it.unit }.distinct()
-                val accountIds =
-                    transaction.records.map { importResourceContext.getAccount(it.accountName).id }.distinct()
-                val recordsByFund = transaction.records.groupBy { it.fundName }
-                val passThroughRecords = recordsByFund.values.firstOrNull { it.size == 2 }
-                val principalRecord = recordsByFund.values.firstOrNull { it.size == 1 }
-                transaction.records.size == 3 && sourceCurrencies.size == 1 && accountIds.size == 1 &&
-                        recordsByFund.size == 2 && passThroughRecords?.size == 2 && principalRecord?.size == 1 &&
-                        passThroughRecords.sumOf { it.amount }.compareTo(BigDecimal.ZERO) == 0 &&
-                        passThroughRecords.any { it.amount.compareTo(principalRecord.first().amount) == 0 }
-            }
-
-            EXCHANGE -> { transaction ->
-                val recordsByAccountNames = transaction.records.associateBy { it.accountName }
-                val accountCurrencies =
-                    transaction.records.map { importResourceContext.getAccount(it.accountName) }.map { it.unit }
-                        .distinct()
-                val positiveRecords = transaction.records.filter { it.amount > BigDecimal.ZERO }
-
-                transaction.records.size in 2..3 && positiveRecords.size == 1 &&
-                        recordsByAccountNames.size == 2 && accountCurrencies.size == 2 && accountCurrencies.all { it is Currency }
-            }
-        }
     }
 
     private fun ImportParsedTransaction.toSingleRecordFundTransaction(
@@ -290,12 +215,13 @@ class ImportFundConversionService(
         }
     }
 
-    private data class ConversionRequest(
+    // TODO(Johann) should extract? together with conversion context?
+    data class ConversionRequest(
         val date: LocalDate,
         val currencyPair: CurrencyPair
     )
 
-    private data class CurrencyPair(
+    data class CurrencyPair(
         val sourceCurrency: Currency,
         val targetCurrency: Currency,
     )

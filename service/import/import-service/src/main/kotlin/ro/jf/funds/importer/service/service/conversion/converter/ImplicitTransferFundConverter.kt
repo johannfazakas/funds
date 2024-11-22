@@ -4,6 +4,7 @@ import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
+import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ConversionRequest
 import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction
 import java.math.BigDecimal
 
@@ -37,5 +38,12 @@ class ImplicitTransferFundConverter : ImportFundConverter {
         val principalRecord = recordsByFund.values.first { it.size == 1 }
         return passThroughRecords.sumOf { it.amount }.compareTo(BigDecimal.ZERO) == 0 &&
                 passThroughRecords.any { it.amount.compareTo(principalRecord.first().amount) == 0 }
+    }
+
+    override fun getRequiredConversions(
+        transaction: ImportParsedTransaction,
+        resolveAccount: ImportParsedRecord.() -> AccountTO
+    ): List<ConversionRequest> {
+        return transaction.getRequiredImportConversions { resolveAccount() }
     }
 }
