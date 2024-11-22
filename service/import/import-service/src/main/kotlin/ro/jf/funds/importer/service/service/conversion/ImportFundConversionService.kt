@@ -1,28 +1,32 @@
-package ro.jf.funds.importer.service.service
+package ro.jf.funds.importer.service.service.conversion
 
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.fund.api.model.*
+import ro.jf.funds.fund.api.model.CreateFundRecordTO
+import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
+import ro.jf.funds.fund.api.model.FundName
+import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.service.ImportFundMapper.ImportFundTransaction.Type.*
+import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction.Type.*
+import ro.jf.funds.importer.service.service.conversion.converter.ImportFundConverterRegistry
 import java.math.BigDecimal
 import java.util.*
 
 private val log = logger { }
 
-class ImportFundMapper(
+class ImportFundConversionService(
     private val accountSdk: AccountSdk,
     private val fundSdk: FundSdk,
     private val historicalPricingAdapter: HistoricalPricingAdapter,
+    private val converterRegistry: ImportFundConverterRegistry
 ) {
     suspend fun mapToFundRequest(
         userId: UUID,
@@ -93,14 +97,13 @@ class ImportFundMapper(
         }
     }
 
+    // TODO(Johann) could actually retrieve the converter instance
     private fun ImportParsedTransaction.resolveTransactionType(
         importResourceContext: ImportResourceContext
     ): ImportFundTransaction.Type {
-        return ImportFundTransaction.Type.entries
-            .map { type -> type to type.matcher(importResourceContext) }
-            .filter { (_, matcher) -> matcher.invoke(this) }
-            .map { (type, _) -> type }
-            .firstOrNull()
+        return converterRegistry.all()
+            .firstOrNull { it.matches(this, { importResourceContext.getAccount(accountName) }) }
+            ?.getType()
             ?: throw ImportDataException("Unrecognized transaction type: $this")
     }
 
@@ -222,6 +225,7 @@ class ImportFundMapper(
         fundSdk.listFunds(userId).items
     )
 
+    // TODO(Johann) could be extracted
     private class ImportResourceContext(
         accounts: List<AccountTO>,
         funds: List<FundTO>
@@ -299,28 +303,6 @@ class ImportFundMapper(
     private fun List<ImportFundTransaction>.toRequest(): CreateFundTransactionsTO =
         CreateFundTransactionsTO(map { it.toRequest() })
 
-    // TODO(Johann) is this class actually needed? It only has an extra type
-    // TODO(Johann) could all the types be extracted as a strategy or something similar?
-    data class ImportFundTransaction(
-        val dateTime: LocalDateTime,
-        val type: Type,
-        val records: List<ImportFundRecord>
-    ) {
-        enum class Type {
-            SINGLE_RECORD,
-            TRANSFER,
-            IMPLICIT_TRANSFER,
-            EXCHANGE,
-            // TODO(Johann) add EXCHANGE type
-        }
-
-        fun toRequest(): CreateFundTransactionTO {
-            return CreateFundTransactionTO(
-                dateTime = dateTime,
-                records = records.map { it.toRequest() }
-            )
-        }
-    }
 
     data class ImportFundRecord(
         val fundId: UUID,

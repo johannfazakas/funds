@@ -1,4 +1,4 @@
-package ro.jf.funds.importer.service.service
+package ro.jf.funds.importer.service.service.conversion
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
@@ -22,15 +22,23 @@ import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
+import ro.jf.funds.importer.service.service.conversion.converter.*
 import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID
 
-class ImportFundMapperTest {
+class ImportFundConversionServiceTest {
     private val accountSdk = mock<AccountSdk>()
     private val fundSdk = mock<FundSdk>()
     private val historicalPricingAdapter = mock<HistoricalPricingAdapter>()
-    private val importFundMapper = ImportFundMapper(accountSdk, fundSdk, historicalPricingAdapter)
+    private val importFundConverterRegistry = ImportFundConverterRegistry(
+        SingleRecordFundConverter(),
+        TransferFundConverter(),
+        ImplicitTransferFundConverter(),
+        ExchangeSingleFundConverter()
+    )
+    private val importFundConversionService =
+        ImportFundConversionService(accountSdk, fundSdk, historicalPricingAdapter, importFundConverterRegistry)
 
     private val userId: UUID = randomUUID()
 
@@ -56,7 +64,7 @@ class ImportFundMapperTest {
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(bankAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
 
-        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
+        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).containsExactlyInAnyOrder(
             CreateFundTransactionTO(
@@ -98,7 +106,7 @@ class ImportFundMapperTest {
         whenever(historicalPricingAdapter.convertCurrencies(Currency.RON, Currency.EUR, listOf(transactionDate)))
             .thenReturn(listOf(HistoricalPrice(transactionDate, BigDecimal("5.00"))))
 
-        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
+        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).hasSize(1)
         assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(transactionDateTime)
@@ -129,7 +137,7 @@ class ImportFundMapperTest {
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, companyAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
 
-        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
+        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).containsExactlyInAnyOrder(
             CreateFundTransactionTO(
@@ -175,7 +183,7 @@ class ImportFundMapperTest {
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, companyAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
 
-        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
+        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).hasSize(1)
         assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(transactionDateTime)
@@ -216,7 +224,7 @@ class ImportFundMapperTest {
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
 
-        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
+        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).hasSize(1)
         assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(transactionDateTime)
@@ -268,7 +276,7 @@ class ImportFundMapperTest {
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(eurAccount, ronAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
 
-        val fundTransactions = importFundMapper.mapToFundRequest(userId, importParsedTransactions)
+        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).hasSize(1)
         assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(dateTime)
@@ -316,7 +324,7 @@ class ImportFundMapperTest {
 
         assertThatThrownBy {
             runBlocking {
-                importFundMapper.mapToFundRequest(
+                importFundConversionService.mapToFundRequest(
                     userId,
                     importParsedTransactions
                 )
@@ -348,7 +356,7 @@ class ImportFundMapperTest {
 
         assertThatThrownBy {
             runBlocking {
-                importFundMapper.mapToFundRequest(
+                importFundConversionService.mapToFundRequest(
                     userId,
                     importParsedTransactions
                 )
