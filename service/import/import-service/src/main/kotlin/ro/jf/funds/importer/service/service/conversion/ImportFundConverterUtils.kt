@@ -4,11 +4,11 @@ import kotlinx.datetime.LocalDate
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
-import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ImportFundRecord
 import java.math.BigDecimal
 import java.util.*
 
@@ -27,8 +27,8 @@ fun ImportParsedRecord.toImportCurrencyFundRecord(
     fundId: UUID,
     account: AccountTO,
     conversionRateStore: Store<Conversion, BigDecimal>,
-): ImportFundRecord {
-    return ImportFundRecord(
+): CreateFundRecordTO {
+    return CreateFundRecordTO(
         fundId = fundId,
         accountId = account.id,
         amount = toFundRecordAmount(date, account, conversionRateStore),
