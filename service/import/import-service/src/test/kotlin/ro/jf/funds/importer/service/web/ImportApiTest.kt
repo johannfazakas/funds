@@ -54,8 +54,6 @@ class ImportApiTest {
     private val fundTransactionSdk: FundTransactionSdk = mock()
 
     @Test
-    // TODO(Johann) clarify this, ByAccountLabelWithTransfer generates 3 records
-    @Disabled("This test is not working, parser is emitting transaction with 3 records. why")
     fun `test valid import`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
