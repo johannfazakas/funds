@@ -23,9 +23,7 @@ import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
 import ro.jf.funds.importer.service.service.ImportService
-import ro.jf.funds.importer.service.service.conversion.ConversionRateService
-import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService
-import ro.jf.funds.importer.service.service.conversion.ImportFundConverterRegistry
+import ro.jf.funds.importer.service.service.conversion.*
 import ro.jf.funds.importer.service.service.conversion.strategy.ExchangeSingleFundConverter
 import ro.jf.funds.importer.service.service.conversion.strategy.ImplicitTransferFundConverter
 import ro.jf.funds.importer.service.service.conversion.strategy.SingleRecordFundConverter
@@ -62,12 +60,14 @@ val Application.importDependencies: Module
             single<AccountSdk> {
                 AccountSdk(environment.getStringProperty(ACCOUNT_SERVICE_BASE_URL_PROPERTY), get())
             }
+            single<AccountService> { AccountService(get()) }
             single<FundSdk> {
                 FundSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
             }
             single<FundTransactionSdk> {
                 FundTransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
             }
+            single<FundService> { FundService(get()) }
             single<HistoricalPricingSdk> {
                 HistoricalPricingSdk(environment.getStringProperty(HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY))
             }

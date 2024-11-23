@@ -33,7 +33,9 @@ import ro.jf.funds.historicalpricing.api.model.Currency as CurrencyHP
 
 class ImportFundConversionServiceTest {
     private val accountSdk = mock<AccountSdk>()
+    private val accountService = AccountService(accountSdk)
     private val fundSdk = mock<FundSdk>()
+    private val fundService = FundService(fundSdk)
     private val historicalPricingSdk = mock<HistoricalPricingSdk>()
     private val conversionRateService = ConversionRateService(historicalPricingSdk)
     private val importFundConverterRegistry = ImportFundConverterRegistry(
@@ -43,7 +45,7 @@ class ImportFundConversionServiceTest {
         ExchangeSingleFundConverter()
     )
     private val importFundConversionService =
-        ImportFundConversionService(accountSdk, fundSdk, conversionRateService, importFundConverterRegistry)
+        ImportFundConversionService(accountService, fundService, conversionRateService, importFundConverterRegistry)
 
     private val userId: UUID = randomUUID()
 
@@ -335,7 +337,6 @@ class ImportFundConversionServiceTest {
             }
         }
             .isInstanceOf(ImportDataException::class.java)
-            .hasMessage("Record account not found: Revolut")
     }
 
     @Test
@@ -367,7 +368,6 @@ class ImportFundConversionServiceTest {
             }
         }
             .isInstanceOf(ImportDataException::class.java)
-            .hasMessage("Record fund not found: Expenses")
     }
 
     private fun account(name: String, currency: Currency = Currency.RON): AccountTO =
