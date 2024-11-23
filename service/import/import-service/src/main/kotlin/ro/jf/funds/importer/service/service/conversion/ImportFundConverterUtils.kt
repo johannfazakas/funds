@@ -1,6 +1,7 @@
 package ro.jf.funds.importer.service.service.conversion
 
 import kotlinx.datetime.LocalDate
+import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.importer.service.domain.Conversion
@@ -12,11 +13,11 @@ import java.math.BigDecimal
 import java.util.*
 
 fun ImportParsedTransaction.getRequiredImportConversions(
-    resolveAccount: ImportParsedRecord.() -> AccountTO,
+    accountStore: Store<AccountName, AccountTO>,
 ): List<Conversion> = records
     .mapNotNull {
         val sourceCurrency = it.unit as? Currency ?: return@mapNotNull null
-        val targetCurrency = it.resolveAccount().unit as? Currency ?: return@mapNotNull null
+        val targetCurrency = accountStore[it.accountName].unit as? Currency ?: return@mapNotNull null
         if (sourceCurrency == targetCurrency) return@mapNotNull null
         Conversion(dateTime.date, sourceCurrency, targetCurrency)
     }
