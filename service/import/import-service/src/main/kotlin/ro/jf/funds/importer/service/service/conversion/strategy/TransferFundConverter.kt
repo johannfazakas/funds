@@ -2,10 +2,10 @@ package ro.jf.funds.importer.service.service.conversion.strategy
 
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
-import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ConversionContext
-import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ConversionRequest
+import ro.jf.funds.importer.service.domain.Store
 import ro.jf.funds.importer.service.service.conversion.ImportFundConverter
 import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction
 import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction.Type.TRANSFER
@@ -36,7 +36,7 @@ class TransferFundConverter : ImportFundConverter {
     override fun getRequiredConversions(
         transaction: ImportParsedTransaction,
         resolveAccount: ImportParsedRecord.() -> AccountTO,
-    ): List<ConversionRequest> {
+    ): List<Conversion> {
         return transaction.getRequiredImportConversions { resolveAccount() }
     }
 
@@ -44,7 +44,7 @@ class TransferFundConverter : ImportFundConverter {
         transaction: ImportParsedTransaction,
         resolveFundId: ImportParsedRecord.() -> UUID,
         resolveAccount: ImportParsedRecord.() -> AccountTO,
-        currencyConverter: ConversionContext,
+        conversionRateStore: Store<Conversion, BigDecimal>,
     ): ImportFundTransaction {
         return ImportFundTransaction(
             dateTime = transaction.dateTime,
@@ -54,7 +54,7 @@ class TransferFundConverter : ImportFundConverter {
                     transaction.dateTime.date,
                     record.resolveFundId(),
                     record.resolveAccount(),
-                    currencyConverter
+                    conversionRateStore
                 )
             }
         )
