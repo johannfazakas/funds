@@ -1,11 +1,9 @@
 package ro.jf.funds.importer.service.service.conversion
 
-import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
-import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
@@ -22,7 +20,7 @@ private val log = logger { }
 class ImportFundConversionService(
     private val accountSdk: AccountSdk,
     private val fundSdk: FundSdk,
-    private val historicalPricingAdapter: HistoricalPricingAdapter,
+    private val conversionRateService: ConversionRateService,
     private val converterRegistry: ImportFundConverterRegistry,
 ) {
     suspend fun mapToFundRequest(
@@ -48,8 +46,8 @@ class ImportFundConversionService(
                     )
                 }
             }
-            .toSet()
-        val conversionContext = createConversionContext(requiredConversions)
+
+        val conversionRateStore = conversionRateService.getConversionRates(requiredConversions)
 
         return parsedTransactionsToStrategy.map { (transaction, strategy) ->
             strategy.mapToFundTransaction(
@@ -57,7 +55,7 @@ class ImportFundConversionService(
                 // TODO(Johann) import resource context might be better, maybe just think of better methods
                 { importResourceContext.getFundId(fundName) },
                 { importResourceContext.getAccount(accountName) },
-                conversionContext
+                conversionRateStore
             )
         }
     }
@@ -89,72 +87,6 @@ class ImportFundConversionService(
         fun getFundId(fundName: FundName) = fundIdByName[fundName]
             ?: throw ImportDataException("Record fund not found: $fundName")
     }
-
-    private suspend fun createConversionContext(
-        requests: Set<ConversionRequest>,
-    ): ConversionContext {
-        // TODO(Johann) could be simplified, or written more nicely
-        val conversions = requests
-            .groupBy(ConversionRequest::currencyPair) { it }
-            .mapValues { (currencyPair, requests) ->
-                val dates = requests.map { it.date }.toList()
-                val historicalPrices = historicalPricingAdapter.convertCurrencies(
-                    sourceCurrency = currencyPair.sourceCurrency,
-                    targetCurrency = currencyPair.targetCurrency,
-                    dates = dates
-                )
-                val missingDates = dates - (historicalPrices.map { it.date }.toSet())
-                if (missingDates.isNotEmpty()) {
-                    throw ImportDataException("Missing historical prices for conversion: $currencyPair on dates: $missingDates")
-                }
-                historicalPrices
-            }
-            .flatMap { (currencyPair, historicalPrices) ->
-                historicalPrices.map {
-                    ConversionRequest(
-                        date = it.date,
-                        currencyPair = currencyPair
-                    ) to it.price
-                }
-            }
-            .toMap()
-        return ConversionContext(conversions)
-    }
-
-    class ConversionContext(
-        private val conversions: Map<ConversionRequest, BigDecimal>,
-    ) {
-        fun getRate(
-            request: ConversionRequest,
-        ): BigDecimal {
-            return conversions[request]
-                ?: throw ImportDataException("Missing historical price for conversion: $request")
-        }
-
-        fun getRate(
-            date: LocalDate,
-            sourceCurrency: Currency,
-            targetCurrency: Currency,
-        ): BigDecimal {
-            return getRate(ConversionRequest(date, CurrencyPair(sourceCurrency, targetCurrency)))
-        }
-    }
-
-    // TODO(Johann) should extract? together with conversion context?
-    data class ConversionRequest(
-        val date: LocalDate,
-        val currencyPair: CurrencyPair,
-    ) {
-        constructor(date: LocalDate, currencyPair: Pair<Currency, Currency>) : this(
-            date,
-            CurrencyPair(currencyPair.first, currencyPair.second)
-        )
-    }
-
-    data class CurrencyPair(
-        val sourceCurrency: Currency,
-        val targetCurrency: Currency,
-    )
 
     private fun List<ImportFundTransaction>.toRequest(): CreateFundTransactionsTO =
         CreateFundTransactionsTO(map { it.toRequest() })

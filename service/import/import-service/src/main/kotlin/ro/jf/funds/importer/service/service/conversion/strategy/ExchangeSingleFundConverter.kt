@@ -2,11 +2,16 @@ package ro.jf.funds.importer.service.service.conversion.strategy
 
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
+import ro.jf.funds.importer.service.domain.Store
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.service.conversion.*
-import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.*
+import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ImportFundRecord
+import ro.jf.funds.importer.service.service.conversion.ImportFundConverter
+import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction
+import ro.jf.funds.importer.service.service.conversion.getRequiredImportConversions
+import ro.jf.funds.importer.service.service.conversion.toFundRecordAmount
 import java.math.BigDecimal
 import java.util.*
 
@@ -33,7 +38,7 @@ class ExchangeSingleFundConverter : ImportFundConverter {
     override fun getRequiredConversions(
         transaction: ImportParsedTransaction,
         resolveAccount: ImportParsedRecord.() -> AccountTO,
-    ): List<ConversionRequest> {
+    ): List<Conversion> {
         val importConversions = transaction.getRequiredImportConversions { resolveAccount() }
         val targetCurrency = transaction.records
             .filter { it.amount > BigDecimal.ZERO }
@@ -43,21 +48,21 @@ class ExchangeSingleFundConverter : ImportFundConverter {
             .map { it.resolveAccount().unit }
             .first { it != targetCurrency } as? Currency ?: throw ImportDataException("Invalid source currency")
         return importConversions +
-                ConversionRequest(transaction.dateTime.date, sourceCurrency to targetCurrency) +
-                ConversionRequest(transaction.dateTime.date, targetCurrency to sourceCurrency)
+                Conversion(transaction.dateTime.date, sourceCurrency, targetCurrency) +
+                Conversion(transaction.dateTime.date, targetCurrency, sourceCurrency)
     }
 
     override fun mapToFundTransaction(
         transaction: ImportParsedTransaction,
         resolveFundId: ImportParsedRecord.() -> UUID,
         resolveAccount: ImportParsedRecord.() -> AccountTO,
-        currencyConverter: ConversionContext,
+        conversionRateStore: Store<Conversion, BigDecimal>,
     ): ImportFundTransaction {
         val date = transaction.dateTime.date
 
         val creditRecord = transaction.records.single { it.amount > BigDecimal.ZERO }
         val creditAmount = creditRecord
-            .toFundRecordAmount(date, creditRecord.resolveAccount(), currencyConverter)
+            .toFundRecordAmount(date, creditRecord.resolveAccount(), conversionRateStore)
         val creditFundRecord = ImportFundRecord(
             fundId = creditRecord.resolveFundId(),
             accountId = creditRecord.resolveAccount().id,
@@ -68,11 +73,11 @@ class ExchangeSingleFundConverter : ImportFundConverter {
         val (debitRecord, debitTotalAmount) = transaction.records
             .asSequence()
             .filter { it.amount < BigDecimal.ZERO }
-            .map { it to it.toFundRecordAmount(date, it.resolveAccount(), currencyConverter) }
+            .map { it to it.toFundRecordAmount(date, it.resolveAccount(), conversionRateStore) }
             .sortedByDescending { (_, amount) -> (creditAmount + amount).abs() }
             .first()
-        val debitAmount = creditAmount.negate() *
-                currencyConverter.getRate(date, creditRecord.unit as Currency, debitRecord.unit as Currency)
+        val creditToDebitConversion = Conversion(date, creditRecord.unit, debitRecord.unit)
+        val debitAmount = creditAmount.negate() * conversionRateStore[creditToDebitConversion]
         val debitFundRecord = ImportFundRecord(
             fundId = debitRecord.resolveFundId(),
             accountId = debitRecord.resolveAccount().id,
