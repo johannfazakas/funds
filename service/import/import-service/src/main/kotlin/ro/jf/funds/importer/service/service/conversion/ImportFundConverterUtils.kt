@@ -10,7 +10,7 @@ import java.math.BigDecimal
 import java.util.*
 
 fun ImportParsedTransaction.getRequiredImportConversions(
-    resolveAccount: ImportParsedRecord.() -> AccountTO
+    resolveAccount: ImportParsedRecord.() -> AccountTO,
 ): List<ConversionRequest> = records
     .mapNotNull {
         val sourceCurrency = it.unit as? Currency ?: return@mapNotNull null
@@ -29,20 +29,24 @@ fun ImportParsedRecord.toImportCurrencyFundRecord(
     date: LocalDate,
     fundId: UUID,
     account: AccountTO,
-    resolveConversionRate: ConversionRequest.() -> BigDecimal
+    currencyConverter: ConversionContext,
 ): ImportFundRecord {
     return ImportFundRecord(
         fundId = fundId,
         accountId = account.id,
-        amount = if (unit == account.unit) {
-            amount
-        } else {
-            val conversionRate = ConversionRequest(
-                date,
-                CurrencyPair(unit as Currency, account.unit as Currency)
-            ).resolveConversionRate()
-            conversionRate * amount
-        },
+        amount = toFundRecordAmount(date, account, currencyConverter),
         unit = account.unit as Currency,
     )
+}
+
+fun ImportParsedRecord.toFundRecordAmount(
+    date: LocalDate,
+    account: AccountTO,
+    currencyConverter: ConversionContext,
+): BigDecimal {
+    return if (unit == account.unit) {
+        amount
+    } else {
+        currencyConverter.getRate(date, unit as Currency, account.unit as Currency) * amount
+    }
 }

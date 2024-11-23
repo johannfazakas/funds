@@ -54,9 +54,10 @@ class ImportFundConversionService(
         return parsedTransactionsToStrategy.map { (transaction, strategy) ->
             strategy.mapToFundTransaction(
                 transaction,
+                // TODO(Johann) import resource context might be better, maybe just think of better methods
                 { importResourceContext.getFundId(fundName) },
                 { importResourceContext.getAccount(accountName) },
-                { conversionContext.getConversionRate(this) }
+                conversionContext
             )
         }
     }
@@ -120,22 +121,22 @@ class ImportFundConversionService(
         return ConversionContext(conversions)
     }
 
-    private class ConversionContext(
+    class ConversionContext(
         private val conversions: Map<ConversionRequest, BigDecimal>,
     ) {
-        fun getConversionRate(
+        fun getRate(
             request: ConversionRequest,
         ): BigDecimal {
             return conversions[request]
                 ?: throw ImportDataException("Missing historical price for conversion: $request")
         }
 
-        fun getConversionRate(
+        fun getRate(
+            date: LocalDate,
             sourceCurrency: Currency,
             targetCurrency: Currency,
-            date: LocalDate,
         ): BigDecimal {
-            return getConversionRate(ConversionRequest(date, CurrencyPair(sourceCurrency, targetCurrency)))
+            return getRate(ConversionRequest(date, CurrencyPair(sourceCurrency, targetCurrency)))
         }
     }
 
@@ -143,7 +144,12 @@ class ImportFundConversionService(
     data class ConversionRequest(
         val date: LocalDate,
         val currencyPair: CurrencyPair,
-    )
+    ) {
+        constructor(date: LocalDate, currencyPair: Pair<Currency, Currency>) : this(
+            date,
+            CurrencyPair(currencyPair.first, currencyPair.second)
+        )
+    }
 
     data class CurrencyPair(
         val sourceCurrency: Currency,

@@ -4,7 +4,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
@@ -248,10 +247,8 @@ class ImportFundConversionServiceTest {
     }
 
     @Test
-    @Disabled("Not implemented yet")
-    // TODO(Johann) make this green
     fun `should map exchange transaction`(): Unit = runBlocking {
-        val dateTime = LocalDateTime.parse("2024-07-22T09:18:00")
+        val dateTime = LocalDateTime.parse("2019-04-01T09:18:00")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionId = "transaction-1",
@@ -271,35 +268,36 @@ class ImportFundConversionServiceTest {
         )
         val eurAccount = account("Cash EUR", Currency.EUR)
         val ronAccount = account("Cash RON", Currency.RON)
-        val expensedFund = fund("Expenses")
+        val expenses = fund("Expenses")
 
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(eurAccount, ronAccount))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expenses))
+        whenever(historicalPricingAdapter.convertCurrencies(Currency.RON, Currency.EUR, listOf(dateTime.date)))
+            .thenReturn(listOf(HistoricalPrice(dateTime.date, BigDecimal("0.20998"))))
+        whenever(historicalPricingAdapter.convertCurrencies(Currency.EUR, Currency.RON, listOf(dateTime.date)))
+            .thenReturn(listOf(HistoricalPrice(dateTime.date, BigDecimal("4.76235"))))
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).hasSize(1)
         assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(dateTime)
-        assertThat(fundTransactions.transactions[0].records).containsExactlyInAnyOrder(
-            CreateFundRecordTO(
-                fundId = expensedFund.id,
-                accountId = eurAccount.id,
-                amount = "-1.89".toBigDecimal(),
-                unit = Currency.EUR
-            ),
-            CreateFundRecordTO(
-                fundId = expensedFund.id,
-                accountId = ronAccount.id,
-                amount = "-1434.00".toBigDecimal(),
-                unit = Currency.RON
-            ),
-            CreateFundRecordTO(
-                fundId = expensedFund.id,
-                accountId = eurAccount.id,
-                amount = "301.24".toBigDecimal(),
-                unit = Currency.EUR
-            )
-        )
+        val records = fundTransactions.transactions[0].records
+        assertThat(records).hasSize(3)
+
+        assertThat(records[0].amount).isEqualByComparingTo("301.24".toBigDecimal())
+        assertThat(records[0].accountId).isEqualTo(eurAccount.id)
+        assertThat(records[0].fundId).isEqualTo(expenses.id)
+        assertThat(records[0].unit).isEqualTo(Currency.EUR)
+
+        assertThat(records[1].amount).isEqualByComparingTo("-1434.6103140".toBigDecimal())
+        assertThat(records[1].accountId).isEqualTo(ronAccount.id)
+        assertThat(records[1].fundId).isEqualTo(expenses.id)
+        assertThat(records[1].unit).isEqualTo(Currency.RON)
+
+        assertThat(records[2].amount).isEqualByComparingTo("0.6103140".toBigDecimal())
+        assertThat(records[2].accountId).isEqualTo(ronAccount.id)
+        assertThat(records[2].fundId).isEqualTo(expenses.id)
+        assertThat(records[2].unit).isEqualTo(Currency.RON)
     }
 
     @Test

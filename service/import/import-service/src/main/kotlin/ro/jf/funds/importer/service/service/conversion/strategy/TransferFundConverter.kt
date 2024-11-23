@@ -4,6 +4,7 @@ import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
+import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ConversionContext
 import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService.ConversionRequest
 import ro.jf.funds.importer.service.service.conversion.ImportFundConverter
 import ro.jf.funds.importer.service.service.conversion.ImportFundTransaction
@@ -43,7 +44,7 @@ class TransferFundConverter : ImportFundConverter {
         transaction: ImportParsedTransaction,
         resolveFundId: ImportParsedRecord.() -> UUID,
         resolveAccount: ImportParsedRecord.() -> AccountTO,
-        resolveConversionRate: ConversionRequest.() -> BigDecimal,
+        currencyConverter: ConversionContext,
     ): ImportFundTransaction {
         return ImportFundTransaction(
             dateTime = transaction.dateTime,
@@ -52,8 +53,9 @@ class TransferFundConverter : ImportFundConverter {
                 record.toImportCurrencyFundRecord(
                     transaction.dateTime.date,
                     record.resolveFundId(),
-                    record.resolveAccount()
-                ) { resolveConversionRate() }
+                    record.resolveAccount(),
+                    currencyConverter
+                )
             }
         )
     }

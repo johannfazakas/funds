@@ -48,6 +48,21 @@ POST http://localhost:5231/api/historical-pricing/currencies/convert
 Content-type: application/json
 
 {
+  "sourceCurrency": "RON",
+  "targetCurrency": "EUR",
+  "dates": [
+    "2019-01-01",
+    "2019-04-01",
+    "2019-04-30",
+    "2020-01-01"
+  ]
+}
+
+### Convert EUR to RON
+POST http://localhost:5231/api/historical-pricing/currencies/convert
+Content-type: application/json
+
+{
   "sourceCurrency": "EUR",
   "targetCurrency": "RON",
   "dates": [
