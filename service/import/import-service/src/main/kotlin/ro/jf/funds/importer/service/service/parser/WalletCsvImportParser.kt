@@ -19,15 +19,16 @@ private const val LABEL_COLUMN = "labels"
 private const val DATE_COLUMN = "date"
 private const val DATE_FORMAT = "yyyy-MM-dd HH:mm:ss"
 private const val NOTE_COLUMN = "note"
+private const val LABEL_DELIMITER = "|"
 
 class WalletCsvImportParser(
-    private val csvParser: CsvParser
+    private val csvParser: CsvParser,
 ) : ImportParser {
     @OptIn(FormatStringsInDatetimeFormats::class)
     private val dateTimeFormat = LocalDateTime.Format { byUnicodePattern(DATE_FORMAT) }
 
     override fun parse(
-        importConfiguration: ImportConfigurationTO, files: List<String>
+        importConfiguration: ImportConfigurationTO, files: List<String>,
     ): List<ImportParsedTransaction> {
         return files
             .parse()
@@ -43,7 +44,8 @@ class WalletCsvImportParser(
     }
 
     private fun CsvRow.transactionId(exchangeMatchers: List<ExchangeMatcherTO>): String {
-        return when (exchangeMatchers.getExchangeMatcher(getString(LABEL_COLUMN))) {
+        // TODO(Johann) will this match "Exchange|S&S - Financial" - probably not, right?
+        return when (exchangeMatchers.getExchangeMatcher(labels())) {
             is ExchangeMatcherTO.ByLabel -> listOf(
                 this.getDateTime(DATE_COLUMN, dateTimeFormat).inWholeMinutes(),
             ).hashCode().toString()
@@ -61,7 +63,7 @@ class WalletCsvImportParser(
     private fun toTransaction(
         importConfiguration: ImportConfigurationTO,
         transactionId: String,
-        csvRows: List<CsvRow>
+        csvRows: List<CsvRow>,
     ): ImportParsedTransaction {
         return ImportParsedTransaction(
             transactionId = transactionId,
@@ -91,4 +93,7 @@ class WalletCsvImportParser(
             }
         }
     }
+
+    private fun CsvRow.labels(): List<String> = getString(LABEL_COLUMN).labels()
+    private fun String.labels(): List<String> = this.split(LABEL_DELIMITER).map { it.trim() }
 }

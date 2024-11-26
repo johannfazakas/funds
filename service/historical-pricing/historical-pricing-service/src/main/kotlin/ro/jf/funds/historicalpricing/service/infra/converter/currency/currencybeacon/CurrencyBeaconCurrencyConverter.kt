@@ -4,7 +4,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.historicalpricing.api.model.Currency
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
 import ro.jf.funds.historicalpricing.service.domain.service.currency.CurrencyConverter
 import ro.jf.funds.historicalpricing.service.infra.converter.currency.currencybeacon.model.CBConversion
@@ -32,7 +32,7 @@ class CurrencyBeaconCurrencyConverter(
             parameter("api_key", CURRENCY_BEACON_API_KEY)
         }
             .body<CBConversion>()
-            .rates[targetCurrency.name] ?: error("No conversion rate found for $targetCurrency")
+            .rates[targetCurrency.value] ?: error("No conversion rate found for $targetCurrency")
         return HistoricalPrice(
             date = date,
             price = price

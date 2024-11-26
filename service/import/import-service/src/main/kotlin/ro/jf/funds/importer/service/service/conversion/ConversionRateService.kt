@@ -12,7 +12,6 @@ import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.Store
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import java.math.BigDecimal
-import ro.jf.funds.historicalpricing.api.model.Currency as CurrencyHP
 
 class ConversionRateService(
     private val historicalPricingSdk: HistoricalPricingSdk,
@@ -67,19 +66,10 @@ class ConversionRateService(
     ): List<HistoricalPrice> {
         return withContext(Dispatchers.IO) {
             historicalPricingSdk.convertCurrency(
-                sourceCurrency.toHistoricalPricingCurrency(),
-                targetCurrency.toHistoricalPricingCurrency(),
+                sourceCurrency,
+                targetCurrency,
                 dates
             )
-        }
-    }
-
-    // TODO(Johann) historical pricing should also use the same currency model
-    private fun Currency.toHistoricalPricingCurrency(): CurrencyHP {
-        return when (this) {
-            Currency.RON -> CurrencyHP.RON
-            Currency.EUR -> CurrencyHP.EUR
-            else -> throw ImportDataException("Currency not supported: $this")
         }
     }
 }

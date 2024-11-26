@@ -13,7 +13,7 @@ class CurrencyService(
         val (sourceCurrency, targetCurrency, dates) = request
 
         val storedHistoricalPricesByDate = currencyPairHistoricalPriceRepository
-            .getHistoricalPrices(sourceCurrency.name, targetCurrency.name, dates)
+            .getHistoricalPrices(sourceCurrency.value, targetCurrency.value, dates)
             .map { HistoricalPrice(it.date, it.price) }
             .associateBy { it.date }
 
@@ -21,7 +21,7 @@ class CurrencyService(
             .convert(sourceCurrency, targetCurrency, dates.filterNot { it in storedHistoricalPricesByDate.keys })
             .onEach {
                 currencyPairHistoricalPriceRepository.saveHistoricalPrice(
-                    CurrencyPairHistoricalPrice(sourceCurrency.name, targetCurrency.name, it.date, it.price)
+                    CurrencyPairHistoricalPrice(sourceCurrency.value, targetCurrency.value, it.date, it.price)
                 )
             }
             .associateBy { it.date }

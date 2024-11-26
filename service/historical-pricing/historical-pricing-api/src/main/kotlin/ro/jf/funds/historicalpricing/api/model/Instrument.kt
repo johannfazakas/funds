@@ -1,19 +1,21 @@
 package ro.jf.funds.historicalpricing.api.model
 
 import kotlinx.serialization.Serializable
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Symbol
 
-// TODO(Johann) this should be removed, there's already one in commons
 @Serializable
-enum class Instrument(val symbol: String, val mainCurrency: Currency, val source: HistoricalPriceSource) {
-    SXR8_DE("SXR8.DE", Currency.EUR, HistoricalPriceSource.YAHOO),
-    QDVE_DE("QDVE.DE", Currency.EUR, HistoricalPriceSource.YAHOO),
-    ENUL_DE("EUNL.DE", Currency.EUR, HistoricalPriceSource.YAHOO),
-    IMAE_NL("IMAEA.XC", Currency.EUR, HistoricalPriceSource.YAHOO),
-    IS3N_DE("IS3N.DE", Currency.EUR, HistoricalPriceSource.YAHOO),
-    SUSW_DE("SUSW.L", Currency.EUR, HistoricalPriceSource.YAHOO),
-    GOLDMAN_SACHS_RO_EQ("28304712", Currency.RON, HistoricalPriceSource.FINANCIAL_TIMES),
-    BT_MAXIM("bt-maxim", Currency.RON, HistoricalPriceSource.BT_ASSET_MANAGEMENT),
-    BT_INDEX("bt-index-romania-rotx", Currency.RON, HistoricalPriceSource.BT_ASSET_MANAGEMENT),
-    BT_TECHNOLOGY("bt-technology", Currency.EUR, HistoricalPriceSource.BT_ASSET_MANAGEMENT),
-    BT_ENERGY("bt-energy", Currency.EUR, HistoricalPriceSource.BT_ASSET_MANAGEMENT);
+enum class Instrument(val symbol: Symbol, val mainCurrency: Currency, val source: HistoricalPriceSource) {
+    // TODO(Johann) how should these instruments be manager, the symbol doesn't seem right, 28304712 is not what would be used in funds
+    SXR8_DE(Symbol("SXR8.DE"), Currency.EUR, HistoricalPriceSource.YAHOO),
+    QDVE_DE(Symbol("QDVE.DE"), Currency.EUR, HistoricalPriceSource.YAHOO),
+    ENUL_DE(Symbol("EUNL.DE"), Currency.EUR, HistoricalPriceSource.YAHOO),
+    IMAE_NL(Symbol("IMAEA.XC"), Currency.EUR, HistoricalPriceSource.YAHOO),
+    IS3N_DE(Symbol("IS3N.DE"), Currency.EUR, HistoricalPriceSource.YAHOO),
+    SUSW_DE(Symbol("SUSW.L"), Currency.EUR, HistoricalPriceSource.YAHOO),
+    GOLDMAN_SACHS_RO_EQ(Symbol("28304712"), Currency.RON, HistoricalPriceSource.FINANCIAL_TIMES),
+    BT_MAXIM(Symbol("bt-maxim"), Currency.RON, HistoricalPriceSource.BT_ASSET_MANAGEMENT),
+    BT_INDEX(Symbol("bt-index-romania-rotx"), Currency.RON, HistoricalPriceSource.BT_ASSET_MANAGEMENT),
+    BT_TECHNOLOGY(Symbol("bt-technology"), Currency.EUR, HistoricalPriceSource.BT_ASSET_MANAGEMENT),
+    BT_ENERGY(Symbol("bt-energy"), Currency.EUR, HistoricalPriceSource.BT_ASSET_MANAGEMENT);
 }
