@@ -2,6 +2,7 @@ package ro.jf.funds.historicalpricing.service.domain.service.instrument
 
 import kotlinx.datetime.LocalDate
 import mu.KotlinLogging
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.historicalpricing.api.model.*
 import ro.jf.funds.historicalpricing.service.domain.model.InstrumentHistoricalPrice
 import ro.jf.funds.historicalpricing.service.domain.service.currency.CurrencyService
@@ -42,7 +43,7 @@ class InstrumentService(
             .mapNotNull(currencyConverter)
             .onEach {
                 instrumentHistoricalPriceRepository.saveHistoricalPrice(
-                    InstrumentHistoricalPrice(instrument.symbol, currency.name, it.date, it.price)
+                    InstrumentHistoricalPrice(instrument.symbol.value, currency.value, it.date, it.price)
                 )
             }
             .associateBy(HistoricalPrice::date)
@@ -53,7 +54,7 @@ class InstrumentService(
         currency: Currency,
         dates: List<LocalDate>
     ) = instrumentHistoricalPriceRepository
-        .getHistoricalPrices(instrument.symbol, currency.name, dates)
+        .getHistoricalPrices(instrument.symbol.value, currency.value, dates)
         .map { HistoricalPrice(it.date, it.price) }
         .associateBy { it.date }
 

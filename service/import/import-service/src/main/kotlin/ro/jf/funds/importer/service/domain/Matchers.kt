@@ -24,8 +24,8 @@ fun FundMatcherTO.matches(importAccountName: String, importLabel: String): Boole
     }
 }
 
-fun List<ExchangeMatcherTO>.getExchangeMatcher(importLabel: String): ExchangeMatcherTO? =
-    firstOrNull { it.matches(importLabel) }
+fun List<ExchangeMatcherTO>.getExchangeMatcher(importLabels: List<String>): ExchangeMatcherTO? =
+    firstOrNull { matcher -> importLabels.any { importLabel -> matcher.matches(importLabel) } }
 
 fun ExchangeMatcherTO.matches(importLabel: String): Boolean {
     return when (this) {

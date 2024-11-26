@@ -7,9 +7,10 @@ import io.ktor.server.routing.*
 import ro.jf.funds.historicalpricing.api.model.CurrencyConversionRequest
 import ro.jf.funds.historicalpricing.api.model.InstrumentConversionRequest
 import ro.jf.funds.historicalpricing.service.domain.service.currency.CurrencyService
+import ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentService
 
 fun Application.configureRouting(
-    instrumentService: ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentService,
+    instrumentService: InstrumentService,
     currencyService: CurrencyService,
 ) {
     routing {

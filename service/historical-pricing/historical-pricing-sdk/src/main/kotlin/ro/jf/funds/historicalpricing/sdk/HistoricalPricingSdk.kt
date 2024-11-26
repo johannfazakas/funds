@@ -7,16 +7,16 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.historicalpricing.api.model.*
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5231"
 
 class HistoricalPricingSdk(
-    private val baseUrl: String = LOCALHOST_BASE_URL
+    private val baseUrl: String = LOCALHOST_BASE_URL,
 ) {
     private val httpClient = OkHttpClient()
 
-    // TODO(Johann) remove this currency from the api
     fun convertInstrument(instrument: Instrument, currency: Currency, date: LocalDate): HistoricalPrice {
         val historicalPrices = convertInstrument(instrument, currency, listOf(date))
         require(historicalPrices.size == 1) { "Expected 1 historical price, but got ${historicalPrices.size}" }
@@ -45,7 +45,7 @@ class HistoricalPricingSdk(
     fun convertCurrency(
         sourceCurrency: Currency,
         targetCurrency: Currency,
-        dates: List<LocalDate>
+        dates: List<LocalDate>,
     ): List<HistoricalPrice> {
         val request = CurrencyConversionRequest(sourceCurrency, targetCurrency, dates)
         val response: CurrencyConversionResponse = httpClient.newCall(

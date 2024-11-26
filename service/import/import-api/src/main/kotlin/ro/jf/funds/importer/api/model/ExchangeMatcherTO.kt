@@ -12,6 +12,6 @@ sealed class ExchangeMatcherTO {
     @Serializable
     @SerialName("by_label")
     data class ByLabel(
-        val label: String
+        val label: String,
     ) : ExchangeMatcherTO()
 }

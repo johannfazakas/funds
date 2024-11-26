@@ -29,7 +29,6 @@ import ro.jf.funds.importer.service.service.conversion.strategy.TransferFundConv
 import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID
-import ro.jf.funds.historicalpricing.api.model.Currency as CurrencyHP
 
 class ImportFundConversionServiceTest {
     private val accountSdk = mock<AccountSdk>()
@@ -110,7 +109,7 @@ class ImportFundConversionServiceTest {
         val expensedFund = fund("Expenses")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(bankAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
-        whenever(historicalPricingSdk.convertCurrency(CurrencyHP.RON, CurrencyHP.EUR, listOf(transactionDate)))
+        whenever(historicalPricingSdk.convertCurrency(Currency.RON, Currency.EUR, listOf(transactionDate)))
             .thenReturn(listOf(HistoricalPrice(transactionDate, BigDecimal("0.2"))))
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
@@ -181,7 +180,7 @@ class ImportFundConversionServiceTest {
                 )
             )
         )
-        whenever(historicalPricingSdk.convertCurrency(CurrencyHP.RON, CurrencyHP.EUR, listOf(transactionDate)))
+        whenever(historicalPricingSdk.convertCurrency(Currency.RON, Currency.EUR, listOf(transactionDate)))
             .thenReturn(listOf(HistoricalPrice(transactionDate, BigDecimal("0.20"))))
         val cashAccount = account("Cash RON", Currency.EUR)
         val companyAccount = account("Company", Currency.EUR)
@@ -280,9 +279,9 @@ class ImportFundConversionServiceTest {
 
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(eurAccount, ronAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expenses))
-        whenever(historicalPricingSdk.convertCurrency(CurrencyHP.RON, CurrencyHP.EUR, listOf(dateTime.date)))
+        whenever(historicalPricingSdk.convertCurrency(Currency.RON, Currency.EUR, listOf(dateTime.date)))
             .thenReturn(listOf(HistoricalPrice(dateTime.date, BigDecimal("0.20998"))))
-        whenever(historicalPricingSdk.convertCurrency(CurrencyHP.EUR, CurrencyHP.RON, listOf(dateTime.date)))
+        whenever(historicalPricingSdk.convertCurrency(Currency.EUR, Currency.RON, listOf(dateTime.date)))
             .thenReturn(listOf(HistoricalPrice(dateTime.date, BigDecimal("4.76235"))))
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)

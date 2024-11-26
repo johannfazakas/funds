@@ -9,18 +9,20 @@ import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.historicalpricing.service.config.configureRouting
 import ro.jf.funds.historicalpricing.service.config.historicalPricingDependencies
 import ro.jf.funds.historicalpricing.service.domain.service.currency.CurrencyService
+import ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentService
 import javax.sql.DataSource
 
 fun main(args: Array<String>) {
     EngineMain.main(args)
 }
 
+// TODO(Johann) adapt service to the patterns in the other services, add tests
 fun Application.module() {
     configureDependencies(historicalPricingDependencies)
     configureContentNegotiation()
     configureDatabaseMigration(get<DataSource>())
     configureRouting(
-        instrumentService = get<ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentService>(),
+        instrumentService = get<InstrumentService>(),
         currencyService = get<CurrencyService>()
     )
 }
