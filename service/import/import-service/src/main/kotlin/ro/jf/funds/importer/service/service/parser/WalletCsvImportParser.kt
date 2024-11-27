@@ -44,7 +44,6 @@ class WalletCsvImportParser(
     }
 
     private fun CsvRow.transactionId(exchangeMatchers: List<ExchangeMatcherTO>): String {
-        // TODO(Johann) will this match "Exchange|S&S - Financial" - probably not, right?
         return when (exchangeMatchers.getExchangeMatcher(labels())) {
             is ExchangeMatcherTO.ByLabel -> listOf(
                 this.getDateTime(DATE_COLUMN, dateTimeFormat).inWholeMinutes(),

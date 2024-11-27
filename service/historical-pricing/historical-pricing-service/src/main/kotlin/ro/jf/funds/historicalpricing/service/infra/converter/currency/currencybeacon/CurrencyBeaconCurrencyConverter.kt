@@ -26,8 +26,8 @@ class CurrencyBeaconCurrencyConverter(
 
     private suspend fun convert(sourceCurrency: Currency, targetCurrency: Currency, date: LocalDate): HistoricalPrice {
         val price = httpClient.get("https://api.currencybeacon.com/v1/historical") {
-            parameter("base", sourceCurrency)
-            parameter("symbols", targetCurrency)
+            parameter("base", sourceCurrency.value)
+            parameter("symbols", targetCurrency.value)
             parameter("date", date.toQueryParam())
             parameter("api_key", CURRENCY_BEACON_API_KEY)
         }

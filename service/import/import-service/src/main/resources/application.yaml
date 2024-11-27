@@ -19,4 +19,4 @@ integration:
   fund-service:
     base-url: "$FUND_BASE_URL:http://localhost:5253"
   historical-pricing-service:
-    base-url: "$HISTORICAL_PRICING_BASE_URL:http://localhost:5254"
+    base-url: "$HISTORICAL_PRICING_BASE_URL:http://localhost:5231"
