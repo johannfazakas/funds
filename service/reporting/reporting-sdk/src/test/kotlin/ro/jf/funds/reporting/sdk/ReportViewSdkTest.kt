@@ -13,7 +13,7 @@ import org.mockserver.model.MediaType
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.CreateReportViewTaskTO
+import ro.jf.funds.reporting.api.model.ReportViewTaskTO
 import ro.jf.funds.reporting.api.model.ReportViewTypeTO
 import java.util.UUID.randomUUID
 
@@ -54,6 +54,6 @@ class ReportViewSdkTest {
         val response = reportViewSdk.createReportView(userId, request)
 
         assertThat(response.taskId).isEqualTo(taskId)
-        assertThat(response).isInstanceOf(CreateReportViewTaskTO.InProgress::class.java)
+        assertThat(response).isInstanceOf(ReportViewTaskTO.InProgress::class.java)
     }
 }

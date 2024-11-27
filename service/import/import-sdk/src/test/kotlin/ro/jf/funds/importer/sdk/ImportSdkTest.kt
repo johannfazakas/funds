@@ -45,7 +45,7 @@ class ImportSdkTest {
             .`when`(
                 request()
                     .withMethod("POST")
-                    .withPath("/bk-api/import/v1/imports")
+                    .withPath("/funds-api/import/v1/imports/tasks")
                     .withHeader("Content-Type", "multipart/form-data.*")
                     .withHeader(USER_ID_HEADER, userId.toString())
             )
@@ -93,7 +93,7 @@ class ImportSdkTest {
                 .`when`(
                     request()
                         .withMethod("POST")
-                        .withPath("/bk-api/import/v1/imports")
+                        .withPath("/funds-api/import/v1/imports/tasks")
                         .withHeader("Content-Type", "multipart/form-data.*")
                         .withHeader(USER_ID_HEADER, userId.toString())
                 )
@@ -135,7 +135,7 @@ class ImportSdkTest {
                 .`when`(
                     request()
                         .withMethod("POST")
-                        .withPath("/bk-api/import/v1/imports")
+                        .withPath("/funds-api/import/v1/imports/tasks")
                         .withHeader("Content-Type", "multipart/form-data.*")
                         .withHeader(USER_ID_HEADER, userId.toString())
                 )

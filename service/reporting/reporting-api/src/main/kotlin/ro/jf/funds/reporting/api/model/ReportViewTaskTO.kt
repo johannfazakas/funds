@@ -10,7 +10,7 @@ import java.util.*
 @OptIn(ExperimentalSerializationApi::class)
 @JsonClassDiscriminator("type")
 @Serializable
-sealed class CreateReportViewTaskTO {
+sealed class ReportViewTaskTO {
     abstract val taskId: UUID
 
     @Serializable
@@ -19,14 +19,14 @@ sealed class CreateReportViewTaskTO {
         @Serializable(with = UUIDSerializer::class)
         override val taskId: UUID,
         val report: ReportViewTO,
-    ) : CreateReportViewTaskTO()
+    ) : ReportViewTaskTO()
 
     @Serializable
     @SerialName("in_progress")
     data class InProgress(
         @Serializable(with = UUIDSerializer::class)
         override val taskId: UUID,
-    ) : CreateReportViewTaskTO()
+    ) : ReportViewTaskTO()
 
     @Serializable
     @SerialName("failed")
@@ -34,5 +34,5 @@ sealed class CreateReportViewTaskTO {
         @Serializable(with = UUIDSerializer::class)
         override val taskId: UUID,
         val reason: String,
-    ) : CreateReportViewTaskTO()
+    ) : ReportViewTaskTO()
 }

@@ -11,7 +11,7 @@ import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.reporting.api.ReportViewApi
 import ro.jf.funds.reporting.api.exception.ReportingApiException
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.CreateReportViewTaskTO
+import ro.jf.funds.reporting.api.model.ReportViewTaskTO
 import ro.jf.funds.reporting.api.model.ReportViewTO
 import java.util.*
 
@@ -23,7 +23,7 @@ class ReportViewSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : ReportViewApi {
-    override suspend fun createReportView(userId: UUID, request: CreateReportViewTO): CreateReportViewTaskTO {
+    override suspend fun createReportView(userId: UUID, request: CreateReportViewTO): ReportViewTaskTO {
         log.info { "Creating for user $userId report view $request." }
         val response = httpClient.post("$baseUrl/bk-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
@@ -37,7 +37,7 @@ class ReportViewSdk(
         return response.body()
     }
 
-    override suspend fun getReportViewTask(userId: UUID, taskId: UUID): CreateReportViewTaskTO {
+    override suspend fun getReportViewTask(userId: UUID, taskId: UUID): ReportViewTaskTO {
         TODO("Not yet implemented")
     }
 

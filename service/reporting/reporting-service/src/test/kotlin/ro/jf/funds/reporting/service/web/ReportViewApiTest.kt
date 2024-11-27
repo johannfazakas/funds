@@ -11,7 +11,7 @@ import ro.jf.funds.commons.test.utils.createJsonHttpClient
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.CreateReportViewTaskTO
+import ro.jf.funds.reporting.api.model.ReportViewTaskTO
 import ro.jf.funds.reporting.api.model.ReportViewTypeTO
 import ro.jf.funds.reporting.service.module
 import java.util.UUID.randomUUID
@@ -28,7 +28,7 @@ class ReportViewApiTest {
 
         val httpClient = createJsonHttpClient()
 
-        val response = httpClient.post("/bk-api/reporting/v1/report-views") {
+        val response = httpClient.post("/funds-api/reporting/v1/report-views/tasks") {
             header(USER_ID_HEADER, userId.toString())
             contentType(ContentType.Application.Json)
             setBody(
@@ -41,12 +41,12 @@ class ReportViewApiTest {
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Accepted)
-        val createReportViewTaskTO = response.body<CreateReportViewTaskTO>()
-        assertThat(createReportViewTaskTO.taskId).isNotNull
-        assertThat(createReportViewTaskTO).isInstanceOf(CreateReportViewTaskTO.Completed::class.java)
-        createReportViewTaskTO as CreateReportViewTaskTO.Completed
-        assertThat(createReportViewTaskTO.report.name).isEqualTo(expenseReportName)
-        assertThat(createReportViewTaskTO.report.fundId).isEqualTo(expenseFundId)
-        assertThat(createReportViewTaskTO.report.type).isEqualTo(ReportViewTypeTO.EXPENSE)
+        val reportViewTaskTO = response.body<ReportViewTaskTO>()
+        assertThat(reportViewTaskTO.taskId).isNotNull
+        assertThat(reportViewTaskTO).isInstanceOf(ReportViewTaskTO.Completed::class.java)
+        reportViewTaskTO as ReportViewTaskTO.Completed
+        assertThat(reportViewTaskTO.report.name).isEqualTo(expenseReportName)
+        assertThat(reportViewTaskTO.report.fundId).isEqualTo(expenseFundId)
+        assertThat(reportViewTaskTO.report.type).isEqualTo(ReportViewTypeTO.EXPENSE)
     }
 }

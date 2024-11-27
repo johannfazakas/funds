@@ -21,8 +21,8 @@ fun Routing.fundTransactionApiRouting(fundTransactionService: FundTransactionSer
         get {
             val userId = call.userId()
             log.debug { "List all transactions by user id $userId." }
-            val funds = fundTransactionService.listTransactions(userId)
-            call.respond(funds.toListTO(FundTransaction::toTO))
+            val fundTransactions = fundTransactionService.listTransactions(userId)
+            call.respond(fundTransactions.toListTO(FundTransaction::toTO))
         }
         post {
             val userId = call.userId()

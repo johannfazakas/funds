@@ -18,10 +18,10 @@ import java.util.*
 private val log = logger { }
 
 fun Routing.importApiRouting(
-    importService: ImportService
+    importService: ImportService,
 ) {
-    route("/bk-api/import/v1/imports") {
-        post {
+    route("/funds-api/import/v1/imports") {
+        post("/tasks") {
             val userId = call.userId()
             log.info { "Import request for user $userId." }
 
@@ -39,10 +39,8 @@ fun Routing.importApiRouting(
             }
             call.respond(statusCode, importTask)
         }
-    }
 
-    route("/bk-api/import/v1/imports/{importTaskId}") {
-        get {
+        get("/tasks/{importTaskId}") {
             val userId = call.userId()
             val taskId = call.parameters["importTaskId"]?.let(UUID::fromString)
                 ?: throw IllegalArgumentException("Missing taskId")
