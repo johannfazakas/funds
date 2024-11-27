@@ -29,7 +29,7 @@ class ImportSdk(
     override suspend fun import(
         userId: UUID,
         importConfiguration: ImportConfigurationTO,
-        csvFile: File
+        csvFile: File,
     ): ImportTaskTO {
         return import(userId, importConfiguration, listOf(csvFile))
     }
@@ -37,10 +37,10 @@ class ImportSdk(
     override suspend fun import(
         userId: UUID,
         importConfiguration: ImportConfigurationTO,
-        csvFiles: List<File>
+        csvFiles: List<File>,
     ): ImportTaskTO {
         log.info { "Importing CSV files ${csvFiles.map { it.name }} for user $userId." }
-        val response: HttpResponse = httpClient.post("$baseUrl/bk-api/import/v1/imports") {
+        val response: HttpResponse = httpClient.post("$baseUrl/funds-api/import/v1/imports/tasks") {
             header(USER_ID_HEADER, userId.toString())
             setBody(MultiPartFormDataContent(
                 formData {
@@ -64,7 +64,7 @@ class ImportSdk(
 
     override suspend fun getImportTask(userId: UUID, taskId: UUID): ImportTaskTO {
         log.info { "Getting import task $taskId for user $userId." }
-        val response: HttpResponse = httpClient.get("$baseUrl/bk-api/import/v1/imports/$taskId") {
+        val response: HttpResponse = httpClient.get("$baseUrl/funds-api/import/v1/imports/tasks/$taskId") {
             header(USER_ID_HEADER, userId.toString())
         }
         return when (response.status) {

@@ -12,6 +12,10 @@ class FundTransactionService(
         return accountTransactionAdapter.listTransactions(userId)
     }
 
+    suspend fun listTransactions(userId: UUID, fundId: UUID): List<FundTransaction> {
+        TODO()
+    }
+
     suspend fun createTransaction(userId: UUID, request: CreateFundTransactionTO): FundTransaction {
         // TODO(Johann) should validate fund existence here? otherwise where?
         return accountTransactionAdapter.createTransaction(userId, request)

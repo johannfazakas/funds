@@ -94,7 +94,7 @@ class ImportApiTest {
         )
         whenever(fundTransactionSdk.createTransaction(eq(userId), any())).thenReturn(mock())
 
-        val response = httpClient.post("/bk-api/import/v1/imports") {
+        val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
             header(USER_ID_HEADER, userId.toString())
             setBody(MultiPartFormDataContent(
                 formData {
@@ -123,7 +123,7 @@ class ImportApiTest {
         val userId = randomUUID()
         val csvFile = File("src/test/resources/data/wallet_export.csv")
 
-        val response = httpClient.post("/bk-api/import/v1/imports") {
+        val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
             header(USER_ID_HEADER, userId.toString())
             setBody(MultiPartFormDataContent(
                 formData {
@@ -165,7 +165,7 @@ class ImportApiTest {
             )
         )
 
-        val response = httpClient.post("/bk-api/import/v1/imports") {
+        val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
             header(USER_ID_HEADER, userId.toString())
             setBody(MultiPartFormDataContent(
                 formData {
@@ -211,7 +211,7 @@ class ImportApiTest {
             )
         )
 
-        val response = httpClient.post("/bk-api/import/v1/imports") {
+        val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
             header(USER_ID_HEADER, userId.toString())
             setBody(MultiPartFormDataContent(
                 formData {
