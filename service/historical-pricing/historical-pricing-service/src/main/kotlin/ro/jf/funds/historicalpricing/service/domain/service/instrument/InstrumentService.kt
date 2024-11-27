@@ -12,7 +12,7 @@ val log = KotlinLogging.logger {}
 class InstrumentService(
     private val instrumentConverterRegistry: ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentConverterRegistry,
     private val instrumentHistoricalPriceRepository: ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentHistoricalPriceRepository,
-    private val currencyService: CurrencyService
+    private val currencyService: CurrencyService,
 ) {
     suspend fun convert(request: InstrumentConversionRequest): InstrumentConversionResponse {
         val (instrument, currency, dates) = request
@@ -34,7 +34,7 @@ class InstrumentService(
     private suspend fun getHistoricalPricesByDate(
         instrument: Instrument,
         currency: Currency,
-        dates: List<LocalDate>
+        dates: List<LocalDate>,
     ): Map<LocalDate, HistoricalPrice> {
         val instrumentConverter = instrumentConverterRegistry.getConverter(instrument)
         val currencyConverter = currencyConverter(instrument, currency, dates)
@@ -52,7 +52,7 @@ class InstrumentService(
     private suspend fun getStoredHistoricalPricesByDate(
         instrument: Instrument,
         currency: Currency,
-        dates: List<LocalDate>
+        dates: List<LocalDate>,
     ) = instrumentHistoricalPriceRepository
         .getHistoricalPrices(instrument.symbol.value, currency.value, dates)
         .map { HistoricalPrice(it.date, it.price) }
@@ -61,7 +61,7 @@ class InstrumentService(
     private suspend fun currencyConverter(
         instrument: Instrument,
         currency: Currency,
-        dates: List<LocalDate>
+        dates: List<LocalDate>,
     ): (HistoricalPrice) -> HistoricalPrice? {
         if (instrument.mainCurrency == currency) {
             return { it }
