@@ -14,6 +14,7 @@ class CreateFundTransactionsResponseHandler(
     init {
         log.info { "CreateFundTransactionsResponseHandler initialized" }
     }
+
     override suspend fun handle(event: Event<GenericResponse>) {
         log.info { "Received event: $event" }
         val importTaskId = event.correlationId ?: error("Missing correlationId")

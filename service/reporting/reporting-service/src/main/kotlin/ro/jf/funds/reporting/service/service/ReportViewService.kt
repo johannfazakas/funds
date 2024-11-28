@@ -1,14 +1,21 @@
 package ro.jf.funds.reporting.service.service
 
+import ro.jf.funds.commons.event.Event
+import ro.jf.funds.commons.event.Producer
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.ReportViewTO
 import ro.jf.funds.reporting.api.model.ReportViewTaskTO
 import ro.jf.funds.reporting.api.model.ReportViewTypeTO
+import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import java.util.*
 import java.util.UUID.randomUUID
 
-class ReportViewService {
+class ReportViewService(
+    private val reportViewRepository: ReportViewRepository,
+    private val createReportViewProducer: Producer<CreateReportViewTO>,
+) {
     suspend fun createReportViewTask(userId: UUID, request: CreateReportViewTO): ReportViewTaskTO {
+        createReportViewProducer.send(Event(userId, request))
         return ReportViewTaskTO.Completed(
             taskId = randomUUID(),
             report = ReportViewTO(
@@ -17,6 +24,10 @@ class ReportViewService {
                 type = request.type
             )
         )
+    }
+
+    suspend fun createReportView(userId: UUID, payload: CreateReportViewTO) {
+        TODO("Not yet implemented")
     }
 
     suspend fun getReportViewTask(userId: UUID, taskId: UUID): ReportViewTaskTO {
