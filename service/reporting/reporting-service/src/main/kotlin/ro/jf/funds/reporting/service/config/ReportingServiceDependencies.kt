@@ -12,7 +12,9 @@ import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
+import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import ro.jf.funds.reporting.service.service.ReportViewService
+import ro.jf.funds.reporting.service.service.ReportViewTaskService
 import ro.jf.funds.reporting.service.service.event.CreateReportViewRequestHandler
 import javax.sql.DataSource
 
@@ -31,6 +33,7 @@ private val Application.persistenceDependencies
     get() = module {
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
+        single<ReportViewTaskRepository> { ReportViewTaskRepository(get()) }
         single<ReportViewRepository> { ReportViewRepository(get()) }
     }
 
@@ -50,11 +53,14 @@ private val Application.integrationDependencies
 
 private val Application.serviceDependencies
     get() = module {
-        single<ReportViewService> { ReportViewService(get(), get()) }
+        single<ReportViewService> { ReportViewService(get()) }
+        single<ReportViewTaskService> { ReportViewTaskService(get(), get(), get()) }
+        single<CreateReportViewRequestHandler> { CreateReportViewRequestHandler(get()) }
     }
 
 private val Application.eventConsumerDependencies
     get() = module {
+        single<ConsumerProperties> { ConsumerProperties.fromEnv(environment) }
         single<Consumer<CreateReportViewTO>> {
             createConsumer(
                 get(),

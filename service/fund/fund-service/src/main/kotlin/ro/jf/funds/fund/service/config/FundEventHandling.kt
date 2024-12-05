@@ -16,7 +16,7 @@ fun Application.configureFundEventHandling() {
         CREATE_ACCOUNT_TRANSACTIONS_RESPONSE_CONSUMER
     )
 
-    logger.info { "Configuring account event handling" }
+    logger.info { "Configuring fund event handling" }
     environment.monitor.subscribe(ApplicationStarted) {
         fundTransactionsBatchCreateRequestConsumer.consume()
         accountTransactionsBatchCreateResponseConsumer.consume()

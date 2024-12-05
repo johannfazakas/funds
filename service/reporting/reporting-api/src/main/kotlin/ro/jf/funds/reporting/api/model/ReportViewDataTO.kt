@@ -12,7 +12,7 @@ import java.util.*
 @JsonClassDiscriminator("type")
 @Serializable
 sealed class ReportViewDataTO(
-    val reportViewType: ReportViewTypeTO,
+    val reportViewType: ReportViewType,
 ) {
     abstract val viewId: UUID
     abstract val viewName: String
@@ -32,7 +32,7 @@ data class ExpenseReportViewDataTO(
     override val fundId: UUID,
     override val granularity: DataGranularityTO,
     val data: List<DataItem>,
-) : ReportViewDataTO(ReportViewTypeTO.EXPENSE) {
+) : ReportViewDataTO(ReportViewType.EXPENSE) {
     @Serializable
     data class DataItem(
         val timeBucket: LocalDateTime,

@@ -14,7 +14,7 @@ sealed class ReportViewTaskTO {
     abstract val taskId: UUID
 
     @Serializable
-    @SerialName("completed")
+    @SerialName("COMPLETED")
     data class Completed(
         @Serializable(with = UUIDSerializer::class)
         override val taskId: UUID,
@@ -22,14 +22,14 @@ sealed class ReportViewTaskTO {
     ) : ReportViewTaskTO()
 
     @Serializable
-    @SerialName("in_progress")
+    @SerialName("IN_PROGRESS")
     data class InProgress(
         @Serializable(with = UUIDSerializer::class)
         override val taskId: UUID,
     ) : ReportViewTaskTO()
 
     @Serializable
-    @SerialName("failed")
+    @SerialName("FAILED")
     data class Failed(
         @Serializable(with = UUIDSerializer::class)
         override val taskId: UUID,

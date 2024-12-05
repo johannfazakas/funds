@@ -9,5 +9,5 @@ data class CreateReportViewTO(
     val name: String,
     @Serializable(with = UUIDSerializer::class)
     val fundId: UUID,
-    val type: ReportViewTypeTO,
+    val type: ReportViewType,
 )
