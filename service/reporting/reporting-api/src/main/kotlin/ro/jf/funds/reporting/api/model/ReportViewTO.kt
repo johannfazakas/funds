@@ -6,8 +6,10 @@ import java.util.*
 
 @Serializable
 data class ReportViewTO(
+    @Serializable(with = UUIDSerializer::class)
+    val id: UUID,
     val name: String,
     @Serializable(with = UUIDSerializer::class)
     val fundId: UUID,
-    val type: ReportViewTypeTO,
+    val type: ReportViewType,
 )

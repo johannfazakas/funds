@@ -16,7 +16,7 @@ object MockServerContainerExtension : BeforeAllCallback, AfterEachCallback, Para
         get() = runningContainer.run { "http://$host:$serverPort" }
 
     private val container: MockServerContainer =
-        DockerImageName.parse("mockserver/mockserver")
+        DockerImageName.parse("mockserver/mockserver:5.15.0")
             .withTag("mockserver-${MockServerClient::class.java.getPackage().implementationVersion}")
             .let(::MockServerContainer)
             .apply { withReuse(true) }

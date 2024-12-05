@@ -13,7 +13,7 @@ import java.util.*
 private val log = logger { }
 
 object KafkaContainerExtension : BeforeAllCallback, AfterEachCallback {
-    private val dockerImage = DockerImageName.parse("confluentinc/cp-kafka:7.7.1")
+    private val dockerImage = DockerImageName.parse("confluentinc/cp-kafka:7.7.2")
     private val container = KafkaContainer(dockerImage)
         .withReuse(true)
 
