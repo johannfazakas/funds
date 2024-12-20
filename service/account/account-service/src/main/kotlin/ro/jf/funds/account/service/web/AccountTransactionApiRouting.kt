@@ -8,6 +8,7 @@ import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
+import ro.jf.funds.account.api.model.TransactionsFilterTO
 import ro.jf.funds.account.service.domain.AccountTransaction
 import ro.jf.funds.account.service.service.AccountTransactionService
 import ro.jf.funds.account.service.web.mapper.toTO
@@ -16,6 +17,9 @@ import ro.jf.funds.commons.web.userId
 import java.util.*
 
 private val log = logger { }
+
+private const val RECORD_PROPERTIES_PREFIX = "properties.record."
+private const val TRANSACTION_PROPERTIES_PREFIX = "properties.transaction."
 
 fun Routing.accountTransactionApiRouting(transactionService: AccountTransactionService) {
     route("/bk-api/account/v1/transactions") {
@@ -36,7 +40,8 @@ fun Routing.accountTransactionApiRouting(transactionService: AccountTransactionS
         get {
             val userId = call.userId()
             log.debug { "List all transactions by user id $userId." }
-            val transactions = transactionService.listTransactions(userId)
+            val transactionFilter = call.parameters.transactionFilter()
+            val transactions = transactionService.listTransactions(userId, transactionFilter)
             call.respond(transactions.toListTO(AccountTransaction::toTO))
         }
         delete("/{transactionId}") {
@@ -48,4 +53,16 @@ fun Routing.accountTransactionApiRouting(transactionService: AccountTransactionS
             call.respond(HttpStatusCode.NoContent)
         }
     }
+}
+
+private fun Parameters.transactionFilter(): TransactionsFilterTO {
+    val recordProperties = this.entries()
+        .map { (key, value) -> key to value }
+        .filter { (key, _) -> key.startsWith(RECORD_PROPERTIES_PREFIX) }
+        .associate { (key, value) -> key.removePrefix(RECORD_PROPERTIES_PREFIX) to value }
+    val transactionProperties = this.entries()
+        .map { (key, value) -> key to value }
+        .filter { (key, _) -> key.startsWith(TRANSACTION_PROPERTIES_PREFIX) }
+        .associate { (key, value) -> key.removePrefix(TRANSACTION_PROPERTIES_PREFIX) to value }
+    return TransactionsFilterTO(transactionProperties, recordProperties)
 }

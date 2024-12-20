@@ -59,7 +59,8 @@ class AccountTransactionsEventHandlingTest {
         val account = account(AccountName("Cash"))
         val createAccountTransactionsTO = createAccountTransactionsTO(account, BigDecimal("100.0"))
 
-        val consumer = createKafkaConsumer(ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer"))
+        val consumer =
+            createKafkaConsumer(ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer"))
         consumer.subscribe(listOf(createTransactionsResponseTopic.value))
 
         val producer = createProducer<CreateAccountTransactionsTO>(
@@ -77,7 +78,7 @@ class AccountTransactionsEventHandlingTest {
             assertThat(response!!.payload).isInstanceOf(GenericResponse.Success::class.java)
         }
 
-        val transactions = accountTransactionRepository.list(userId)
+        val transactions = accountTransactionRepository.list(userId, TransactionsFilterTO.empty())
         assertThat(transactions).hasSize(1)
         val transaction = transactions.first()
         assertThat(transaction.userId).isEqualTo(userId)

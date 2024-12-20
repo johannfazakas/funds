@@ -103,8 +103,8 @@ class FundTransactionsEventHandlingTest {
                                     accountId = accountId,
                                     amount = BigDecimal("100.0"),
                                     unit = Currency.RON,
-                                    metadata = mapOf(
-                                        METADATA_FUND_ID to fundId.toString()
+                                    properties = mapOf(
+                                        METADATA_FUND_ID to listOf(fundId.toString())
                                     )
                                 )
                             )
@@ -126,12 +126,14 @@ class FundTransactionsEventHandlingTest {
         val createAccountTransactionsResponseProducer =
             createProducer<GenericResponse>(producerProperties, createAccountTransactionsResponseTopic)
 
-        createAccountTransactionsResponseProducer.send(Event(
-            userId,
-            GenericResponse.Success,
-            correlationId,
-            userId.toString()
-        ))
+        createAccountTransactionsResponseProducer.send(
+            Event(
+                userId,
+                GenericResponse.Success,
+                correlationId,
+                userId.toString()
+            )
+        )
 
         await().atMost(Duration.ofSeconds(10)).untilAsserted {
             val createFundTransactionsResponse =

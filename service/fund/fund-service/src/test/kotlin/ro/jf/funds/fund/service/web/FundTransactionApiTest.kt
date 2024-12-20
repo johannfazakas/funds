@@ -14,10 +14,7 @@ import org.koin.ktor.ext.get
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
-import ro.jf.funds.account.api.model.AccountRecordTO
-import ro.jf.funds.account.api.model.AccountTransactionTO
-import ro.jf.funds.account.api.model.CreateAccountRecordTO
-import ro.jf.funds.account.api.model.CreateAccountTransactionTO
+import ro.jf.funds.account.api.model.*
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.account.sdk.AccountTransactionSdk
 import ro.jf.funds.commons.config.configureContentNegotiation
@@ -68,16 +65,16 @@ class FundTransactionApiTest {
                             accountId = companyAccountId,
                             amount = BigDecimal("-100.25"),
                             unit = Currency.RON,
-                            metadata = mapOf("fundId" to workFundId.toString())
+                            properties = mapOf("fundId" to listOf(workFundId.toString()))
                         ),
                         CreateAccountRecordTO(
                             accountId = personalAccountId,
                             amount = BigDecimal("100.25"),
                             unit = Currency.RON,
-                            metadata = mapOf("fundId" to expensesFundId.toString())
+                            properties = mapOf("fundId" to listOf(expensesFundId.toString()))
                         )
                     ),
-                    metadata = emptyMap()
+                    properties = emptyMap()
                 )
             )
         ).thenReturn(
@@ -90,17 +87,17 @@ class FundTransactionApiTest {
                         accountId = companyAccountId,
                         amount = BigDecimal("-100.25"),
                         unit = Currency.RON,
-                        metadata = mapOf("fundId" to workFundId.toString())
+                        properties = mapOf("fundId" to listOf(workFundId.toString()))
                     ),
                     AccountRecordTO(
                         id = randomUUID(),
                         accountId = personalAccountId,
                         amount = BigDecimal("100.25"),
                         unit = Currency.RON,
-                        metadata = mapOf("fundId" to expensesFundId.toString())
+                        properties = mapOf("fundId" to listOf(expensesFundId.toString()))
                     )
                 ),
-                metadata = emptyMap()
+                properties = emptyMap()
             )
         )
 
@@ -162,7 +159,7 @@ class FundTransactionApiTest {
         val rawTransactionTime = "2021-09-01T12:00:00"
         val transactionTime = LocalDateTime.parse(rawTransactionTime)
 
-        whenever(accountTransactionSdk.listTransactions(userId)).thenReturn(
+        whenever(accountTransactionSdk.listTransactions(userId, TransactionsFilterTO.empty())).thenReturn(
             ListTO(
                 listOf(
                     AccountTransactionTO(
@@ -174,17 +171,17 @@ class FundTransactionApiTest {
                                 accountId = account1Id,
                                 amount = BigDecimal(100.25),
                                 unit = Currency.RON,
-                                metadata = mapOf("fundId" to fund1Id.toString()),
+                                properties = mapOf("fundId" to listOf(fund1Id.toString())),
                             ),
                             AccountRecordTO(
                                 id = record2Id,
                                 accountId = account2Id,
                                 amount = BigDecimal(50.75),
                                 unit = Currency.RON,
-                                metadata = mapOf("fundId" to fund2Id.toString()),
+                                properties = mapOf("fundId" to listOf(fund2Id.toString())),
                             )
                         ),
-                        metadata = emptyMap()
+                        properties = emptyMap()
                     )
                 )
             )

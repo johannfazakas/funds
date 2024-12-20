@@ -11,5 +11,6 @@ data class AccountTransactionTO(
     val id: UUID,
     val dateTime: LocalDateTime,
     val records: List<AccountRecordTO>,
-    val metadata: Map<String, String>
+    // TODO(Johann) Expenses by fund - add a PropertyTO
+    val properties: Map<String, List<String>>,
 )

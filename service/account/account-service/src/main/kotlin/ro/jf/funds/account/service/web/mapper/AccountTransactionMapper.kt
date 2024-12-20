@@ -10,7 +10,7 @@ fun AccountTransaction.toTO(): AccountTransactionTO {
         id = id,
         dateTime = dateTime,
         records = records.map(AccountRecord::toTO),
-        metadata = metadata,
+        properties = properties.groupBy { it.key }.mapValues { (_, props) -> props.map { it.value } },
     )
 }
 
@@ -19,5 +19,5 @@ fun AccountRecord.toTO() = AccountRecordTO(
     accountId = accountId,
     amount = amount,
     unit = unit,
-    metadata = metadata,
+    properties = properties.groupBy { it.key }.mapValues { (_, props) -> props.map { it.value } },
 )

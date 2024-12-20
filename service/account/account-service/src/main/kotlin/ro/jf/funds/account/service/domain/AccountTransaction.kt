@@ -10,7 +10,7 @@ data class AccountTransaction(
     val userId: UUID,
     val dateTime: LocalDateTime,
     val records: List<AccountRecord>,
-    val metadata: Map<String, String>
+    val properties: List<Property>,
 )
 
 data class AccountRecord(
@@ -18,5 +18,5 @@ data class AccountRecord(
     val accountId: UUID,
     val amount: BigDecimal,
     val unit: FinancialUnit,
-    val metadata: Map<String, String>
+    val properties: List<Property>,
 )

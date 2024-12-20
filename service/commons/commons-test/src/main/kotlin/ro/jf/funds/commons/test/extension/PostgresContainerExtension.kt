@@ -13,9 +13,10 @@ private val log = logger {}
 
 object PostgresContainerExtension : BeforeAllCallback, AfterAllCallback {
     private val dockerImageName = DockerImageName.parse("postgres:15.2")
+
     // container will be reused on local if you have `testcontainers.reuse.enable=true` in ~/.testcontainers.properties
     private val container = PostgreSQLContainer(dockerImageName)
-        .withDatabaseName("user_db")
+        .withDatabaseName("mock")
         .withUsername("mock")
         .withPassword("mock")
         .withReuse(true)

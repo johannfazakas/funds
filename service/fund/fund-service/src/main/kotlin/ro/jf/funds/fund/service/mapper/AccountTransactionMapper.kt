@@ -18,7 +18,8 @@ fun AccountRecordTO.toRecord() = FundRecord(
     id = id,
     accountId = accountId,
     amount = amount,
-    fundId = metadata[METADATA_FUND_ID]
+    fundId = properties[METADATA_FUND_ID]
+        ?.single()
         ?.let(UUID::fromString)
         ?: error("Fund id not found in metadata")
 )

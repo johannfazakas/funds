@@ -2,6 +2,7 @@ package ro.jf.funds.account.service.service
 
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
+import ro.jf.funds.account.api.model.TransactionsFilterTO
 import ro.jf.funds.account.service.domain.Account
 import ro.jf.funds.account.service.domain.AccountServiceException
 import ro.jf.funds.account.service.domain.AccountTransaction
@@ -11,7 +12,7 @@ import java.util.*
 
 class AccountTransactionService(
     private val transactionRepository: AccountTransactionRepository,
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
 ) {
     suspend fun createTransaction(userId: UUID, request: CreateAccountTransactionTO): AccountTransaction {
         validateTransactionRequests(userId, listOf(request))
@@ -23,8 +24,11 @@ class AccountTransactionService(
         return transactionRepository.saveAll(userId, requests)
     }
 
-    suspend fun listTransactions(userId: UUID): List<AccountTransaction> {
-        return transactionRepository.list(userId)
+    suspend fun listTransactions(
+        userId: UUID,
+        filter: TransactionsFilterTO
+    ): List<AccountTransaction> {
+        return transactionRepository.list(userId, filter)
     }
 
     suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {

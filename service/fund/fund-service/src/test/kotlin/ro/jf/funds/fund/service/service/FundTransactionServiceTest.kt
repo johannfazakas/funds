@@ -59,16 +59,16 @@ class FundTransactionServiceTest {
                     accountId = companyAccountId,
                     amount = BigDecimal("-100.25"),
                     unit = Currency.RON,
-                    metadata = mapOf(METADATA_FUND_ID to workFundId.toString())
+                    properties = mapOf(METADATA_FUND_ID to listOf(workFundId.toString()))
                 ),
                 CreateAccountRecordTO(
                     accountId = personalAccountId,
                     amount = BigDecimal("100.25"),
                     unit = Currency.RON,
-                    metadata = mapOf(METADATA_FUND_ID to expensesFundId.toString())
+                    properties = mapOf(METADATA_FUND_ID to listOf(expensesFundId.toString()))
                 )
             ),
-            metadata = emptyMap()
+            properties = emptyMap()
         )
         whenever(accountTransactionSdk.createTransaction(userId, expectedCreateAccountTransactionRequest)).thenReturn(
             AccountTransactionTO(
@@ -80,17 +80,17 @@ class FundTransactionServiceTest {
                         accountId = companyAccountId,
                         amount = BigDecimal("-100.25"),
                         unit = Currency.RON,
-                        metadata = mapOf(METADATA_FUND_ID to workFundId.toString())
+                        properties = mapOf(METADATA_FUND_ID to listOf(workFundId.toString()))
                     ),
                     AccountRecordTO(
                         id = record2Id,
                         accountId = personalAccountId,
                         amount = BigDecimal("100.25"),
                         unit = Currency.RON,
-                        metadata = mapOf(METADATA_FUND_ID to expensesFundId.toString())
+                        properties = mapOf(METADATA_FUND_ID to listOf(expensesFundId.toString()))
                     )
                 ),
-                metadata = emptyMap()
+                properties = emptyMap()
             )
         )
 
@@ -122,7 +122,7 @@ class FundTransactionServiceTest {
         val fund2Id = randomUUID()
         val rawTransactionTime = "2021-09-01T12:00:00"
         val transactionTime = LocalDateTime.parse(rawTransactionTime)
-        whenever(accountTransactionSdk.listTransactions(userId)).thenReturn(
+        whenever(accountTransactionSdk.listTransactions(userId, TransactionsFilterTO.empty())).thenReturn(
             ListTO(
                 listOf(
                     AccountTransactionTO(
@@ -134,17 +134,17 @@ class FundTransactionServiceTest {
                                 accountId = account1Id,
                                 amount = BigDecimal(100.25),
                                 unit = Currency.RON,
-                                metadata = mapOf("fundId" to fund1Id.toString()),
+                                properties = mapOf("fundId" to listOf(fund1Id.toString())),
                             ),
                             AccountRecordTO(
                                 id = record2Id,
                                 accountId = account2Id,
                                 amount = BigDecimal(50.75),
                                 unit = Currency.RON,
-                                metadata = mapOf("fundId" to fund2Id.toString()),
+                                properties = mapOf("fundId" to listOf(fund2Id.toString())),
                             )
                         ),
-                        metadata = emptyMap()
+                        properties = emptyMap()
                     )
                 )
             )

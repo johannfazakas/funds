@@ -14,5 +14,6 @@ data class CreateAccountRecordTO(
     @Serializable(with = BigDecimalSerializer::class)
     val amount: BigDecimal,
     val unit: FinancialUnit,
-    val metadata: Map<String, String> = emptyMap(),
+    // TODO(Johann) Expenses by fund - add a PropertyTO
+    val properties: Map<String, List<String>> = emptyMap(),
 )
