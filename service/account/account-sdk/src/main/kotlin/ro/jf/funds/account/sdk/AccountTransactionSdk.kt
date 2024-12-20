@@ -7,8 +7,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.AccountTransactionApi
-import ro.jf.funds.account.api.model.AccountTransactionTO
-import ro.jf.funds.account.api.model.CreateAccountTransactionTO
+import ro.jf.funds.account.api.model.*
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.toApiException
@@ -21,11 +20,11 @@ private val log = logger { }
 
 class AccountTransactionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
 ) : AccountTransactionApi {
     override suspend fun createTransaction(
         userId: UUID,
-        request: CreateAccountTransactionTO
+        request: CreateAccountTransactionTO,
     ): AccountTransactionTO {
         val response: HttpResponse = httpClient.post("$baseUrl$BASE_PATH/transactions") {
             headers {
@@ -43,8 +42,15 @@ class AccountTransactionSdk(
         return accountTransaction
     }
 
-    override suspend fun listTransactions(userId: UUID): ListTO<AccountTransactionTO> {
+    override suspend fun listTransactions(userId: UUID, filter: TransactionsFilterTO): ListTO<AccountTransactionTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
+            sequenceOf(
+                filter.transactionProperties.map { (key, value) -> "$TRANSACTION_PROPERTIES_PREFIX$key" to value },
+                filter.recordProperties.map { (key, value) -> "$RECORD_PROPERTIES_PREFIX$key" to value },
+            )
+                .flatten()
+                .flatMap { (key, value) -> value.map { key to it } }
+                .forEach { (key, value) -> parameter(key, value) }
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }

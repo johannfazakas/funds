@@ -7,5 +7,6 @@ import kotlinx.serialization.Serializable
 data class CreateAccountTransactionTO(
     val dateTime: LocalDateTime,
     val records: List<CreateAccountRecordTO>,
-    val metadata: Map<String, String> = emptyMap(),
+    // TODO(Johann) Expenses by fund - add a PropertyTO
+    val properties: Map<String, List<String>> = emptyMap(),
 )

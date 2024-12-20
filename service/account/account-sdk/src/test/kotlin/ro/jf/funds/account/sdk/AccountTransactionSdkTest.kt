@@ -19,9 +19,7 @@ import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.JsonSchemaBody.jsonSchema
 import org.mockserver.model.MediaType
-import ro.jf.funds.account.api.model.AccountTransactionTO
-import ro.jf.funds.account.api.model.CreateAccountRecordTO
-import ro.jf.funds.account.api.model.CreateAccountTransactionTO
+import ro.jf.funds.account.api.model.*
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
@@ -66,7 +64,7 @@ class AccountTransactionSdkTest {
                                 put("required", buildJsonArray {
                                     add(JsonPrimitive("dateTime"))
                                     add(JsonPrimitive("records"))
-                                    add(JsonPrimitive("metadata"))
+                                    add(JsonPrimitive("properties"))
                                 })
                                 put("type", JsonPrimitive("object"))
                                 put(
@@ -75,7 +73,7 @@ class AccountTransactionSdkTest {
                                         put("dateTime", buildJsonObject {
                                             put("type", JsonPrimitive("string"))
                                         })
-                                        put("metadata", buildJsonObject {
+                                        put("properties", buildJsonObject {
                                             put("type", JsonPrimitive("object"))
                                         })
                                         put("records", buildJsonObject {
@@ -105,8 +103,8 @@ class AccountTransactionSdkTest {
                                         put("type", JsonPrimitive("currency"))
                                         put("value", JsonPrimitive("RON"))
                                     })
-                                    put("metadata", buildJsonObject {
-                                        put("external_id", JsonPrimitive("1111"))
+                                    put("properties", buildJsonObject {
+                                        put("external_id", buildJsonArray { add(JsonPrimitive("1111")) })
                                     })
                                 })
                                 add(buildJsonObject {
@@ -117,13 +115,13 @@ class AccountTransactionSdkTest {
                                         put("type", JsonPrimitive("currency"))
                                         put("value", JsonPrimitive("RON"))
                                     })
-                                    put("metadata", buildJsonObject {
-                                        put("external_id", JsonPrimitive("2222"))
+                                    put("properties", buildJsonObject {
+                                        put("external_id", buildJsonArray { add(JsonPrimitive("2222")) })
                                     })
                                 })
                             })
-                            put("metadata", buildJsonObject {
-                                put("key", JsonPrimitive("value"))
+                            put("properties", buildJsonObject {
+                                put("key", buildJsonArray { JsonPrimitive("value") })
                             })
                         }.toString()
                     )
@@ -131,11 +129,15 @@ class AccountTransactionSdkTest {
         val createTransactionRequest = CreateAccountTransactionTO(
             dateTime = transactionDateTime,
             records = listOf(
-                CreateAccountRecordTO(randomUUID(), BigDecimal("100.25"), Currency.RON, mapOf("external_id" to "1111")),
-                CreateAccountRecordTO(randomUUID(), BigDecimal("-100.25"), Currency.RON, mapOf("external_id" to "2222"))
+                CreateAccountRecordTO(
+                    randomUUID(), BigDecimal("100.25"), Currency.RON, mapOf("external_id" to listOf("1111"))
+                ),
+                CreateAccountRecordTO(
+                    randomUUID(), BigDecimal("-100.25"), Currency.RON, mapOf("external_id" to listOf("2222"))
+                )
             ),
-            metadata = mapOf(
-                "key" to "value"
+            properties = mapOf(
+                "key" to listOf("value")
             )
         )
 
@@ -147,11 +149,11 @@ class AccountTransactionSdkTest {
         assertThat(transaction.records[0].id).isEqualTo(recordId1)
         assertThat(transaction.records[0].accountId).isNotEqualTo(accountId1)
         assertThat(transaction.records[0].amount).isEqualTo(BigDecimal("100.25"))
-        assertThat(transaction.records[0].metadata).isEqualTo(mapOf("external_id" to "1111"))
+        assertThat(transaction.records[0].properties).isEqualTo(mapOf("external_id" to listOf("1111")))
         assertThat(transaction.records[1].id).isEqualTo(recordId2)
         assertThat(transaction.records[1].accountId).isNotEqualTo(accountId2)
         assertThat(transaction.records[1].amount).isEqualTo(BigDecimal("-100.25"))
-        assertThat(transaction.records[1].metadata).isEqualTo(mapOf("external_id" to "2222"))
+        assertThat(transaction.records[1].properties).isEqualTo(mapOf("external_id" to listOf("2222")))
     }
 
     @Test
@@ -161,12 +163,22 @@ class AccountTransactionSdkTest {
         val recordId = randomUUID()
         val accountId = randomUUID()
         val dateTime = "2024-07-22T09:17"
+        val filter = TransactionsFilterTO(
+            transactionProperties = mapOf("transactionProp" to listOf("value1", "value2")),
+            recordProperties = mapOf("recordProp" to listOf("value3"))
+        )
 
         mockServerClient
             .`when`(
                 request()
                     .withMethod("GET")
                     .withPath("/bk-api/account/v1/transactions")
+                    .withQueryStringParameters(
+                        mapOf(
+                            "${TRANSACTION_PROPERTIES_PREFIX}transactionProp" to listOf("value1", "value2"),
+                            "${RECORD_PROPERTIES_PREFIX}recordProp" to listOf("value3")
+                        )
+                    )
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(
@@ -191,13 +203,18 @@ class AccountTransactionSdkTest {
                                                 put("type", JsonPrimitive("currency"))
                                                 put("value", JsonPrimitive("RON"))
                                             })
-                                            put("metadata", buildJsonObject {
-                                                put("external_id", JsonPrimitive("4321"))
+                                            put("properties", buildJsonObject {
+                                                put("recordProp", buildJsonArray {
+                                                    add(JsonPrimitive("value3"))
+                                                })
                                             })
                                         })
                                     })
-                                    put("metadata", buildJsonObject {
-                                        put("external_id", JsonPrimitive("1234"))
+                                    put("properties", buildJsonObject {
+                                        put("transactionProp", buildJsonArray {
+                                            add(JsonPrimitive("value1"))
+                                            add(JsonPrimitive("value2"))
+                                        })
                                     })
                                 })
                             })
@@ -205,7 +222,7 @@ class AccountTransactionSdkTest {
                     )
             )
 
-        val transactions = accountTransactionSdk.listTransactions(userId)
+        val transactions = accountTransactionSdk.listTransactions(userId, filter)
 
         assertThat(transactions.items).hasSize(1)
         assertThat(transactions.items.first()).isInstanceOf(AccountTransactionTO::class.java)
@@ -216,9 +233,9 @@ class AccountTransactionSdkTest {
         assertThat(transaction.records.first().id).isEqualTo(recordId)
         assertThat(transaction.records.first().accountId).isEqualTo(accountId)
         assertThat(transaction.records.first().amount.compareTo(BigDecimal(42.0))).isZero()
-        assertThat(transaction.records.first().metadata["external_id"]).isEqualTo("4321")
-        assertThat(transaction.metadata).hasSize(1)
-        assertThat(transaction.metadata["external_id"]).isEqualTo("1234")
+        assertThat(transaction.records.first().properties["recordProp"]).isEqualTo(listOf("value3"))
+        assertThat(transaction.properties).hasSize(1)
+        assertThat(transaction.properties["transactionProp"]).isEqualTo(listOf("value1", "value2"))
     }
 
     @Test

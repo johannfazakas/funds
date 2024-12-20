@@ -14,10 +14,12 @@ const val METADATA_FUND_ID = "fundId"
 
 class AccountTransactionAdapter(
     private val accountTransactionSdk: AccountTransactionSdk,
-    private val accountTransactionsRequestProducer: Producer<CreateAccountTransactionsTO>
+    private val accountTransactionsRequestProducer: Producer<CreateAccountTransactionsTO>,
 ) {
     suspend fun listTransactions(userId: UUID): List<FundTransaction> {
-        return accountTransactionSdk.listTransactions(userId).items.map { it.toFundTransaction(userId) }
+        return accountTransactionSdk
+            .listTransactions(userId, TransactionsFilterTO.empty())
+            .items.map { it.toFundTransaction(userId) }
     }
 
     suspend fun createTransaction(userId: UUID, request: CreateFundTransactionTO): FundTransaction {
@@ -42,10 +44,10 @@ class AccountTransactionAdapter(
                     accountId = record.accountId,
                     amount = record.amount,
                     unit = record.unit,
-                    metadata = mapOf(METADATA_FUND_ID to record.fundId.toString())
+                    properties = mapOf(METADATA_FUND_ID to listOf(record.fundId.toString()))
                 )
             },
-            metadata = emptyMap()
+            properties = emptyMap()
         )
 
     suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
@@ -67,7 +69,8 @@ class AccountTransactionAdapter(
             }
         )
 
-    private fun AccountRecordTO.fundId(): UUID = metadata[METADATA_FUND_ID]
+    private fun AccountRecordTO.fundId(): UUID = properties[METADATA_FUND_ID]
+        ?.single()
         ?.let(UUID::fromString)
         ?: error("Fund id not found in metadata")
 }
