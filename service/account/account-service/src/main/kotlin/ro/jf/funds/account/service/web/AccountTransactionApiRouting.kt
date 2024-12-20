@@ -8,6 +8,7 @@ import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
+import ro.jf.funds.account.api.model.PropertyTO
 import ro.jf.funds.account.api.model.TransactionsFilterTO
 import ro.jf.funds.account.service.domain.AccountTransaction
 import ro.jf.funds.account.service.service.AccountTransactionService
@@ -59,10 +60,10 @@ private fun Parameters.transactionFilter(): TransactionsFilterTO {
     val recordProperties = this.entries()
         .map { (key, value) -> key to value }
         .filter { (key, _) -> key.startsWith(RECORD_PROPERTIES_PREFIX) }
-        .associate { (key, value) -> key.removePrefix(RECORD_PROPERTIES_PREFIX) to value }
+        .flatMap { (key, values) -> values.map { PropertyTO(key.removePrefix(RECORD_PROPERTIES_PREFIX) to it) } }
     val transactionProperties = this.entries()
         .map { (key, value) -> key to value }
         .filter { (key, _) -> key.startsWith(TRANSACTION_PROPERTIES_PREFIX) }
-        .associate { (key, value) -> key.removePrefix(TRANSACTION_PROPERTIES_PREFIX) to value }
+        .flatMap { (key, values) -> values.map { PropertyTO(key.removePrefix(TRANSACTION_PROPERTIES_PREFIX) to it) } }
     return TransactionsFilterTO(transactionProperties, recordProperties)
 }

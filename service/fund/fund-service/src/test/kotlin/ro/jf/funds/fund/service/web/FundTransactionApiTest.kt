@@ -65,16 +65,16 @@ class FundTransactionApiTest {
                             accountId = companyAccountId,
                             amount = BigDecimal("-100.25"),
                             unit = Currency.RON,
-                            properties = mapOf("fundId" to listOf(workFundId.toString()))
+                            properties = propertiesOf("fundId" to workFundId.toString())
                         ),
                         CreateAccountRecordTO(
                             accountId = personalAccountId,
                             amount = BigDecimal("100.25"),
                             unit = Currency.RON,
-                            properties = mapOf("fundId" to listOf(expensesFundId.toString()))
+                            properties = propertiesOf("fundId" to expensesFundId.toString())
                         )
                     ),
-                    properties = emptyMap()
+                    properties = propertiesOf()
                 )
             )
         ).thenReturn(
@@ -87,17 +87,17 @@ class FundTransactionApiTest {
                         accountId = companyAccountId,
                         amount = BigDecimal("-100.25"),
                         unit = Currency.RON,
-                        properties = mapOf("fundId" to listOf(workFundId.toString()))
+                        properties = propertiesOf("fundId" to workFundId.toString())
                     ),
                     AccountRecordTO(
                         id = randomUUID(),
                         accountId = personalAccountId,
                         amount = BigDecimal("100.25"),
                         unit = Currency.RON,
-                        properties = mapOf("fundId" to listOf(expensesFundId.toString()))
+                        properties = propertiesOf("fundId" to expensesFundId.toString())
                     )
                 ),
-                properties = emptyMap()
+                properties = propertiesOf()
             )
         )
 
@@ -171,17 +171,17 @@ class FundTransactionApiTest {
                                 accountId = account1Id,
                                 amount = BigDecimal(100.25),
                                 unit = Currency.RON,
-                                properties = mapOf("fundId" to listOf(fund1Id.toString())),
+                                properties = propertiesOf("fundId" to fund1Id.toString()),
                             ),
                             AccountRecordTO(
                                 id = record2Id,
                                 accountId = account2Id,
                                 amount = BigDecimal(50.75),
                                 unit = Currency.RON,
-                                properties = mapOf("fundId" to listOf(fund2Id.toString())),
+                                properties = propertiesOf("fundId" to fund2Id.toString()),
                             )
                         ),
-                        properties = emptyMap()
+                        properties = propertiesOf()
                     )
                 )
             )

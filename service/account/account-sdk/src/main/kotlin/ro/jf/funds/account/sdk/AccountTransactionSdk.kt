@@ -49,7 +49,6 @@ class AccountTransactionSdk(
                 filter.recordProperties.map { (key, value) -> "$RECORD_PROPERTIES_PREFIX$key" to value },
             )
                 .flatten()
-                .flatMap { (key, value) -> value.map { key to it } }
                 .forEach { (key, value) -> parameter(key, value) }
             headers {
                 append(USER_ID_HEADER, userId.toString())

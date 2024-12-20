@@ -59,16 +59,16 @@ class AccountTransactionApiTest {
                     accountId = account1.id,
                     amount = BigDecimal("123.45"),
                     unit = Currency.RON,
-                    properties = mapOf("externalId" to listOf("record1")),
+                    properties = propertiesOf("externalId" to "record1"),
                 ),
                 CreateAccountRecordTO(
                     accountId = account2.id,
                     amount = BigDecimal("-123.45"),
                     unit = Currency.RON,
-                    properties = mapOf("externalId" to listOf("record2")),
+                    properties = propertiesOf("externalId" to "record2"),
                 )
             ),
-            properties = mapOf("key" to listOf("val1", "val2"))
+            properties = propertiesOf("key" to "val1", "key" to "val2")
         )
 
         val response = createJsonHttpClient()
@@ -82,14 +82,14 @@ class AccountTransactionApiTest {
         val transaction = response.body<AccountTransactionTO>()
         assertThat(transaction).isNotNull
         assertThat(transaction.dateTime).isEqualTo(createTransactionRequest.dateTime)
-        assertThat(transaction.properties["key"]).isEqualTo(listOf("val1", "val2"))
+        assertThat(transaction.properties.filter { it.key == "key" }.map { it.value }).isEqualTo(listOf("val1", "val2"))
         assertThat(transaction.records).hasSize(2)
         assertThat(transaction.records[0].accountId).isEqualTo(account1.id)
         assertThat(transaction.records[0].amount).isEqualTo(BigDecimal("123.45"))
-        assertThat(transaction.records[0].properties["externalId"]).isEqualTo(listOf("record1"))
+        assertThat(transaction.records[0].properties.single { it.key == "externalId" }.value).isEqualTo("record1")
         assertThat(transaction.records[1].accountId).isEqualTo(account2.id)
         assertThat(transaction.records[1].amount).isEqualTo(BigDecimal("-123.45"))
-        assertThat(transaction.records[1].properties["externalId"]).isEqualTo(listOf("record2"))
+        assertThat(transaction.records[1].properties.single { it.key == "externalId" }.value).isEqualTo("record2")
     }
 
     @Test
@@ -109,19 +109,20 @@ class AccountTransactionApiTest {
                         accountId = account1.id,
                         amount = BigDecimal(100.0),
                         unit = Currency.RON,
-                        properties = mapOf(
-                            "externalId" to listOf("record1"),
-                            "someKey" to listOf("someValue", "otherValue")
+                        properties = propertiesOf(
+                            "externalId" to "record1", "someKey" to "someValue", "someKey" to "otherValue"
                         )
                     ),
                     CreateAccountRecordTO(
                         accountId = account2.id,
                         amount = BigDecimal(-100.0),
                         unit = Currency.RON,
-                        properties = mapOf("externalId" to listOf("record2"))
+                        properties = propertiesOf("externalId" to "record2")
                     )
                 ),
-                properties = mapOf("externalId" to listOf("transaction1"), "transactionProp" to listOf("val1", "val2"))
+                properties = propertiesOf(
+                    "externalId" to "transaction1", "transactionProp" to "val1", "transactionProp" to "val2"
+                )
             )
         )
         transactionRepository.save(
@@ -133,10 +134,10 @@ class AccountTransactionApiTest {
                         accountId = account1.id,
                         amount = BigDecimal(50.123),
                         unit = Currency.RON,
-                        properties = mapOf("externalId" to listOf("record3"))
+                        properties = propertiesOf("externalId" to "record3")
                     ),
                 ),
-                properties = mapOf("externalId" to listOf("transaction2"))
+                properties = propertiesOf("externalId" to "transaction2")
             )
         )
 
@@ -148,18 +149,22 @@ class AccountTransactionApiTest {
 
         val transactions = response.body<ListTO<AccountTransactionTO>>()
         assertThat(transactions.items).hasSize(2)
-        val transaction1 = transactions.items.first { it.properties["externalId"]?.contains("transaction1") ?: false }
+        val transaction1 = transactions.items
+            .first { t -> t.properties.any { it == PropertyTO("externalId" to "transaction1") } }
         assertThat(transaction1.records).hasSize(2)
         assertThat(transaction1.records[0].amount.compareTo(BigDecimal(100))).isZero()
         assertThat(transaction1.records[0].accountId).isEqualTo(account1.id)
-        assertThat(transaction1.records[0].properties["externalId"]).isEqualTo(listOf("record1"))
-        assertThat(transaction1.records[0].properties["someKey"]).containsExactlyInAnyOrder("someValue", "otherValue")
+        assertThat(transaction1.records[0].properties.single { it.key == "externalId" }.value).isEqualTo("record1")
+        assertThat(transaction1.records[0].properties.filter { it.key == "someKey" }.map { it.value })
+            .containsExactlyInAnyOrder("someValue", "otherValue")
         assertThat(transaction1.records[1].amount.compareTo(BigDecimal(-100))).isZero()
         assertThat(transaction1.records[1].accountId).isEqualTo(account2.id)
-        assertThat(transaction1.records[1].properties["externalId"]).isEqualTo(listOf("record2"))
-        assertThat(transaction1.properties["transactionProp"]).containsExactly("val1", "val2")
+        assertThat(transaction1.records[1].properties.single { it.key == "externalId" }.value).isEqualTo("record2")
+        assertThat(transaction1.properties.filter { it.key == "transactionProp" }.map { it.value })
+            .containsExactly("val1", "val2")
 
-        val transaction2 = transactions.items.first { it.properties["externalId"]?.contains("transaction2") ?: false }
+        val transaction2 =
+            transactions.items.first { t -> t.properties.any { it == PropertyTO("externalId" to "transaction2") } }
         assertThat(transaction2.records).hasSize(1)
     }
 
@@ -180,18 +185,17 @@ class AccountTransactionApiTest {
                         accountId = account1.id,
                         amount = BigDecimal(100.0),
                         unit = Currency.RON,
-                        properties = mapOf("some-key" to listOf("one"), "other-key" to listOf("x", "y"))
+                        properties = propertiesOf("some-key" to "one", "other-key" to "x", "other-key" to "y")
                     ),
                     CreateAccountRecordTO(
                         accountId = account2.id,
                         amount = BigDecimal(-100.0),
                         unit = Currency.RON,
-                        properties = mapOf("some-key" to listOf("two"), "other-key" to listOf("z"))
+                        properties = propertiesOf("some-key" to "two", "other-key" to "z")
                     )
                 ),
-                properties = mapOf(
-                    "externalId" to listOf("transaction1"),
-                    "transactionProp" to listOf("val1", "val2")
+                properties = propertiesOf(
+                    "externalId" to "transaction1", "transactionProp" to "val1", "transactionProp" to "val2"
                 )
             )
         )
@@ -204,12 +208,11 @@ class AccountTransactionApiTest {
                         accountId = account1.id,
                         amount = BigDecimal(50.123),
                         unit = Currency.RON,
-                        properties = mapOf("some-key" to listOf("one"), "other-key" to listOf("x"))
+                        properties = propertiesOf("some-key" to "one", "other-key" to "x")
                     ),
                 ),
-                properties = mapOf(
-                    "externalId" to listOf("transaction2"),
-                    "transactionProp" to listOf("val3")
+                properties = propertiesOf(
+                    "externalId" to "transaction2", "transactionProp" to "val3"
                 )
             )
         )
@@ -222,12 +225,12 @@ class AccountTransactionApiTest {
                         accountId = account1.id,
                         amount = BigDecimal(12.5),
                         unit = Currency.RON,
-                        properties = mapOf("some-key" to listOf("two"), "other-key" to listOf("x"))
+                        properties = propertiesOf("some-key" to "two", "other-key" to "x")
                     ),
                 ),
-                properties = mapOf(
-                    "externalId" to listOf("transaction3"),
-                    "transactionProp" to listOf("val4")
+                properties = propertiesOf(
+                    "externalId" to "transaction3",
+                    "transactionProp" to "val4"
                 )
             )
         )
@@ -244,19 +247,20 @@ class AccountTransactionApiTest {
         val transactions = response.body<ListTO<AccountTransactionTO>>()
         assertThat(transactions.items).hasSize(2)
         val responseTransaction1 =
-            transactions.items.first { it.properties["externalId"]?.contains("transaction1") ?: false }
+            transactions.items.first { t -> t.properties.any { it == PropertyTO("externalId" to "transaction1") } }
         assertThat(responseTransaction1.records).hasSize(2)
         assertThat(responseTransaction1.records[0].amount.compareTo(BigDecimal(100))).isZero()
         assertThat(responseTransaction1.records[0].accountId).isEqualTo(account1.id)
-        assertThat(responseTransaction1.records[0].properties["some-key"]).containsExactly("one")
-        assertThat(responseTransaction1.records[0].properties["other-key"]).containsExactly("x", "y")
+        assertThat(responseTransaction1.records[0].properties.single { it.key == "some-key" }.value).isEqualTo("one")
+        assertThat(responseTransaction1.records[0].properties.filter { it.key == "other-key" }
+            .map { it.value }).containsExactly("x", "y")
         assertThat(responseTransaction1.records[1].amount.compareTo(BigDecimal(-100))).isZero()
         assertThat(responseTransaction1.records[1].accountId).isEqualTo(account2.id)
-        assertThat(responseTransaction1.records[1].properties["some-key"]).containsExactly("two")
-        assertThat(responseTransaction1.records[1].properties["other-key"]).containsExactly("z")
+        assertThat(responseTransaction1.records[1].properties.single { it.key == "some-key" }.value).isEqualTo("two")
+        assertThat(responseTransaction1.records[1].properties.single { it.key == "other-key" }.value).isEqualTo("z")
 
         val responseTransaction2 =
-            transactions.items.first { it.properties["externalId"]?.contains("transaction2") ?: false }
+            transactions.items.first { t -> t.properties.any { it == PropertyTO("externalId" to "transaction2") } }
         assertThat(responseTransaction2.records).hasSize(1)
     }
 
@@ -277,18 +281,17 @@ class AccountTransactionApiTest {
                         accountId = account1.id,
                         amount = BigDecimal(100.0),
                         unit = Currency.RON,
-                        properties = mapOf("some-key" to listOf("one"))
+                        properties = propertiesOf("some-key" to "one")
                     ),
                     CreateAccountRecordTO(
                         accountId = account2.id,
                         amount = BigDecimal(-100.0),
                         unit = Currency.RON,
-                        properties = mapOf("some-key" to listOf("two"))
+                        properties = propertiesOf("some-key" to "two")
                     )
                 ),
-                properties = mapOf(
-                    "externalId" to listOf("transaction1"),
-                    "transactionProp" to listOf("val1", "val2")
+                properties = propertiesOf(
+                    "externalId" to "transaction1", "transactionProp" to "val1", "transactionProp" to "val2"
                 )
             )
         )
@@ -301,12 +304,11 @@ class AccountTransactionApiTest {
                         accountId = account1.id,
                         amount = BigDecimal(50.123),
                         unit = Currency.RON,
-                        properties = mapOf("some-key" to listOf("one"))
+                        properties = propertiesOf("some-key" to "one")
                     ),
                 ),
-                properties = mapOf(
-                    "externalId" to listOf("transaction2"),
-                    "transactionProp" to listOf("val1")
+                properties = propertiesOf(
+                    "externalId" to "transaction2", "transactionProp" to "val1"
                 )
             )
         )
@@ -319,12 +321,11 @@ class AccountTransactionApiTest {
                         accountId = account1.id,
                         amount = BigDecimal(12.5),
                         unit = Currency.RON,
-                        properties = mapOf("some-key" to listOf("two"))
+                        properties = propertiesOf("some-key" to "two")
                     ),
                 ),
-                properties = mapOf(
-                    "externalId" to listOf("transaction3"),
-                    "transactionProp" to listOf("val2")
+                properties = propertiesOf(
+                    "externalId" to "transaction3", "transactionProp" to "val2"
                 )
             )
         )
@@ -339,17 +340,17 @@ class AccountTransactionApiTest {
         val transactions = response.body<ListTO<AccountTransactionTO>>()
         assertThat(transactions.items).hasSize(2)
         val responseTransaction1 =
-            transactions.items.first { it.properties["externalId"]?.contains("transaction1") ?: false }
+            transactions.items.first { t -> t.properties.any { it == PropertyTO("externalId" to "transaction1") } }
         assertThat(responseTransaction1.records).hasSize(2)
         assertThat(responseTransaction1.records[0].amount.compareTo(BigDecimal(100))).isZero()
         assertThat(responseTransaction1.records[0].accountId).isEqualTo(account1.id)
-        assertThat(responseTransaction1.records[0].properties["some-key"]).containsExactly("one")
+        assertThat(responseTransaction1.records[0].properties.single { it.key == "some-key" }.value).isEqualTo("one")
         assertThat(responseTransaction1.records[1].amount.compareTo(BigDecimal(-100))).isZero()
         assertThat(responseTransaction1.records[1].accountId).isEqualTo(account2.id)
-        assertThat(responseTransaction1.records[1].properties["some-key"]).containsExactly("two")
+        assertThat(responseTransaction1.records[1].properties.single { it.key == "some-key" }.value).isEqualTo("two")
 
         val responseTransaction3 =
-            transactions.items.first { it.properties["externalId"]?.contains("transaction3") ?: false }
+            transactions.items.first { t -> t.properties.any { it == PropertyTO("externalId" to "transaction3") } }
         assertThat(responseTransaction3.records).hasSize(1)
     }
 
@@ -370,16 +371,16 @@ class AccountTransactionApiTest {
                         accountId = account1.id,
                         amount = BigDecimal(100.0),
                         unit = Currency.RON,
-                        properties = mapOf("externalId" to listOf("record1")),
+                        properties = propertiesOf("externalId" to "record1"),
                     ),
                     CreateAccountRecordTO(
                         accountId = account2.id,
                         amount = BigDecimal(-100.0),
                         unit = Currency.RON,
-                        properties = mapOf("externalId" to listOf("record2"))
+                        properties = propertiesOf("externalId" to "record2")
                     )
                 ),
-                properties = mapOf("externalId" to listOf("transaction1"))
+                properties = propertiesOf("externalId" to "transaction1")
             )
         )
 
