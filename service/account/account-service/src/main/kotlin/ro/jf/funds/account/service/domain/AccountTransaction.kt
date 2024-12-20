@@ -9,8 +9,8 @@ data class AccountTransaction(
     val id: UUID,
     val userId: UUID,
     val dateTime: LocalDateTime,
-    val records: List<AccountRecord>,
-    val properties: List<Property>,
+    val records: List<AccountRecord> = emptyList(),
+    val properties: List<Property> = emptyList(),
 )
 
 data class AccountRecord(
@@ -18,5 +18,5 @@ data class AccountRecord(
     val accountId: UUID,
     val amount: BigDecimal,
     val unit: FinancialUnit,
-    val properties: List<Property>,
+    val properties: List<Property> = emptyList(),
 )

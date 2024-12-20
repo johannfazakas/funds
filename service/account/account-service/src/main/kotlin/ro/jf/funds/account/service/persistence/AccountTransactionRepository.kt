@@ -39,7 +39,6 @@ class AccountTransactionRepository(
         val transactionId = uuid("transaction_id").references(AccountTransactionTable.id)
         val key = varchar("key", 50)
         val value = varchar("value", 50)
-        val type = varchar("type", 50)
     }
 
     object RecordPropertyTable : UUIDTable("record_property") {
@@ -50,100 +49,30 @@ class AccountTransactionRepository(
         val value = varchar("value", 50)
     }
 
-    enum class TransactionPropertyType(val key: String) {
-        TRANSACTION("transaction"),
-        RECORD("record"),
-    }
-
-    suspend fun list(
-        userId: UUID,
-        filter: TransactionsFilterTO,
-    ): List<AccountTransaction> = blockingTransaction {
-        val transactionIds = findTransactionIdsByProperties(userId, filter)
-        (AccountTransactionTable
-                leftJoin AccountRecordTable
-                leftJoin TransactionPropertyTable
-                leftJoin RecordPropertyTable)
-            .select {
-                transactionIds
-                    ?.let { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id inList transactionIds) }
-                    ?: (AccountTransactionTable.userId eq userId)
-            }
-            .toTransactions()
-    }
-
-    private fun findTransactionIdsByProperties(userId: UUID, filter: TransactionsFilterTO): List<UUID>? {
-        if (filter.transactionProperties.isEmpty() && filter.recordProperties.isEmpty()) {
-            return null
-        }
-        val transactionPropertiesFilter = filter.transactionProperties
-            .flatMap { (key, values) -> values.map { key to it } }
-            .map { (key, value) ->
-                TransactionPropertyTable.userId eq userId and
-                        (TransactionPropertyTable.key eq key) and
-                        (TransactionPropertyTable.value eq value) and
-                        (TransactionPropertyTable.type eq TransactionPropertyType.TRANSACTION.key)
-            }
-            .reduceOrNull { acc, op -> acc or op }
-            ?.let {
-                TransactionPropertyTable.select { it }
-                    .map {
-                        it[TransactionPropertyTable.transactionId] to Property(
-                            it[TransactionPropertyTable.id].value,
-                            it[TransactionPropertyTable.key],
-                            it[TransactionPropertyTable.value]
-                        )
-                    }
-                    .groupBy({ it.first }) { it.second }
-            }
-            ?: emptyMap()
-
-
-        val recordPropertiesFilter = filter.recordProperties
-            .flatMap { (key, values) -> values.map { key to it } }
-            .map { (key, value) ->
-                RecordPropertyTable.userId eq userId and
-                        (RecordPropertyTable.key eq key) and
-                        (RecordPropertyTable.value eq value)
-            }
-            .reduceOrNull { acc, op -> acc or op }
-            ?.let {
-                RecordPropertyTable.select { it }
-                    .map {
-                        it[RecordPropertyTable.transactionId] to Property(
-                            it[RecordPropertyTable.id].value,
-                            it[RecordPropertyTable.key],
-                            it[RecordPropertyTable.value]
-                        )
-                    }
-                    .groupBy({ it.first }) { it.second }
-            }
-            ?: emptyMap()
-
-        val transactionsMatchingAllProperties = (transactionPropertiesFilter + recordPropertiesFilter)
-            .filter { (_, properties) ->
-                filter.recordProperties
-                    .flatMap { (key, values) -> values.map { key to it } }
-                    .all { (key, value) -> properties.any { it.key == key && it.value == value } }
-                        &&
-                        filter.transactionProperties
-                            .flatMap { (key, values) -> values.map { key to it } }
-                            .all { (key, value) -> properties.any { it.key == key && it.value == value } }
-            }
-            .map { it.key }
-        return transactionsMatchingAllProperties
-    }
-
     suspend fun findById(userId: UUID, transactionId: UUID): AccountTransaction? = blockingTransaction {
         (AccountTransactionTable
                 leftJoin AccountRecordTable
                 leftJoin TransactionPropertyTable
                 leftJoin RecordPropertyTable)
             .select { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id eq transactionId) }
-            .groupBy { it[AccountTransactionTable.id].value }
-            .map { (_, rows) -> rows.toTransaction() }
-            .firstOrNull()
+            .toTransactions()
+            .singleOrNull()
     }
+
+    suspend fun list(
+        userId: UUID,
+        filter: TransactionsFilterTO,
+    ): List<AccountTransaction> = blockingTransaction {
+        AccountTransactionTable
+            .innerJoinWithMatchingTransactionProperties(userId, filter)
+            .innerJoinWithMatchingRecordProperties(userId, filter)
+            .leftJoin(AccountRecordTable)
+            .leftJoin(TransactionPropertyTable)
+            .leftJoin(RecordPropertyTable)
+            .select { AccountTransactionTable.userId eq userId }
+            .toTransactions()
+    }
+
 
     suspend fun save(userId: UUID, command: CreateAccountTransactionTO): AccountTransaction = blockingTransaction {
         saveTransaction(userId, command)
@@ -155,7 +84,6 @@ class AccountTransactionRepository(
     ): List<AccountTransaction> = blockingTransaction {
         requests.transactions.map { saveTransaction(userId, it) }
     }
-
 
     suspend fun deleteByUserId(userId: UUID): Unit = blockingTransaction {
         AccountRecordTable.deleteWhere { AccountRecordTable.userId eq userId }
@@ -176,14 +104,128 @@ class AccountTransactionRepository(
         AccountTransactionTable.deleteAll()
     }
 
+    private fun ColumnSet.innerJoinWithMatchingTransactionProperties(
+        userId: UUID,
+        filter: TransactionsFilterTO,
+    ): ColumnSet {
+        if (filter.transactionProperties.isEmpty()) {
+            return this
+        }
+        val transactionProperties = filter.transactionProperties
+            .flatMap { (key, values) -> values.map { key to it } }
+        val transactionPropertiesMatcher = transactionProperties
+            .map { (key, value) ->
+                (TransactionPropertyTable.key eq key) and (TransactionPropertyTable.value eq value)
+            }
+            .reduce { acc, op -> acc or op }
+        val matchingSubquery = TransactionPropertyTable
+            .slice(TransactionPropertyTable.transactionId)
+            .select { TransactionPropertyTable.userId eq userId and transactionPropertiesMatcher }
+            .groupBy(TransactionPropertyTable.transactionId)
+            .having { TransactionPropertyTable.key.countDistinct() eq transactionProperties.size.toLong() }
+            .alias("matchingTransactionProperties")
+        return this.join(matchingSubquery, JoinType.INNER) {
+            AccountTransactionTable.id eq matchingSubquery[TransactionPropertyTable.transactionId]
+        }
+    }
+
+    private fun ColumnSet.innerJoinWithMatchingRecordProperties(
+        userId: UUID,
+        filter: TransactionsFilterTO,
+    ): ColumnSet {
+        if (filter.recordProperties.isEmpty()) {
+            return this
+        }
+        val recordProperties = filter.recordProperties
+            .flatMap { (key, values) -> values.map { key to it } }
+        val recordPropertiesMatcher = recordProperties
+            .map { (key, value) ->
+                (RecordPropertyTable.key eq key) and (RecordPropertyTable.value eq value)
+            }
+            .reduce { acc, op -> acc or op }
+        val matchingSubquery = RecordPropertyTable
+            .slice(RecordPropertyTable.transactionId)
+            .select { RecordPropertyTable.userId eq userId and recordPropertiesMatcher }
+            .groupBy(RecordPropertyTable.transactionId)
+            .having { RecordPropertyTable.key.countDistinct() eq recordProperties.size.toLong() }
+            .alias("matchingRecordProperties")
+        return this.join(matchingSubquery, JoinType.INNER) {
+            AccountTransactionTable.id eq matchingSubquery[RecordPropertyTable.transactionId]
+        }
+    }
+
     private fun saveTransaction(
         userId: UUID,
         command: CreateAccountTransactionTO,
     ): AccountTransaction {
-        // TODO(Johann) Expenses by fund - refactor, regroup
-        val transaction = insertTransaction(userId, command)
-        val transactionId = transaction[AccountTransactionTable.id].value
-        val transactionProperties = insertTransactionProperties(command, userId, transactionId)
+        return insertTransaction(userId, command).let { transaction ->
+            transaction.copy(
+                records = command.records.map { recordRequest ->
+                    insertRecord(userId, transaction.id, recordRequest).let { record ->
+                        record.copy(
+                            properties = insertRecordProperties(
+                                userId, transaction.id, record.id, recordRequest.properties
+                            )
+                        )
+                    }
+                },
+                properties = insertTransactionProperties(command, userId, transaction.id)
+            )
+        }
+    }
+
+    private fun insertTransaction(
+        userId: UUID,
+        command: CreateAccountTransactionTO,
+    ) =
+        AccountTransactionTable.insert {
+            it[AccountTransactionTable.userId] = userId
+            it[dateTime] = command.dateTime.toJavaLocalDateTime()
+        }.let {
+            AccountTransaction(
+                id = it[AccountTransactionTable.id].value,
+                userId = it[AccountTransactionTable.userId],
+                dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
+            )
+        }
+
+    private fun insertRecord(
+        userId: UUID,
+        transactionId: UUID,
+        record: CreateAccountRecordTO,
+    ) =
+        AccountRecordTable.insert {
+            it[AccountRecordTable.userId] = userId
+            it[AccountRecordTable.transactionId] = transactionId
+            it[accountId] = record.accountId
+            it[amount] = record.amount
+            it[unit] = record.unit.value
+            it[unitType] = record.unit.toUnitType()
+        }
+            .let {
+                AccountRecord(
+                    id = it[AccountRecordTable.id].value,
+                    accountId = it[AccountRecordTable.accountId],
+                    amount = it[AccountRecordTable.amount],
+                    unit = toFinancialUnit(it[AccountRecordTable.unitType], it[AccountRecordTable.unit]),
+                )
+            }
+
+    private fun insertTransactionProperties(
+        command: CreateAccountTransactionTO,
+        userId: UUID,
+        transactionId: UUID,
+    ): List<Property> =
+        command.properties.entries
+            .flatMap { (key, values) -> values.map { value -> key to value } }
+            .map { (key, value) ->
+                TransactionPropertyTable.insert {
+                    it[TransactionPropertyTable.userId] = userId
+                    it[TransactionPropertyTable.transactionId] = transactionId
+                    it[TransactionPropertyTable.key] = key
+                    it[TransactionPropertyTable.value] = value
+                }
+            }
             .map {
                 Property(
                     it[TransactionPropertyTable.id].value,
@@ -192,131 +234,30 @@ class AccountTransactionRepository(
                 )
             }
 
-        val transactionRecordProperties = insertTransactionRecordProperties(command, userId, transactionId)
-        val records = command.records.map { record ->
-            val insertedRecord = getInsertedRecord(userId, transactionId, record)
-            val insertedProperties = record.properties.entries
-                .flatMap { (key, values) -> values.map { value -> key to value } }
-                .map { (key, value) ->
-                    RecordPropertyTable.insert {
-                        it[RecordPropertyTable.userId] = userId
-                        it[RecordPropertyTable.transactionId] = transactionId
-                        it[RecordPropertyTable.recordId] = insertedRecord[AccountRecordTable.id].value
-                        it[RecordPropertyTable.key] = key
-                        it[RecordPropertyTable.value] = value
-                    }
+    private fun insertRecordProperties(
+        userId: UUID,
+        transactionId: UUID,
+        recordId: UUID,
+        properties: Map<String, List<String>>,
+    ): List<Property> =
+        properties.entries
+            .flatMap { (key, values) -> values.map { value -> key to value } }
+            .map { (key, value) ->
+                RecordPropertyTable.insert {
+                    it[RecordPropertyTable.userId] = userId
+                    it[RecordPropertyTable.transactionId] = transactionId
+                    it[RecordPropertyTable.recordId] = recordId
+                    it[RecordPropertyTable.key] = key
+                    it[RecordPropertyTable.value] = value
                 }
-            insertedRecord.let {
-                AccountRecord(
-                    id = it[AccountRecordTable.id].value,
-                    accountId = it[AccountRecordTable.accountId],
-                    amount = it[AccountRecordTable.amount],
-                    unit = toFinancialUnit(it[AccountRecordTable.unitType], it[AccountRecordTable.unit]),
-                    properties = insertedProperties
-                        .map { savedProperty ->
-                            Property(
-                                savedProperty[RecordPropertyTable.id].value,
-                                savedProperty[RecordPropertyTable.key],
-                                savedProperty[RecordPropertyTable.value]
-                            )
-                        }
+            }
+            .map {
+                Property(
+                    it[RecordPropertyTable.id].value,
+                    it[RecordPropertyTable.key],
+                    it[RecordPropertyTable.value]
                 )
             }
-        }
-        return AccountTransaction(
-            id = transactionId,
-            userId = transaction[AccountTransactionTable.userId],
-            dateTime = transaction[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
-            records = records,
-            properties = transactionProperties + records.flatMap { it.properties }
-        )
-    }
-
-    private fun transactionFilter(userId: UUID, filter: TransactionsFilterTO): Op<Boolean> {
-        val userFilter = AccountTransactionTable.userId eq userId
-
-        val transactionPropertiesFilter = filter.transactionProperties
-            .flatMap { (key, values) -> values.map { key to it } }
-            .map { (key, value) ->
-                sequenceOf(
-                    TransactionPropertyTable.userId eq userId,
-                    TransactionPropertyTable.key eq key,
-                    TransactionPropertyTable.value eq value,
-                    TransactionPropertyTable.type eq TransactionPropertyType.TRANSACTION.key
-                ).reduce { acc, op -> acc and op }
-            }
-
-        val recordPropertiesFilter = filter.recordProperties
-            .flatMap { (key, values) -> values.map { key to it } }
-            .map { (key, value) ->
-                sequenceOf(
-                    TransactionPropertyTable.userId eq userId,
-                    TransactionPropertyTable.key eq key,
-                    TransactionPropertyTable.value eq value,
-                    TransactionPropertyTable.type eq TransactionPropertyType.RECORD.key
-                ).reduce { acc, op -> acc and op }
-            }
-
-        val propertiesFilter = sequenceOf(transactionPropertiesFilter, recordPropertiesFilter)
-            .flatten()
-            .reduceOrNull { acc, op -> acc or op }
-        return listOfNotNull(userFilter, propertiesFilter)
-            .reduceOrNull { acc, op -> acc and op } ?: userFilter
-    }
-
-    private fun getInsertedRecord(
-        userId: UUID,
-        transactionId: UUID,
-        record: CreateAccountRecordTO,
-    ) = AccountRecordTable.insert {
-        it[AccountRecordTable.userId] = userId
-        it[AccountRecordTable.transactionId] = transactionId
-        it[accountId] = record.accountId
-        it[amount] = record.amount
-        it[unit] = record.unit.value
-        it[unitType] = record.unit.toUnitType()
-    }
-
-    private fun insertTransactionRecordProperties(
-        command: CreateAccountTransactionTO,
-        userId: UUID,
-        transactionId: UUID,
-    ) = command.records
-        .flatMap { record -> record.properties.entries }
-        .flatMap { (key, values) -> values.map { value -> key to value } }
-        .map { (key, value) ->
-            TransactionPropertyTable.insert {
-                it[TransactionPropertyTable.userId] = userId
-                it[TransactionPropertyTable.transactionId] = transactionId
-                it[TransactionPropertyTable.key] = key
-                it[TransactionPropertyTable.value] = value
-                it[type] = TransactionPropertyType.RECORD.key
-            }
-        }
-
-    private fun insertTransactionProperties(
-        command: CreateAccountTransactionTO,
-        userId: UUID,
-        transactionId: UUID,
-    ) = command.properties.entries
-        .flatMap { (key, values) -> values.map { value -> key to value } }
-        .map { (key, value) ->
-            TransactionPropertyTable.insert {
-                it[TransactionPropertyTable.userId] = userId
-                it[TransactionPropertyTable.transactionId] = transactionId
-                it[TransactionPropertyTable.key] = key
-                it[TransactionPropertyTable.value] = value
-                it[type] = TransactionPropertyType.TRANSACTION.key
-            }
-        }
-
-    private fun insertTransaction(
-        userId: UUID,
-        command: CreateAccountTransactionTO,
-    ) = AccountTransactionTable.insert {
-        it[AccountTransactionTable.userId] = userId
-        it[dateTime] = command.dateTime.toJavaLocalDateTime()
-    }
 
     private fun Query.toTransactions(): List<AccountTransaction> = this
         .groupBy { it[AccountTransactionTable.id].value }
@@ -336,7 +277,6 @@ class AccountTransactionRepository(
     private fun List<ResultRow>.toTransactionProperties(): List<Property> = this
         .groupBy { it.getOrNull(TransactionPropertyTable.id)?.value }
         .filter { it.key != null }
-        .filter { it.value.first()[TransactionPropertyTable.type] == TransactionPropertyType.TRANSACTION.key }
         .map { (_, rows) ->
             Property(
                 id = rows.first()[TransactionPropertyTable.id].value,
