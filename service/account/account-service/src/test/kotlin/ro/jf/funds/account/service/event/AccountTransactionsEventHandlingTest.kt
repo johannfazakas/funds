@@ -103,7 +103,6 @@ class AccountTransactionsEventHandlingTest {
                             accountId = account.id,
                             amount = amount,
                             unit = Currency.RON,
-                            emptyMap()
                         ),
                     )
                 )

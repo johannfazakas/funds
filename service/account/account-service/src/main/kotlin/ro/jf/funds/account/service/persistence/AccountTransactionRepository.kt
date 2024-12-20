@@ -6,10 +6,7 @@ import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.javatime.datetime
-import ro.jf.funds.account.api.model.CreateAccountRecordTO
-import ro.jf.funds.account.api.model.CreateAccountTransactionTO
-import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
-import ro.jf.funds.account.api.model.TransactionsFilterTO
+import ro.jf.funds.account.api.model.*
 import ro.jf.funds.account.service.domain.AccountRecord
 import ro.jf.funds.account.service.domain.AccountTransaction
 import ro.jf.funds.account.service.domain.Property
@@ -64,8 +61,8 @@ class AccountTransactionRepository(
         filter: TransactionsFilterTO,
     ): List<AccountTransaction> = blockingTransaction {
         AccountTransactionTable
-            .innerJoinWithMatchingTransactionProperties(userId, filter)
-            .innerJoinWithMatchingRecordProperties(userId, filter)
+            .innerJoinWithMatchingTransactionProperties(userId, filter.transactionProperties)
+            .innerJoinWithMatchingRecordProperties(userId, filter.recordProperties)
             .leftJoin(AccountRecordTable)
             .leftJoin(TransactionPropertyTable)
             .leftJoin(RecordPropertyTable)
@@ -106,13 +103,11 @@ class AccountTransactionRepository(
 
     private fun ColumnSet.innerJoinWithMatchingTransactionProperties(
         userId: UUID,
-        filter: TransactionsFilterTO,
+        transactionProperties: List<PropertyTO>,
     ): ColumnSet {
-        if (filter.transactionProperties.isEmpty()) {
+        if (transactionProperties.isEmpty()) {
             return this
         }
-        val transactionProperties = filter.transactionProperties
-            .flatMap { (key, values) -> values.map { key to it } }
         val transactionPropertiesMatcher = transactionProperties
             .map { (key, value) ->
                 (TransactionPropertyTable.key eq key) and (TransactionPropertyTable.value eq value)
@@ -131,13 +126,11 @@ class AccountTransactionRepository(
 
     private fun ColumnSet.innerJoinWithMatchingRecordProperties(
         userId: UUID,
-        filter: TransactionsFilterTO,
+        recordProperties: List<PropertyTO>,
     ): ColumnSet {
-        if (filter.recordProperties.isEmpty()) {
+        if (recordProperties.isEmpty()) {
             return this
         }
-        val recordProperties = filter.recordProperties
-            .flatMap { (key, values) -> values.map { key to it } }
         val recordPropertiesMatcher = recordProperties
             .map { (key, value) ->
                 (RecordPropertyTable.key eq key) and (RecordPropertyTable.value eq value)
@@ -216,8 +209,7 @@ class AccountTransactionRepository(
         userId: UUID,
         transactionId: UUID,
     ): List<Property> =
-        command.properties.entries
-            .flatMap { (key, values) -> values.map { value -> key to value } }
+        command.properties
             .map { (key, value) ->
                 TransactionPropertyTable.insert {
                     it[TransactionPropertyTable.userId] = userId
@@ -238,10 +230,9 @@ class AccountTransactionRepository(
         userId: UUID,
         transactionId: UUID,
         recordId: UUID,
-        properties: Map<String, List<String>>,
+        properties: List<PropertyTO>,
     ): List<Property> =
-        properties.entries
-            .flatMap { (key, values) -> values.map { value -> key to value } }
+        properties
             .map { (key, value) ->
                 RecordPropertyTable.insert {
                     it[RecordPropertyTable.userId] = userId

@@ -9,9 +9,9 @@ import ro.jf.funds.account.api.AccountApi
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
-import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.util.*
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5211"

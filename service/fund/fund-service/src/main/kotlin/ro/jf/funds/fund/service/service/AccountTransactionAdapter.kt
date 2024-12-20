@@ -44,10 +44,10 @@ class AccountTransactionAdapter(
                     accountId = record.accountId,
                     amount = record.amount,
                     unit = record.unit,
-                    properties = mapOf(METADATA_FUND_ID to listOf(record.fundId.toString()))
+                    properties = propertiesOf(METADATA_FUND_ID to record.fundId.toString())
                 )
             },
-            properties = emptyMap()
+            properties = propertiesOf()
         )
 
     suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
@@ -69,8 +69,8 @@ class AccountTransactionAdapter(
             }
         )
 
-    private fun AccountRecordTO.fundId(): UUID = properties[METADATA_FUND_ID]
-        ?.single()
-        ?.let(UUID::fromString)
-        ?: error("Fund id not found in metadata")
+    private fun AccountRecordTO.fundId(): UUID = properties
+        .single { it.key == METADATA_FUND_ID }
+        .value
+        .let(UUID::fromString)
 }

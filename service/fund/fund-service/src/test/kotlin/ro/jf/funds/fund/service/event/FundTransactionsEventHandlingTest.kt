@@ -14,6 +14,7 @@ import ro.jf.funds.account.api.event.ACCOUNT_TRANSACTIONS_RESPONSE
 import ro.jf.funds.account.api.model.CreateAccountRecordTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
+import ro.jf.funds.account.api.model.propertiesOf
 import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.GenericResponse
@@ -103,8 +104,8 @@ class FundTransactionsEventHandlingTest {
                                     accountId = accountId,
                                     amount = BigDecimal("100.0"),
                                     unit = Currency.RON,
-                                    properties = mapOf(
-                                        METADATA_FUND_ID to listOf(fundId.toString())
+                                    properties = propertiesOf(
+                                        METADATA_FUND_ID to fundId.toString()
                                     )
                                 )
                             )
