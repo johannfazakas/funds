@@ -8,5 +8,6 @@ import java.util.*
 interface FundTransactionApi {
     suspend fun createTransaction(userId: UUID, transaction: CreateFundTransactionTO): FundTransactionTO
     suspend fun listTransactions(userId: UUID): ListTO<FundTransactionTO>
+    suspend fun listTransactions(userId: UUID, fundId: UUID): ListTO<FundTransactionTO>
     suspend fun deleteTransaction(userId: UUID, transactionId: UUID)
 }

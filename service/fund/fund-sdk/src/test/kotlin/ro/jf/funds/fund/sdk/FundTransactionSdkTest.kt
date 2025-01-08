@@ -42,14 +42,15 @@ class FundTransactionSdkTest {
         }
     )
 
+    private val userId = randomUUID()
+    private val transactionId = randomUUID()
+    private val dateTime = "2024-07-22T09:17"
+    private val recordId = randomUUID()
+    private val accountId = randomUUID()
+    private val fundId = randomUUID()
+
     @Test
     fun `given create transaction`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val userId = randomUUID()
-        val transactionId = randomUUID()
-        val dateTime = "2024-07-22T09:17"
-        val recordId = randomUUID()
-        val accountId = randomUUID()
-        val fundId = randomUUID()
         val amount = 42.0
 
         mockServerClient
@@ -107,13 +108,6 @@ class FundTransactionSdkTest {
 
     @Test
     fun `given list transactions`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val userId = randomUUID()
-        val transactionId = randomUUID()
-        val recordId = randomUUID()
-        val accountId = randomUUID()
-        val fundId = randomUUID()
-        val dateTime = "2024-07-22T09:17"
-
         mockServerClient
             .`when`(
                 request()
@@ -164,10 +158,58 @@ class FundTransactionSdkTest {
     }
 
     @Test
-    fun `given remove transaction by id`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val userId = randomUUID()
-        val transactionId = randomUUID()
+    fun `given list fund transactions`(mockServerClient: MockServerClient): Unit = runBlocking {
+        mockServerClient
+            .`when`(
+                request()
+                    .withMethod("GET")
+                    .withPath("/bk-api/fund/v1/funds/$fundId/transactions")
+                    .withHeader(Header(USER_ID_HEADER, userId.toString()))
+            )
+            .respond(
+                response()
+                    .withStatusCode(200)
+                    .withContentType(MediaType.APPLICATION_JSON)
+                    .withBody(
+                        buildJsonObject {
+                            put("items", buildJsonArray {
+                                add(buildJsonObject {
+                                    put("id", JsonPrimitive(transactionId.toString()))
+                                    put("userId", JsonPrimitive(userId.toString()))
+                                    put(
+                                        "dateTime",
+                                        JsonPrimitive(dateTime)
+                                    )
+                                    put("records", buildJsonArray {
+                                        add(buildJsonObject {
+                                            put("id", JsonPrimitive(recordId.toString()))
+                                            put("accountId", JsonPrimitive(accountId.toString()))
+                                            put("fundId", JsonPrimitive(fundId.toString()))
+                                            put("amount", JsonPrimitive(42.0))
+                                        })
+                                    })
+                                })
+                            })
+                        }.toString()
+                    )
+            )
 
+        val transactions = fundTransactionSdk.listTransactions(userId, fundId)
+
+        assertThat(transactions.items).hasSize(1)
+        assertThat(transactions.items.first()).isInstanceOf(FundTransactionTO::class.java)
+        val transaction = transactions.items.first()
+        assertThat(transaction.id).isEqualTo(transactionId)
+        assertThat(transaction.dateTime.toString()).isEqualTo(dateTime)
+        assertThat(transaction.records).hasSize(1)
+        assertThat(transaction.records.first().id).isEqualTo(recordId)
+        assertThat(transaction.records.first().accountId).isEqualTo(accountId)
+        assertThat(transaction.records.first().amount.compareTo(BigDecimal(42.0))).isZero()
+        assertThat(transaction.records.first().fundId).isEqualTo(fundId)
+    }
+
+    @Test
+    fun `given remove transaction by id`(mockServerClient: MockServerClient): Unit = runBlocking {
         mockServerClient
             .`when`(
                 request()
