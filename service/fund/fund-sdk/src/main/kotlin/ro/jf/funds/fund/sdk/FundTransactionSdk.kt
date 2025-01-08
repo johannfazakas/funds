@@ -17,7 +17,7 @@ private val log = logger { }
 
 class FundTransactionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
 ) : FundTransactionApi {
     override suspend fun createTransaction(userId: UUID, transaction: CreateFundTransactionTO): FundTransactionTO {
         val response = httpClient.post("$baseUrl$BASE_PATH/transactions") {
@@ -36,6 +36,21 @@ class FundTransactionSdk(
         return fundTransaction
     }
 
+    override suspend fun listTransactions(userId: UUID, fundId: UUID): ListTO<FundTransactionTO> {
+        val response = httpClient.get("$baseUrl$BASE_PATH/funds/$fundId/transactions") {
+            headers {
+                append(USER_ID_HEADER, userId.toString())
+            }
+        }
+        if (response.status != HttpStatusCode.OK) {
+            log.warn { "Unexpected response on list fund transactions: $response" }
+            throw response.toApiException()
+        }
+        val transactions = response.body<ListTO<FundTransactionTO>>()
+        log.debug { "Retrieved fund $fundId transactions: $transactions" }
+        return transactions
+    }
+
     override suspend fun listTransactions(userId: UUID): ListTO<FundTransactionTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
             headers {
@@ -43,7 +58,7 @@ class FundTransactionSdk(
             }
         }
         if (response.status != HttpStatusCode.OK) {
-            log.warn { "Unexpected response on list accounts: $response" }
+            log.warn { "Unexpected response on list transactions: $response" }
             throw response.toApiException()
         }
         val transactions = response.body<ListTO<FundTransactionTO>>()
