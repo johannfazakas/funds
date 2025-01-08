@@ -32,7 +32,7 @@ import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.service.module
-import ro.jf.funds.fund.service.service.METADATA_FUND_ID
+import ro.jf.funds.fund.service.service.FUND_ID_PROPERTY
 import java.math.BigDecimal
 import java.time.Duration
 import java.util.UUID.randomUUID
@@ -105,7 +105,7 @@ class FundTransactionsEventHandlingTest {
                                     amount = BigDecimal("100.0"),
                                     unit = Currency.RON,
                                     properties = propertiesOf(
-                                        METADATA_FUND_ID to fundId.toString()
+                                        FUND_ID_PROPERTY to fundId.toString()
                                     )
                                 )
                             )

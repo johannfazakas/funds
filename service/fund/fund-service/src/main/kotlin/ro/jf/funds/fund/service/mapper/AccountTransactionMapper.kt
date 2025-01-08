@@ -4,7 +4,7 @@ import ro.jf.funds.account.api.model.AccountRecordTO
 import ro.jf.funds.account.api.model.AccountTransactionTO
 import ro.jf.funds.fund.service.domain.FundRecord
 import ro.jf.funds.fund.service.domain.FundTransaction
-import ro.jf.funds.fund.service.service.METADATA_FUND_ID
+import ro.jf.funds.fund.service.service.FUND_ID_PROPERTY
 import java.util.*
 
 fun AccountTransactionTO.toTransaction(userId: UUID) = FundTransaction(
@@ -19,6 +19,6 @@ fun AccountRecordTO.toRecord() = FundRecord(
     accountId = accountId,
     amount = amount,
     fundId = properties
-        .single { it.key == METADATA_FUND_ID }.value
+        .single { it.key == FUND_ID_PROPERTY }.value
         .let(UUID::fromString)
 )

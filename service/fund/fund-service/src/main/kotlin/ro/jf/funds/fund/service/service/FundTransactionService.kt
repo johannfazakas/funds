@@ -13,7 +13,7 @@ class FundTransactionService(
     }
 
     suspend fun listTransactions(userId: UUID, fundId: UUID): List<FundTransaction> {
-        TODO()
+        return accountTransactionAdapter.listTransactions(userId, fundId)
     }
 
     suspend fun createTransaction(userId: UUID, request: CreateFundTransactionTO): FundTransaction {

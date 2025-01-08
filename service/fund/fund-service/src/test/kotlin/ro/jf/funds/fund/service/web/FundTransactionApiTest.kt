@@ -36,6 +36,7 @@ import ro.jf.funds.fund.api.model.FundTransactionTO
 import ro.jf.funds.fund.service.config.configureFundErrorHandling
 import ro.jf.funds.fund.service.config.configureFundRouting
 import ro.jf.funds.fund.service.config.fundDependencies
+import ro.jf.funds.fund.service.service.FUND_ID_PROPERTY
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
@@ -47,14 +48,22 @@ class FundTransactionApiTest {
     private val accountTransactionSdk: AccountTransactionSdk = mock()
     private val accountSdk: AccountSdk = mock()
 
+    private val userId = randomUUID()
+
+    private val transaction1Id = randomUUID()
+
+    private val record1Id = randomUUID()
+    private val record2Id = randomUUID()
+
+    private val companyAccountId = randomUUID()
+    private val personalAccountId = randomUUID()
+
+    private val workFundId = randomUUID()
+    private val expensesFundId = randomUUID()
+
     @Test
     fun `test create transaction`(): Unit = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
-        val userId = randomUUID()
-        val companyAccountId = randomUUID()
-        val personalAccountId = randomUUID()
-        val workFundId = randomUUID()
-        val expensesFundId = randomUUID()
         val transactionTime = LocalDateTime.parse("2021-09-01T12:00:00")
         whenever(
             accountTransactionSdk.createTransaction(
@@ -149,13 +158,6 @@ class FundTransactionApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
-        val transactionId = randomUUID()
-        val record1Id = randomUUID()
-        val record2Id = randomUUID()
-        val account1Id = randomUUID()
-        val account2Id = randomUUID()
-        val fund1Id = randomUUID()
-        val fund2Id = randomUUID()
         val rawTransactionTime = "2021-09-01T12:00:00"
         val transactionTime = LocalDateTime.parse(rawTransactionTime)
 
@@ -163,22 +165,22 @@ class FundTransactionApiTest {
             ListTO(
                 listOf(
                     AccountTransactionTO(
-                        id = transactionId,
+                        id = transaction1Id,
                         dateTime = transactionTime,
                         records = listOf(
                             AccountRecordTO(
                                 id = record1Id,
-                                accountId = account1Id,
+                                accountId = companyAccountId,
                                 amount = BigDecimal(100.25),
                                 unit = Currency.RON,
-                                properties = propertiesOf("fundId" to fund1Id.toString()),
+                                properties = propertiesOf("fundId" to workFundId.toString()),
                             ),
                             AccountRecordTO(
                                 id = record2Id,
-                                accountId = account2Id,
+                                accountId = personalAccountId,
                                 amount = BigDecimal(50.75),
                                 unit = Currency.RON,
-                                properties = propertiesOf("fundId" to fund2Id.toString()),
+                                properties = propertiesOf("fundId" to expensesFundId.toString()),
                             )
                         ),
                         properties = propertiesOf()
@@ -197,37 +199,98 @@ class FundTransactionApiTest {
         val transactions = response.body<ListTO<FundTransactionTO>>()
         assertThat(transactions.items).hasSize(1)
         val transaction = transactions.items.first()
-        assertThat(transaction.id).isEqualTo(transactionId)
+        assertThat(transaction.id).isEqualTo(transaction1Id)
         assertThat(transaction.dateTime).isEqualTo(transactionTime)
         assertThat(transaction.records).hasSize(2)
         val record1 = transaction.records[0]
         assertThat(record1.id).isEqualTo(record1Id)
-        assertThat(record1.accountId).isEqualTo(account1Id)
+        assertThat(record1.accountId).isEqualTo(companyAccountId)
         assertThat(record1.amount).isEqualTo(BigDecimal(100.25))
-        assertThat(record1.fundId).isEqualTo(fund1Id)
+        assertThat(record1.fundId).isEqualTo(workFundId)
         val record2 = transaction.records[1]
         assertThat(record2.id).isEqualTo(record2Id)
-        assertThat(record2.accountId).isEqualTo(account2Id)
+        assertThat(record2.accountId).isEqualTo(personalAccountId)
         assertThat(record2.amount).isEqualTo(BigDecimal(50.75))
-        assertThat(record2.fundId).isEqualTo(fund2Id)
+        assertThat(record2.fundId).isEqualTo(expensesFundId)
+    }
+
+    @Test
+    fun `test list fund transactions`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+
+        val fundId = randomUUID()
+        val rawTransactionTime = "2021-09-01T12:00:00"
+        val transactionTime = LocalDateTime.parse(rawTransactionTime)
+
+        val filter = TransactionsFilterTO(
+            recordProperties = listOf(PropertyTO(FUND_ID_PROPERTY, fundId.toString()))
+        )
+        whenever(accountTransactionSdk.listTransactions(userId, filter)).thenReturn(
+            ListTO(
+                listOf(
+                    AccountTransactionTO(
+                        id = transaction1Id,
+                        dateTime = transactionTime,
+                        records = listOf(
+                            AccountRecordTO(
+                                id = record1Id,
+                                accountId = companyAccountId,
+                                amount = BigDecimal(100.25),
+                                unit = Currency.RON,
+                                properties = propertiesOf("fundId" to workFundId.toString()),
+                            ),
+                            AccountRecordTO(
+                                id = record2Id,
+                                accountId = personalAccountId,
+                                amount = BigDecimal(50.75),
+                                unit = Currency.RON,
+                                properties = propertiesOf("fundId" to expensesFundId.toString()),
+                            )
+                        ),
+                        properties = propertiesOf()
+                    )
+                )
+            )
+        )
+
+        val response = createJsonHttpClient()
+            .get("/bk-api/fund/v1/funds/$fundId/transactions") {
+                header(USER_ID_HEADER, userId.toString())
+            }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+
+        val transactions = response.body<ListTO<FundTransactionTO>>()
+        assertThat(transactions.items).hasSize(1)
+        val transaction = transactions.items.first()
+        assertThat(transaction.id).isEqualTo(transaction1Id)
+        assertThat(transaction.dateTime).isEqualTo(transactionTime)
+        assertThat(transaction.records).hasSize(2)
+        val record1 = transaction.records[0]
+        assertThat(record1.id).isEqualTo(record1Id)
+        assertThat(record1.accountId).isEqualTo(companyAccountId)
+        assertThat(record1.amount).isEqualTo(BigDecimal(100.25))
+        assertThat(record1.fundId).isEqualTo(workFundId)
+        val record2 = transaction.records[1]
+        assertThat(record2.id).isEqualTo(record2Id)
+        assertThat(record2.accountId).isEqualTo(personalAccountId)
+        assertThat(record2.amount).isEqualTo(BigDecimal(50.75))
+        assertThat(record2.fundId).isEqualTo(expensesFundId)
     }
 
     @Test
     fun `test remove transaction`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
-        val userId = randomUUID()
-        val transactionId = randomUUID()
-
-        whenever(accountTransactionSdk.deleteTransaction(userId, transactionId)).thenReturn(Unit)
+        whenever(accountTransactionSdk.deleteTransaction(userId, transaction1Id)).thenReturn(Unit)
 
         val response = createJsonHttpClient()
-            .delete("/bk-api/fund/v1/transactions/$transactionId") {
+            .delete("/bk-api/fund/v1/transactions/$transaction1Id") {
                 header(USER_ID_HEADER, userId.toString())
             }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
-        verify(accountTransactionSdk).deleteTransaction(userId, transactionId)
+        verify(accountTransactionSdk).deleteTransaction(userId, transaction1Id)
     }
 
     private fun Application.testModule() {
