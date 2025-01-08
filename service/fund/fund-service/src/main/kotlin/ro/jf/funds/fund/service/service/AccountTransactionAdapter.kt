@@ -10,15 +10,24 @@ import ro.jf.funds.fund.service.domain.FundRecord
 import ro.jf.funds.fund.service.domain.FundTransaction
 import java.util.*
 
-const val METADATA_FUND_ID = "fundId"
+const val FUND_ID_PROPERTY = "fundId"
 
 class AccountTransactionAdapter(
     private val accountTransactionSdk: AccountTransactionSdk,
     private val accountTransactionsRequestProducer: Producer<CreateAccountTransactionsTO>,
 ) {
-    suspend fun listTransactions(userId: UUID): List<FundTransaction> {
+    suspend fun listTransactions(userId: UUID, fundId: UUID? = null): List<FundTransaction> {
+        val filter = TransactionsFilterTO(
+            transactionProperties = propertiesOf(),
+            recordProperties = propertiesOf(
+                *listOfNotNull(
+                    fundId?.let { FUND_ID_PROPERTY to it.toString() }
+                )
+                    .toTypedArray<Pair<String, String>>()
+            )
+        )
         return accountTransactionSdk
-            .listTransactions(userId, TransactionsFilterTO.empty())
+            .listTransactions(userId, filter)
             .items.map { it.toFundTransaction(userId) }
     }
 
@@ -44,7 +53,7 @@ class AccountTransactionAdapter(
                     accountId = record.accountId,
                     amount = record.amount,
                     unit = record.unit,
-                    properties = propertiesOf(METADATA_FUND_ID to record.fundId.toString())
+                    properties = propertiesOf(FUND_ID_PROPERTY to record.fundId.toString())
                 )
             },
             properties = propertiesOf()
@@ -70,7 +79,7 @@ class AccountTransactionAdapter(
         )
 
     private fun AccountRecordTO.fundId(): UUID = properties
-        .single { it.key == METADATA_FUND_ID }
+        .single { it.key == FUND_ID_PROPERTY }
         .value
         .let(UUID::fromString)
 }
