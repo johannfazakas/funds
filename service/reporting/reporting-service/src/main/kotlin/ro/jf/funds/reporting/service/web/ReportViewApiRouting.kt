@@ -59,5 +59,12 @@ fun Routing.reportingViewApiRouting(
             val response: ReportViewTO = reportViewService.getReportView(userId, reportViewId).toTO()
             call.respond(status = HttpStatusCode.OK, message = response)
         }
+
+        get("/{reportViewId}/data") {
+            val userId = call.userId()
+            val reportViewId =
+                call.parameters["reportViewId"]?.let(UUID::fromString) ?: error("Missing reportViewId path parameter")
+            log.info { "Get report view data request for user $userId and report view $reportViewId." }
+        }
     }
 }
