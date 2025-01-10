@@ -5,7 +5,9 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
+import ro.jf.funds.commons.serialization.BigDecimalSerializer
 import ro.jf.funds.commons.serialization.UUIDSerializer
+import java.math.BigDecimal
 import java.util.*
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -19,7 +21,7 @@ sealed class ReportViewDataTO(
 
     @Serializable(with = UUIDSerializer::class)
     abstract val fundId: UUID
-    abstract val granularity: DataGranularityTO
+    abstract val granularity: DataGranularity
 }
 
 @Serializable
@@ -30,11 +32,13 @@ data class ExpenseReportViewDataTO(
     override val viewName: String,
     @Serializable(with = UUIDSerializer::class)
     override val fundId: UUID,
-    override val granularity: DataGranularityTO,
+    override val granularity: DataGranularity,
     val data: List<DataItem>,
 ) : ReportViewDataTO(ReportViewType.EXPENSE) {
     @Serializable
     data class DataItem(
         val timeBucket: LocalDateTime,
+        @Serializable(with = BigDecimalSerializer::class)
+        val amount: BigDecimal,
     )
 }

@@ -11,5 +11,6 @@ data class ReportViewTO(
     val name: String,
     @Serializable(with = UUIDSerializer::class)
     val fundId: UUID,
+    // TODO(Johann) the report view should also have a single currency
     val type: ReportViewType,
 )

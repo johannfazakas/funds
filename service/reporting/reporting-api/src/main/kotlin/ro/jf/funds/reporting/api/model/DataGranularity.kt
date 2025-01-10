@@ -1,6 +1,6 @@
 package ro.jf.funds.reporting.api.model
 
-enum class DataGranularityTO {
+enum class DataGranularity {
     DAILY,
     MONTHLY,
     YEARLY,
