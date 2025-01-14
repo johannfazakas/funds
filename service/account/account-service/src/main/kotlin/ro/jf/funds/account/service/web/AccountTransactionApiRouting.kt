@@ -48,7 +48,7 @@ fun Routing.accountTransactionApiRouting(transactionService: AccountTransactionS
         delete("/{transactionId}") {
             val userId = call.userId()
             val transactionId =
-                call.parameters["transactionId"]?.let(UUID::fromString) ?: error("Account id is missing.")
+                call.parameters["transactionId"]?.let(UUID::fromString) ?: error("Transaction id is missing.")
             log.debug { "Delete transaction by user id $userId and transaction id $transactionId." }
             transactionService.deleteTransaction(userId, transactionId)
             call.respond(HttpStatusCode.NoContent)

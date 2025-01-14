@@ -6,6 +6,7 @@ import org.koin.ktor.ext.get
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
+import ro.jf.funds.reporting.service.config.configureReportingErrorHandling
 import ro.jf.funds.reporting.service.config.configureReportingEventHandling
 import ro.jf.funds.reporting.service.config.reportingDependencies
 import ro.jf.funds.reporting.service.config.reportingRouting
@@ -17,6 +18,7 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
     configureDependencies(reportingDependencies)
+    configureReportingErrorHandling()
     configureContentNegotiation()
     configureDatabaseMigration(get<DataSource>())
     configureReportingEventHandling()

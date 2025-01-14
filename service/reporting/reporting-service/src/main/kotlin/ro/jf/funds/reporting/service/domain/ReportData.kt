@@ -5,8 +5,10 @@ import ro.jf.funds.reporting.api.model.GranularTimeInterval
 import java.math.BigDecimal
 import java.util.*
 
-data class ReportViewData(
+data class ReportData(
     val reportViewId: UUID,
+    val reportViewName: String,
+    val fundId: UUID,
     val granularInterval: GranularTimeInterval,
     val data: List<ReportDataBucket>,
 )
