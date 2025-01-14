@@ -12,4 +12,7 @@ kafka:
   bootstrap-servers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:29092"
   group-id: reporting-service
   client-id: reporting-service
-
+database:
+  url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/ff_reporting"
+  user: postgres
+  password: pass
