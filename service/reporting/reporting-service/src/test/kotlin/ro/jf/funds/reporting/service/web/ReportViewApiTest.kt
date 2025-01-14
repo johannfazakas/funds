@@ -30,6 +30,7 @@ import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import java.time.Duration.ofSeconds
 import java.util.UUID.randomUUID
+import ro.jf.funds.reporting.api.model.*
 
 @ExtendWith(KafkaContainerExtension::class)
 @ExtendWith(PostgresContainerExtension::class)
@@ -162,5 +163,43 @@ class ReportViewApiTest {
         assertThat(reportViewTO.fundId).isEqualTo(expenseFundId)
         assertThat(reportViewTO.name).isEqualTo(expenseReportName)
         assertThat(reportViewTO.type).isEqualTo(ReportViewType.EXPENSE)
+    }
+
+    @Test
+    fun `given get report view data`() = testApplication {
+        configureEnvironment({ module() }, dbConfig, kafkaConfig)
+        val httpClient = createJsonHttpClient()
+        val reportView =
+            createReportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
+
+        val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
+            header(USER_ID_HEADER, userId.toString())
+            parameter("granularity", "DAILY")
+            parameter("from", "2021-01-01")
+            parameter("to", "2021-01-31")
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+        val reportData = response.body<ReportDataTO>()
+        assertThat(reportData.reportViewType).isEqualTo(ReportViewType.EXPENSE)
+        assertThat(reportData.viewId).isEqualTo(reportView.id)
+        assertThat(reportData.viewName).isEqualTo(expenseReportName)
+        assertThat(reportData.fundId).isEqualTo(expenseFundId)
+    }
+
+    @Test
+    fun `given get report view without granularity`() = testApplication {
+        configureEnvironment({ module() }, dbConfig, kafkaConfig)
+        val httpClient = createJsonHttpClient()
+        val reportView =
+            createReportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
+
+        val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
+            header(USER_ID_HEADER, userId.toString())
+            parameter("from", "2021-01-01")
+            parameter("to", "2021-01-31")
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
     }
 }

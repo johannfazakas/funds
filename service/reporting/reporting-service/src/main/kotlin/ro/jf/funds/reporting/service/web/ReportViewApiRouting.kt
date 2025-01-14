@@ -5,11 +5,15 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.web.userId
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
+import ro.jf.funds.reporting.api.model.DataGranularity
+import ro.jf.funds.reporting.api.model.GranularTimeInterval
 import ro.jf.funds.reporting.api.model.ReportViewTO
+import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
 import ro.jf.funds.reporting.service.web.mapper.toTO
@@ -64,7 +68,20 @@ fun Routing.reportingViewApiRouting(
             val userId = call.userId()
             val reportViewId =
                 call.parameters["reportViewId"]?.let(UUID::fromString) ?: error("Missing reportViewId path parameter")
-            log.info { "Get report view data request for user $userId and report view $reportViewId." }
+            val granularInterval = call.granularTimeInterval()
+            log.info { "Get report view data request for user $userId and report view $reportViewId in interval $granularInterval." }
+            val reportData = reportViewService.getReportViewData(userId, reportViewId, granularInterval).toTO()
+            call.respond(status = HttpStatusCode.OK, message = reportData)
         }
     }
 }
+
+private fun ApplicationCall.granularTimeInterval() =
+    GranularTimeInterval(
+        start = parameters["from"]?.let(LocalDate::parse)
+            ?: throw ReportingException.MissingIntervalStart(),
+        end = parameters["to"]?.let(LocalDate::parse)
+            ?: throw ReportingException.MissingIntervalEnd(),
+        granularity = parameters["granularity"]
+            ?.let(DataGranularity::valueOf) ?: throw ReportingException.MissingGranularity(),
+    )

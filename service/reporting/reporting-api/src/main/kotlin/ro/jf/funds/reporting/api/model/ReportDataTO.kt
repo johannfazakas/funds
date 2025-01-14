@@ -13,7 +13,7 @@ import java.util.*
 @OptIn(ExperimentalSerializationApi::class)
 @JsonClassDiscriminator("type")
 @Serializable
-sealed class ReportViewDataTO(
+sealed class ReportDataTO(
     val reportViewType: ReportViewType,
 ) {
     abstract val viewId: UUID
@@ -21,20 +21,20 @@ sealed class ReportViewDataTO(
 
     @Serializable(with = UUIDSerializer::class)
     abstract val fundId: UUID
-    abstract val granularity: DataGranularity
+    abstract val granularInterval: GranularTimeInterval
 }
 
 @Serializable
 @SerialName("expense")
-data class ExpenseReportViewDataTO(
+data class ExpenseReportDataTO(
     @Serializable(with = UUIDSerializer::class)
     override val viewId: UUID,
     override val viewName: String,
     @Serializable(with = UUIDSerializer::class)
     override val fundId: UUID,
-    override val granularity: DataGranularity,
+    override val granularInterval: GranularTimeInterval,
     val data: List<DataItem>,
-) : ReportViewDataTO(ReportViewType.EXPENSE) {
+) : ReportDataTO(ReportViewType.EXPENSE) {
     @Serializable
     data class DataItem(
         val timeBucket: LocalDateTime,

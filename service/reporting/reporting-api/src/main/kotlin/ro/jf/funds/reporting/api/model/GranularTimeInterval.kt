@@ -1,9 +1,11 @@
 package ro.jf.funds.reporting.api.model
 
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalDate
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class GranularTimeInterval(
-    val start: LocalDateTime,
-    val end: LocalDateTime,
+    val start: LocalDate,
+    val end: LocalDate,
     val granularity: DataGranularity,
 )
