@@ -89,3 +89,16 @@ services:
     depends_on:
       - postgres
       - kafka
+
+  reporting-service:
+    image: funds/reporting-service:latest
+    container_name: ff_reporting
+    ports:
+      - '5212:5212'
+    environment:
+      - FUND_BASE_URL=http://ff_fund:5253
+      - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
+      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_reporting
+    depends_on:
+      - postgres
+      - kafka
