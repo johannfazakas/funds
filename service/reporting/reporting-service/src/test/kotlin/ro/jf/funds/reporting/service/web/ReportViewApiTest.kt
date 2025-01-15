@@ -3,12 +3,20 @@ package ro.jf.funds.reporting.service.web
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.koin.ktor.ext.get
+import org.mockito.Mockito.mock
+import org.mockito.kotlin.whenever
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
+import ro.jf.funds.commons.config.configureContentNegotiation
+import ro.jf.funds.commons.config.configureDatabaseMigration
+import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.event.ConsumerProperties
 import ro.jf.funds.commons.event.asEvent
 import ro.jf.funds.commons.event.createKafkaConsumer
@@ -17,6 +25,7 @@ import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.*
 import ro.jf.funds.commons.web.USER_ID_HEADER
+import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
@@ -31,6 +40,14 @@ import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import java.time.Duration.ofSeconds
 import java.util.UUID.randomUUID
 import ro.jf.funds.reporting.api.model.*
+import ro.jf.funds.reporting.service.config.configureReportingErrorHandling
+import ro.jf.funds.reporting.service.config.configureReportingEventHandling
+import ro.jf.funds.reporting.service.config.reportingDependencies
+import ro.jf.funds.reporting.service.config.configureReportingRouting
+import ro.jf.funds.reporting.service.utils.record
+import ro.jf.funds.reporting.service.utils.transaction
+import java.math.BigDecimal
+import javax.sql.DataSource
 
 @ExtendWith(KafkaContainerExtension::class)
 @ExtendWith(PostgresContainerExtension::class)
@@ -39,16 +56,24 @@ class ReportViewApiTest {
     private val consumerProperties = ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer")
     private val createReportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)
     private val createReportViewTaskRepository = ReportViewTaskRepository(PostgresContainerExtension.connection)
+    private val fundTransactionSdk = mock<FundTransactionSdk>()
 
     private val userId = randomUUID()
     private val expenseFundId = randomUUID()
     private val expenseReportName = "Expense Report"
+    private val cashAccountId = randomUUID()
+    private val dateTime = LocalDateTime.parse("2021-09-01T12:00:00")
 
     @Test
     fun `given create report view should create it async`() = testApplication {
-        configureEnvironment({ module() }, dbConfig, kafkaConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val httpClient = createJsonHttpClient()
+
+        val transaction =
+            transaction(userId, dateTime, listOf(record(expenseFundId, cashAccountId, BigDecimal("-100.0"))))
+        whenever(fundTransactionSdk.listTransactions(userId, expenseFundId)).thenReturn(ListTO.of(transaction))
+
 
         val response = httpClient.post("/funds-api/reporting/v1/report-views/tasks") {
             header(USER_ID_HEADER, userId.toString())
@@ -100,7 +125,7 @@ class ReportViewApiTest {
 
     @Test
     fun `given get report view task`() = testApplication {
-        configureEnvironment({ module() }, dbConfig, kafkaConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportViewTask = createReportViewTaskRepository.create(userId)
         val reportView =
@@ -125,7 +150,7 @@ class ReportViewApiTest {
 
     @Test
     fun `given get report view`() = testApplication {
-        configureEnvironment({ module() }, dbConfig, kafkaConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
             createReportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
@@ -145,7 +170,7 @@ class ReportViewApiTest {
 
     @Test
     fun `given list report views`() = testApplication {
-        configureEnvironment({ module() }, dbConfig, kafkaConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
             createReportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
@@ -167,7 +192,7 @@ class ReportViewApiTest {
 
     @Test
     fun `given get report view data`() = testApplication {
-        configureEnvironment({ module() }, dbConfig, kafkaConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
             createReportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
@@ -189,7 +214,7 @@ class ReportViewApiTest {
 
     @Test
     fun `given get report view without granularity`() = testApplication {
-        configureEnvironment({ module() }, dbConfig, kafkaConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
             createReportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
@@ -201,5 +226,17 @@ class ReportViewApiTest {
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+    }
+
+    private fun Application.testModule() {
+        val importAppTestModule = org.koin.dsl.module {
+            single<FundTransactionSdk> { fundTransactionSdk }
+        }
+        configureDependencies(reportingDependencies, importAppTestModule)
+        configureReportingErrorHandling()
+        configureContentNegotiation()
+        configureDatabaseMigration(get<DataSource>())
+        configureReportingEventHandling()
+        configureReportingRouting()
     }
 }

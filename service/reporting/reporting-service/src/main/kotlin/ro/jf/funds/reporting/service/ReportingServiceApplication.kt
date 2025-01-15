@@ -9,7 +9,7 @@ import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.reporting.service.config.configureReportingErrorHandling
 import ro.jf.funds.reporting.service.config.configureReportingEventHandling
 import ro.jf.funds.reporting.service.config.reportingDependencies
-import ro.jf.funds.reporting.service.config.reportingRouting
+import ro.jf.funds.reporting.service.config.configureReportingRouting
 import javax.sql.DataSource
 
 fun main(args: Array<String>) {
@@ -22,5 +22,5 @@ fun Application.module() {
     configureContentNegotiation()
     configureDatabaseMigration(get<DataSource>())
     configureReportingEventHandling()
-    reportingRouting()
+    configureReportingRouting()
 }

@@ -6,9 +6,9 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
-import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.FundApi
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundTO
@@ -18,7 +18,7 @@ private val log = logger { }
 
 class FundSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
-    private val httpClient: HttpClient = createHttpClient()
+    private val httpClient: HttpClient = createHttpClient(),
 ) : FundApi {
     override suspend fun listFunds(userId: UUID): ListTO<FundTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds") {
