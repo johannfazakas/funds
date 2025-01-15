@@ -1,13 +1,17 @@
 package ro.jf.funds.reporting.service.service.event
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.event.Event
+import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
+import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.ReportViewType
 import ro.jf.funds.reporting.service.domain.ReportViewTask
@@ -15,6 +19,9 @@ import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
+import ro.jf.funds.reporting.service.utils.record
+import ro.jf.funds.reporting.service.utils.transaction
+import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
 @ExtendWith(PostgresContainerExtension::class)
@@ -23,8 +30,9 @@ class CreateReportViewRequestHandlerTest {
 
     private val reportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)
     private val reportViewTaskRepository = ReportViewTaskRepository(PostgresContainerExtension.connection)
+    private val fundTransactionSdk = mock<FundTransactionSdk>()
 
-    private val reportViewService = ReportViewService(reportViewRepository)
+    private val reportViewService = ReportViewService(reportViewRepository, fundTransactionSdk)
     private val reportViewTaskService = ReportViewTaskService(reportViewService, reportViewTaskRepository, mock())
 
     private val requestHandler = CreateReportViewRequestHandler(reportViewTaskService)
@@ -33,11 +41,18 @@ class CreateReportViewRequestHandlerTest {
     private val viewName = "Expenses"
     private val fundId = randomUUID()
 
+    private val accountId = randomUUID()
+    private val dateTime = LocalDateTime.parse("2021-09-01T12:00:00")
+
     @Test
     fun `handle create report view request`(): Unit = runBlocking {
         val initialTask = reportViewTaskRepository.create(userId)
         val payload = CreateReportViewTO(viewName, fundId, ReportViewType.EXPENSE)
         val event = Event(userId, payload, initialTask.taskId)
+
+        val transaction =
+            transaction(userId, dateTime, listOf(record(fundId, accountId, BigDecimal("100.0"))))
+        whenever(fundTransactionSdk.listTransactions(userId, fundId)).thenReturn(ListTO.of(transaction))
 
         requestHandler.handle(event)
 

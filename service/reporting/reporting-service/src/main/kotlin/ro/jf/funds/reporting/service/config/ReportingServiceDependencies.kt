@@ -8,6 +8,7 @@ import ro.jf.funds.commons.config.getEnvironmentProperty
 import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.commons.web.createHttpClient
+import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
@@ -17,6 +18,8 @@ import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
 import ro.jf.funds.reporting.service.service.event.CreateReportViewRequestHandler
 import javax.sql.DataSource
+
+private const val FUND_SERVICE_BASE_URL_PROPERTY = "integration.fund-service.base-url"
 
 val Application.reportingDependencies
     get() = module {
@@ -49,11 +52,12 @@ private val Application.eventProducerDependencies
 private val Application.integrationDependencies
     get() = module {
         single<HttpClient> { createHttpClient() }
+        single<FundTransactionSdk> { FundTransactionSdk(FUND_SERVICE_BASE_URL_PROPERTY, get()) }
     }
 
 private val Application.serviceDependencies
     get() = module {
-        single<ReportViewService> { ReportViewService(get()) }
+        single<ReportViewService> { ReportViewService(get(), get()) }
         single<ReportViewTaskService> { ReportViewTaskService(get(), get(), get()) }
         single<CreateReportViewRequestHandler> { CreateReportViewRequestHandler(get()) }
     }

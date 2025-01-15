@@ -7,7 +7,7 @@ import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
 import ro.jf.funds.reporting.service.web.reportingViewApiRouting
 
-fun Application.reportingRouting() {
+fun Application.configureReportingRouting() {
     routing {
         reportingViewApiRouting(get<ReportViewService>(), get<ReportViewTaskService>())
     }

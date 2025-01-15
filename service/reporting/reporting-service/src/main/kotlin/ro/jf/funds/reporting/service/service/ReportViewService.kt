@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.service.service
 
+import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.GranularTimeInterval
 import ro.jf.funds.reporting.service.domain.ReportData
@@ -10,9 +11,11 @@ import java.util.*
 
 class ReportViewService(
     private val reportViewRepository: ReportViewRepository,
+    private val fundTransactionSdk: FundTransactionSdk,
 ) {
     suspend fun createReportView(userId: UUID, payload: CreateReportViewTO): ReportView {
-        // TODO(Johann) what should be here?
+        val transactions = fundTransactionSdk.listTransactions(userId, payload.fundId)
+        transactions.items.size
         return reportViewRepository.create(userId, payload.name, payload.fundId, payload.type)
     }
 
