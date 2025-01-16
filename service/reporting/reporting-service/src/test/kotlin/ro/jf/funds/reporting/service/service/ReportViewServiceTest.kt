@@ -10,7 +10,9 @@ import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.ReportViewType
+import ro.jf.funds.reporting.service.domain.ReportRecord
 import ro.jf.funds.reporting.service.domain.ReportView
+import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.utils.record
 import ro.jf.funds.reporting.service.utils.transaction
@@ -20,9 +22,10 @@ import java.util.UUID.randomUUID
 class ReportViewServiceTest {
 
     private val reportViewRepository = mock<ReportViewRepository>()
+    private val reportRecordRepository = mock<ReportRecordRepository>()
     private val fundTransactionSdk = mock<FundTransactionSdk>()
 
-    private val reportViewService = ReportViewService(reportViewRepository, fundTransactionSdk)
+    private val reportViewService = ReportViewService(reportViewRepository, reportRecordRepository, fundTransactionSdk)
 
     private val userId = randomUUID()
     private val reportViewId = randomUUID()
@@ -37,6 +40,16 @@ class ReportViewServiceTest {
         whenever(reportViewRepository.create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
             .thenReturn(
                 ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE)
+            )
+        whenever(reportRecordRepository.create(userId, reportViewId, dateTime.date, BigDecimal("100.0")))
+            .thenReturn(
+                ReportRecord(
+                    randomUUID(),
+                    userId,
+                    reportViewId,
+                    dateTime.date,
+                    BigDecimal("100.0")
+                )
             )
 
         val transaction =

@@ -15,6 +15,7 @@ import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.ReportViewType
 import ro.jf.funds.reporting.service.domain.ReportViewTask
+import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import ro.jf.funds.reporting.service.service.ReportViewService
@@ -30,9 +31,10 @@ class CreateReportViewRequestHandlerTest {
 
     private val reportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)
     private val reportViewTaskRepository = ReportViewTaskRepository(PostgresContainerExtension.connection)
+    private val reportRecordRepository = ReportRecordRepository(PostgresContainerExtension.connection)
     private val fundTransactionSdk = mock<FundTransactionSdk>()
 
-    private val reportViewService = ReportViewService(reportViewRepository, fundTransactionSdk)
+    private val reportViewService = ReportViewService(reportViewRepository, reportRecordRepository, fundTransactionSdk)
     private val reportViewTaskService = ReportViewTaskService(reportViewService, reportViewTaskRepository, mock())
 
     private val requestHandler = CreateReportViewRequestHandler(reportViewTaskService)

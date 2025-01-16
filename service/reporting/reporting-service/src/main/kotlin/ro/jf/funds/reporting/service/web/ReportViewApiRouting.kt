@@ -9,10 +9,7 @@ import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.web.userId
-import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.DataGranularity
-import ro.jf.funds.reporting.api.model.GranularTimeInterval
-import ro.jf.funds.reporting.api.model.ReportViewTO
+import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
@@ -77,11 +74,13 @@ fun Routing.reportingViewApiRouting(
 }
 
 private fun ApplicationCall.granularTimeInterval() =
-    GranularTimeInterval(
-        start = parameters["from"]?.let(LocalDate::parse)
-            ?: throw ReportingException.MissingIntervalStart(),
-        end = parameters["to"]?.let(LocalDate::parse)
-            ?: throw ReportingException.MissingIntervalEnd(),
+    GranularDateInterval(
+        interval = DateInterval(
+            from = parameters["from"]?.let(LocalDate::parse)
+                ?: throw ReportingException.MissingIntervalStart(),
+            to = parameters["to"]?.let(LocalDate::parse)
+                ?: throw ReportingException.MissingIntervalEnd(),
+        ),
         granularity = parameters["granularity"]
             ?.let(DataGranularity::valueOf) ?: throw ReportingException.MissingGranularity(),
     )

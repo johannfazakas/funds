@@ -4,8 +4,13 @@ import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class GranularTimeInterval(
-    val start: LocalDate,
-    val end: LocalDate,
+data class GranularDateInterval(
+    val interval: DateInterval,
     val granularity: DataGranularity,
+)
+
+@Serializable
+data class DateInterval(
+    val from: LocalDate,
+    val to: LocalDate,
 )
