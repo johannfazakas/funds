@@ -4,7 +4,8 @@ import kotlinx.datetime.LocalDate
 import java.math.BigDecimal
 import java.util.*
 
-data class ReportingRecord(
+data class ReportRecord(
+    val id: UUID,
     val userId: UUID,
     val reportViewId: UUID,
     val date: LocalDate,

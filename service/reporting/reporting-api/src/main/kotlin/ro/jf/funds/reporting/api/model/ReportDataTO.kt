@@ -21,7 +21,7 @@ sealed class ReportDataTO(
 
     @Serializable(with = UUIDSerializer::class)
     abstract val fundId: UUID
-    abstract val granularInterval: GranularTimeInterval
+    abstract val granularInterval: GranularDateInterval
 }
 
 @Serializable
@@ -32,7 +32,7 @@ data class ExpenseReportDataTO(
     override val viewName: String,
     @Serializable(with = UUIDSerializer::class)
     override val fundId: UUID,
-    override val granularInterval: GranularTimeInterval,
+    override val granularInterval: GranularDateInterval,
     val data: List<DataItem>,
 ) : ReportDataTO(ReportViewType.EXPENSE) {
     @Serializable
