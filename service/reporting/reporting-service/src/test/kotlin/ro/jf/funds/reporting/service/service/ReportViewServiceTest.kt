@@ -1,15 +1,17 @@
 package ro.jf.funds.reporting.service.service
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.fund.sdk.FundTransactionSdk
-import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.ReportViewType
+import ro.jf.funds.reporting.api.model.*
+import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
 import ro.jf.funds.reporting.service.domain.ReportRecord
 import ro.jf.funds.reporting.service.domain.ReportView
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
@@ -32,29 +34,18 @@ class ReportViewServiceTest {
     private val reportViewName = "view name"
     private val expensesFundId = randomUUID()
     private val bankAccountId = randomUUID()
-    private val dateTime = LocalDateTime.parse("2021-09-01T12:00:00")
+    private val cashAccountId = randomUUID()
+    private val dateTime1 = LocalDateTime.parse("2021-09-01T12:00:00")
+    private val dateTime2 = LocalDateTime.parse("2021-09-03T12:00:00")
 
     @Test
-    fun `create report view`(): Unit = runBlocking {
+    fun `create report view should create report view`(): Unit = runBlocking {
         val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE)
         whenever(reportViewRepository.create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
             .thenReturn(
                 ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE)
             )
-        whenever(reportRecordRepository.create(userId, reportViewId, dateTime.date, BigDecimal("100.0")))
-            .thenReturn(
-                ReportRecord(
-                    randomUUID(),
-                    userId,
-                    reportViewId,
-                    dateTime.date,
-                    BigDecimal("100.0")
-                )
-            )
-
-        val transaction =
-            transaction(userId, dateTime, listOf(record(expensesFundId, bankAccountId, BigDecimal("100.0"))))
-        whenever(fundTransactionSdk.listTransactions(userId, expensesFundId)).thenReturn(ListTO.of(transaction))
+        whenever(fundTransactionSdk.listTransactions(userId, expensesFundId)).thenReturn(ListTO.of())
 
         val reportView = reportViewService.createReportView(userId, request)
 
@@ -69,7 +60,47 @@ class ReportViewServiceTest {
     }
 
     @Test
-    fun `get report view data`() {
+    fun `create report view should store single fund report records`(): Unit = runBlocking {
+        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE)
+        whenever(reportViewRepository.create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
+            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
+
+        val transaction1 =
+            transaction(userId, dateTime1, listOf(record(expensesFundId, bankAccountId, BigDecimal("100.0"))))
+        val transaction2 =
+            transaction(userId, dateTime2, listOf(record(expensesFundId, cashAccountId, BigDecimal("-200.0"))))
+        whenever(fundTransactionSdk.listTransactions(userId, expensesFundId))
+            .thenReturn(ListTO.of(transaction1, transaction2))
+
+        val reportView = reportViewService.createReportView(userId, request)
+
+        val commandCaptor = argumentCaptor<CreateReportRecordCommand>()
+        verify(reportRecordRepository, times(2)).create(commandCaptor.capture())
+        assertThat(commandCaptor.allValues).containsExactlyInAnyOrder(
+            CreateReportRecordCommand(userId, reportView.id, dateTime1.date, BigDecimal("100.0")),
+            CreateReportRecordCommand(userId, reportView.id, dateTime2.date, BigDecimal("-200.0"))
+        )
+    }
+
+    @Test
+    fun `get report view data`(): Unit = runBlocking {
+        whenever(reportViewRepository.findById(userId, reportViewId))
+            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
+        val interval = DateInterval(from = LocalDate.parse("2021-09-03"), to = LocalDate.parse("2021-10-25"))
+        whenever(reportRecordRepository.findByViewInInterval(userId, reportViewId, interval))
+            .thenReturn(
+                listOf(
+                    reportRecord(LocalDate.parse("2021-09-03"), BigDecimal("-100.0")),
+                    reportRecord(LocalDate.parse("2021-09-15"), BigDecimal("-40.0")),
+                    reportRecord(LocalDate.parse("2021-10-07"), BigDecimal("-30.0")),
+                )
+            )
+        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
+
+        val data = reportViewService.getReportViewData(userId, reportViewId, granularInterval)
 
     }
+
+    private fun reportRecord(date: LocalDate, amount: BigDecimal) =
+        ReportRecord(randomUUID(), userId, reportViewId, dateTime1.date, amount)
 }

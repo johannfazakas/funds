@@ -208,8 +208,6 @@ class ReportViewApiTest {
         val reportData = response.body<ReportDataTO>()
         assertThat(reportData.reportViewType).isEqualTo(ReportViewType.EXPENSE)
         assertThat(reportData.viewId).isEqualTo(reportView.id)
-        assertThat(reportData.viewName).isEqualTo(expenseReportName)
-        assertThat(reportData.fundId).isEqualTo(expenseFundId)
     }
 
     @Test

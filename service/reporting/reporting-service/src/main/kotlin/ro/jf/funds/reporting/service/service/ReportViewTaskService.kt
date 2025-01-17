@@ -1,11 +1,15 @@
 package ro.jf.funds.reporting.service.service
 
+import mu.KotlinLogging.logger
 import ro.jf.funds.commons.event.Event
 import ro.jf.funds.commons.event.Producer
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.service.domain.ReportViewTask
 import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import java.util.*
+import kotlin.time.measureTime
+
+private val log = logger { }
 
 class ReportViewTaskService(
     private val reportViewService: ReportViewService,
@@ -24,9 +28,13 @@ class ReportViewTaskService(
 
     suspend fun handleReportViewTask(userId: UUID, taskId: UUID, createReportViewTO: CreateReportViewTO) {
         try {
-            reportViewTaskRepository.findById(userId, taskId) ?: error("Report view task not found")
-            val createReportView = reportViewService.createReportView(userId, createReportViewTO)
-            reportViewTaskRepository.complete(userId, taskId, createReportView.id)
+            measureTime {
+                reportViewTaskRepository.findById(userId, taskId) ?: error("Report view task not found")
+                val createReportView = reportViewService.createReportView(userId, createReportViewTO)
+                reportViewTaskRepository.complete(userId, taskId, createReportView.id)
+            }.let { duration ->
+                log.info { "Report view task $taskId completed in $duration" }
+            }
         } catch (e: Exception) {
             reportViewTaskRepository.fail(userId, taskId, e.message ?: "Unknown error")
         }

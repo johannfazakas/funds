@@ -1,6 +1,5 @@
 package ro.jf.funds.reporting.service.persistence
 
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
 import org.jetbrains.exposed.dao.id.UUIDTable
@@ -8,8 +7,8 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.javatime.date
 import ro.jf.funds.commons.service.persistence.blockingTransaction
 import ro.jf.funds.reporting.api.model.DateInterval
+import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
 import ro.jf.funds.reporting.service.domain.ReportRecord
-import java.math.BigDecimal
 import java.util.*
 
 class ReportRecordRepository(
@@ -22,13 +21,13 @@ class ReportRecordRepository(
         val amount = decimal("amount", 10, 2)
     }
 
-    suspend fun create(userId: UUID, reportViewId: UUID, date: LocalDate, amount: BigDecimal): ReportRecord =
+    suspend fun create(command: CreateReportRecordCommand): ReportRecord =
         blockingTransaction {
             val reportRecord = ReportRecordTable.insert {
-                it[ReportRecordTable.userId] = userId
-                it[ReportRecordTable.reportViewId] = reportViewId
-                it[ReportRecordTable.date] = date.toJavaLocalDate()
-                it[ReportRecordTable.amount] = amount
+                it[userId] = command.userId
+                it[reportViewId] = command.reportViewId
+                it[date] = command.date.toJavaLocalDate()
+                it[amount] = command.amount
             }
             reportRecord.let {
                 ReportRecord(
@@ -41,10 +40,11 @@ class ReportRecordRepository(
             }
         }
 
-    suspend fun findByInterval(userId: UUID, interval: DateInterval) = blockingTransaction {
+    suspend fun findByViewInInterval(userId: UUID, reportViewId: UUID, interval: DateInterval) = blockingTransaction {
         ReportRecordTable
             .select {
                 (ReportRecordTable.userId eq userId) and
+                        (ReportRecordTable.reportViewId eq reportViewId) and
                         (ReportRecordTable.date greaterEq interval.from.toJavaLocalDate()) and
                         (ReportRecordTable.date lessEq interval.to.toJavaLocalDate())
             }
