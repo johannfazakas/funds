@@ -3,6 +3,7 @@ package ro.jf.funds.reporting.service.service
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.GranularDateInterval
+import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
 import ro.jf.funds.reporting.service.domain.ReportData
 import ro.jf.funds.reporting.service.domain.ReportView
 import ro.jf.funds.reporting.service.domain.ReportingException
@@ -18,12 +19,13 @@ class ReportViewService(
     suspend fun createReportView(userId: UUID, payload: CreateReportViewTO): ReportView {
         val reportView = reportViewRepository.create(userId, payload.name, payload.fundId, payload.type)
 
-        // TODO(Johann) this is just dummy logic for now.
-        val transactions = fundTransactionSdk.listTransactions(userId, payload.fundId)
-        val firstRecord = transactions.items.flatMap { it.records }.firstOrNull()
-        firstRecord?.let {
-            reportRecordRepository.create(userId, reportView.id, transactions.items.first().dateTime.date, it.amount)
-        }
+        fundTransactionSdk.listTransactions(userId, payload.fundId).items
+            .flatMap { transaction ->
+                transaction.records
+                    .filter { it.fundId == payload.fundId }
+                    .map { CreateReportRecordCommand(userId, reportView.id, transaction.dateTime.date, it.amount) }
+            }
+            .forEach { reportRecordRepository.create(it) }
 
         return reportView
     }
@@ -37,9 +39,12 @@ class ReportViewService(
         reportViewId: UUID,
         granularInterval: GranularDateInterval,
     ): ReportData {
-        val reportView =
-            reportViewRepository.findById(userId, reportViewId) ?: throw ReportingException.ReportViewNotFound()
-        return ReportData(reportViewId, reportView.name, reportView.fundId, granularInterval, emptyList())
+        reportViewRepository.findById(userId, reportViewId) ?: throw ReportingException.ReportViewNotFound()
+        val reportRecords =
+            reportRecordRepository.findByViewInInterval(userId, reportViewId, granularInterval.interval)
+
+
+        return ReportData(reportViewId, granularInterval, emptyList())
     }
 
     suspend fun listReportViews(userId: UUID): List<ReportView> {

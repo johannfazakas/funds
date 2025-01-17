@@ -7,17 +7,15 @@ import java.util.*
 
 data class ReportData(
     val reportViewId: UUID,
-    val reportViewName: String,
-    val fundId: UUID,
     val granularInterval: GranularDateInterval,
     val data: List<ReportDataBucket>,
 )
 
 sealed class ReportDataBucket {
-    abstract val intervalStart: LocalDate
+    abstract val timeBucket: LocalDate
 }
 
 data class ExpenseReportDataBucket(
-    override val intervalStart: LocalDate,
+    override val timeBucket: LocalDate,
     val amount: BigDecimal,
 ) : ReportDataBucket()

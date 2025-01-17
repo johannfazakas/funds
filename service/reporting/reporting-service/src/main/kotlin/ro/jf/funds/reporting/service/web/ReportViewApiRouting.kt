@@ -82,5 +82,5 @@ private fun ApplicationCall.granularTimeInterval() =
                 ?: throw ReportingException.MissingIntervalEnd(),
         ),
         granularity = parameters["granularity"]
-            ?.let(DataGranularity::valueOf) ?: throw ReportingException.MissingGranularity(),
+            ?.let(TimeGranularity::valueOf) ?: throw ReportingException.MissingGranularity(),
     )
