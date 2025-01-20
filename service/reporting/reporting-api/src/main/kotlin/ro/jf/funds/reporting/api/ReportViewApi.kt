@@ -2,8 +2,8 @@ package ro.jf.funds.reporting.api
 
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.ReportViewTaskTO
 import ro.jf.funds.reporting.api.model.ReportViewTO
+import ro.jf.funds.reporting.api.model.ReportViewTaskTO
 import java.util.*
 
 interface ReportViewApi {

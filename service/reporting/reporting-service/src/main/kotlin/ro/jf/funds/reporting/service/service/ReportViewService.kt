@@ -3,12 +3,11 @@ package ro.jf.funds.reporting.service.service
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.GranularDateInterval
-import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
-import ro.jf.funds.reporting.service.domain.ReportData
-import ro.jf.funds.reporting.service.domain.ReportView
-import ro.jf.funds.reporting.service.domain.ReportingException
+import ro.jf.funds.reporting.api.model.getTimeBucket
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
+import java.math.BigDecimal
 import java.util.*
 
 class ReportViewService(
@@ -40,11 +39,21 @@ class ReportViewService(
         granularInterval: GranularDateInterval,
     ): ReportData {
         reportViewRepository.findById(userId, reportViewId) ?: throw ReportingException.ReportViewNotFound()
-        val reportRecords =
-            reportRecordRepository.findByViewInInterval(userId, reportViewId, granularInterval.interval)
 
+        val reportRecordsByBucket = reportRecordRepository
+            .findByViewInInterval(userId, reportViewId, granularInterval.interval)
+            .groupBy { getTimeBucket(it.date, granularInterval.granularity) }
 
-        return ReportData(reportViewId, granularInterval, emptyList())
+        val dataBuckets = granularInterval
+            .getTimeBuckets()
+            .map { timeBucket ->
+                ExpenseReportDataBucket(
+                    timeBucket,
+                    reportRecordsByBucket[timeBucket]?.sumOf { it.amount } ?: BigDecimal.ZERO
+                )
+            }
+
+        return ExpenseReportData(reportViewId, granularInterval, dataBuckets)
     }
 
     suspend fun listReportViews(userId: UUID): List<ReportView> {

@@ -1,6 +1,6 @@
 package ro.jf.funds.reporting.api.model
 
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -30,7 +30,7 @@ data class ExpenseReportDataTO(
 ) : ReportDataTO(ReportViewType.EXPENSE) {
     @Serializable
     data class DataItem(
-        val timeBucket: LocalDateTime,
+        val timeBucket: LocalDate,
         @Serializable(with = BigDecimalSerializer::class)
         val amount: BigDecimal,
     )
