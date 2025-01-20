@@ -6,6 +6,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -28,25 +29,22 @@ import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
-import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.ReportViewTO
-import ro.jf.funds.reporting.api.model.ReportViewTaskTO
-import ro.jf.funds.reporting.api.model.ReportViewType
-import ro.jf.funds.reporting.service.domain.ReportView
-import ro.jf.funds.reporting.service.domain.ReportViewTask
-import ro.jf.funds.reporting.service.module
-import ro.jf.funds.reporting.service.persistence.ReportViewRepository
-import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
-import java.time.Duration.ofSeconds
-import java.util.UUID.randomUUID
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.config.configureReportingErrorHandling
 import ro.jf.funds.reporting.service.config.configureReportingEventHandling
-import ro.jf.funds.reporting.service.config.reportingDependencies
 import ro.jf.funds.reporting.service.config.configureReportingRouting
+import ro.jf.funds.reporting.service.config.reportingDependencies
+import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
+import ro.jf.funds.reporting.service.domain.ReportView
+import ro.jf.funds.reporting.service.domain.ReportViewTask
+import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
+import ro.jf.funds.reporting.service.persistence.ReportViewRepository
+import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import ro.jf.funds.reporting.service.utils.record
 import ro.jf.funds.reporting.service.utils.transaction
 import java.math.BigDecimal
+import java.time.Duration.ofSeconds
+import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
 @ExtendWith(KafkaContainerExtension::class)
@@ -54,8 +52,9 @@ import javax.sql.DataSource
 class ReportViewApiTest {
     private val createReportViewTopic = testTopicSupplier.topic(REPORTING_DOMAIN, REPORT_VIEW_REQUEST)
     private val consumerProperties = ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer")
-    private val createReportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)
-    private val createReportViewTaskRepository = ReportViewTaskRepository(PostgresContainerExtension.connection)
+    private val reportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)
+    private val reportViewTaskRepository = ReportViewTaskRepository(PostgresContainerExtension.connection)
+    private val reportRecordRepository = ReportRecordRepository(PostgresContainerExtension.connection)
     private val fundTransactionSdk = mock<FundTransactionSdk>()
 
     private val userId = randomUUID()
@@ -65,7 +64,7 @@ class ReportViewApiTest {
     private val dateTime = LocalDateTime.parse("2021-09-01T12:00:00")
 
     @Test
-    fun `given create report view should create it async`() = testApplication {
+    fun `create report view should create it async`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val httpClient = createJsonHttpClient()
@@ -105,7 +104,7 @@ class ReportViewApiTest {
 
         await().atMost(ofSeconds(10)).untilAsserted {
             val createReportViewTask = runBlocking {
-                createReportViewTaskRepository.findById(userId, reportViewTaskTO.taskId)
+                reportViewTaskRepository.findById(userId, reportViewTaskTO.taskId)
             }
             assertThat(createReportViewTask).isNotNull
             assertThat(createReportViewTask).isInstanceOf(ReportViewTask.Completed::class.java)
@@ -113,7 +112,7 @@ class ReportViewApiTest {
             assertThat(createReportViewTask.reportViewId).isNotNull()
 
             val createReportView = runBlocking {
-                createReportViewRepository.findById(userId, createReportViewTask.reportViewId)
+                reportViewRepository.findById(userId, createReportViewTask.reportViewId)
             }
             assertThat(createReportView).isNotNull
             createReportView as ReportView
@@ -124,13 +123,13 @@ class ReportViewApiTest {
     }
 
     @Test
-    fun `given get report view task`() = testApplication {
+    fun `get report view task`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
-        val reportViewTask = createReportViewTaskRepository.create(userId)
+        val reportViewTask = reportViewTaskRepository.create(userId)
         val reportView =
-            createReportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
-        createReportViewTaskRepository.complete(userId, reportViewTask.taskId, reportView.id)
+            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
+        reportViewTaskRepository.complete(userId, reportViewTask.taskId, reportView.id)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/tasks/${reportViewTask.taskId}") {
             header(USER_ID_HEADER, userId.toString())
@@ -149,11 +148,11 @@ class ReportViewApiTest {
     }
 
     @Test
-    fun `given get report view`() = testApplication {
+    fun `get report view`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            createReportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
+            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}") {
             header(USER_ID_HEADER, userId.toString())
@@ -169,11 +168,11 @@ class ReportViewApiTest {
     }
 
     @Test
-    fun `given list report views`() = testApplication {
+    fun `list report views`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            createReportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
+            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
@@ -191,31 +190,43 @@ class ReportViewApiTest {
     }
 
     @Test
-    fun `given get report view data`() = testApplication {
+    fun `get report view data`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            createReportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
+            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
+        reportRecordRepository.create(
+            CreateReportRecordCommand(userId, reportView.id, LocalDate.parse("2021-01-02"), BigDecimal("-25.0")),
+        )
+        reportRecordRepository.create(
+            CreateReportRecordCommand(userId, reportView.id, LocalDate.parse("2021-01-02"), BigDecimal("-10.0"))
+        )
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
             header(USER_ID_HEADER, userId.toString())
             parameter("granularity", "DAILY")
             parameter("from", "2021-01-01")
-            parameter("to", "2021-01-31")
+            parameter("to", "2021-01-28")
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val reportData = response.body<ReportDataTO>()
         assertThat(reportData.reportViewType).isEqualTo(ReportViewType.EXPENSE)
         assertThat(reportData.viewId).isEqualTo(reportView.id)
+        val expenseReportData = reportData as ExpenseReportDataTO
+        assertThat(expenseReportData.data).hasSize(28)
+        assertThat(expenseReportData.data[0])
+            .isEqualTo(ExpenseReportDataTO.DataItem(LocalDate.parse("2021-01-01"), BigDecimal("0.0")))
+        assertThat(expenseReportData.data[1])
+            .isEqualTo(ExpenseReportDataTO.DataItem(LocalDate.parse("2021-01-02"), BigDecimal("-35.0")))
     }
 
     @Test
-    fun `given get report view without granularity`() = testApplication {
+    fun `get report view without granularity`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            createReportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
+            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
             header(USER_ID_HEADER, userId.toString())

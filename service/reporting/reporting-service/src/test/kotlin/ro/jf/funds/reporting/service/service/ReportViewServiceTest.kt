@@ -12,6 +12,7 @@ import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
+import ro.jf.funds.reporting.service.domain.ExpenseReportDataBucket
 import ro.jf.funds.reporting.service.domain.ReportRecord
 import ro.jf.funds.reporting.service.domain.ReportView
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
@@ -83,10 +84,10 @@ class ReportViewServiceTest {
     }
 
     @Test
-    fun `get report view data`(): Unit = runBlocking {
+    fun `get expense report view data grouped by months`(): Unit = runBlocking {
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
-        val interval = DateInterval(from = LocalDate.parse("2021-09-03"), to = LocalDate.parse("2021-10-25"))
+        val interval = DateInterval(from = LocalDate.parse("2021-09-03"), to = LocalDate.parse("2021-11-25"))
         whenever(reportRecordRepository.findByViewInInterval(userId, reportViewId, interval))
             .thenReturn(
                 listOf(
@@ -99,8 +100,15 @@ class ReportViewServiceTest {
 
         val data = reportViewService.getReportViewData(userId, reportViewId, granularInterval)
 
+        assertThat(data.reportViewId).isEqualTo(reportViewId)
+        assertThat(data.granularInterval).isEqualTo(granularInterval)
+        assertThat(data.data).containsExactly(
+            ExpenseReportDataBucket(LocalDate.parse("2021-09-01"), BigDecimal("-140.0")),
+            ExpenseReportDataBucket(LocalDate.parse("2021-10-01"), BigDecimal("-30.0")),
+            ExpenseReportDataBucket(LocalDate.parse("2021-11-01"), BigDecimal.ZERO),
+        )
     }
 
     private fun reportRecord(date: LocalDate, amount: BigDecimal) =
-        ReportRecord(randomUUID(), userId, reportViewId, dateTime1.date, amount)
+        ReportRecord(randomUUID(), userId, reportViewId, date, amount)
 }
