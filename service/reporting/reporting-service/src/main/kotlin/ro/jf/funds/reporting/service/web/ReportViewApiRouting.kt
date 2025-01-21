@@ -18,7 +18,7 @@ import java.util.*
 
 private val log = logger { }
 
-fun Routing.reportingViewApiRouting(
+fun Routing.reportingApiRouting(
     reportViewService: ReportViewService,
     reportViewTaskService: ReportViewTaskService,
 ) {

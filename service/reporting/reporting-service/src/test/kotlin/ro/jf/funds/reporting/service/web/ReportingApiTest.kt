@@ -49,7 +49,7 @@ import javax.sql.DataSource
 
 @ExtendWith(KafkaContainerExtension::class)
 @ExtendWith(PostgresContainerExtension::class)
-class ReportViewApiTest {
+class ReportingApiTest {
     private val createReportViewTopic = testTopicSupplier.topic(REPORTING_DOMAIN, REPORT_VIEW_REQUEST)
     private val consumerProperties = ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer")
     private val reportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)

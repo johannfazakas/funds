@@ -9,20 +9,18 @@ import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
-import ro.jf.funds.reporting.api.ReportViewApi
-import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.ReportViewTO
-import ro.jf.funds.reporting.api.model.ReportViewTaskTO
+import ro.jf.funds.reporting.api.ReportingApi
+import ro.jf.funds.reporting.api.model.*
 import java.util.*
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5212"
 
 private val log = logger { }
 
-class ReportViewSdk(
+class ReportingSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
-) : ReportViewApi {
+) : ReportingApi {
     override suspend fun createReportView(userId: UUID, request: CreateReportViewTO): ReportViewTaskTO {
         log.info { "Creating for user $userId report view $request." }
         val response = httpClient.post("$baseUrl/bk-api/reporting/v1/report-views/tasks") {
@@ -49,9 +47,9 @@ class ReportViewSdk(
         return response.body()
     }
 
-    override suspend fun getReportView(userId: UUID, reportId: UUID): ReportViewTO {
-        log.info { "Getting report view for user $userId and report $reportId." }
-        val response = httpClient.get("$baseUrl/bk-api/reporting/v1/report-views/$reportId") {
+    override suspend fun getReportView(userId: UUID, reportViewId: UUID): ReportViewTO {
+        log.info { "Getting report view for user $userId and report $reportViewId." }
+        val response = httpClient.get("$baseUrl/bk-api/reporting/v1/report-views/$reportViewId") {
             header(USER_ID_HEADER, userId.toString())
         }
         if (response.status != HttpStatusCode.OK) {
@@ -59,6 +57,14 @@ class ReportViewSdk(
             throw response.toApiException()
         }
         return response.body()
+    }
+
+    override suspend fun getReportViewData(
+        userId: UUID,
+        reportViewId: UUID,
+        granularInterval: GranularDateInterval,
+    ): ReportDataTO {
+        TODO("Not yet implemented")
     }
 
     override suspend fun listReportsViews(userId: UUID): ListTO<ReportViewTO> {
