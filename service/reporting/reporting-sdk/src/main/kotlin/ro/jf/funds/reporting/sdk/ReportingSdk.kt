@@ -23,7 +23,7 @@ class ReportingSdk(
 ) : ReportingApi {
     override suspend fun createReportView(userId: UUID, request: CreateReportViewTO): ReportViewTaskTO {
         log.info { "Creating for user $userId report view $request." }
-        val response = httpClient.post("$baseUrl/bk-api/reporting/v1/report-views/tasks") {
+        val response = httpClient.post("$baseUrl/funds-api/reporting/v1/report-views/tasks") {
             header(USER_ID_HEADER, userId.toString())
             contentType(ContentType.Application.Json)
             setBody(request)
@@ -37,7 +37,7 @@ class ReportingSdk(
 
     override suspend fun getReportViewTask(userId: UUID, taskId: UUID): ReportViewTaskTO {
         log.info { "Getting report view task for user $userId and task $taskId." }
-        val response = httpClient.get("$baseUrl/bk-api/reporting/v1/report-views/tasks/$taskId") {
+        val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views/tasks/$taskId") {
             header(USER_ID_HEADER, userId.toString())
         }
         if (response.status != HttpStatusCode.OK) {
@@ -49,11 +49,23 @@ class ReportingSdk(
 
     override suspend fun getReportView(userId: UUID, reportViewId: UUID): ReportViewTO {
         log.info { "Getting report view for user $userId and report $reportViewId." }
-        val response = httpClient.get("$baseUrl/bk-api/reporting/v1/report-views/$reportViewId") {
+        val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views/$reportViewId") {
             header(USER_ID_HEADER, userId.toString())
         }
         if (response.status != HttpStatusCode.OK) {
             log.warn { "Unexpected response on get report view: $response" }
+            throw response.toApiException()
+        }
+        return response.body()
+    }
+
+    override suspend fun listReportsViews(userId: UUID): ListTO<ReportViewTO> {
+        log.info { "Listing report views for user $userId." }
+        val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views") {
+            header(USER_ID_HEADER, userId.toString())
+        }
+        if (response.status != HttpStatusCode.OK) {
+            log.warn { "Unexpected response on list report views: $response" }
             throw response.toApiException()
         }
         return response.body()
@@ -64,16 +76,15 @@ class ReportingSdk(
         reportViewId: UUID,
         granularInterval: GranularDateInterval,
     ): ReportDataTO {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun listReportsViews(userId: UUID): ListTO<ReportViewTO> {
-        log.info { "Listing report views for user $userId." }
-        val response = httpClient.get("$baseUrl/bk-api/reporting/v1/report-views") {
+        log.info { "Getting report view data for user $userId and report $reportViewId in interval $granularInterval." }
+        val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data") {
             header(USER_ID_HEADER, userId.toString())
+            parameter("from", granularInterval.interval.from.toString())
+            parameter("to", granularInterval.interval.to.toString())
+            parameter("granularity", granularInterval.granularity.toString())
         }
         if (response.status != HttpStatusCode.OK) {
-            log.warn { "Unexpected response on list report views: $response" }
+            log.warn { "Unexpected response on get report view data: $response" }
             throw response.toApiException()
         }
         return response.body()

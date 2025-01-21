@@ -1,6 +1,7 @@
 package ro.jf.funds.reporting.sdk
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -15,10 +16,8 @@ import org.mockserver.model.MediaType
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
-import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.ReportViewTO
-import ro.jf.funds.reporting.api.model.ReportViewTaskTO
-import ro.jf.funds.reporting.api.model.ReportViewType
+import ro.jf.funds.reporting.api.model.*
+import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID
 
@@ -68,7 +67,7 @@ class ReportingSdkTest {
     }
 
     @Test
-    fun `given get report view list`(mockServerClient: MockServerClient): Unit = runBlocking {
+    fun `list report views`(mockServerClient: MockServerClient): Unit = runBlocking {
         val expectedResponse = ListTO.of(ReportViewTO(viewId, viewName, fundId, ReportViewType.EXPENSE))
         mockServerClient.mockListReportViews(expectedResponse)
 
@@ -77,11 +76,42 @@ class ReportingSdkTest {
         assertThat(response).isEqualTo(expectedResponse)
     }
 
+    @Test
+    fun `get report view data`(mockServerClient: MockServerClient): Unit = runBlocking {
+        val granularInterval = GranularDateInterval(
+            interval = DateInterval(LocalDate.parse("2024-11-01"), LocalDate.parse("2025-01-31")),
+            granularity = TimeGranularity.MONTHLY
+        )
+        val expectedResponse = ExpenseReportDataTO(
+            viewId = viewId,
+            granularInterval = granularInterval,
+            data = listOf(
+                ExpenseReportDataTO.DataItem(
+                    timeBucket = LocalDate.parse("2024-11-01"),
+                    amount = BigDecimal("200.0")
+                ),
+                ExpenseReportDataTO.DataItem(
+                    timeBucket = LocalDate.parse("2024-12-01"),
+                    amount = BigDecimal("300.0")
+                ),
+                ExpenseReportDataTO.DataItem(
+                    timeBucket = LocalDate.parse("2025-01-01"),
+                    amount = BigDecimal("400.0")
+                )
+            )
+        )
+        mockServerClient.mockGetReportData(expectedResponse)
+
+        val response = reportingSdk.getReportViewData(userId, viewId, granularInterval)
+
+        assertThat(response).isEqualTo(expectedResponse)
+    }
+
     private fun MockServerClient.mockCreateReportViewTask(request: CreateReportViewTO, taskId: UUID, status: String) {
         `when`(
             request()
                 .withMethod("POST")
-                .withPath("/bk-api/reporting/v1/report-views/tasks")
+                .withPath("/funds-api/reporting/v1/report-views/tasks")
                 .withHeader(USER_ID_HEADER, userId.toString())
                 .withContentType(MediaType.APPLICATION_JSON)
                 .withBody(
@@ -130,7 +160,7 @@ class ReportingSdkTest {
         `when`(
             request()
                 .withMethod("GET")
-                .withPath("/bk-api/reporting/v1/report-views/tasks/$taskId")
+                .withPath("/funds-api/reporting/v1/report-views/tasks/$taskId")
                 .withHeader(USER_ID_HEADER, userId.toString())
         )
             .respond(
@@ -150,7 +180,7 @@ class ReportingSdkTest {
         `when`(
             request()
                 .withMethod("GET")
-                .withPath("/bk-api/reporting/v1/report-views/$fundId")
+                .withPath("/funds-api/reporting/v1/report-views/$fundId")
                 .withHeader(USER_ID_HEADER, userId.toString())
         )
             .respond(
@@ -172,7 +202,7 @@ class ReportingSdkTest {
         `when`(
             request()
                 .withMethod("GET")
-                .withPath("/bk-api/reporting/v1/report-views")
+                .withPath("/funds-api/reporting/v1/report-views")
                 .withHeader(USER_ID_HEADER, userId.toString())
         )
             .respond(
@@ -197,4 +227,52 @@ class ReportingSdkTest {
                     )
             )
     }
+
+    private fun MockServerClient.mockGetReportData(expectedResponse: ExpenseReportDataTO) {
+        `when`(
+            request()
+                .withMethod("GET")
+                .withPath("/funds-api/reporting/v1/report-views/$viewId/data")
+                .withQueryStringParameters(
+                    mapOf(
+                        "from" to listOf(expectedResponse.granularInterval.interval.from.toString()),
+                        "to" to listOf(expectedResponse.granularInterval.interval.to.toString()),
+                        "granularity" to listOf(expectedResponse.granularInterval.granularity.name)
+                    )
+                )
+                .withHeader(USER_ID_HEADER, userId.toString())
+        )
+            .respond(
+                response()
+                    .withStatusCode(200)
+                    .withContentType(MediaType.APPLICATION_JSON)
+                    .withBody(
+                        buildJsonObject {
+                            put("viewId", JsonPrimitive(expectedResponse.viewId.toString()))
+                            put("type", JsonPrimitive(expectedResponse.type.name))
+                            put("granularInterval", buildJsonObject {
+                                put("interval", buildJsonObject {
+                                    put(
+                                        "from",
+                                        JsonPrimitive(expectedResponse.granularInterval.interval.from.toString())
+                                    )
+                                    put("to", JsonPrimitive(expectedResponse.granularInterval.interval.to.toString()))
+                                })
+                                put("granularity", JsonPrimitive(expectedResponse.granularInterval.granularity.name))
+                            })
+                            put("data", buildJsonArray {
+                                expectedResponse.data.forEach { item ->
+                                    add(
+                                        buildJsonObject {
+                                            put("timeBucket", JsonPrimitive(item.timeBucket.toString()))
+                                            put("amount", JsonPrimitive(item.amount.toString()))
+                                        }
+                                    )
+                                }
+                            })
+                        }.toString()
+                    )
+            )
+    }
 }
+
