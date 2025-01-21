@@ -14,14 +14,14 @@ import java.util.*
 @JsonClassDiscriminator("type")
 @Serializable
 sealed class ReportDataTO(
-    val reportViewType: ReportViewType,
+    val type: ReportViewType,
 ) {
     abstract val viewId: UUID
     abstract val granularInterval: GranularDateInterval
 }
 
 @Serializable
-@SerialName("expense")
+@SerialName("EXPENSE")
 data class ExpenseReportDataTO(
     @Serializable(with = UUIDSerializer::class)
     override val viewId: UUID,
