@@ -8,7 +8,7 @@ import ro.jf.funds.commons.serialization.UUIDSerializer
 import java.util.*
 
 @OptIn(ExperimentalSerializationApi::class)
-@JsonClassDiscriminator("type")
+@JsonClassDiscriminator("status")
 @Serializable
 sealed class ReportViewTaskTO {
     abstract val taskId: UUID

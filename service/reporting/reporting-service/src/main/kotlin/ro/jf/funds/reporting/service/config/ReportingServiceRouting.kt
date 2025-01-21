@@ -5,10 +5,10 @@ import io.ktor.server.routing.*
 import org.koin.ktor.ext.get
 import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
-import ro.jf.funds.reporting.service.web.reportingViewApiRouting
+import ro.jf.funds.reporting.service.web.reportingApiRouting
 
 fun Application.configureReportingRouting() {
     routing {
-        reportingViewApiRouting(get<ReportViewService>(), get<ReportViewTaskService>())
+        reportingApiRouting(get<ReportViewService>(), get<ReportViewTaskService>())
     }
 }
