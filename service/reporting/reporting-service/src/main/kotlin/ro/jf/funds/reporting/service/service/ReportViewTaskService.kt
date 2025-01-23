@@ -27,6 +27,7 @@ class ReportViewTaskService(
     }
 
     suspend fun handleReportViewTask(userId: UUID, taskId: UUID, createReportViewTO: CreateReportViewTO) {
+        log.info { "Handle report view task $taskId for user $userId." }
         try {
             measureTime {
                 reportViewTaskRepository.findById(userId, taskId) ?: error("Report view task not found")
@@ -36,7 +37,9 @@ class ReportViewTaskService(
                 log.info { "Report view task $taskId completed in $duration" }
             }
         } catch (e: Exception) {
+            // TODO(Johann) could remove report view if task fails after creation
             reportViewTaskRepository.fail(userId, taskId, e.message ?: "Unknown error")
+            log.warn(e) { "Report view task $taskId failed." }
         }
     }
 }

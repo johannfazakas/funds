@@ -5,6 +5,7 @@ import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import ro.jf.funds.commons.config.getEnvironmentProperty
+import ro.jf.funds.commons.config.getStringProperty
 import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.commons.web.createHttpClient
@@ -54,7 +55,9 @@ private val Application.eventProducerDependencies
 private val Application.integrationDependencies
     get() = module {
         single<HttpClient> { createHttpClient() }
-        single<FundTransactionSdk> { FundTransactionSdk(FUND_SERVICE_BASE_URL_PROPERTY, get()) }
+        single<FundTransactionSdk> {
+            FundTransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
+        }
     }
 
 private val Application.serviceDependencies

@@ -13,9 +13,7 @@ import java.util.*
 @OptIn(ExperimentalSerializationApi::class)
 @JsonClassDiscriminator("type")
 @Serializable
-sealed class ReportDataTO(
-    val type: ReportViewType,
-) {
+sealed class ReportDataTO {
     abstract val viewId: UUID
     abstract val granularInterval: GranularDateInterval
 }
@@ -27,7 +25,7 @@ data class ExpenseReportDataTO(
     override val viewId: UUID,
     override val granularInterval: GranularDateInterval,
     val data: List<DataItem>,
-) : ReportDataTO(ReportViewType.EXPENSE) {
+) : ReportDataTO() {
     @Serializable
     data class DataItem(
         val timeBucket: LocalDate,

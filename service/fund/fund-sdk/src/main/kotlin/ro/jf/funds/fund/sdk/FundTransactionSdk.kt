@@ -19,6 +19,10 @@ class FundTransactionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient,
 ) : FundTransactionApi {
+    init {
+        log.info { "FundTransactionSdk initialized with baseUrl=$baseUrl" }
+    }
+
     override suspend fun createTransaction(userId: UUID, transaction: CreateFundTransactionTO): FundTransactionTO {
         val response = httpClient.post("$baseUrl$BASE_PATH/transactions") {
             headers {
