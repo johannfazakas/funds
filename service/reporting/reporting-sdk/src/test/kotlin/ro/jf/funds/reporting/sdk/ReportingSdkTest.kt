@@ -71,7 +71,7 @@ class ReportingSdkTest {
         val expectedResponse = ListTO.of(ReportViewTO(viewId, viewName, fundId, ReportViewType.EXPENSE))
         mockServerClient.mockListReportViews(expectedResponse)
 
-        val response = reportingSdk.listReportsViews(userId)
+        val response = reportingSdk.listReportViews(userId)
 
         assertThat(response).isEqualTo(expectedResponse)
     }
@@ -228,7 +228,7 @@ class ReportingSdkTest {
             )
     }
 
-    private fun MockServerClient.mockGetReportData(expectedResponse: ExpenseReportDataTO) {
+    private fun MockServerClient.mockGetReportData(expectedResponse: ReportDataTO) {
         `when`(
             request()
                 .withMethod("GET")
@@ -249,7 +249,13 @@ class ReportingSdkTest {
                     .withBody(
                         buildJsonObject {
                             put("viewId", JsonPrimitive(expectedResponse.viewId.toString()))
-                            put("type", JsonPrimitive(expectedResponse.type.name))
+                            put(
+                                "type", JsonPrimitive(
+                                    when (expectedResponse) {
+                                        is ExpenseReportDataTO -> "EXPENSE"
+                                    }
+                                )
+                            )
                             put("granularInterval", buildJsonObject {
                                 put("interval", buildJsonObject {
                                     put(

@@ -211,7 +211,6 @@ class ReportingApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val reportData = response.body<ReportDataTO>()
-        assertThat(reportData.reportViewType).isEqualTo(ReportViewType.EXPENSE)
         assertThat(reportData.viewId).isEqualTo(reportView.id)
         val expenseReportData = reportData as ExpenseReportDataTO
         assertThat(expenseReportData.data).hasSize(28)

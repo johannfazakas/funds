@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.service.service
 
+import mu.KotlinLogging.logger
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.GranularDateInterval
@@ -10,12 +11,15 @@ import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import java.math.BigDecimal
 import java.util.*
 
+private val log = logger { }
+
 class ReportViewService(
     private val reportViewRepository: ReportViewRepository,
     private val reportRecordRepository: ReportRecordRepository,
     private val fundTransactionSdk: FundTransactionSdk,
 ) {
     suspend fun createReportView(userId: UUID, payload: CreateReportViewTO): ReportView {
+        log.info { "Create report view for user $userId: $payload" }
         val reportView = reportViewRepository.create(userId, payload.name, payload.fundId, payload.type)
 
         fundTransactionSdk.listTransactions(userId, payload.fundId).items

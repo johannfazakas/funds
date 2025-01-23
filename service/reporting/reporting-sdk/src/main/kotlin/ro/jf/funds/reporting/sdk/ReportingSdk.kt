@@ -59,7 +59,7 @@ class ReportingSdk(
         return response.body()
     }
 
-    override suspend fun listReportsViews(userId: UUID): ListTO<ReportViewTO> {
+    override suspend fun listReportViews(userId: UUID): ListTO<ReportViewTO> {
         log.info { "Listing report views for user $userId." }
         val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
