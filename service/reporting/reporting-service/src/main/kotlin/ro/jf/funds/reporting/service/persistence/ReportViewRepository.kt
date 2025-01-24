@@ -39,6 +39,16 @@ class ReportViewRepository(
         }
     }
 
+    suspend fun findByName(
+        userId: UUID,
+        name: String,
+    ): ReportView? = blockingTransaction {
+        ReportViewTable
+            .select { (ReportViewTable.userId eq userId) and (ReportViewTable.name eq name) }
+            .map { it.toModel() }
+            .singleOrNull()
+    }
+
     suspend fun findById(
         userId: UUID,
         reportViewId: UUID,

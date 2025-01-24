@@ -20,6 +20,10 @@ class ReportViewService(
 ) {
     suspend fun createReportView(userId: UUID, payload: CreateReportViewTO): ReportView {
         log.info { "Create report view for user $userId: $payload" }
+
+        reportViewRepository.findByName(userId, payload.name)?.let {
+            throw ReportingException.ReportViewAlreadyExists(userId, payload.name)
+        }
         val reportView = reportViewRepository.create(userId, payload.name, payload.fundId, payload.type)
 
         fundTransactionSdk.listTransactions(userId, payload.fundId).items
@@ -34,7 +38,8 @@ class ReportViewService(
     }
 
     suspend fun getReportView(userId: UUID, reportViewId: UUID): ReportView {
-        return reportViewRepository.findById(userId, reportViewId) ?: throw ReportingException.ReportViewNotFound()
+        return reportViewRepository.findById(userId, reportViewId)
+            ?: throw ReportingException.ReportViewNotFound(userId, reportViewId)
     }
 
     suspend fun getReportViewData(
@@ -42,10 +47,15 @@ class ReportViewService(
         reportViewId: UUID,
         granularInterval: GranularDateInterval,
     ): ReportData {
-        reportViewRepository.findById(userId, reportViewId) ?: throw ReportingException.ReportViewNotFound()
+        // TODO(Johann) dive into logging a bit. how can it be controlled in a ktor service? This should probably be a DEBUG
+        log.info { "Get report view data for user $userId, report $reportViewId and interval $granularInterval" }
+        reportViewRepository.findById(userId, reportViewId)
+            ?: throw ReportingException.ReportViewNotFound(userId, reportViewId)
 
-        val reportRecordsByBucket = reportRecordRepository
+        val reportRecords = reportRecordRepository
             .findByViewInInterval(userId, reportViewId, granularInterval.interval)
+        log.info { "Found ${reportRecords.size} records for report $reportViewId in interval ${granularInterval.interval}" }
+        val reportRecordsByBucket = reportRecords
             .groupBy { getTimeBucket(it.date, granularInterval.granularity) }
 
         val dataBuckets = granularInterval

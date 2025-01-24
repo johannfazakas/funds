@@ -35,6 +35,7 @@ fun ReportingException.toStatusCode(): HttpStatusCode = when (this) {
     is ReportingException.MissingIntervalEnd -> HttpStatusCode.BadRequest
     is ReportingException.MissingIntervalStart -> HttpStatusCode.BadRequest
     is ReportingException.ReportViewNotFound -> HttpStatusCode.NotFound
+    is ReportingException.ReportViewAlreadyExists -> HttpStatusCode.Conflict
 }
 
 fun Throwable.toError(): ErrorTO {
@@ -49,6 +50,14 @@ fun ReportingException.toError(): ErrorTO {
         is ReportingException.MissingGranularity -> ErrorTO(title = "Missing granularity", detail = null)
         is ReportingException.MissingIntervalEnd -> ErrorTO(title = "Missing interval end", detail = null)
         is ReportingException.MissingIntervalStart -> ErrorTO(title = "Missing interval start", detail = null)
-        is ReportingException.ReportViewNotFound -> ErrorTO(title = "Report view not found", detail = null)
+        is ReportingException.ReportViewNotFound -> ErrorTO(
+            title = "Report view not found",
+            detail = "Report view ${this.reportViewId} not found for user ${this.userId}"
+        )
+
+        is ReportingException.ReportViewAlreadyExists -> ErrorTO(
+            title = "Report view already exists",
+            detail = "Report view with name ${this.reportViewName} already exists for user ${this.userId}"
+        )
     }
 }

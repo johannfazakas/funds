@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 import org.mockito.kotlin.argumentCaptor
@@ -11,10 +12,7 @@ import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.model.*
-import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
-import ro.jf.funds.reporting.service.domain.ExpenseReportDataBucket
-import ro.jf.funds.reporting.service.domain.ReportRecord
-import ro.jf.funds.reporting.service.domain.ReportView
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.utils.record
@@ -42,6 +40,7 @@ class ReportViewServiceTest {
     @Test
     fun `create report view should create report view`(): Unit = runBlocking {
         val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE)
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(reportViewRepository.create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
             .thenReturn(
                 ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE)
@@ -63,6 +62,7 @@ class ReportViewServiceTest {
     @Test
     fun `create report view should store single fund report records`(): Unit = runBlocking {
         val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE)
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(reportViewRepository.create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
             .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
 
@@ -81,6 +81,18 @@ class ReportViewServiceTest {
             CreateReportRecordCommand(userId, reportView.id, dateTime1.date, BigDecimal("100.0")),
             CreateReportRecordCommand(userId, reportView.id, dateTime2.date, BigDecimal("-200.0"))
         )
+    }
+
+    @Test
+    fun `create report view with same name should raise error`(): Unit = runBlocking {
+        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE)
+        whenever(reportViewRepository.findByName(userId, reportViewName))
+            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
+
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, request) } }
+            .isInstanceOf(ReportingException.ReportViewAlreadyExists::class.java)
+
+        verify(reportViewRepository, never()).create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE)
     }
 
     @Test
