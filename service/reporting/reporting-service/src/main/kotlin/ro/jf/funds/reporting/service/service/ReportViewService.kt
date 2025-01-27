@@ -42,6 +42,10 @@ class ReportViewService(
             ?: throw ReportingException.ReportViewNotFound(userId, reportViewId)
     }
 
+    suspend fun deleteReportView(userId: UUID, reportViewId: UUID) {
+        reportViewRepository.delete(userId, reportViewId)
+    }
+
     suspend fun getReportViewData(
         userId: UUID,
         reportViewId: UUID,

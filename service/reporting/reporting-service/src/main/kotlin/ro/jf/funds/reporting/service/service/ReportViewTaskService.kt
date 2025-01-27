@@ -37,7 +37,7 @@ class ReportViewTaskService(
                 log.info { "Report view task $taskId completed in $duration" }
             }
         } catch (e: Exception) {
-            // TODO(Johann) could remove report view if task fails after creation
+            reportViewService.deleteReportView(userId, taskId)
             reportViewTaskRepository.fail(userId, taskId, e.message ?: "Unknown error")
             log.warn(e) { "Report view task $taskId failed." }
         }

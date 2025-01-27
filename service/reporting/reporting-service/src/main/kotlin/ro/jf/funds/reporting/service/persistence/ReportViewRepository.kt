@@ -2,6 +2,7 @@ package ro.jf.funds.reporting.service.persistence
 
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import ro.jf.funds.commons.service.persistence.blockingTransaction
 import ro.jf.funds.reporting.api.model.ReportViewType
 import ro.jf.funds.reporting.service.domain.ReportView
@@ -57,6 +58,12 @@ class ReportViewRepository(
             .select { (ReportViewTable.userId eq userId) and (ReportViewTable.id eq reportViewId) }
             .map { it.toModel() }
             .singleOrNull()
+    }
+
+    suspend fun delete(userId: UUID, reportViewId: UUID): Unit = blockingTransaction {
+        ReportViewTable.deleteWhere {
+            (ReportViewTable.userId eq userId) and (ReportViewTable.id eq reportViewId)
+        }
     }
 
     suspend fun deleteAll(): Unit = blockingTransaction { ReportViewTable.deleteAll() }
