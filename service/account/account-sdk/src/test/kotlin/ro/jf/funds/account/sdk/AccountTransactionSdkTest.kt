@@ -56,7 +56,7 @@ class AccountTransactionSdkTest {
             .`when`(
                 request()
                     .withMethod("POST")
-                    .withPath("/bk-api/account/v1/transactions")
+                    .withPath("/funds-api/account/v1/transactions")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
                     .withBody(
                         jsonSchema(
@@ -182,7 +182,7 @@ class AccountTransactionSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/account/v1/transactions")
+                    .withPath("/funds-api/account/v1/transactions")
                     .withQueryStringParameters(
                         mapOf(
                             "${TRANSACTION_PROPERTIES_PREFIX}transactionProp" to listOf("value1", "value2"),
@@ -263,7 +263,7 @@ class AccountTransactionSdkTest {
             .`when`(
                 request()
                     .withMethod("DELETE")
-                    .withPath("/bk-api/account/v1/transactions/$transactionId")
+                    .withPath("/funds-api/account/v1/transactions/$transactionId")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(response().withStatusCode(204))
@@ -274,7 +274,7 @@ class AccountTransactionSdkTest {
             .verify(
                 request()
                     .withMethod("DELETE")
-                    .withPath("/bk-api/account/v1/transactions/$transactionId")
+                    .withPath("/funds-api/account/v1/transactions/$transactionId")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
     }

@@ -36,7 +36,7 @@ class AccountSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/account/v1/accounts")
+                    .withPath("/funds-api/account/v1/accounts")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(
@@ -79,7 +79,7 @@ class AccountSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/account/v1/accounts/$accountId")
+                    .withPath("/funds-api/account/v1/accounts/$accountId")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(
@@ -118,7 +118,7 @@ class AccountSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/account/v1/accounts/$accountId")
+                    .withPath("/funds-api/account/v1/accounts/$accountId")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(
@@ -141,7 +141,7 @@ class AccountSdkTest {
             .`when`(
                 request()
                     .withMethod("POST")
-                    .withPath("/bk-api/account/v1/accounts")
+                    .withPath("/funds-api/account/v1/accounts")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
                     .withBody(
                         jsonSchema(
@@ -197,7 +197,7 @@ class AccountSdkTest {
             .`when`(
                 request()
                     .withMethod("DELETE")
-                    .withPath("/bk-api/account/v1/accounts/$accountId")
+                    .withPath("/funds-api/account/v1/accounts/$accountId")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(
@@ -210,7 +210,7 @@ class AccountSdkTest {
         mockServerClient.verify(
             request()
                 .withMethod("DELETE")
-                .withPath("/bk-api/account/v1/accounts/$accountId")
+                .withPath("/funds-api/account/v1/accounts/$accountId")
                 .withHeader(Header(USER_ID_HEADER, userId.toString()))
         )
     }

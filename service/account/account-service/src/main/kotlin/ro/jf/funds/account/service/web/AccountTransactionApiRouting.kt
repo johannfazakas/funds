@@ -23,7 +23,7 @@ private const val RECORD_PROPERTIES_PREFIX = "properties.record."
 private const val TRANSACTION_PROPERTIES_PREFIX = "properties.transaction."
 
 fun Routing.accountTransactionApiRouting(transactionService: AccountTransactionService) {
-    route("/bk-api/account/v1/transactions") {
+    route("/funds-api/account/v1/transactions") {
         post {
             val userId = call.userId()
             val request = call.receive<CreateAccountTransactionTO>()

@@ -1,7 +1,7 @@
 @user-id=51b978e8-1faa-4183-a67a-96096d673224
 
 ### Call dummy service
-POST {{import_host}}/bk-api/import/v1/imports
+POST {{import_host}}/funds-api/import/v1/imports
 BK_USER_ID: {{user-id}}
 Content-Type: application/json
 

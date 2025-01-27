@@ -43,7 +43,7 @@ class AccountApiTest {
         accountRepository.save(userId, CreateAccountTO(AccountName("Cash"), Currency.RON))
         accountRepository.save(userId, CreateAccountTO(AccountName("BET"), Symbol("TVBETETF")))
 
-        val response = createJsonHttpClient().get("/bk-api/account/v1/accounts") {
+        val response = createJsonHttpClient().get("/funds-api/account/v1/accounts") {
             header(USER_ID_HEADER, userId)
         }
 
@@ -61,7 +61,7 @@ class AccountApiTest {
         val userId = randomUUID()
         val user = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
 
-        val response = createJsonHttpClient().get("/bk-api/account/v1/accounts/${user.id}") {
+        val response = createJsonHttpClient().get("/funds-api/account/v1/accounts/${user.id}") {
             header(USER_ID_HEADER, userId)
         }
 
@@ -76,7 +76,7 @@ class AccountApiTest {
         configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
-        val response = createJsonHttpClient().get("/bk-api/account/v1/accounts/${randomUUID()}") {
+        val response = createJsonHttpClient().get("/funds-api/account/v1/accounts/${randomUUID()}") {
             header(USER_ID_HEADER, userId)
         }
 
@@ -88,7 +88,7 @@ class AccountApiTest {
         configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
-        val response = createJsonHttpClient().post("/bk-api/account/v1/accounts") {
+        val response = createJsonHttpClient().post("/funds-api/account/v1/accounts") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
             setBody(CreateAccountTO(AccountName("Revolut"), Currency.RON))
@@ -109,7 +109,7 @@ class AccountApiTest {
         configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
-        val response = createJsonHttpClient().post("/bk-api/account/v1/accounts") {
+        val response = createJsonHttpClient().post("/funds-api/account/v1/accounts") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
             setBody(CreateAccountTO(AccountName("S&P500"), Symbol("SXR8_DE")))
@@ -134,7 +134,7 @@ class AccountApiTest {
         val userId = randomUUID()
         accountRepository.save(userId, CreateAccountTO(AccountName("BT"), Currency.EUR))
 
-        val response = createJsonHttpClient().post("/bk-api/account/v1/accounts") {
+        val response = createJsonHttpClient().post("/funds-api/account/v1/accounts") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
             setBody(CreateAccountTO(AccountName("BT"), Currency.RON))
@@ -150,7 +150,7 @@ class AccountApiTest {
         val userId = randomUUID()
         val account = accountRepository.save(userId, CreateAccountTO(AccountName("ING"), Currency.RON))
 
-        val response = createJsonHttpClient().delete("/bk-api/account/v1/accounts/${account.id}") {
+        val response = createJsonHttpClient().delete("/funds-api/account/v1/accounts/${account.id}") {
             header(USER_ID_HEADER, userId)
         }
 
@@ -162,7 +162,7 @@ class AccountApiTest {
     fun `test delete not existing user by id`() = testApplication {
         configureEnvironment(Application::module, dbConfig, kafkaConfig)
 
-        val response = createJsonHttpClient().delete("/bk-api/account/v1/accounts/${randomUUID()}") {
+        val response = createJsonHttpClient().delete("/funds-api/account/v1/accounts/${randomUUID()}") {
             header(USER_ID_HEADER, randomUUID())
         }
 

@@ -27,12 +27,12 @@ class FundSdk(
             }
         }
         if (response.status != HttpStatusCode.OK) {
-            log.warn { "Unexpected response on list accounts: $response" }
+            log.warn { "Unexpected response on list funds: $response" }
             throw response.toApiException()
         }
-        val accounts = response.body<ListTO<FundTO>>()
-        log.debug { "Retrieved accounts: $accounts" }
-        return accounts
+        val funds = response.body<ListTO<FundTO>>()
+        log.debug { "Retrieved funds: $funds" }
+        return funds
     }
 
     override suspend fun createFund(userId: UUID, request: CreateFundTO): FundTO {

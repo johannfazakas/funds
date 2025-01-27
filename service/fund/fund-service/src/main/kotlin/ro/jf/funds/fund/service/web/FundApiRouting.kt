@@ -16,7 +16,7 @@ import java.util.*
 private val log = logger { }
 
 fun Routing.fundApiRouting(fundService: ro.jf.funds.fund.service.service.FundService) {
-    route("/bk-api/fund/v1/funds") {
+    route("/funds-api/fund/v1/funds") {
         get {
             val userId = call.userId()
             log.debug { "List all accounts by user id $userId." }

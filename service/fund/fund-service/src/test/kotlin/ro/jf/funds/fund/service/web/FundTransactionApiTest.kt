@@ -111,7 +111,7 @@ class FundTransactionApiTest {
         )
 
         val response = createJsonHttpClient()
-            .post("/bk-api/fund/v1/transactions") {
+            .post("/funds-api/fund/v1/transactions") {
                 contentType(ContentType.Application.Json)
                 header(USER_ID_HEADER, userId.toString())
                 setBody(
@@ -190,7 +190,7 @@ class FundTransactionApiTest {
         )
 
         val response = createJsonHttpClient()
-            .get("/bk-api/fund/v1/transactions") {
+            .get("/funds-api/fund/v1/transactions") {
                 header(USER_ID_HEADER, userId.toString())
             }
 
@@ -254,7 +254,7 @@ class FundTransactionApiTest {
         )
 
         val response = createJsonHttpClient()
-            .get("/bk-api/fund/v1/funds/$fundId/transactions") {
+            .get("/funds-api/fund/v1/funds/$fundId/transactions") {
                 header(USER_ID_HEADER, userId.toString())
             }
 
@@ -285,7 +285,7 @@ class FundTransactionApiTest {
         whenever(accountTransactionSdk.deleteTransaction(userId, transaction1Id)).thenReturn(Unit)
 
         val response = createJsonHttpClient()
-            .delete("/bk-api/fund/v1/transactions/$transaction1Id") {
+            .delete("/funds-api/fund/v1/transactions/$transaction1Id") {
                 header(USER_ID_HEADER, userId.toString())
             }
 

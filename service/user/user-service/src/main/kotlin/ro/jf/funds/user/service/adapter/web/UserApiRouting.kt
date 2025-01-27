@@ -16,7 +16,7 @@ import java.util.*
 private val log = logger { }
 
 fun Routing.userApiRouting(userRepository: UserRepository) {
-    route("/bk-api/user/v1") {
+    route("/funds-api/user/v1") {
         get("/users") {
             log.debug { "List all users." }
             val response = userRepository.listAll().map { it.toTO() }.toListTO()

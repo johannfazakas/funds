@@ -57,7 +57,7 @@ class FundTransactionSdkTest {
             .`when`(
                 request()
                     .withMethod("POST")
-                    .withPath("/bk-api/fund/v1/transactions")
+                    .withPath("/funds-api/fund/v1/transactions")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(
@@ -112,7 +112,7 @@ class FundTransactionSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/fund/v1/transactions")
+                    .withPath("/funds-api/fund/v1/transactions")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(
@@ -163,7 +163,7 @@ class FundTransactionSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/fund/v1/funds/$fundId/transactions")
+                    .withPath("/funds-api/fund/v1/funds/$fundId/transactions")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(
@@ -214,7 +214,7 @@ class FundTransactionSdkTest {
             .`when`(
                 request()
                     .withMethod("DELETE")
-                    .withPath("/bk-api/fund/v1/transactions/$transactionId")
+                    .withPath("/funds-api/fund/v1/transactions/$transactionId")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(response().withStatusCode(204))
@@ -225,7 +225,7 @@ class FundTransactionSdkTest {
             .verify(
                 request()
                     .withMethod("DELETE")
-                    .withPath("/bk-api/fund/v1/transactions/$transactionId")
+                    .withPath("/funds-api/fund/v1/transactions/$transactionId")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
     }
