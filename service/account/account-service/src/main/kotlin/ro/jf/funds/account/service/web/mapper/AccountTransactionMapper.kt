@@ -19,4 +19,5 @@ fun AccountRecord.toTO() = AccountRecordTO(
     amount = amount,
     unit = unit,
     properties = properties.map { PropertyTO(it.key to it.value) },
+    labels = labels,
 )

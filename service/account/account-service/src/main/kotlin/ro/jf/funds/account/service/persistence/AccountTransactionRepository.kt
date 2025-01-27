@@ -11,8 +11,11 @@ import ro.jf.funds.account.service.domain.AccountRecord
 import ro.jf.funds.account.service.domain.AccountTransaction
 import ro.jf.funds.account.service.domain.Property
 import ro.jf.funds.account.service.persistence.AccountRepository.AccountTable
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.service.persistence.blockingTransaction
 import java.util.*
+
+private const val LABELS_DELIMITER = ","
 
 class AccountTransactionRepository(
     private val database: Database,
@@ -29,6 +32,7 @@ class AccountTransactionRepository(
         val amount = decimal("amount", 20, 8)
         val unitType = varchar("unit_type", 50)
         val unit = varchar("unit", 50)
+        val labels = varchar("labels", 100)
     }
 
     object TransactionPropertyTable : UUIDTable("transaction_property") {
@@ -194,6 +198,7 @@ class AccountTransactionRepository(
             it[amount] = record.amount
             it[unit] = record.unit.value
             it[unitType] = record.unit.toUnitType()
+            it[labels] = record.labels.joinToString(separator = LABELS_DELIMITER) { it.value }
         }
             .let {
                 AccountRecord(
@@ -201,6 +206,7 @@ class AccountTransactionRepository(
                     accountId = it[AccountRecordTable.accountId],
                     amount = it[AccountRecordTable.amount],
                     unit = toFinancialUnit(it[AccountRecordTable.unitType], it[AccountRecordTable.unit]),
+                    labels = it[AccountRecordTable.labels].toLabels(),
                 )
             }
 
@@ -286,7 +292,8 @@ class AccountTransactionRepository(
             accountId = this.first()[AccountRecordTable.accountId],
             amount = this.first()[AccountRecordTable.amount],
             unit = toFinancialUnit(this.first()[AccountRecordTable.unitType], this.first()[AccountRecordTable.unit]),
-            properties = this.toRecordProperties()
+            labels = this.first()[AccountRecordTable.labels].toLabels(),
+            properties = this.toRecordProperties(),
         )
 
     private fun List<ResultRow>.toRecordProperties(): List<Property> = this
@@ -299,4 +306,6 @@ class AccountTransactionRepository(
                 value = rows.first()[RecordPropertyTable.value]
             )
         }
+
+    private fun String.toLabels(): List<Label> = this.split(LABELS_DELIMITER).filter { it.isNotBlank() }.map(::Label)
 }
