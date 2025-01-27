@@ -2,6 +2,7 @@ package ro.jf.funds.account.service.domain
 
 import kotlinx.datetime.LocalDateTime
 import ro.jf.funds.commons.model.FinancialUnit
+import ro.jf.funds.commons.model.Label
 import java.math.BigDecimal
 import java.util.*
 
@@ -18,5 +19,6 @@ data class AccountRecord(
     val accountId: UUID,
     val amount: BigDecimal,
     val unit: FinancialUnit,
+    val labels: List<Label> = emptyList(),
     val properties: List<Property> = emptyList(),
 )

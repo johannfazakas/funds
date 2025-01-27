@@ -17,6 +17,7 @@ import ro.jf.funds.account.service.module
 import ro.jf.funds.account.service.persistence.AccountRepository
 import ro.jf.funds.account.service.persistence.AccountTransactionRepository
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
@@ -59,12 +60,14 @@ class AccountTransactionApiTest {
                     accountId = account1.id,
                     amount = BigDecimal("123.45"),
                     unit = Currency.RON,
+                    labels = listOf(Label("label1"), Label("label2")),
                     properties = propertiesOf("externalId" to "record1"),
                 ),
                 CreateAccountRecordTO(
                     accountId = account2.id,
                     amount = BigDecimal("-123.45"),
                     unit = Currency.RON,
+                    labels = listOf(Label("label3")),
                     properties = propertiesOf("externalId" to "record2"),
                 )
             ),
@@ -86,10 +89,12 @@ class AccountTransactionApiTest {
         assertThat(transaction.records).hasSize(2)
         assertThat(transaction.records[0].accountId).isEqualTo(account1.id)
         assertThat(transaction.records[0].amount).isEqualTo(BigDecimal("123.45"))
+        assertThat(transaction.records[0].labels).containsExactlyInAnyOrder(Label("label1"), Label("label2"))
         assertThat(transaction.records[0].properties.single { it.key == "externalId" }.value).isEqualTo("record1")
         assertThat(transaction.records[1].accountId).isEqualTo(account2.id)
         assertThat(transaction.records[1].amount).isEqualTo(BigDecimal("-123.45"))
         assertThat(transaction.records[1].properties.single { it.key == "externalId" }.value).isEqualTo("record2")
+        assertThat(transaction.records[1].labels).containsExactlyInAnyOrder(Label("label3"))
     }
 
     @Test
@@ -111,7 +116,8 @@ class AccountTransactionApiTest {
                         unit = Currency.RON,
                         properties = propertiesOf(
                             "externalId" to "record1", "someKey" to "someValue", "someKey" to "otherValue"
-                        )
+                        ),
+                        labels = listOf(Label("label1"), Label("label2"))
                     ),
                     CreateAccountRecordTO(
                         accountId = account2.id,
@@ -154,14 +160,16 @@ class AccountTransactionApiTest {
         assertThat(transaction1.records).hasSize(2)
         assertThat(transaction1.records[0].amount.compareTo(BigDecimal(100))).isZero()
         assertThat(transaction1.records[0].accountId).isEqualTo(account1.id)
+        assertThat(transaction1.records[0].labels).containsExactlyInAnyOrder(Label("label1"), Label("label2"))
         assertThat(transaction1.records[0].properties.single { it.key == "externalId" }.value).isEqualTo("record1")
         assertThat(transaction1.records[0].properties.filter { it.key == "someKey" }.map { it.value })
             .containsExactlyInAnyOrder("someValue", "otherValue")
         assertThat(transaction1.records[1].amount.compareTo(BigDecimal(-100))).isZero()
         assertThat(transaction1.records[1].accountId).isEqualTo(account2.id)
+        assertThat(transaction1.records[1].labels).isEmpty()
         assertThat(transaction1.records[1].properties.single { it.key == "externalId" }.value).isEqualTo("record2")
         assertThat(transaction1.properties.filter { it.key == "transactionProp" }.map { it.value })
-            .containsExactly("val1", "val2")
+            .containsExactlyInAnyOrder("val1", "val2")
 
         val transaction2 =
             transactions.items.first { t -> t.properties.any { it == PropertyTO("externalId" to "transaction2") } }
@@ -185,6 +193,7 @@ class AccountTransactionApiTest {
                         accountId = account1.id,
                         amount = BigDecimal(100.0),
                         unit = Currency.RON,
+                        labels = listOf(Label("label1")),
                         properties = propertiesOf("some-key" to "one", "other-key" to "x", "other-key" to "y")
                     ),
                     CreateAccountRecordTO(
@@ -251,11 +260,13 @@ class AccountTransactionApiTest {
         assertThat(responseTransaction1.records).hasSize(2)
         assertThat(responseTransaction1.records[0].amount.compareTo(BigDecimal(100))).isZero()
         assertThat(responseTransaction1.records[0].accountId).isEqualTo(account1.id)
+        assertThat(responseTransaction1.records[0].labels).containsExactlyInAnyOrder(Label("label1"))
         assertThat(responseTransaction1.records[0].properties.single { it.key == "some-key" }.value).isEqualTo("one")
         assertThat(responseTransaction1.records[0].properties.filter { it.key == "other-key" }
             .map { it.value }).containsExactly("x", "y")
         assertThat(responseTransaction1.records[1].amount.compareTo(BigDecimal(-100))).isZero()
         assertThat(responseTransaction1.records[1].accountId).isEqualTo(account2.id)
+        assertThat(responseTransaction1.records[1].labels).isEmpty()
         assertThat(responseTransaction1.records[1].properties.single { it.key == "some-key" }.value).isEqualTo("two")
         assertThat(responseTransaction1.records[1].properties.single { it.key == "other-key" }.value).isEqualTo("z")
 

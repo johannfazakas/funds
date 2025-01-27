@@ -30,6 +30,7 @@ import java.math.BigDecimal
 import java.time.Duration
 import java.util.UUID.randomUUID
 import java.util.concurrent.TimeUnit
+import ro.jf.funds.commons.model.Label
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(KafkaContainerExtension::class)
@@ -88,6 +89,7 @@ class AccountTransactionsEventHandlingTest {
         assertThat(record.amount).isEqualByComparingTo(BigDecimal("100.0"))
         assertThat(record.unit).isEqualTo(Currency.RON)
         assertThat(record.accountId).isEqualTo(account.id)
+        assertThat(record.labels).containsExactly(Label("one"), Label("two"))
     }
 
     private suspend fun account(name: AccountName): Account =
@@ -103,6 +105,7 @@ class AccountTransactionsEventHandlingTest {
                             accountId = account.id,
                             amount = amount,
                             unit = Currency.RON,
+                            labels = listOf(Label("one"), Label("two"))
                         ),
                     )
                 )
