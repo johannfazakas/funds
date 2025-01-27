@@ -3,7 +3,6 @@ package ro.jf.funds.importer.service.config
 import io.ktor.client.*
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
-import org.koin.core.module.Module
 import org.koin.core.qualifier.StringQualifier
 import org.koin.dsl.module
 import ro.jf.funds.account.sdk.AccountSdk
@@ -41,55 +40,79 @@ private const val HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY = "integration.hi
 
 val CREATE_FUND_TRANSACTIONS_RESPONSE_CONSUMER = StringQualifier("CreateFundTransactionsResponse")
 
-val Application.importDependencies: Module
-    get() {
-        return module {
-            single<DataSource> { environment.getDataSource() }
-            single<Database> { Database.connect(datasource = get()) }
-            single<Connection> { environment.getDbConnection() }
-            single<ImportTaskRepository> { ImportTaskRepository(get()) }
-            single<TopicSupplier> { TopicSupplier(environment.getEnvironmentProperty()) }
-            single<ProducerProperties> { ProducerProperties.fromEnv(environment) }
-            single<Producer<CreateFundTransactionsTO>> {
-                createProducer(get(), get<TopicSupplier>().topic(FUND_DOMAIN, FUND_TRANSACTIONS_REQUEST))
-            }
-            single<HttpClient> { createHttpClient() }
-            single<CsvParser> { CsvParser() }
-            single<WalletCsvImportParser> { WalletCsvImportParser(get()) }
-            single<ImportParserRegistry> { ImportParserRegistry(get()) }
-            single<AccountSdk> {
-                AccountSdk(environment.getStringProperty(ACCOUNT_SERVICE_BASE_URL_PROPERTY), get())
-            }
-            single<AccountService> { AccountService(get()) }
-            single<FundSdk> {
-                FundSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
-            }
-            single<FundTransactionSdk> {
-                FundTransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
-            }
-            single<FundService> { FundService(get()) }
-            single<HistoricalPricingSdk> {
-                HistoricalPricingSdk(environment.getStringProperty(HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY))
-            }
-            single<ConversionRateService> { ConversionRateService(get()) }
-            single<SingleRecordFundConverter> { SingleRecordFundConverter() }
-            single<TransferFundConverter> { TransferFundConverter() }
-            single<ImplicitTransferFundConverter> { ImplicitTransferFundConverter() }
-            single<ExchangeSingleFundConverter> { ExchangeSingleFundConverter() }
-            single<ImportFundConverterRegistry> { ImportFundConverterRegistry(get(), get(), get(), get()) }
-            single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get(), get()) }
-            single<ImportService> { ImportService(get(), get(), get(), get()) }
+val Application.importDependencyModules
+    get() = arrayOf(
+        importPersistenceDependencies,
+        importIntegrationDependencies,
+        importEventProducerDependencies,
+        importServiceDependencies,
+        importEventConsumerDependencies,
+    )
 
-            single<ConsumerProperties> { ConsumerProperties.fromEnv(environment) }
-            single<CreateFundTransactionsResponseHandler> {
-                CreateFundTransactionsResponseHandler(get())
-            }
-            single<Consumer<GenericResponse>>(CREATE_FUND_TRANSACTIONS_RESPONSE_CONSUMER) {
-                createConsumer(
-                    get(),
-                    get<TopicSupplier>().topic(FUND_DOMAIN, FUND_TRANSACTIONS_RESPONSE),
-                    get<CreateFundTransactionsResponseHandler>()
-                )
-            }
+private val Application.importPersistenceDependencies
+    get() = module {
+        single<DataSource> { environment.getDataSource() }
+        single<Database> { Database.connect(datasource = get()) }
+        single<Connection> { environment.getDbConnection() }
+        single<ImportTaskRepository> { ImportTaskRepository(get()) }
+    }
+
+private val Application.importIntegrationDependencies
+    get() = module {
+        single<HttpClient> { createHttpClient() }
+        single<AccountSdk> {
+            AccountSdk(environment.getStringProperty(ACCOUNT_SERVICE_BASE_URL_PROPERTY), get())
+        }
+        single<FundSdk> {
+            FundSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
+        }
+        single<FundTransactionSdk> {
+            FundTransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
+        }
+        single<HistoricalPricingSdk> {
+            HistoricalPricingSdk(environment.getStringProperty(HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY))
+        }
+    }
+
+private val Application.importEventProducerDependencies
+    get() = module {
+        single<TopicSupplier> { TopicSupplier(environment.getEnvironmentProperty()) }
+        single<ProducerProperties> { ProducerProperties.fromEnv(environment) }
+        single<Producer<CreateFundTransactionsTO>> {
+            createProducer(get(), get<TopicSupplier>().topic(FUND_DOMAIN, FUND_TRANSACTIONS_REQUEST))
+        }
+    }
+
+private val Application.importServiceDependencies
+    get() = module {
+        single<CsvParser> { CsvParser() }
+        single<WalletCsvImportParser> { WalletCsvImportParser(get()) }
+        single<ImportParserRegistry> { ImportParserRegistry(get()) }
+        single<AccountService> { AccountService(get()) }
+        single<FundService> { FundService(get()) }
+        single<ConversionRateService> { ConversionRateService(get()) }
+        single<SingleRecordFundConverter> { SingleRecordFundConverter() }
+        single<TransferFundConverter> { TransferFundConverter() }
+        single<ImplicitTransferFundConverter> { ImplicitTransferFundConverter() }
+        single<ExchangeSingleFundConverter> { ExchangeSingleFundConverter() }
+        single<ImportFundConverterRegistry> { ImportFundConverterRegistry(get(), get(), get(), get()) }
+        single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get(), get()) }
+        single<ImportService> { ImportService(get(), get(), get(), get()) }
+        single<CreateFundTransactionsResponseHandler> {
+            CreateFundTransactionsResponseHandler(get())
+        }
+    }
+
+private val Application.importEventConsumerDependencies
+    get() = module {
+
+        single<ConsumerProperties> { ConsumerProperties.fromEnv(environment) }
+
+        single<Consumer<GenericResponse>>(CREATE_FUND_TRANSACTIONS_RESPONSE_CONSUMER) {
+            createConsumer(
+                get(),
+                get<TopicSupplier>().topic(FUND_DOMAIN, FUND_TRANSACTIONS_RESPONSE),
+                get<CreateFundTransactionsResponseHandler>()
+            )
         }
     }

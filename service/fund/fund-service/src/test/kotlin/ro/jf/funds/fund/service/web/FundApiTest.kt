@@ -22,14 +22,17 @@ import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
-import ro.jf.funds.commons.test.utils.*
+import ro.jf.funds.commons.test.utils.configureEnvironment
+import ro.jf.funds.commons.test.utils.createJsonHttpClient
+import ro.jf.funds.commons.test.utils.dbConfig
+import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.service.config.configureFundErrorHandling
 import ro.jf.funds.fund.service.config.configureFundRouting
-import ro.jf.funds.fund.service.config.fundDependencies
+import ro.jf.funds.fund.service.config.fundDependencyModules
 import ro.jf.funds.fund.service.persistence.FundRepository
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
@@ -145,7 +148,7 @@ class FundApiTest {
     )
 
     private fun Application.testModule() {
-        configureDependencies(fundDependencies)
+        configureDependencies(*fundDependencyModules)
         configureFundErrorHandling()
         configureContentNegotiation()
         configureDatabaseMigration(get<DataSource>())
