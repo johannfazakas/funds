@@ -48,7 +48,7 @@ class FundApiTest {
         val userId = randomUUID()
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
 
-        val response = createJsonHttpClient().get("/bk-api/fund/v1/funds") {
+        val response = createJsonHttpClient().get("/funds-api/fund/v1/funds") {
             header(USER_ID_HEADER, userId)
         }
 
@@ -67,7 +67,7 @@ class FundApiTest {
         val userId = randomUUID()
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Savings")))
 
-        val response = createJsonHttpClient().get("/bk-api/fund/v1/funds/${fund.id}") {
+        val response = createJsonHttpClient().get("/funds-api/fund/v1/funds/${fund.id}") {
             header(USER_ID_HEADER, userId)
         }
 
@@ -90,7 +90,7 @@ class FundApiTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/account/v1/accounts/$accountId")
+                    .withPath("/funds-api/account/v1/accounts/$accountId")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(
@@ -109,7 +109,7 @@ class FundApiTest {
                     )
             )
 
-        val response = createJsonHttpClient().post("/bk-api/fund/v1/funds") {
+        val response = createJsonHttpClient().post("/funds-api/fund/v1/funds") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
             setBody(CreateFundTO(FundName("Investment Portfolio")))
@@ -132,7 +132,7 @@ class FundApiTest {
         val userId = randomUUID()
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Company")))
 
-        val response = createJsonHttpClient().delete("/bk-api/fund/v1/funds/${fund.id}") {
+        val response = createJsonHttpClient().delete("/funds-api/fund/v1/funds/${fund.id}") {
             header(USER_ID_HEADER, userId)
         }
 

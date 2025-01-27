@@ -1,18 +1,18 @@
 ### Get Users
-GET {{user_host}}/bk-api/user/v1/users
+GET {{user_host}}/funds-api/user/v1/users
 
 ### Get User by id
-GET {{user_host}}/bk-api/user/v1/users/{{user-id}}
+GET {{user_host}}/funds-api/user/v1/users/{{user-id}}
 
 ### Get User by username
-GET {{user_host}}/bk-api/user/v1/users/username/johann
+GET {{user_host}}/funds-api/user/v1/users/username/johann
 
 > {%
     client.global.set("user-id", response.body["id"]);
 %}
 
 ### Create User
-POST {{user_host}}/bk-api/user/v1/users
+POST {{user_host}}/funds-api/user/v1/users
 Content-Type: application/json
 
 {
@@ -23,4 +23,4 @@ Content-Type: application/json
 %}
 
 ### Delete User
-DELETE {{user_host}}/bk-api/user/v1/users/{{user-id}}
+DELETE {{user_host}}/funds-api/user/v1/users/{{user-id}}

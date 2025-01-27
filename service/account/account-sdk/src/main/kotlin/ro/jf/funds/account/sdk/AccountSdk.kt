@@ -15,7 +15,7 @@ import ro.jf.funds.commons.web.toApiException
 import java.util.*
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5211"
-private const val BASE_PATH = "/bk-api/account/v1"
+private const val BASE_PATH = "/funds-api/account/v1"
 
 private val log = logger { }
 

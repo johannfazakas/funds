@@ -26,7 +26,7 @@ class UserSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/user/v1/users")
+                    .withPath("/funds-api/user/v1/users")
             )
             .respond(
                 response()
@@ -67,7 +67,7 @@ class UserSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/user/v1/users/$userId")
+                    .withPath("/funds-api/user/v1/users/$userId")
             )
             .respond(
                 response()
@@ -97,7 +97,7 @@ class UserSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/user/v1/users/$userId")
+                    .withPath("/funds-api/user/v1/users/$userId")
             )
             .respond(
                 response()
@@ -118,7 +118,7 @@ class UserSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/user/v1/users/username/$username")
+                    .withPath("/funds-api/user/v1/users/username/$username")
             )
             .respond(
                 response()
@@ -148,7 +148,7 @@ class UserSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/user/v1/users/$username")
+                    .withPath("/funds-api/user/v1/users/$username")
             )
             .respond(
                 response()
@@ -169,7 +169,7 @@ class UserSdkTest {
             .`when`(
                 request()
                     .withMethod("POST")
-                    .withPath("/bk-api/user/v1/users")
+                    .withPath("/funds-api/user/v1/users")
             )
             .respond(
                 response()
@@ -200,7 +200,7 @@ class UserSdkTest {
             .`when`(
                 request()
                     .withMethod("POST")
-                    .withPath("/bk-api/user/v1/users")
+                    .withPath("/funds-api/user/v1/users")
                     .withBody(
                         """
                         {
@@ -227,7 +227,7 @@ class UserSdkTest {
             .`when`(
                 request()
                     .withMethod("DELETE")
-                    .withPath("/bk-api/user/v1/users/$userId")
+                    .withPath("/funds-api/user/v1/users/$userId")
             )
             .respond(
                 response()

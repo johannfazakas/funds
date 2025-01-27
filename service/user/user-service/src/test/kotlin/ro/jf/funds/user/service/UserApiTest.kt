@@ -38,7 +38,7 @@ class UserApiTest {
         userRepository.save(CreateUserCommand("Crina"))
         userRepository.save(CreateUserCommand("Johann"))
 
-        val response = createJsonHttpClient().get("/bk-api/user/v1/users")
+        val response = createJsonHttpClient().get("/funds-api/user/v1/users")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val users = response.body<ro.jf.funds.commons.model.ListTO<UserTO>>()
@@ -52,7 +52,7 @@ class UserApiTest {
 
         val user = userRepository.save(CreateUserCommand("Johann"))
 
-        val response = createJsonHttpClient().get("/bk-api/user/v1/users/${user.id}")
+        val response = createJsonHttpClient().get("/funds-api/user/v1/users/${user.id}")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val userTO = response.body<UserTO>()
@@ -64,7 +64,7 @@ class UserApiTest {
     fun `test get user by id when missing`() = testApplication {
         configureEnvironment()
 
-        val response = createJsonHttpClient().get("/bk-api/user/v1/users/${randomUUID()}")
+        val response = createJsonHttpClient().get("/funds-api/user/v1/users/${randomUUID()}")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
     }
@@ -75,7 +75,7 @@ class UserApiTest {
         val username = "Johann"
         userRepository.save(CreateUserCommand(username))
 
-        val response = createJsonHttpClient().get("/bk-api/user/v1/users/username/$username")
+        val response = createJsonHttpClient().get("/funds-api/user/v1/users/username/$username")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val userTO = response.body<UserTO>()
@@ -87,7 +87,7 @@ class UserApiTest {
     fun `test create user`() = testApplication {
         configureEnvironment()
 
-        val response = createJsonHttpClient().post("/bk-api/user/v1/users") {
+        val response = createJsonHttpClient().post("/funds-api/user/v1/users") {
             contentType(ContentType.Application.Json)
             setBody(CreateUserTO("username"))
         }
@@ -108,7 +108,7 @@ class UserApiTest {
 
         userRepository.save(CreateUserCommand("username"))
 
-        val response = createJsonHttpClient().post("/bk-api/user/v1/users") {
+        val response = createJsonHttpClient().post("/funds-api/user/v1/users") {
             contentType(ContentType.Application.Json)
             setBody(CreateUserTO("username"))
         }
@@ -121,7 +121,7 @@ class UserApiTest {
         configureEnvironment()
         val user = userRepository.save(CreateUserCommand("username"))
 
-        val response = createJsonHttpClient().delete("/bk-api/user/v1/users/${user.id}")
+        val response = createJsonHttpClient().delete("/funds-api/user/v1/users/${user.id}")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
         assertThat(userRepository.findById(user.id)).isNull()
@@ -131,7 +131,7 @@ class UserApiTest {
     fun `test delete not existing user by id`() = testApplication {
         configureEnvironment()
 
-        val response = createJsonHttpClient().delete("/bk-api/user/v1/users/${randomUUID()}")
+        val response = createJsonHttpClient().delete("/funds-api/user/v1/users/${randomUUID()}")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
     }

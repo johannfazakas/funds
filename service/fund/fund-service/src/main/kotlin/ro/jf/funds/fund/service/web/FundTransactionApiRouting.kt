@@ -17,8 +17,7 @@ import java.util.*
 private val log = logger { }
 
 fun Routing.fundTransactionApiRouting(fundTransactionService: FundTransactionService) {
-    // TODO(Johann) change to /funds-api
-    route("/bk-api/fund/v1") {
+    route("/funds-api/fund/v1") {
         route("/transactions") {
             get {
                 val userId = call.userId()

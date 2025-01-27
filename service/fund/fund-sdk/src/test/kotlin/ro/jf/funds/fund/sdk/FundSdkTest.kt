@@ -32,7 +32,7 @@ class FundSdkTest {
             .`when`(
                 request()
                     .withMethod("GET")
-                    .withPath("/bk-api/fund/v1/funds")
+                    .withPath("/funds-api/fund/v1/funds")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(
@@ -73,7 +73,7 @@ class FundSdkTest {
             .`when`(
                 request()
                     .withMethod("POST")
-                    .withPath("/bk-api/fund/v1/funds")
+                    .withPath("/funds-api/fund/v1/funds")
                     .withHeader(Header(USER_ID_HEADER, userId.toString()))
             )
             .respond(

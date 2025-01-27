@@ -13,7 +13,7 @@ import ro.jf.funds.user.api.model.UserTO
 import java.util.*
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5247"
-private const val BASE_PATH = "/bk-api/user/v1"
+private const val BASE_PATH = "/funds-api/user/v1"
 
 private val log = logger { }
 

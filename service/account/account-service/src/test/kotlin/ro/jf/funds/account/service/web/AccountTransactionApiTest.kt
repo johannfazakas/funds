@@ -72,7 +72,7 @@ class AccountTransactionApiTest {
         )
 
         val response = createJsonHttpClient()
-            .post("/bk-api/account/v1/transactions") {
+            .post("/funds-api/account/v1/transactions") {
                 header(USER_ID_HEADER, userId)
                 contentType(ContentType.Application.Json)
                 setBody(createTransactionRequest)
@@ -141,7 +141,7 @@ class AccountTransactionApiTest {
             )
         )
 
-        val response = createJsonHttpClient().get("/bk-api/account/v1/transactions") {
+        val response = createJsonHttpClient().get("/funds-api/account/v1/transactions") {
             header(USER_ID_HEADER, userId)
         }
 
@@ -237,7 +237,7 @@ class AccountTransactionApiTest {
 
         val response =
             createJsonHttpClient().get(
-                "/bk-api/account/v1/transactions?properties.record.some-key=one&properties.record.other-key=x"
+                "/funds-api/account/v1/transactions?properties.record.some-key=one&properties.record.other-key=x"
             ) {
                 header(USER_ID_HEADER, userId)
             }
@@ -331,7 +331,7 @@ class AccountTransactionApiTest {
         )
 
         val response =
-            createJsonHttpClient().get("/bk-api/account/v1/transactions?properties.transaction.transactionProp=val2") {
+            createJsonHttpClient().get("/funds-api/account/v1/transactions?properties.transaction.transactionProp=val2") {
                 header(USER_ID_HEADER, userId)
             }
 
@@ -385,7 +385,7 @@ class AccountTransactionApiTest {
         )
 
         val response = createJsonHttpClient()
-            .delete("/bk-api/account/v1/transactions/${transaction.id}") {
+            .delete("/funds-api/account/v1/transactions/${transaction.id}") {
                 header(USER_ID_HEADER, userId)
             }
 
