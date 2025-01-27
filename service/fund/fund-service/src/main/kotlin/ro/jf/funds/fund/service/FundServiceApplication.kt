@@ -9,7 +9,7 @@ import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.fund.service.config.configureFundErrorHandling
 import ro.jf.funds.fund.service.config.configureFundEventHandling
 import ro.jf.funds.fund.service.config.configureFundRouting
-import ro.jf.funds.fund.service.config.fundDependencies
+import ro.jf.funds.fund.service.config.fundDependencyModules
 import javax.sql.DataSource
 
 fun main(args: Array<String>) {
@@ -17,7 +17,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    configureDependencies(fundDependencies)
+    configureDependencies(*fundDependencyModules)
     configureContentNegotiation()
     configureFundErrorHandling()
     configureDatabaseMigration(get<DataSource>())

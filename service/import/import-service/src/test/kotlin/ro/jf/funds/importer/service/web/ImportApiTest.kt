@@ -9,7 +9,6 @@ import io.ktor.server.testing.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.ktor.ext.get
@@ -41,7 +40,7 @@ import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.service.config.configureImportErrorHandling
 import ro.jf.funds.importer.service.config.configureImportEventHandling
 import ro.jf.funds.importer.service.config.configureImportRouting
-import ro.jf.funds.importer.service.config.importDependencies
+import ro.jf.funds.importer.service.config.importDependencyModules
 import java.io.File
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
@@ -96,7 +95,8 @@ class ImportApiTest {
 
         val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
             header(USER_ID_HEADER, userId.toString())
-            setBody(MultiPartFormDataContent(
+            setBody(
+                MultiPartFormDataContent(
                 formData {
                     append("file", csvFile.readBytes(), Headers.build {
                         append(HttpHeaders.ContentType, ContentType.Text.CSV)
@@ -125,7 +125,8 @@ class ImportApiTest {
 
         val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
             header(USER_ID_HEADER, userId.toString())
-            setBody(MultiPartFormDataContent(
+            setBody(
+                MultiPartFormDataContent(
                 formData {
                     append("file", csvFile.readBytes(), Headers.build {
                         append(HttpHeaders.ContentType, ContentType.Text.CSV)
@@ -167,7 +168,8 @@ class ImportApiTest {
 
         val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
             header(USER_ID_HEADER, userId.toString())
-            setBody(MultiPartFormDataContent(
+            setBody(
+                MultiPartFormDataContent(
                 formData {
                     append("file", csvFile.readBytes(), Headers.build {
                         append(HttpHeaders.ContentType, ContentType.Text.CSV)
@@ -213,7 +215,8 @@ class ImportApiTest {
 
         val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
             header(USER_ID_HEADER, userId.toString())
-            setBody(MultiPartFormDataContent(
+            setBody(
+                MultiPartFormDataContent(
                 formData {
                     append("file", csvFile.readBytes(), Headers.build {
                         append(HttpHeaders.ContentType, ContentType.Text.CSV)
@@ -239,7 +242,7 @@ class ImportApiTest {
             single<FundTransactionSdk> { fundTransactionSdk }
             single<HistoricalPricingSdk> { historicalPricingSdk }
         }
-        configureDependencies(importDependencies, importAppTestModule)
+        configureDependencies(*importDependencyModules, importAppTestModule)
         configureImportErrorHandling()
         configureContentNegotiation()
         configureDatabaseMigration(get<DataSource>())

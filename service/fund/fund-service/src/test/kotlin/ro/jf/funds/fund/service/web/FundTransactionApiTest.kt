@@ -35,7 +35,7 @@ import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
 import ro.jf.funds.fund.service.config.configureFundErrorHandling
 import ro.jf.funds.fund.service.config.configureFundRouting
-import ro.jf.funds.fund.service.config.fundDependencies
+import ro.jf.funds.fund.service.config.fundDependencyModules
 import ro.jf.funds.fund.service.service.FUND_ID_PROPERTY
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
@@ -298,7 +298,7 @@ class FundTransactionApiTest {
             single<AccountSdk> { accountSdk }
             single<AccountTransactionSdk> { accountTransactionSdk }
         }
-        configureDependencies(fundDependencies, fundsAppTestModule)
+        configureDependencies(*fundDependencyModules, fundsAppTestModule)
         configureFundErrorHandling()
         configureContentNegotiation()
         configureDatabaseMigration(get<DataSource>())

@@ -176,7 +176,7 @@ class AccountTransactionApiTest {
         val dateTime = LocalDateTime(2024, 7, 22, 9, 17)
         val account1 = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
         val account2 = accountRepository.save(userId, CreateAccountTO(AccountName("BT"), Currency.RON))
-        val transaction1 = transactionRepository.save(
+        transactionRepository.save(
             userId,
             CreateAccountTransactionTO(
                 dateTime = dateTime,
@@ -199,7 +199,7 @@ class AccountTransactionApiTest {
                 )
             )
         )
-        val transaction2 = transactionRepository.save(
+        transactionRepository.save(
             userId = userId,
             CreateAccountTransactionTO(
                 dateTime = dateTime,
@@ -216,7 +216,7 @@ class AccountTransactionApiTest {
                 )
             )
         )
-        val transaction3 = transactionRepository.save(
+        transactionRepository.save(
             userId = userId,
             CreateAccountTransactionTO(
                 dateTime = dateTime,
@@ -272,7 +272,7 @@ class AccountTransactionApiTest {
         val dateTime = LocalDateTime(2024, 7, 22, 9, 17)
         val account1 = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
         val account2 = accountRepository.save(userId, CreateAccountTO(AccountName("BT"), Currency.RON))
-        val transaction1 = transactionRepository.save(
+        transactionRepository.save(
             userId,
             CreateAccountTransactionTO(
                 dateTime = dateTime,
@@ -295,7 +295,7 @@ class AccountTransactionApiTest {
                 )
             )
         )
-        val transaction2 = transactionRepository.save(
+        transactionRepository.save(
             userId = userId,
             CreateAccountTransactionTO(
                 dateTime = dateTime,
