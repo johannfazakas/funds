@@ -21,6 +21,7 @@ import org.mockserver.model.JsonSchemaBody.jsonSchema
 import org.mockserver.model.MediaType
 import ro.jf.funds.account.api.model.*
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.math.BigDecimal
@@ -106,6 +107,10 @@ class AccountTransactionSdkTest {
                                         put("type", JsonPrimitive("currency"))
                                         put("value", JsonPrimitive("RON"))
                                     })
+                                    put("labels", buildJsonArray {
+                                        add(JsonPrimitive("one"))
+                                        add(JsonPrimitive("two"))
+                                    })
                                     put("properties", buildJsonArray {
                                         add(buildJsonObject {
                                             put("key", JsonPrimitive("external_id"))
@@ -121,6 +126,7 @@ class AccountTransactionSdkTest {
                                         put("type", JsonPrimitive("currency"))
                                         put("value", JsonPrimitive("RON"))
                                     })
+                                    put("labels", buildJsonArray { })
                                     put("properties", buildJsonArray {
                                         add(buildJsonObject {
                                             put("key", JsonPrimitive("external_id"))
@@ -142,10 +148,12 @@ class AccountTransactionSdkTest {
             dateTime = transactionDateTime,
             records = listOf(
                 CreateAccountRecordTO(
-                    randomUUID(), BigDecimal("100.25"), Currency.RON, propertiesOf("external_id" to "1111")
+                    randomUUID(), BigDecimal("100.25"), Currency.RON,
+                    listOf(Label("one"), Label("two")), propertiesOf("external_id" to "1111")
                 ),
                 CreateAccountRecordTO(
-                    randomUUID(), BigDecimal("-100.25"), Currency.RON, propertiesOf("external_id" to "2222")
+                    randomUUID(), BigDecimal("-100.25"), Currency.RON,
+                    emptyList(), propertiesOf("external_id" to "2222")
                 )
             ),
             properties = propertiesOf("key" to "value")
@@ -212,6 +220,10 @@ class AccountTransactionSdkTest {
                                             put("unit", buildJsonObject {
                                                 put("type", JsonPrimitive("currency"))
                                                 put("value", JsonPrimitive("RON"))
+                                            })
+                                            put("labels", buildJsonArray {
+                                                add(JsonPrimitive("one"))
+                                                add(JsonPrimitive("two"))
                                             })
                                             put("properties", buildJsonArray {
                                                 add(buildJsonObject {

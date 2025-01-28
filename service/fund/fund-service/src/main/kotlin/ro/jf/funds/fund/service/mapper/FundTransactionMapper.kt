@@ -17,4 +17,5 @@ fun FundRecord.toTO() = FundRecordTO(
     fundId = fundId,
     accountId = accountId,
     amount = amount,
+    labels = labels
 )
