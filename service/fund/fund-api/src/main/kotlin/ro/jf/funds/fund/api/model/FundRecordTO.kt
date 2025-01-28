@@ -1,6 +1,7 @@
 package ro.jf.funds.fund.api.model
 
 import kotlinx.serialization.Serializable
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.serialization.BigDecimalSerializer
 import ro.jf.funds.commons.serialization.UUIDSerializer
 import java.math.BigDecimal
@@ -15,5 +16,6 @@ data class FundRecordTO(
     @Serializable(with = UUIDSerializer::class)
     val accountId: UUID,
     @Serializable(with = BigDecimalSerializer::class)
-    val amount: BigDecimal
+    val amount: BigDecimal,
+    val labels: List<Label> = emptyList(),
 )

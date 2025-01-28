@@ -21,6 +21,7 @@ import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
@@ -74,6 +75,7 @@ class FundTransactionApiTest {
                             accountId = companyAccountId,
                             amount = BigDecimal("-100.25"),
                             unit = Currency.RON,
+                            labels = listOf(Label("one"), Label("two")),
                             properties = propertiesOf("fundId" to workFundId.toString())
                         ),
                         CreateAccountRecordTO(
@@ -96,6 +98,7 @@ class FundTransactionApiTest {
                         accountId = companyAccountId,
                         amount = BigDecimal("-100.25"),
                         unit = Currency.RON,
+                        labels  = listOf(Label("one"), Label("two")),
                         properties = propertiesOf("fundId" to workFundId.toString())
                     ),
                     AccountRecordTO(
@@ -103,6 +106,7 @@ class FundTransactionApiTest {
                         accountId = personalAccountId,
                         amount = BigDecimal("100.25"),
                         unit = Currency.RON,
+                        labels = emptyList(),
                         properties = propertiesOf("fundId" to expensesFundId.toString())
                     )
                 ),
@@ -123,12 +127,14 @@ class FundTransactionApiTest {
                                 accountId = companyAccountId,
                                 unit = Currency.RON,
                                 amount = BigDecimal("-100.25"),
+                                labels = listOf(Label("one"), Label("two")),
                             ),
                             CreateFundRecordTO(
                                 fundId = expensesFundId,
                                 accountId = personalAccountId,
                                 unit = Currency.RON,
                                 amount = BigDecimal("100.25"),
+                                labels = emptyList()
                             )
                         )
                     )
@@ -146,11 +152,13 @@ class FundTransactionApiTest {
         assertThat(record1.fundId).isEqualTo(workFundId)
         assertThat(record1.accountId).isEqualTo(companyAccountId)
         assertThat(record1.amount).isEqualTo(BigDecimal("-100.25"))
+        assertThat(record1.labels).containsExactly(Label("one"), Label("two"))
         val record2 = transaction.records[1]
         assertThat(record2.fundId).isEqualTo(expensesFundId)
         assertThat(record2.id).isNotNull()
         assertThat(record2.accountId).isEqualTo(personalAccountId)
         assertThat(record2.amount).isEqualTo(BigDecimal("100.25"))
+        assertThat(record2.labels).isEmpty()
     }
 
     @Test
@@ -173,6 +181,7 @@ class FundTransactionApiTest {
                                 accountId = companyAccountId,
                                 amount = BigDecimal(100.25),
                                 unit = Currency.RON,
+                                labels = listOf(Label("one"), Label("two")),
                                 properties = propertiesOf("fundId" to workFundId.toString()),
                             ),
                             AccountRecordTO(
@@ -180,6 +189,7 @@ class FundTransactionApiTest {
                                 accountId = personalAccountId,
                                 amount = BigDecimal(50.75),
                                 unit = Currency.RON,
+                                labels = emptyList(),
                                 properties = propertiesOf("fundId" to expensesFundId.toString()),
                             )
                         ),
@@ -207,11 +217,13 @@ class FundTransactionApiTest {
         assertThat(record1.accountId).isEqualTo(companyAccountId)
         assertThat(record1.amount).isEqualTo(BigDecimal(100.25))
         assertThat(record1.fundId).isEqualTo(workFundId)
+        assertThat(record1.labels).containsExactly(Label("one"), Label("two"))
         val record2 = transaction.records[1]
         assertThat(record2.id).isEqualTo(record2Id)
         assertThat(record2.accountId).isEqualTo(personalAccountId)
         assertThat(record2.amount).isEqualTo(BigDecimal(50.75))
         assertThat(record2.fundId).isEqualTo(expensesFundId)
+        assertThat(record2.labels).isEmpty()
     }
 
     @Test
@@ -237,6 +249,7 @@ class FundTransactionApiTest {
                                 accountId = companyAccountId,
                                 amount = BigDecimal(100.25),
                                 unit = Currency.RON,
+                                labels = listOf(Label("one"), Label("two")),
                                 properties = propertiesOf("fundId" to workFundId.toString()),
                             ),
                             AccountRecordTO(
@@ -244,6 +257,7 @@ class FundTransactionApiTest {
                                 accountId = personalAccountId,
                                 amount = BigDecimal(50.75),
                                 unit = Currency.RON,
+                                labels = emptyList(),
                                 properties = propertiesOf("fundId" to expensesFundId.toString()),
                             )
                         ),
@@ -271,11 +285,13 @@ class FundTransactionApiTest {
         assertThat(record1.accountId).isEqualTo(companyAccountId)
         assertThat(record1.amount).isEqualTo(BigDecimal(100.25))
         assertThat(record1.fundId).isEqualTo(workFundId)
+        assertThat(record1.labels).containsExactly(Label("one"), Label("two"))
         val record2 = transaction.records[1]
         assertThat(record2.id).isEqualTo(record2Id)
         assertThat(record2.accountId).isEqualTo(personalAccountId)
         assertThat(record2.amount).isEqualTo(BigDecimal(50.75))
         assertThat(record2.fundId).isEqualTo(expensesFundId)
+        assertThat(record2.labels).isEmpty()
     }
 
     @Test
