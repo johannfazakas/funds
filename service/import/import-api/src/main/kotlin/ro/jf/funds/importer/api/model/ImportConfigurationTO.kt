@@ -8,4 +8,5 @@ data class ImportConfigurationTO(
     val accountMatchers: List<AccountMatcherTO>,
     val fundMatchers: List<FundMatcherTO>,
     val exchangeMatchers: List<ExchangeMatcherTO> = emptyList(),
+    val labelMatchers: List<LabelMatcherTO> = emptyList(),
 )

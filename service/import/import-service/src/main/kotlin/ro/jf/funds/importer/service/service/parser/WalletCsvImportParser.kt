@@ -74,25 +74,29 @@ class WalletCsvImportParser(
     private fun toImportRecords(importConfiguration: ImportConfigurationTO, csvRow: CsvRow): List<ImportParsedRecord> {
         val importAccountName = csvRow.getString(ACCOUNT_NAME_COLUMN)
         val accountName = importConfiguration.accountMatchers.getAccountName(importAccountName)
-        val importType = csvRow.getString(LABEL_COLUMN)
+        val importLabels = csvRow.getString(LABEL_COLUMN).labels()
         val currency = csvRow.getString(CURRENCY_COLUMN)
         val amount = csvRow.getBigDecimal(AMOUNT_COLUMN)
-        val fundMatcher = importConfiguration.fundMatchers.getFundMatcher(importAccountName, importType)
+        val fundMatcher = importConfiguration.fundMatchers.getFundMatcher(importAccountName, importLabels)
+        val labelMatchers = importConfiguration.labelMatchers.getLabelMatchers(importLabels)
+        val labels = labelMatchers.map { it.label }
 
         return when (fundMatcher) {
             is ByAccount, is ByLabel, is ByAccountLabel ->
-                listOf(ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount))
+                listOf(ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount, labels))
 
             is ByAccountLabelWithTransfer -> {
                 listOf(
-                    ImportParsedRecord(accountName, fundMatcher.initialFundName, Currency(currency), amount),
-                    ImportParsedRecord(accountName, fundMatcher.initialFundName, Currency(currency), amount.negate()),
-                    ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount)
+                    ImportParsedRecord(accountName, fundMatcher.initialFundName, Currency(currency), amount, labels),
+                    ImportParsedRecord(
+                        accountName, fundMatcher.initialFundName, Currency(currency), amount.negate(), emptyList()
+                    ),
+                    ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount, emptyList())
                 )
             }
         }
     }
 
     private fun CsvRow.labels(): List<String> = getString(LABEL_COLUMN).labels()
-    private fun String.labels(): List<String> = this.split(LABEL_DELIMITER).map { it.trim() }
+    private fun String.labels(): List<String> = this.split(LABEL_DELIMITER).map { it.trim() }.filter { it.isNotBlank() }
 }
