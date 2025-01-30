@@ -24,6 +24,7 @@ import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.error.ErrorTO
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
@@ -74,6 +75,11 @@ class ImportApiTest {
                     FundName("Work"),
                     FundName("Expenses")
                 ),
+            ),
+            labelMatchers = listOf(
+                LabelMatcherTO("Basic - Food", Label("Basic")),
+                LabelMatcherTO("C&T - Gas & Parking", Label("Transport")),
+                LabelMatcherTO("Work Income", Label("Income")),
             )
         )
         whenever(accountSdk.listAccounts(userId)).thenReturn(

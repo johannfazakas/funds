@@ -69,6 +69,7 @@ class ExchangeSingleFundConverter : ImportFundConverter {
             accountId = accountStore[creditRecord.accountName].id,
             amount = creditAmount,
             unit = creditRecord.unit,
+            labels = creditRecord.labels,
         )
 
         val (debitRecord, debitTotalAmount) = transaction.records
@@ -84,8 +85,10 @@ class ExchangeSingleFundConverter : ImportFundConverter {
             accountId = accountStore[debitRecord.accountName].id,
             amount = debitAmount,
             unit = debitRecord.unit,
+            labels = debitRecord.labels,
         )
 
+        val feeRecord = transaction.records.singleOrNull { it != debitRecord && it != creditRecord }
         val feeAmount = debitTotalAmount - debitAmount
         val feeFundRecord = (debitTotalAmount - debitAmount)
             .takeIf { it.compareTo(BigDecimal.ZERO) != 0 }
@@ -95,6 +98,7 @@ class ExchangeSingleFundConverter : ImportFundConverter {
                     accountId = accountStore[debitRecord.accountName].id,
                     amount = feeAmount,
                     unit = debitRecord.unit,
+                    labels = feeRecord?.labels ?: debitRecord.labels,
                 )
             }
 

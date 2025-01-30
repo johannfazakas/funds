@@ -323,7 +323,7 @@ class AccountTransactionApiTest {
                 )
             )
         )
-        val transaction3 = transactionRepository.save(
+        transactionRepository.save(
             userId = userId,
             CreateAccountTransactionTO(
                 dateTime = dateTime,

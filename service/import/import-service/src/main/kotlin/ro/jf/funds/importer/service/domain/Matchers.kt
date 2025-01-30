@@ -4,6 +4,7 @@ import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.ExchangeMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
+import ro.jf.funds.importer.api.model.LabelMatcherTO
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 
 fun List<AccountMatcherTO>.getAccountName(importAccountName: String): AccountName =
@@ -11,18 +12,27 @@ fun List<AccountMatcherTO>.getAccountName(importAccountName: String): AccountNam
         ?.accountName
         ?: throw ImportDataException("Account name not matched: $importAccountName")
 
-fun List<FundMatcherTO>.getFundMatcher(importAccountName: String, importLabel: String): FundMatcherTO =
-    firstOrNull { it.matches(importAccountName, importLabel) }
-        ?: throw ImportDataException("No fund matcher found for import account name: $importAccountName, import label: $importLabel.")
+fun List<FundMatcherTO>.getFundMatcher(importAccountName: String, importLabels: List<String>): FundMatcherTO =
+    firstOrNull { it.matches(importAccountName, importLabels) }
+        ?: throw ImportDataException("No fund matcher found for import account name: $importAccountName, import labels: $importLabels.")
 
-fun FundMatcherTO.matches(importAccountName: String, importLabel: String): Boolean {
+fun FundMatcherTO.matches(importAccountName: String, importLabels: List<String>): Boolean {
     return when (this) {
         is FundMatcherTO.ByAccount -> this.importAccountName == importAccountName
-        is FundMatcherTO.ByLabel -> this.importLabel == importLabel
-        is FundMatcherTO.ByAccountLabel -> this.importAccountName == importAccountName && this.importLabel == importLabel
-        is FundMatcherTO.ByAccountLabelWithTransfer -> this.importAccountName == importAccountName && this.importLabel == importLabel
+        is FundMatcherTO.ByLabel -> this.importLabel in importLabels
+        is FundMatcherTO.ByAccountLabel -> this.importAccountName == importAccountName && this.importLabel in importLabels
+        is FundMatcherTO.ByAccountLabelWithTransfer -> this.importAccountName == importAccountName && this.importLabel in importLabels
     }
 }
+
+fun List<LabelMatcherTO>.getLabelMatchers(importLabels: List<String>): List<LabelMatcherTO> =
+    if (importLabels.isEmpty()) {
+        emptyList()
+    } else {
+        this.filter { matcher: LabelMatcherTO -> matcher.importLabel in importLabels }
+            .takeIf { it.isNotEmpty() }
+            ?: throw ImportDataException("No label matcher found for import label: $importLabels.")
+    }
 
 fun List<ExchangeMatcherTO>.getExchangeMatcher(importLabels: List<String>): ExchangeMatcherTO? =
     firstOrNull { matcher -> importLabels.any { importLabel -> matcher.matches(importLabel) } }
