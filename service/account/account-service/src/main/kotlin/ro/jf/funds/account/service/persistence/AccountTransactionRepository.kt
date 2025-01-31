@@ -11,11 +11,10 @@ import ro.jf.funds.account.service.domain.AccountRecord
 import ro.jf.funds.account.service.domain.AccountTransaction
 import ro.jf.funds.account.service.domain.Property
 import ro.jf.funds.account.service.persistence.AccountRepository.AccountTable
-import ro.jf.funds.commons.model.Label
+import ro.jf.funds.commons.model.asLabels
+import ro.jf.funds.commons.model.asString
 import ro.jf.funds.commons.service.persistence.blockingTransaction
 import java.util.*
-
-private const val LABELS_DELIMITER = ","
 
 class AccountTransactionRepository(
     private val database: Database,
@@ -198,7 +197,7 @@ class AccountTransactionRepository(
             it[amount] = record.amount
             it[unit] = record.unit.value
             it[unitType] = record.unit.toUnitType()
-            it[labels] = record.labels.joinToString(separator = LABELS_DELIMITER) { it.value }
+            it[labels] = record.labels.asString()
         }
             .let {
                 AccountRecord(
@@ -206,7 +205,7 @@ class AccountTransactionRepository(
                     accountId = it[AccountRecordTable.accountId],
                     amount = it[AccountRecordTable.amount],
                     unit = toFinancialUnit(it[AccountRecordTable.unitType], it[AccountRecordTable.unit]),
-                    labels = it[AccountRecordTable.labels].toLabels(),
+                    labels = it[AccountRecordTable.labels].asLabels(),
                 )
             }
 
@@ -292,7 +291,7 @@ class AccountTransactionRepository(
             accountId = this.first()[AccountRecordTable.accountId],
             amount = this.first()[AccountRecordTable.amount],
             unit = toFinancialUnit(this.first()[AccountRecordTable.unitType], this.first()[AccountRecordTable.unit]),
-            labels = this.first()[AccountRecordTable.labels].toLabels(),
+            labels = this.first()[AccountRecordTable.labels].asLabels(),
             properties = this.toRecordProperties(),
         )
 
@@ -306,6 +305,4 @@ class AccountTransactionRepository(
                 value = rows.first()[RecordPropertyTable.value]
             )
         }
-
-    private fun String.toLabels(): List<Label> = this.split(LABELS_DELIMITER).filter { it.isNotBlank() }.map(::Label)
 }
