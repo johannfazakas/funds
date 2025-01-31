@@ -9,7 +9,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.whenever
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.domain.*
@@ -36,14 +38,15 @@ class ReportViewServiceTest {
     private val cashAccountId = randomUUID()
     private val dateTime1 = LocalDateTime.parse("2021-09-01T12:00:00")
     private val dateTime2 = LocalDateTime.parse("2021-09-03T12:00:00")
+    private val allLabels = labelsOf("need", "want")
 
     @Test
     fun `create report view should create report view`(): Unit = runBlocking {
-        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE)
+        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
-        whenever(reportViewRepository.create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
+        whenever(reportViewRepository.create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels))
             .thenReturn(
-                ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE)
+                ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
             )
         whenever(fundTransactionSdk.listTransactions(userId, expensesFundId)).thenReturn(ListTO.of())
 
@@ -56,56 +59,98 @@ class ReportViewServiceTest {
         assertThat(reportView.type).isEqualTo(ReportViewType.EXPENSE)
 
         verify(reportViewRepository, times(1))
-            .create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE)
+            .create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
     }
 
     @Test
     fun `create report view should store single fund report records`(): Unit = runBlocking {
-        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE)
+        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
-        whenever(reportViewRepository.create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
-            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
+        whenever(reportViewRepository.create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels))
+            .thenReturn(
+                ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
+            )
 
         val transaction1 =
-            transaction(userId, dateTime1, listOf(record(expensesFundId, bankAccountId, BigDecimal("100.0"))))
+            transaction(
+                userId, dateTime1, listOf(
+                    record(expensesFundId, bankAccountId, BigDecimal("100.0"), labelsOf("need"))
+                )
+            )
         val transaction2 =
-            transaction(userId, dateTime2, listOf(record(expensesFundId, cashAccountId, BigDecimal("-200.0"))))
+            transaction(
+                userId, dateTime2, listOf(
+                    record(expensesFundId, cashAccountId, BigDecimal("-200.0"), labelsOf("want"))
+                )
+            )
+        val transaction3 =
+            transaction(
+                userId, dateTime2, listOf(
+                    record(expensesFundId, cashAccountId, BigDecimal("-20.0"), labelsOf("other"))
+                )
+            )
         whenever(fundTransactionSdk.listTransactions(userId, expensesFundId))
-            .thenReturn(ListTO.of(transaction1, transaction2))
+            .thenReturn(ListTO.of(transaction1, transaction2, transaction3))
 
         val reportView = reportViewService.createReportView(userId, request)
 
         val commandCaptor = argumentCaptor<CreateReportRecordCommand>()
-        verify(reportRecordRepository, times(2)).create(commandCaptor.capture())
+        verify(reportRecordRepository, times(3)).create(commandCaptor.capture())
         assertThat(commandCaptor.allValues).containsExactlyInAnyOrder(
-            CreateReportRecordCommand(userId, reportView.id, dateTime1.date, BigDecimal("100.0")),
-            CreateReportRecordCommand(userId, reportView.id, dateTime2.date, BigDecimal("-200.0"))
+            CreateReportRecordCommand(userId, reportView.id, dateTime1.date, BigDecimal("100.0"), labelsOf("need")),
+            CreateReportRecordCommand(userId, reportView.id, dateTime2.date, BigDecimal("-200.0"), labelsOf("want")),
+            CreateReportRecordCommand(userId, reportView.id, dateTime2.date, BigDecimal("-20.0"), labelsOf("other"))
         )
     }
 
     @Test
     fun `create report view with same name should raise error`(): Unit = runBlocking {
-        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE)
+        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName))
-            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
+            .thenReturn(
+                ReportView(
+                    reportViewId,
+                    userId,
+                    reportViewName,
+                    expensesFundId,
+                    ReportViewType.EXPENSE,
+                    allLabels
+                )
+            )
 
         assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, request) } }
             .isInstanceOf(ReportingException.ReportViewAlreadyExists::class.java)
 
-        verify(reportViewRepository, never()).create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE)
+        verify(reportViewRepository, never()).create(
+            userId,
+            reportViewName,
+            expensesFundId,
+            ReportViewType.EXPENSE,
+            allLabels
+        )
     }
 
     @Test
     fun `get expense report view data grouped by months`(): Unit = runBlocking {
         whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE))
+            .thenReturn(
+                ReportView(
+                    reportViewId,
+                    userId,
+                    reportViewName,
+                    expensesFundId,
+                    ReportViewType.EXPENSE,
+                    allLabels
+                )
+            )
         val interval = DateInterval(from = LocalDate.parse("2021-09-03"), to = LocalDate.parse("2021-11-25"))
         whenever(reportRecordRepository.findByViewInInterval(userId, reportViewId, interval))
             .thenReturn(
                 listOf(
-                    reportRecord(LocalDate.parse("2021-09-03"), BigDecimal("-100.0")),
-                    reportRecord(LocalDate.parse("2021-09-15"), BigDecimal("-40.0")),
-                    reportRecord(LocalDate.parse("2021-10-07"), BigDecimal("-30.0")),
+                    reportRecord(LocalDate.parse("2021-09-03"), BigDecimal("-100.0"), labelsOf("need")),
+                    reportRecord(LocalDate.parse("2021-09-15"), BigDecimal("-40.0"), labelsOf("want")),
+                    reportRecord(LocalDate.parse("2021-10-07"), BigDecimal("-30.0"), labelsOf("want")),
+                    reportRecord(LocalDate.parse("2021-10-08"), BigDecimal("-16.0"), labelsOf("other")),
                 )
             )
         val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
@@ -121,6 +166,6 @@ class ReportViewServiceTest {
         )
     }
 
-    private fun reportRecord(date: LocalDate, amount: BigDecimal) =
-        ReportRecord(randomUUID(), userId, reportViewId, date, amount)
+    private fun reportRecord(date: LocalDate, amount: BigDecimal, labels: List<Label>) =
+        ReportRecord(randomUUID(), userId, reportViewId, date, amount, labels)
 }

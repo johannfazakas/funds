@@ -24,13 +24,17 @@ class ReportViewService(
         reportViewRepository.findByName(userId, payload.name)?.let {
             throw ReportingException.ReportViewAlreadyExists(userId, payload.name)
         }
-        val reportView = reportViewRepository.create(userId, payload.name, payload.fundId, payload.type)
+        val reportView = reportViewRepository.create(userId, payload.name, payload.fundId, payload.type, payload.labels)
 
         fundTransactionSdk.listTransactions(userId, payload.fundId).items
             .flatMap { transaction ->
                 transaction.records
                     .filter { it.fundId == payload.fundId }
-                    .map { CreateReportRecordCommand(userId, reportView.id, transaction.dateTime.date, it.amount) }
+                    .map {
+                        CreateReportRecordCommand(
+                            userId, reportView.id, transaction.dateTime.date, it.amount, it.labels
+                        )
+                    }
             }
             .forEach { reportRecordRepository.create(it) }
 
@@ -53,7 +57,8 @@ class ReportViewService(
     ): ReportData {
         // TODO(Johann) dive into logging a bit. how can it be controlled in a ktor service? This should probably be a DEBUG
         log.info { "Get report view data for user $userId, report $reportViewId and interval $granularInterval" }
-        reportViewRepository.findById(userId, reportViewId)
+        val reportView = reportViewRepository.findById(userId, reportViewId)
+        reportView
             ?: throw ReportingException.ReportViewNotFound(userId, reportViewId)
 
         val reportRecords = reportRecordRepository
@@ -67,7 +72,10 @@ class ReportViewService(
             .map { timeBucket ->
                 ExpenseReportDataBucket(
                     timeBucket,
-                    reportRecordsByBucket[timeBucket]?.sumOf { it.amount } ?: BigDecimal.ZERO
+                    reportRecordsByBucket[timeBucket]
+                        ?.filter { it.labels.any { label -> label in reportView.labels } }
+                        ?.sumOf { it.amount }
+                        ?: BigDecimal.ZERO
                 )
             }
 

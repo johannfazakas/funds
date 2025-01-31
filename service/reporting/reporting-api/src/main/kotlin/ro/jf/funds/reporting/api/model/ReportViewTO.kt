@@ -1,6 +1,7 @@
 package ro.jf.funds.reporting.api.model
 
 import kotlinx.serialization.Serializable
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.serialization.UUIDSerializer
 import java.util.*
 
@@ -13,4 +14,5 @@ data class ReportViewTO(
     val fundId: UUID,
     // TODO(Johann) the report view should also have a single currency
     val type: ReportViewType,
+    val labels: List<Label>,
 )

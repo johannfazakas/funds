@@ -7,5 +7,6 @@ fun ReportView.toTO(): ReportViewTO = ReportViewTO(
     id = id,
     name = name,
     fundId = fundId,
-    type = type
+    type = type,
+    labels = labels,
 )

@@ -5,11 +5,14 @@ import kotlinx.datetime.toKotlinLocalDate
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.javatime.date
+import ro.jf.funds.commons.model.asLabels
 import ro.jf.funds.commons.service.persistence.blockingTransaction
 import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
 import ro.jf.funds.reporting.service.domain.ReportRecord
 import java.util.*
+
+import ro.jf.funds.commons.model.asString
 
 class ReportRecordRepository(
     private val database: Database,
@@ -19,6 +22,7 @@ class ReportRecordRepository(
         val reportViewId = uuid("report_view_id")
         val date = date("date")
         val amount = decimal("amount", 10, 2)
+        val labels = varchar("labels", 100)
     }
 
     suspend fun create(command: CreateReportRecordCommand): ReportRecord =
@@ -28,6 +32,7 @@ class ReportRecordRepository(
                 it[reportViewId] = command.reportViewId
                 it[date] = command.date.toJavaLocalDate()
                 it[amount] = command.amount
+                it[labels] = command.labels.asString()
             }
             reportRecord.let {
                 ReportRecord(
@@ -36,6 +41,7 @@ class ReportRecordRepository(
                     reportViewId = it[ReportRecordTable.reportViewId],
                     date = it[ReportRecordTable.date].toKotlinLocalDate(),
                     amount = it[ReportRecordTable.amount],
+                    labels = it[ReportRecordTable.labels].asLabels()
                 )
             }
         }
@@ -58,5 +64,6 @@ class ReportRecordRepository(
             reportViewId = this[ReportRecordTable.reportViewId],
             date = this[ReportRecordTable.date].toKotlinLocalDate(),
             amount = this[ReportRecordTable.amount],
+            labels = this[ReportRecordTable.labels].asLabels()
         )
 }

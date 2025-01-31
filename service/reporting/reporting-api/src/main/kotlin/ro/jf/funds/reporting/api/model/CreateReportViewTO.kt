@@ -1,6 +1,7 @@
 package ro.jf.funds.reporting.api.model
 
 import kotlinx.serialization.Serializable
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.serialization.UUIDSerializer
 import java.util.*
 
@@ -10,4 +11,6 @@ data class CreateReportViewTO(
     @Serializable(with = UUIDSerializer::class)
     val fundId: UUID,
     val type: ReportViewType,
+    // TODO(Johann) should this be applied only on certain features or on all features? will figure it out later
+    val labels: List<Label>,
 )

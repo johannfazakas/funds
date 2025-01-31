@@ -21,6 +21,8 @@ import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID
 
+import ro.jf.funds.commons.model.labelsOf
+
 @ExtendWith(MockServerContainerExtension::class)
 class ReportingSdkTest {
     private val reportingSdk = ReportingSdk(baseUrl = MockServerContainerExtension.baseUrl)
@@ -36,7 +38,8 @@ class ReportingSdkTest {
         val request = CreateReportViewTO(
             name = viewName,
             type = ReportViewType.EXPENSE,
-            fundId = fundId
+            fundId = fundId,
+            labels = labelsOf("need", "want")
         )
         mockServerClient.mockCreateReportViewTask(request, taskId, "IN_PROGRESS")
 
@@ -58,7 +61,7 @@ class ReportingSdkTest {
 
     @Test
     fun `get report view`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val expectedResponse = ReportViewTO(viewId, viewName, fundId, ReportViewType.EXPENSE)
+        val expectedResponse = ReportViewTO(viewId, viewName, fundId, ReportViewType.EXPENSE, labelsOf("need", "want"))
         mockServerClient.mockGetReportView(expectedResponse)
 
         val response = reportingSdk.getReportView(userId, fundId)
@@ -68,7 +71,9 @@ class ReportingSdkTest {
 
     @Test
     fun `list report views`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val expectedResponse = ListTO.of(ReportViewTO(viewId, viewName, fundId, ReportViewType.EXPENSE))
+        val expectedResponse = ListTO.of(
+            ReportViewTO(viewId, viewName, fundId, ReportViewType.EXPENSE, labelsOf("need", "want"))
+        )
         mockServerClient.mockListReportViews(expectedResponse)
 
         val response = reportingSdk.listReportViews(userId)
@@ -193,6 +198,11 @@ class ReportingSdkTest {
                             put("name", JsonPrimitive(response.name))
                             put("fundId", JsonPrimitive(response.fundId.toString()))
                             put("type", JsonPrimitive(response.type.name))
+                            put("labels", buildJsonArray {
+                                response.labels.forEach { label ->
+                                    add(JsonPrimitive(label.value))
+                                }
+                            })
                         }.toString()
                     )
             )
@@ -219,6 +229,11 @@ class ReportingSdkTest {
                                             put("name", JsonPrimitive(item.name))
                                             put("fundId", JsonPrimitive(item.fundId.toString()))
                                             put("type", JsonPrimitive(item.type.name))
+                                            put("labels", buildJsonArray {
+                                                item.labels.forEach { label ->
+                                                    add(JsonPrimitive(label.value))
+                                                }
+                                            })
                                         }
                                     )
                                 }

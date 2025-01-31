@@ -9,6 +9,7 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.event.Event
 import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.fund.sdk.FundTransactionSdk
@@ -46,14 +47,18 @@ class CreateReportViewRequestHandlerTest {
     private val accountId = randomUUID()
     private val dateTime = LocalDateTime.parse("2021-09-01T12:00:00")
 
+    private val labels = labelsOf("need", "want")
+
     @Test
     fun `handle create report view request`(): Unit = runBlocking {
         val initialTask = reportViewTaskRepository.create(userId)
-        val payload = CreateReportViewTO(viewName, fundId, ReportViewType.EXPENSE)
+        val payload = CreateReportViewTO(viewName, fundId, ReportViewType.EXPENSE, labels)
         val event = Event(userId, payload, initialTask.taskId)
 
         val transaction =
-            transaction(userId, dateTime, listOf(record(fundId, accountId, BigDecimal("100.0"))))
+            transaction(userId, dateTime, listOf(
+                record(fundId, accountId, BigDecimal("100.0"), labelsOf("need")))
+            )
         whenever(fundTransactionSdk.listTransactions(userId, fundId)).thenReturn(ListTO.of(transaction))
 
         requestHandler.handle(event)

@@ -3,6 +3,9 @@ package ro.jf.funds.reporting.service.persistence
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import ro.jf.funds.commons.model.Label
+import ro.jf.funds.commons.model.asLabels
+import ro.jf.funds.commons.model.asString
 import ro.jf.funds.commons.service.persistence.blockingTransaction
 import ro.jf.funds.reporting.api.model.ReportViewType
 import ro.jf.funds.reporting.service.domain.ReportView
@@ -16,6 +19,7 @@ class ReportViewRepository(
         val name = varchar("name", 50)
         val fundId = uuid("fund_id")
         val type = varchar("type", 50)
+        val labels = varchar("labels", 100)
     }
 
     suspend fun create(
@@ -23,12 +27,14 @@ class ReportViewRepository(
         name: String,
         fundId: UUID,
         type: ReportViewType,
+        labels: List<Label>,
     ): ReportView = blockingTransaction {
         ReportViewTable.insert {
             it[ReportViewTable.userId] = userId
             it[ReportViewTable.name] = name
             it[ReportViewTable.fundId] = fundId
             it[ReportViewTable.type] = type.name
+            it[ReportViewTable.labels] = labels.asString()
         }.let {
             ReportView(
                 id = it[ReportViewTable.id].value,
@@ -36,6 +42,7 @@ class ReportViewRepository(
                 name = it[ReportViewTable.name],
                 fundId = it[ReportViewTable.fundId],
                 type = it[ReportViewTable.type].let(ReportViewType::fromString),
+                labels = it[ReportViewTable.labels].asLabels(),
             )
         }
     }
@@ -81,5 +88,6 @@ class ReportViewRepository(
             name = this[ReportViewTable.name],
             fundId = this[ReportViewTable.fundId],
             type = this[ReportViewTable.type].let(ReportViewType::fromString),
+            labels = this[ReportViewTable.labels].asLabels(),
         )
 }
