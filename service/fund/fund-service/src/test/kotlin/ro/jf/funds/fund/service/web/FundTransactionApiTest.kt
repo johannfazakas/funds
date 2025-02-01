@@ -20,6 +20,7 @@ import ro.jf.funds.account.sdk.AccountTransactionSdk
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
+import ro.jf.funds.commons.error.ErrorTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
@@ -31,12 +32,11 @@ import ro.jf.funds.commons.test.utils.createJsonHttpClient
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.web.USER_ID_HEADER
-import ro.jf.funds.fund.api.model.CreateFundRecordTO
-import ro.jf.funds.fund.api.model.CreateFundTransactionTO
-import ro.jf.funds.fund.api.model.FundTransactionTO
+import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.config.configureFundErrorHandling
 import ro.jf.funds.fund.service.config.configureFundRouting
 import ro.jf.funds.fund.service.config.fundDependencyModules
+import ro.jf.funds.fund.service.persistence.FundRepository
 import ro.jf.funds.fund.service.service.FUND_ID_PROPERTY
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
@@ -46,6 +46,9 @@ import javax.sql.DataSource
 @ExtendWith(MockServerContainerExtension::class)
 @ExtendWith(KafkaContainerExtension::class)
 class FundTransactionApiTest {
+
+    private val fundRepository = FundRepository(PostgresContainerExtension.connection)
+
     private val accountTransactionSdk: AccountTransactionSdk = mock()
     private val accountSdk: AccountSdk = mock()
 
@@ -59,13 +62,13 @@ class FundTransactionApiTest {
     private val companyAccountId = randomUUID()
     private val personalAccountId = randomUUID()
 
-    private val workFundId = randomUUID()
-    private val expensesFundId = randomUUID()
-
     @Test
     fun `test create transaction`(): Unit = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val transactionTime = LocalDateTime.parse("2021-09-01T12:00:00")
+        val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
+        val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
+
         whenever(
             accountTransactionSdk.createTransaction(
                 userId, CreateAccountTransactionTO(
@@ -76,13 +79,13 @@ class FundTransactionApiTest {
                             amount = BigDecimal("-100.25"),
                             unit = Currency.RON,
                             labels = listOf(Label("one"), Label("two")),
-                            properties = propertiesOf("fundId" to workFundId.toString())
+                            properties = propertiesOf("fundId" to workFund.id.toString())
                         ),
                         CreateAccountRecordTO(
                             accountId = personalAccountId,
                             amount = BigDecimal("100.25"),
                             unit = Currency.RON,
-                            properties = propertiesOf("fundId" to expensesFundId.toString())
+                            properties = propertiesOf("fundId" to expensesFund.id.toString())
                         )
                     ),
                     properties = propertiesOf()
@@ -98,8 +101,8 @@ class FundTransactionApiTest {
                         accountId = companyAccountId,
                         amount = BigDecimal("-100.25"),
                         unit = Currency.RON,
-                        labels  = listOf(Label("one"), Label("two")),
-                        properties = propertiesOf("fundId" to workFundId.toString())
+                        labels = listOf(Label("one"), Label("two")),
+                        properties = propertiesOf("fundId" to workFund.id.toString())
                     ),
                     AccountRecordTO(
                         id = randomUUID(),
@@ -107,7 +110,7 @@ class FundTransactionApiTest {
                         amount = BigDecimal("100.25"),
                         unit = Currency.RON,
                         labels = emptyList(),
-                        properties = propertiesOf("fundId" to expensesFundId.toString())
+                        properties = propertiesOf("fundId" to expensesFund.id.toString())
                     )
                 ),
                 properties = propertiesOf()
@@ -123,14 +126,14 @@ class FundTransactionApiTest {
                         dateTime = transactionTime,
                         records = listOf(
                             CreateFundRecordTO(
-                                fundId = workFundId,
+                                fundId = workFund.id,
                                 accountId = companyAccountId,
                                 unit = Currency.RON,
                                 amount = BigDecimal("-100.25"),
                                 labels = listOf(Label("one"), Label("two")),
                             ),
                             CreateFundRecordTO(
-                                fundId = expensesFundId,
+                                fundId = expensesFund.id,
                                 accountId = personalAccountId,
                                 unit = Currency.RON,
                                 amount = BigDecimal("100.25"),
@@ -149,16 +152,57 @@ class FundTransactionApiTest {
         assertThat(transaction.records).hasSize(2)
         val record1 = transaction.records[0]
         assertThat(record1.id).isNotNull()
-        assertThat(record1.fundId).isEqualTo(workFundId)
+        assertThat(record1.fundId).isEqualTo(workFund.id)
         assertThat(record1.accountId).isEqualTo(companyAccountId)
         assertThat(record1.amount).isEqualTo(BigDecimal("-100.25"))
         assertThat(record1.labels).containsExactly(Label("one"), Label("two"))
         val record2 = transaction.records[1]
-        assertThat(record2.fundId).isEqualTo(expensesFundId)
+        assertThat(record2.fundId).isEqualTo(expensesFund.id)
         assertThat(record2.id).isNotNull()
         assertThat(record2.accountId).isEqualTo(personalAccountId)
         assertThat(record2.amount).isEqualTo(BigDecimal("100.25"))
         assertThat(record2.labels).isEmpty()
+    }
+
+    @Test
+    fun `test create transaction when fund not found`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        val transactionTime = LocalDateTime.parse("2021-09-01T12:00:00")
+        val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
+        val expensesFundId = randomUUID()
+
+        val response = createJsonHttpClient()
+            .post("/funds-api/fund/v1/transactions") {
+                contentType(ContentType.Application.Json)
+                header(USER_ID_HEADER, userId.toString())
+                setBody(
+                    CreateFundTransactionTO(
+                        dateTime = transactionTime,
+                        records = listOf(
+                            CreateFundRecordTO(
+                                fundId = workFund.id,
+                                accountId = companyAccountId,
+                                unit = Currency.RON,
+                                amount = BigDecimal("-100.25"),
+                                labels = listOf(Label("one"), Label("two")),
+                            ),
+                            CreateFundRecordTO(
+                                fundId = expensesFundId,
+                                accountId = personalAccountId,
+                                unit = Currency.RON,
+                                amount = BigDecimal("100.25"),
+                                labels = emptyList()
+                            )
+                        )
+                    )
+                )
+            }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.UnprocessableEntity)
+
+        val error = response.body<ErrorTO>()
+        assertThat(error.title).isEqualTo("Transaction fund not found")
+        assertThat(error.detail).contains(expensesFundId.toString())
     }
 
     @Test
@@ -168,6 +212,8 @@ class FundTransactionApiTest {
         val userId = randomUUID()
         val rawTransactionTime = "2021-09-01T12:00:00"
         val transactionTime = LocalDateTime.parse(rawTransactionTime)
+        val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
+        val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
 
         whenever(accountTransactionSdk.listTransactions(userId, TransactionsFilterTO.empty())).thenReturn(
             ListTO(
@@ -182,7 +228,7 @@ class FundTransactionApiTest {
                                 amount = BigDecimal(100.25),
                                 unit = Currency.RON,
                                 labels = listOf(Label("one"), Label("two")),
-                                properties = propertiesOf("fundId" to workFundId.toString()),
+                                properties = propertiesOf("fundId" to workFund.id.toString()),
                             ),
                             AccountRecordTO(
                                 id = record2Id,
@@ -190,7 +236,7 @@ class FundTransactionApiTest {
                                 amount = BigDecimal(50.75),
                                 unit = Currency.RON,
                                 labels = emptyList(),
-                                properties = propertiesOf("fundId" to expensesFundId.toString()),
+                                properties = propertiesOf("fundId" to expensesFund.id.toString()),
                             )
                         ),
                         properties = propertiesOf()
@@ -216,13 +262,13 @@ class FundTransactionApiTest {
         assertThat(record1.id).isEqualTo(record1Id)
         assertThat(record1.accountId).isEqualTo(companyAccountId)
         assertThat(record1.amount).isEqualTo(BigDecimal(100.25))
-        assertThat(record1.fundId).isEqualTo(workFundId)
+        assertThat(record1.fundId).isEqualTo(workFund.id)
         assertThat(record1.labels).containsExactly(Label("one"), Label("two"))
         val record2 = transaction.records[1]
         assertThat(record2.id).isEqualTo(record2Id)
         assertThat(record2.accountId).isEqualTo(personalAccountId)
         assertThat(record2.amount).isEqualTo(BigDecimal(50.75))
-        assertThat(record2.fundId).isEqualTo(expensesFundId)
+        assertThat(record2.fundId).isEqualTo(expensesFund.id)
         assertThat(record2.labels).isEmpty()
     }
 
@@ -233,6 +279,9 @@ class FundTransactionApiTest {
         val fundId = randomUUID()
         val rawTransactionTime = "2021-09-01T12:00:00"
         val transactionTime = LocalDateTime.parse(rawTransactionTime)
+
+        val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
+        val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
 
         val filter = TransactionsFilterTO(
             recordProperties = listOf(PropertyTO(FUND_ID_PROPERTY, fundId.toString()))
@@ -250,7 +299,7 @@ class FundTransactionApiTest {
                                 amount = BigDecimal(100.25),
                                 unit = Currency.RON,
                                 labels = listOf(Label("one"), Label("two")),
-                                properties = propertiesOf("fundId" to workFundId.toString()),
+                                properties = propertiesOf("fundId" to workFund.id.toString()),
                             ),
                             AccountRecordTO(
                                 id = record2Id,
@@ -258,7 +307,7 @@ class FundTransactionApiTest {
                                 amount = BigDecimal(50.75),
                                 unit = Currency.RON,
                                 labels = emptyList(),
-                                properties = propertiesOf("fundId" to expensesFundId.toString()),
+                                properties = propertiesOf("fundId" to expensesFund.id.toString()),
                             )
                         ),
                         properties = propertiesOf()
@@ -284,13 +333,13 @@ class FundTransactionApiTest {
         assertThat(record1.id).isEqualTo(record1Id)
         assertThat(record1.accountId).isEqualTo(companyAccountId)
         assertThat(record1.amount).isEqualTo(BigDecimal(100.25))
-        assertThat(record1.fundId).isEqualTo(workFundId)
+        assertThat(record1.fundId).isEqualTo(workFund.id)
         assertThat(record1.labels).containsExactly(Label("one"), Label("two"))
         val record2 = transaction.records[1]
         assertThat(record2.id).isEqualTo(record2Id)
         assertThat(record2.accountId).isEqualTo(personalAccountId)
         assertThat(record2.amount).isEqualTo(BigDecimal(50.75))
-        assertThat(record2.fundId).isEqualTo(expensesFundId)
+        assertThat(record2.fundId).isEqualTo(expensesFund.id)
         assertThat(record2.labels).isEmpty()
     }
 

@@ -1,9 +1,9 @@
 package ro.jf.funds.fund.service.domain
 
 import kotlinx.datetime.LocalDateTime
+import ro.jf.funds.commons.model.Label
 import java.math.BigDecimal
 import java.util.*
-import ro.jf.funds.commons.model.Label
 
 data class FundTransaction(
     val id: UUID,

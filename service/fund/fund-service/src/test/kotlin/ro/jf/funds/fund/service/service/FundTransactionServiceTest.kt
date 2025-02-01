@@ -15,6 +15,8 @@ import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
+import ro.jf.funds.fund.service.domain.Fund
+import ro.jf.funds.fund.service.persistence.FundRepository
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
@@ -23,7 +25,10 @@ class FundTransactionServiceTest {
     private val accountTransactionsRequestProducer = mock<Producer<CreateAccountTransactionsTO>>()
     private val accountTransactionAdapter =
         AccountTransactionAdapter(accountTransactionSdk, accountTransactionsRequestProducer)
-    private val fundTransactionService = FundTransactionService(accountTransactionAdapter)
+    private val fundRepository = mock<FundRepository>()
+    private val fundService = FundService(fundRepository)
+
+    private val fundTransactionService = FundTransactionService(fundService, accountTransactionAdapter)
 
     private val userId = randomUUID()
 
@@ -81,6 +86,8 @@ class FundTransactionServiceTest {
             ),
             properties = propertiesOf()
         )
+        whenever(fundRepository.findById(userId, workFundId)).thenReturn(mock<Fund>())
+        whenever(fundRepository.findById(userId, expensesFundId)).thenReturn(mock<Fund>())
         whenever(accountTransactionSdk.createTransaction(userId, expectedCreateAccountTransactionRequest)).thenReturn(
             AccountTransactionTO(
                 id = transactionId,
