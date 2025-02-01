@@ -84,7 +84,7 @@ private val Application.fundServiceDependencies
     get() = module {
         single<AccountTransactionAdapter> { AccountTransactionAdapter(get(), get()) }
         single<FundService> { FundService(get()) }
-        single<FundTransactionService> { FundTransactionService(get()) }
+        single<FundTransactionService> { FundTransactionService(get(), get()) }
         single<CreateAccountTransactionsResponseHandler> {
             CreateAccountTransactionsResponseHandler(
                 get<Producer<GenericResponse>>(
