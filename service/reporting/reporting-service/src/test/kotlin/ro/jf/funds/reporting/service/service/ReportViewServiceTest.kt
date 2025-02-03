@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.whenever
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
@@ -42,11 +44,18 @@ class ReportViewServiceTest {
 
     @Test
     fun `create report view should create report view`(): Unit = runBlocking {
-        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
+        val request =
+            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
-        whenever(reportViewRepository.create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels))
+        whenever(
+            reportViewRepository.create(
+                userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
+            )
+        )
             .thenReturn(
-                ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
+                ReportView(
+                    reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
+                )
             )
         whenever(fundTransactionSdk.listTransactions(userId, expensesFundId)).thenReturn(ListTO.of())
 
@@ -59,16 +68,22 @@ class ReportViewServiceTest {
         assertThat(reportView.type).isEqualTo(ReportViewType.EXPENSE)
 
         verify(reportViewRepository, times(1))
-            .create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
+            .create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
     }
 
     @Test
     fun `create report view should store single fund report records`(): Unit = runBlocking {
-        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
+        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
-        whenever(reportViewRepository.create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels))
+        whenever(
+            reportViewRepository.create(
+                userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
+            )
+        )
             .thenReturn(
-                ReportView(reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
+                ReportView(
+                    reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
+                )
             )
 
         val transaction1 =
@@ -105,16 +120,11 @@ class ReportViewServiceTest {
 
     @Test
     fun `create report view with same name should raise error`(): Unit = runBlocking {
-        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, allLabels)
+        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName))
             .thenReturn(
                 ReportView(
-                    reportViewId,
-                    userId,
-                    reportViewName,
-                    expensesFundId,
-                    ReportViewType.EXPENSE,
-                    allLabels
+                    reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
                 )
             )
 
@@ -122,11 +132,7 @@ class ReportViewServiceTest {
             .isInstanceOf(ReportingException.ReportViewAlreadyExists::class.java)
 
         verify(reportViewRepository, never()).create(
-            userId,
-            reportViewName,
-            expensesFundId,
-            ReportViewType.EXPENSE,
-            allLabels
+            userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
         )
     }
 
@@ -135,12 +141,7 @@ class ReportViewServiceTest {
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(
                 ReportView(
-                    reportViewId,
-                    userId,
-                    reportViewName,
-                    expensesFundId,
-                    ReportViewType.EXPENSE,
-                    allLabels
+                    reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
                 )
             )
         val interval = DateInterval(from = LocalDate.parse("2021-09-03"), to = LocalDate.parse("2021-11-25"))
