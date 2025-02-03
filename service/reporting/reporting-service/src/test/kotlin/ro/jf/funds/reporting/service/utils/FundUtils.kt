@@ -1,6 +1,7 @@
 package ro.jf.funds.reporting.service.utils
 
 import kotlinx.datetime.LocalDateTime
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.fund.api.model.FundRecordTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
@@ -19,6 +20,7 @@ fun record(
     fundId: UUID,
     accountId: UUID,
     amount: BigDecimal,
+    currency: Currency,
     labels: List<Label>
 ): FundRecordTO =
-    FundRecordTO(randomUUID(), fundId, accountId, amount, labels)
+    FundRecordTO(randomUUID(), fundId, accountId, amount, currency, labels)

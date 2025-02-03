@@ -75,6 +75,7 @@ class AccountTransactionAdapter(
                     fundId = recordTO.fundId(),
                     accountId = recordTO.accountId,
                     amount = recordTO.amount,
+                    unit = recordTO.unit,
                     labels = recordTO.labels
                 )
             }

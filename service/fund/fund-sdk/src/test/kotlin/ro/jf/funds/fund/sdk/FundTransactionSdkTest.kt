@@ -75,6 +75,10 @@ class FundTransactionSdkTest {
                                     put("accountId", JsonPrimitive(accountId.toString()))
                                     put("fundId", JsonPrimitive(fundId.toString()))
                                     put("amount", JsonPrimitive(amount))
+                                    put("unit", buildJsonObject {
+                                        put("type", JsonPrimitive("currency"))
+                                        put("value", JsonPrimitive("RON"))
+                                    })
                                 })
                             })
                         }.toString()
@@ -135,6 +139,10 @@ class FundTransactionSdkTest {
                                             put("accountId", JsonPrimitive(accountId.toString()))
                                             put("fundId", JsonPrimitive(fundId.toString()))
                                             put("amount", JsonPrimitive(42.0))
+                                            put("unit", buildJsonObject {
+                                                put("type", JsonPrimitive("currency"))
+                                                put("value", JsonPrimitive("RON"))
+                                            })
                                         })
                                     })
                                 })
@@ -186,6 +194,10 @@ class FundTransactionSdkTest {
                                             put("accountId", JsonPrimitive(accountId.toString()))
                                             put("fundId", JsonPrimitive(fundId.toString()))
                                             put("amount", JsonPrimitive(42.0))
+                                            put("unit", buildJsonObject {
+                                                put("type", JsonPrimitive("currency"))
+                                                put("value", JsonPrimitive("RON"))
+                                            })
                                         })
                                     })
                                 })
