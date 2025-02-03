@@ -18,6 +18,7 @@ fun AccountRecordTO.toRecord() = FundRecord(
     id = id,
     accountId = accountId,
     amount = amount,
+    unit = unit,
     fundId = properties
         .single { it.key == FUND_ID_PROPERTY }.value
         .let(UUID::fromString)

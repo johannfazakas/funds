@@ -76,7 +76,7 @@ class ReportingApiTest {
         val transaction =
             transaction(
                 userId, dateTime, listOf(
-                    record(expenseFundId, cashAccountId, BigDecimal("-100.0"), labelsOf("need"))
+                    record(expenseFundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need"))
                 )
             )
         whenever(fundTransactionSdk.listTransactions(userId, expenseFundId)).thenReturn(ListTO.of(transaction))

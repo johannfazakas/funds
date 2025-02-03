@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.whenever
-import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
@@ -89,19 +88,19 @@ class ReportViewServiceTest {
         val transaction1 =
             transaction(
                 userId, dateTime1, listOf(
-                    record(expensesFundId, bankAccountId, BigDecimal("100.0"), labelsOf("need"))
+                    record(expensesFundId, bankAccountId, BigDecimal("100.0"), RON, labelsOf("need"))
                 )
             )
         val transaction2 =
             transaction(
                 userId, dateTime2, listOf(
-                    record(expensesFundId, cashAccountId, BigDecimal("-200.0"), labelsOf("want"))
+                    record(expensesFundId, cashAccountId, BigDecimal("-200.0"), RON, labelsOf("want"))
                 )
             )
         val transaction3 =
             transaction(
                 userId, dateTime2, listOf(
-                    record(expensesFundId, cashAccountId, BigDecimal("-20.0"), labelsOf("other"))
+                    record(expensesFundId, cashAccountId, BigDecimal("-20.0"), RON, labelsOf("other"))
                 )
             )
         whenever(fundTransactionSdk.listTransactions(userId, expensesFundId))

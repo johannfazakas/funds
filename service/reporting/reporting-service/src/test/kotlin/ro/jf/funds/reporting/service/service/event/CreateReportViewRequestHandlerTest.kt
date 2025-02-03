@@ -59,7 +59,7 @@ class CreateReportViewRequestHandlerTest {
         val transaction =
             transaction(
                 userId, dateTime, listOf(
-                    record(fundId, accountId, BigDecimal("100.0"), labelsOf("need"))
+                    record(fundId, accountId, BigDecimal("100.0"), Currency.RON, labelsOf("need"))
                 )
             )
         whenever(fundTransactionSdk.listTransactions(userId, fundId)).thenReturn(ListTO.of(transaction))
