@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.event.Event
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
@@ -52,12 +53,14 @@ class CreateReportViewRequestHandlerTest {
     @Test
     fun `handle create report view request`(): Unit = runBlocking {
         val initialTask = reportViewTaskRepository.create(userId)
-        val payload = CreateReportViewTO(viewName, fundId, ReportViewType.EXPENSE, labels)
+        val payload = CreateReportViewTO(viewName, fundId, ReportViewType.EXPENSE, Currency.RON, labels)
         val event = Event(userId, payload, initialTask.taskId)
 
         val transaction =
-            transaction(userId, dateTime, listOf(
-                record(fundId, accountId, BigDecimal("100.0"), labelsOf("need")))
+            transaction(
+                userId, dateTime, listOf(
+                    record(fundId, accountId, BigDecimal("100.0"), labelsOf("need"))
+                )
             )
         whenever(fundTransactionSdk.listTransactions(userId, fundId)).thenReturn(ListTO.of(transaction))
 

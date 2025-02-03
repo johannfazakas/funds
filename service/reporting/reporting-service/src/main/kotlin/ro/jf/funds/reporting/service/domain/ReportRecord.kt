@@ -1,6 +1,7 @@
 package ro.jf.funds.reporting.service.domain
 
 import kotlinx.datetime.LocalDate
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Label
 import java.math.BigDecimal
 import java.util.*

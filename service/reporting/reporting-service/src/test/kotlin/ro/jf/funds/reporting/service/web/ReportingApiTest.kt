@@ -21,6 +21,8 @@ import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.event.ConsumerProperties
 import ro.jf.funds.commons.event.asEvent
 import ro.jf.funds.commons.event.createKafkaConsumer
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
@@ -88,6 +90,7 @@ class ReportingApiTest {
                     name = expenseReportName,
                     fundId = expenseFundId,
                     type = ReportViewType.EXPENSE,
+                    currency = Currency.RON,
                     labels = labels
                 )
             )
@@ -135,7 +138,7 @@ class ReportingApiTest {
         val httpClient = createJsonHttpClient()
         val reportViewTask = reportViewTaskRepository.create(userId)
         val reportView =
-            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, labels)
+            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
         reportViewTaskRepository.complete(userId, reportViewTask.taskId, reportView.id)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/tasks/${reportViewTask.taskId}") {
@@ -159,7 +162,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, labels)
+            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}") {
             header(USER_ID_HEADER, userId.toString())
@@ -179,7 +182,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, labels)
+            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
@@ -201,7 +204,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, labels)
+            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
         reportRecordRepository.create(
             CreateReportRecordCommand(
                 userId,
@@ -244,7 +247,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, labels)
+            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
             header(USER_ID_HEADER, userId.toString())

@@ -24,13 +24,16 @@ class ReportViewService(
         reportViewRepository.findByName(userId, payload.name)?.let {
             throw ReportingException.ReportViewAlreadyExists(userId, payload.name)
         }
-        val reportView = reportViewRepository.create(userId, payload.name, payload.fundId, payload.type, payload.labels)
+        val reportView = reportViewRepository.create(
+            userId, payload.name, payload.fundId, payload.type, payload.currency, payload.labels
+        )
 
         fundTransactionSdk.listTransactions(userId, payload.fundId).items
             .flatMap { transaction ->
                 transaction.records
                     .filter { it.fundId == payload.fundId }
                     .map {
+                        // TODO(Johann) convert to currency
                         CreateReportRecordCommand(
                             userId, reportView.id, transaction.dateTime.date, it.amount, it.labels
                         )

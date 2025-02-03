@@ -13,6 +13,8 @@ import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.JsonSchemaBody.jsonSchema
 import org.mockserver.model.MediaType
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
@@ -39,6 +41,7 @@ class ReportingSdkTest {
             name = viewName,
             type = ReportViewType.EXPENSE,
             fundId = fundId,
+            currency = RON,
             labels = labelsOf("need", "want")
         )
         mockServerClient.mockCreateReportViewTask(request, taskId, "IN_PROGRESS")
@@ -61,7 +64,9 @@ class ReportingSdkTest {
 
     @Test
     fun `get report view`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val expectedResponse = ReportViewTO(viewId, viewName, fundId, ReportViewType.EXPENSE, labelsOf("need", "want"))
+        val expectedResponse = ReportViewTO(
+            viewId, viewName, fundId, ReportViewType.EXPENSE, RON, labelsOf("need", "want")
+        )
         mockServerClient.mockGetReportView(expectedResponse)
 
         val response = reportingSdk.getReportView(userId, fundId)
@@ -72,7 +77,7 @@ class ReportingSdkTest {
     @Test
     fun `list report views`(mockServerClient: MockServerClient): Unit = runBlocking {
         val expectedResponse = ListTO.of(
-            ReportViewTO(viewId, viewName, fundId, ReportViewType.EXPENSE, labelsOf("need", "want"))
+            ReportViewTO(viewId, viewName, fundId, ReportViewType.EXPENSE, RON,  labelsOf("need", "want"))
         )
         mockServerClient.mockListReportViews(expectedResponse)
 
@@ -198,6 +203,9 @@ class ReportingSdkTest {
                             put("name", JsonPrimitive(response.name))
                             put("fundId", JsonPrimitive(response.fundId.toString()))
                             put("type", JsonPrimitive(response.type.name))
+                            put("currency", buildJsonObject {
+                                put("value", JsonPrimitive(response.currency.value))
+                            })
                             put("labels", buildJsonArray {
                                 response.labels.forEach { label ->
                                     add(JsonPrimitive(label.value))
@@ -229,6 +237,7 @@ class ReportingSdkTest {
                                             put("name", JsonPrimitive(item.name))
                                             put("fundId", JsonPrimitive(item.fundId.toString()))
                                             put("type", JsonPrimitive(item.type.name))
+                                            put("currency", buildJsonObject { put("value", JsonPrimitive(item.currency.value)) })
                                             put("labels", buildJsonArray {
                                                 item.labels.forEach { label ->
                                                     add(JsonPrimitive(label.value))
