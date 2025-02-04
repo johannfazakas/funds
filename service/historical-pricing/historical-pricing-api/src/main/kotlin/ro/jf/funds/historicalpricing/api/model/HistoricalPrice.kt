@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import ro.jf.funds.commons.serialization.BigDecimalSerializer
 import java.math.BigDecimal
 
+@Deprecated("Use ConversionResponse instead")
 @Serializable
 data class HistoricalPrice(
     val date: LocalDate,
