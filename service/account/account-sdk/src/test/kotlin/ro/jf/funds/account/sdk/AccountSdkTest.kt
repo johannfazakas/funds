@@ -90,7 +90,7 @@ class AccountSdkTest {
                         buildJsonObject {
                             put("id", JsonPrimitive(accountId.toString()))
                             put("name", JsonPrimitive(accountName.value))
-                            put("type", JsonPrimitive("instrument"))
+                            put("type", JsonPrimitive("converter"))
                             put("unit", buildJsonObject {
                                 put("type", JsonPrimitive("symbol"))
                                 put("value", JsonPrimitive("ICBETNETF"))

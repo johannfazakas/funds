@@ -6,10 +6,10 @@ import org.koin.ktor.ext.get
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
-import ro.jf.funds.historicalpricing.service.config.configureRouting
+import ro.jf.funds.historicalpricing.service.config.configureHistoricalPricingRouting
 import ro.jf.funds.historicalpricing.service.config.historicalPricingDependencies
-import ro.jf.funds.historicalpricing.service.domain.service.currency.CurrencyService
-import ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentService
+import ro.jf.funds.historicalpricing.service.service.currency.CurrencyService
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentService
 import javax.sql.DataSource
 
 fun main(args: Array<String>) {
@@ -21,8 +21,9 @@ fun Application.module() {
     configureDependencies(historicalPricingDependencies)
     configureContentNegotiation()
     configureDatabaseMigration(get<DataSource>())
-    configureRouting(
+    configureHistoricalPricingRouting(
         instrumentService = get<InstrumentService>(),
-        currencyService = get<CurrencyService>()
+        currencyService = get<CurrencyService>(),
+        conversionService = get()
     )
 }

@@ -8,20 +8,21 @@ import io.ktor.server.application.*
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
-import org.koin.ktor.plugin.Koin
 import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.commons.persistence.getDbConnection
 import ro.jf.funds.historicalpricing.api.model.HistoricalPriceSource
-import ro.jf.funds.historicalpricing.service.domain.service.currency.CurrencyPairHistoricalPriceRepository
-import ro.jf.funds.historicalpricing.service.domain.service.currency.CurrencyService
-import ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentConverterRegistry
-import ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentHistoricalPriceRepository
-import ro.jf.funds.historicalpricing.service.infra.converter.currency.currencybeacon.CurrencyBeaconCurrencyConverter
-import ro.jf.funds.historicalpricing.service.infra.converter.instrument.bt.BTInstrumentConverter
-import ro.jf.funds.historicalpricing.service.infra.converter.instrument.financialtimes.FinancialTimesInstrumentConverter
-import ro.jf.funds.historicalpricing.service.infra.converter.instrument.yahoo.YahooInstrumentConverter
-import ro.jf.funds.historicalpricing.service.infra.persistence.CurrencyPairHistoricalPriceExposedRepository
-import ro.jf.funds.historicalpricing.service.infra.persistence.InstrumentHistoricalPriceExposedRepository
+import ro.jf.funds.historicalpricing.service.persistence.CurrencyPairHistoricalPriceExposedRepository
+import ro.jf.funds.historicalpricing.service.persistence.InstrumentHistoricalPriceExposedRepository
+import ro.jf.funds.historicalpricing.service.service.ConversionService
+import ro.jf.funds.historicalpricing.service.service.currency.CurrencyPairHistoricalPriceRepository
+import ro.jf.funds.historicalpricing.service.service.currency.CurrencyService
+import ro.jf.funds.historicalpricing.service.service.currency.converter.currencybeacon.CurrencyBeaconCurrencyConverter
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverterRegistry
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentHistoricalPriceRepository
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentService
+import ro.jf.funds.historicalpricing.service.service.instrument.converter.bt.BTInstrumentConverter
+import ro.jf.funds.historicalpricing.service.service.instrument.converter.financialtimes.FinancialTimesInstrumentConverter
+import ro.jf.funds.historicalpricing.service.service.instrument.converter.yahoo.YahooInstrumentConverter
 import javax.sql.DataSource
 
 val Application.historicalPricingDependencies
@@ -56,11 +57,6 @@ val Application.historicalPricingDependencies
         }
         single { CurrencyBeaconCurrencyConverter(get()) }
         single { CurrencyService(get<CurrencyBeaconCurrencyConverter>(), get()) }
-        single {
-            ro.jf.funds.historicalpricing.service.domain.service.instrument.InstrumentService(
-                get(),
-                get(),
-                get()
-            )
-        }
+        single { InstrumentService(get(), get(), get()) }
+        single { ConversionService(get()) }
     }
