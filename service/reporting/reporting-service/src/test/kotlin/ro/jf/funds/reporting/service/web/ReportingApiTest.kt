@@ -11,6 +11,7 @@ import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.koin.dsl.module
 import org.koin.ktor.ext.get
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
@@ -259,7 +260,7 @@ class ReportingApiTest {
     }
 
     private fun Application.testModule() {
-        val importAppTestModule = org.koin.dsl.module {
+        val importAppTestModule = module {
             single<FundTransactionSdk> { fundTransactionSdk }
         }
         configureDependencies(reportingDependencies, importAppTestModule)

@@ -11,13 +11,14 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.select
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.historicalpricing.service.domain.CurrencyPairHistoricalPrice
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyPairHistoricalPriceRepository
 import java.util.*
 
-
+// TODO(Johann) why are there 2 repositories?
 class CurrencyPairHistoricalPriceExposedRepository(
-    private val database: Database
+    private val database: Database,
 ) : CurrencyPairHistoricalPriceRepository {
 
     object Table : UUIDTable("currency_pair_historical_price") {
@@ -37,14 +38,14 @@ class CurrencyPairHistoricalPriceExposedRepository(
     }
 
     override suspend fun getHistoricalPrice(
-        sourceCurrency: String,
-        targetCurrency: String,
-        date: LocalDate
+        sourceCurrency: Currency,
+        targetCurrency: Currency,
+        date: LocalDate,
     ): CurrencyPairHistoricalPrice? = blockingTransaction {
         Table
             .select {
-                (Table.sourceCurrency eq sourceCurrency) and
-                        (Table.targetCurrency eq targetCurrency) and
+                (Table.sourceCurrency eq sourceCurrency.value) and
+                        (Table.targetCurrency eq targetCurrency.value) and
                         (Table.date eq date.toJavaLocalDate())
             }
             .mapNotNull { it.toModel() }
@@ -52,14 +53,14 @@ class CurrencyPairHistoricalPriceExposedRepository(
     }
 
     override suspend fun getHistoricalPrices(
-        sourceCurrency: String,
-        targetCurrency: String,
-        dates: List<LocalDate>
+        sourceCurrency: Currency,
+        targetCurrency: Currency,
+        dates: List<LocalDate>,
     ): List<CurrencyPairHistoricalPrice> = blockingTransaction {
         Table
             .select {
-                (Table.sourceCurrency eq sourceCurrency) and
-                        (Table.targetCurrency eq targetCurrency) and
+                (Table.sourceCurrency eq sourceCurrency.value) and
+                        (Table.targetCurrency eq targetCurrency.value) and
                         (Table.date inList dates.map { it.toJavaLocalDate() })
             }
             .map { it.toModel() }
@@ -67,11 +68,11 @@ class CurrencyPairHistoricalPriceExposedRepository(
 
 
     override suspend fun saveHistoricalPrice(
-        currencyPairHistoricalPrice: CurrencyPairHistoricalPrice
+        currencyPairHistoricalPrice: CurrencyPairHistoricalPrice,
     ): Unit = blockingTransaction {
         DAO.new {
-            sourceCurrency = currencyPairHistoricalPrice.sourceCurrency
-            targetCurrency = currencyPairHistoricalPrice.targetCurrency
+            sourceCurrency = currencyPairHistoricalPrice.sourceCurrency.value
+            targetCurrency = currencyPairHistoricalPrice.targetCurrency.value
             date = currencyPairHistoricalPrice.date.toJavaLocalDate()
             price = currencyPairHistoricalPrice.price
         }
@@ -79,8 +80,8 @@ class CurrencyPairHistoricalPriceExposedRepository(
 
     private fun ResultRow.toModel() =
         CurrencyPairHistoricalPrice(
-            sourceCurrency = this[Table.sourceCurrency],
-            targetCurrency = this[Table.targetCurrency],
+            sourceCurrency = Currency(this[Table.sourceCurrency]),
+            targetCurrency = Currency(this[Table.targetCurrency]),
             date = this[Table.date].let {
                 LocalDate(it.year, it.monthValue, it.dayOfMonth)
             },
