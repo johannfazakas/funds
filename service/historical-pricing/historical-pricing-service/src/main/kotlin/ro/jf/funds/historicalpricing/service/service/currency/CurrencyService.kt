@@ -7,24 +7,27 @@ import ro.jf.funds.historicalpricing.service.domain.CurrencyPairHistoricalPrice
 
 class CurrencyService(
     private val currencyConverter: CurrencyConverter,
-    private val currencyPairHistoricalPriceRepository: CurrencyPairHistoricalPriceRepository
+    private val currencyPairHistoricalPriceRepository: CurrencyPairHistoricalPriceRepository,
 ) {
     suspend fun convert(request: CurrencyConversionRequest): CurrencyConversionResponse {
         val (sourceCurrency, targetCurrency, dates) = request
 
         val storedHistoricalPricesByDate = currencyPairHistoricalPriceRepository
-            .getHistoricalPrices(sourceCurrency.value, targetCurrency.value, dates)
+            .getHistoricalPrices(sourceCurrency, targetCurrency, dates)
             .map { HistoricalPrice(it.date, it.price) }
             .associateBy { it.date }
 
-        val newConversionsByDate = currencyConverter
-            .convert(sourceCurrency, targetCurrency, dates.filterNot { it in storedHistoricalPricesByDate.keys })
-            .onEach {
+        val newConversionsByDate = dates
+            .filterNot { it in storedHistoricalPricesByDate.keys }
+            .takeIf { it.isNotEmpty() }
+            ?.let { it -> currencyConverter.convert(sourceCurrency, targetCurrency, it) }
+            ?.onEach {
                 currencyPairHistoricalPriceRepository.saveHistoricalPrice(
-                    CurrencyPairHistoricalPrice(sourceCurrency.value, targetCurrency.value, it.date, it.price)
+                    CurrencyPairHistoricalPrice(sourceCurrency, targetCurrency, it.date, it.price)
                 )
             }
-            .associateBy { it.date }
+            ?.associateBy { it.date }
+            ?: emptyMap()
 
         return CurrencyConversionResponse(
             sourceCurrency = sourceCurrency,
