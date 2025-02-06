@@ -14,6 +14,7 @@ import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.ReportViewType
 import ro.jf.funds.reporting.service.domain.ReportViewTask
@@ -35,8 +36,11 @@ class CreateReportViewRequestHandlerTest {
     private val reportViewTaskRepository = ReportViewTaskRepository(PostgresContainerExtension.connection)
     private val reportRecordRepository = ReportRecordRepository(PostgresContainerExtension.connection)
     private val fundTransactionSdk = mock<FundTransactionSdk>()
+    private val historicalPricingSdk = mock<HistoricalPricingSdk>()
 
-    private val reportViewService = ReportViewService(reportViewRepository, reportRecordRepository, fundTransactionSdk)
+    private val reportViewService = ReportViewService(
+        reportViewRepository, reportRecordRepository, fundTransactionSdk, historicalPricingSdk
+    )
     private val reportViewTaskService = ReportViewTaskService(reportViewService, reportViewTaskRepository, mock())
 
     private val requestHandler = CreateReportViewRequestHandler(reportViewTaskService)

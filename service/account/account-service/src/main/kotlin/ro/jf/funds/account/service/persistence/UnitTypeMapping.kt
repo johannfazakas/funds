@@ -4,6 +4,7 @@ import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Symbol
 
+// TODO(Johann) might not be needed anymore, added this to class
 internal object UnitTypeMapping {
     const val CURRENCY = "currency"
     const val SYMBOL = "symbol"

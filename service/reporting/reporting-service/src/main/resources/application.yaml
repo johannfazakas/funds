@@ -8,6 +8,8 @@ environment: "$ENVIRONMENT:local"
 integration:
   fund-service:
     base-url: "$FUND_BASE_URL:http://localhost:5253"
+  historical-pricing-service:
+    base-url: "$HISTORICAL_PRICING_BASE_URL:http://localhost:5231"
 kafka:
   bootstrap-servers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:29092"
   group-id: reporting-service

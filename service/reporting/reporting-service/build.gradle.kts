@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":reporting:reporting-api"))
     implementation(project(":commons:commons-service"))
     implementation(project(":fund:fund-sdk"))
+    implementation(project(":historical-pricing:historical-pricing-sdk"))
     testImplementation(project(":commons:commons-test"))
 }
 

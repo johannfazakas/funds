@@ -13,6 +13,7 @@ import ro.jf.funds.importer.service.domain.Store
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import java.math.BigDecimal
 
+// TODO(Johann) this should be replaced by the new historical pricing api
 class ConversionRateService(
     private val historicalPricingSdk: HistoricalPricingSdk,
 ) {
