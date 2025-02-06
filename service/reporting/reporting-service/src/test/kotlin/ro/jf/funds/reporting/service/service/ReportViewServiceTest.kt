@@ -9,11 +9,18 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.whenever
+import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
+import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.historicalpricing.api.model.ConversionRequest
+import ro.jf.funds.historicalpricing.api.model.ConversionResponse
+import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
+import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
+import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
@@ -28,8 +35,10 @@ class ReportViewServiceTest {
     private val reportViewRepository = mock<ReportViewRepository>()
     private val reportRecordRepository = mock<ReportRecordRepository>()
     private val fundTransactionSdk = mock<FundTransactionSdk>()
+    private val historicalPricingSdk = mock<HistoricalPricingSdk>()
 
-    private val reportViewService = ReportViewService(reportViewRepository, reportRecordRepository, fundTransactionSdk)
+    private val reportViewService =
+        ReportViewService(reportViewRepository, reportRecordRepository, fundTransactionSdk, historicalPricingSdk)
 
     private val userId = randomUUID()
     private val reportViewId = randomUUID()
@@ -111,9 +120,58 @@ class ReportViewServiceTest {
         val commandCaptor = argumentCaptor<CreateReportRecordCommand>()
         verify(reportRecordRepository, times(3)).create(commandCaptor.capture())
         assertThat(commandCaptor.allValues).containsExactlyInAnyOrder(
-            CreateReportRecordCommand(userId, reportView.id, dateTime1.date, BigDecimal("100.0"), labelsOf("need")),
-            CreateReportRecordCommand(userId, reportView.id, dateTime2.date, BigDecimal("-200.0"), labelsOf("want")),
-            CreateReportRecordCommand(userId, reportView.id, dateTime2.date, BigDecimal("-20.0"), labelsOf("other"))
+            CreateReportRecordCommand(
+                userId, reportView.id, dateTime1.date, RON,
+                BigDecimal("100.0"), BigDecimal("100.0"), labelsOf("need")
+            ),
+            CreateReportRecordCommand(
+                userId, reportView.id, dateTime2.date, RON,
+                BigDecimal("-200.0"), BigDecimal("-200.0"), labelsOf("want")
+            ),
+            CreateReportRecordCommand(
+                userId, reportView.id, dateTime2.date, RON,
+                BigDecimal("-20.0"), BigDecimal("-20.0"), labelsOf("other")
+            )
+        )
+    }
+
+    @Test
+    fun `create report view should store single fund report records with conversions`(): Unit = runBlocking {
+        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
+        whenever(
+            reportViewRepository.create(
+                userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
+            )
+        )
+            .thenReturn(
+                ReportView(
+                    reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
+                )
+            )
+
+        val transaction1 =
+            transaction(
+                userId, dateTime1, listOf(
+                    record(expensesFundId, bankAccountId, BigDecimal("100.0"), EUR, labelsOf("need"))
+                )
+            )
+        whenever(fundTransactionSdk.listTransactions(userId, expensesFundId)).thenReturn(ListTO.of(transaction1))
+        val conversionsRequest = ConversionsRequest(
+            listOf(ConversionRequest(EUR, RON, dateTime1.date))
+        )
+        whenever(historicalPricingSdk.convert(userId, conversionsRequest))
+            .thenReturn(ConversionsResponse(listOf(ConversionResponse(EUR, RON, dateTime1.date, BigDecimal("5.0")))))
+
+        val reportView = reportViewService.createReportView(userId, request)
+
+        val commandCaptor = argumentCaptor<CreateReportRecordCommand>()
+        verify(reportRecordRepository, times(1)).create(commandCaptor.capture())
+        assertThat(commandCaptor.allValues).containsExactlyInAnyOrder(
+            CreateReportRecordCommand(
+                userId, reportView.id, dateTime1.date, EUR,
+                BigDecimal("100.0"), BigDecimal("500.00"), labelsOf("need")
+            ),
         )
     }
 
@@ -147,10 +205,18 @@ class ReportViewServiceTest {
         whenever(reportRecordRepository.findByViewInInterval(userId, reportViewId, interval))
             .thenReturn(
                 listOf(
-                    reportRecord(LocalDate.parse("2021-09-03"), BigDecimal("-100.0"), labelsOf("need")),
-                    reportRecord(LocalDate.parse("2021-09-15"), BigDecimal("-40.0"), labelsOf("want")),
-                    reportRecord(LocalDate.parse("2021-10-07"), BigDecimal("-30.0"), labelsOf("want")),
-                    reportRecord(LocalDate.parse("2021-10-08"), BigDecimal("-16.0"), labelsOf("other")),
+                    reportRecord(
+                        LocalDate.parse("2021-09-03"), RON, BigDecimal("-100.0"), BigDecimal("-100.0"), labelsOf("need")
+                    ),
+                    reportRecord(
+                        LocalDate.parse("2021-09-15"), EUR, BigDecimal("-40.0"), BigDecimal("-200.0"), labelsOf("want")
+                    ),
+                    reportRecord(
+                        LocalDate.parse("2021-10-07"), RON, BigDecimal("-30.0"), BigDecimal("-30.0"), labelsOf("want")
+                    ),
+                    reportRecord(
+                        LocalDate.parse("2021-10-08"), RON, BigDecimal("-16.0"), BigDecimal("-16.0"), labelsOf("other")
+                    ),
                 )
             )
         val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
@@ -160,12 +226,14 @@ class ReportViewServiceTest {
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.granularInterval).isEqualTo(granularInterval)
         assertThat(data.data).containsExactly(
-            ExpenseReportDataBucket(LocalDate.parse("2021-09-01"), BigDecimal("-140.0")),
+            ExpenseReportDataBucket(LocalDate.parse("2021-09-01"), BigDecimal("-300.0")),
             ExpenseReportDataBucket(LocalDate.parse("2021-10-01"), BigDecimal("-30.0")),
             ExpenseReportDataBucket(LocalDate.parse("2021-11-01"), BigDecimal.ZERO),
         )
     }
 
-    private fun reportRecord(date: LocalDate, amount: BigDecimal, labels: List<Label>) =
-        ReportRecord(randomUUID(), userId, reportViewId, date, amount, labels)
+    private fun reportRecord(
+        date: LocalDate, unit: FinancialUnit, amount: BigDecimal, reportCurrencyAmount: BigDecimal, labels: List<Label>,
+    ) =
+        ReportRecord(randomUUID(), userId, reportViewId, date, unit, amount, reportCurrencyAmount, labels)
 }

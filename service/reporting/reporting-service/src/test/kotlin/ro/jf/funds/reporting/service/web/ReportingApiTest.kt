@@ -23,6 +23,7 @@ import ro.jf.funds.commons.event.ConsumerProperties
 import ro.jf.funds.commons.event.asEvent
 import ro.jf.funds.commons.event.createKafkaConsumer
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
@@ -31,6 +32,7 @@ import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.*
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
 import ro.jf.funds.reporting.api.model.*
@@ -60,6 +62,7 @@ class ReportingApiTest {
     private val reportViewTaskRepository = ReportViewTaskRepository(PostgresContainerExtension.connection)
     private val reportRecordRepository = ReportRecordRepository(PostgresContainerExtension.connection)
     private val fundTransactionSdk = mock<FundTransactionSdk>()
+    private val historicalPricingSdk = mock<HistoricalPricingSdk>()
 
     private val userId = randomUUID()
     private val expenseFundId = randomUUID()
@@ -208,20 +211,14 @@ class ReportingApiTest {
             reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
         reportRecordRepository.create(
             CreateReportRecordCommand(
-                userId,
-                reportView.id,
-                LocalDate.parse("2021-01-02"),
-                BigDecimal("-25.0"),
-                labelsOf("need")
+                userId, reportView.id, LocalDate.parse("2021-01-02"), RON,
+                BigDecimal("-25.0"), BigDecimal("-25.0"), labelsOf("need")
             ),
         )
         reportRecordRepository.create(
             CreateReportRecordCommand(
-                userId,
-                reportView.id,
-                LocalDate.parse("2021-01-02"),
-                BigDecimal("-10.0"),
-                labelsOf("want")
+                userId, reportView.id, LocalDate.parse("2021-01-02"), EUR,
+                BigDecimal("-10.0"), BigDecimal("-50.0"), labelsOf("want")
             )
         )
 
@@ -240,7 +237,7 @@ class ReportingApiTest {
         assertThat(expenseReportData.data[0])
             .isEqualTo(ExpenseReportDataTO.DataItem(LocalDate.parse("2021-01-01"), BigDecimal("0.0")))
         assertThat(expenseReportData.data[1])
-            .isEqualTo(ExpenseReportDataTO.DataItem(LocalDate.parse("2021-01-02"), BigDecimal("-35.0")))
+            .isEqualTo(ExpenseReportDataTO.DataItem(LocalDate.parse("2021-01-02"), BigDecimal("-75.0")))
     }
 
     @Test
@@ -262,6 +259,7 @@ class ReportingApiTest {
     private fun Application.testModule() {
         val importAppTestModule = module {
             single<FundTransactionSdk> { fundTransactionSdk }
+            single<HistoricalPricingSdk> { historicalPricingSdk }
         }
         configureDependencies(reportingDependencies, importAppTestModule)
         configureReportingErrorHandling()

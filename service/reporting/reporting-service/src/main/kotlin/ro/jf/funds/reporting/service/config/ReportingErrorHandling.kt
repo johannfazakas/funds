@@ -36,6 +36,7 @@ fun ReportingException.toStatusCode(): HttpStatusCode = when (this) {
     is ReportingException.MissingIntervalStart -> HttpStatusCode.BadRequest
     is ReportingException.ReportViewNotFound -> HttpStatusCode.NotFound
     is ReportingException.ReportViewAlreadyExists -> HttpStatusCode.Conflict
+    is ReportingException.ReportRecordConversionRateNotFound -> HttpStatusCode.UnprocessableEntity
 }
 
 fun Throwable.toError(): ErrorTO {
@@ -58,6 +59,11 @@ fun ReportingException.toError(): ErrorTO {
         is ReportingException.ReportViewAlreadyExists -> ErrorTO(
             title = "Report view already exists",
             detail = "Report view with name ${this.reportViewName} already exists for user ${this.userId}"
+        )
+
+        is ReportingException.ReportRecordConversionRateNotFound -> ErrorTO(
+            title = "Conversion rate not found",
+            detail = "Conversion rate for record ${this.recordId} not found"
         )
     }
 }
