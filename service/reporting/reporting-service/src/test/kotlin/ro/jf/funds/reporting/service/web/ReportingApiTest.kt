@@ -142,7 +142,7 @@ class ReportingApiTest {
         val httpClient = createJsonHttpClient()
         val reportViewTask = reportViewTaskRepository.create(userId)
         val reportView =
-            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
         reportViewTaskRepository.complete(userId, reportViewTask.taskId, reportView.id)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/tasks/${reportViewTask.taskId}") {
@@ -166,7 +166,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}") {
             header(USER_ID_HEADER, userId.toString())
@@ -186,7 +186,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
@@ -208,14 +208,14 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
-        reportRecordRepository.create(
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
+        reportRecordRepository.save(
             CreateReportRecordCommand(
                 userId, reportView.id, LocalDate.parse("2021-01-02"), RON,
                 BigDecimal("-25.0"), BigDecimal("-25.0"), labelsOf("need")
             ),
         )
-        reportRecordRepository.create(
+        reportRecordRepository.save(
             CreateReportRecordCommand(
                 userId, reportView.id, LocalDate.parse("2021-01-02"), EUR,
                 BigDecimal("-10.0"), BigDecimal("-50.0"), labelsOf("want")
@@ -245,7 +245,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.create(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
             header(USER_ID_HEADER, userId.toString())

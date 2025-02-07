@@ -33,7 +33,7 @@ class ReportViewService(
         reportViewRepository.findByName(userId, payload.name)?.let {
             throw ReportingException.ReportViewAlreadyExists(userId, payload.name)
         }
-        val reportView = reportViewRepository.create(
+        val reportView = reportViewRepository.save(
             userId, payload.name, payload.fundId, payload.type, payload.currency, payload.labels
         )
 
@@ -117,7 +117,8 @@ class ReportViewService(
                         )
                     }
             }
-            .forEach { reportRecordRepository.create(it) }
+            .toList()
+            .let { reportRecordRepository.saveAll(it) }
     }
 
     private suspend fun getConversions(

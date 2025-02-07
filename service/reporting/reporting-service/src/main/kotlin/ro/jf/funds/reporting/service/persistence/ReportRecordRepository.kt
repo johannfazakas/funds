@@ -28,30 +28,14 @@ class ReportRecordRepository(
         val labels = varchar("labels", 100)
     }
 
-    suspend fun create(command: CreateReportRecordCommand): ReportRecord =
+    suspend fun save(command: CreateReportRecordCommand): ReportRecord =
         blockingTransaction {
-            val reportRecord = ReportRecordTable.insert {
-                it[userId] = command.userId
-                it[reportViewId] = command.reportViewId
-                it[date] = command.date.toJavaLocalDate()
-                it[unit] = command.unit.value
-                it[unitType] = command.unit.unitType.value
-                it[amount] = command.amount
-                it[reportCurrencyAmount] = command.reportCurrencyAmount
-                it[labels] = command.labels.asString()
-            }
-            reportRecord.let {
-                ReportRecord(
-                    id = it[ReportRecordTable.id].value,
-                    userId = it[ReportRecordTable.userId],
-                    reportViewId = it[ReportRecordTable.reportViewId],
-                    date = it[ReportRecordTable.date].toKotlinLocalDate(),
-                    unit = toFinancialUnit(it[ReportRecordTable.unitType], it[ReportRecordTable.unit]),
-                    amount = it[ReportRecordTable.amount],
-                    reportCurrencyAmount = it[ReportRecordTable.reportCurrencyAmount],
-                    labels = it[ReportRecordTable.labels].asLabels()
-                )
-            }
+            saveRecord(command)
+        }
+
+    suspend fun saveAll(commands: List<CreateReportRecordCommand>): List<ReportRecord> =
+        blockingTransaction {
+            commands.map { saveRecord(it) }
         }
 
     suspend fun findByViewInInterval(userId: UUID, reportViewId: UUID, interval: DateInterval) = blockingTransaction {
@@ -76,4 +60,29 @@ class ReportRecordRepository(
             reportCurrencyAmount = this[ReportRecordTable.reportCurrencyAmount],
             labels = this[ReportRecordTable.labels].asLabels()
         )
+
+    private fun saveRecord(command: CreateReportRecordCommand): ReportRecord {
+        val reportRecord = ReportRecordTable.insert {
+            it[userId] = command.userId
+            it[reportViewId] = command.reportViewId
+            it[date] = command.date.toJavaLocalDate()
+            it[unit] = command.unit.value
+            it[unitType] = command.unit.unitType.value
+            it[amount] = command.amount
+            it[reportCurrencyAmount] = command.reportCurrencyAmount
+            it[labels] = command.labels.asString()
+        }
+        return reportRecord.let {
+            ReportRecord(
+                id = it[ReportRecordTable.id].value,
+                userId = it[ReportRecordTable.userId],
+                reportViewId = it[ReportRecordTable.reportViewId],
+                date = it[ReportRecordTable.date].toKotlinLocalDate(),
+                unit = toFinancialUnit(it[ReportRecordTable.unitType], it[ReportRecordTable.unit]),
+                amount = it[ReportRecordTable.amount],
+                reportCurrencyAmount = it[ReportRecordTable.reportCurrencyAmount],
+                labels = it[ReportRecordTable.labels].asLabels()
+            )
+        }
+    }
 }
