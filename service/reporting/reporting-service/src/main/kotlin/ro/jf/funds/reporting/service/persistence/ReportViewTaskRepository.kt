@@ -2,7 +2,7 @@ package ro.jf.funds.reporting.service.persistence
 
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
-import ro.jf.funds.commons.service.persistence.blockingTransaction
+import ro.jf.funds.commons.persistence.blockingTransaction
 import ro.jf.funds.reporting.service.domain.ReportViewTask
 import java.util.*
 

@@ -6,9 +6,8 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.account.service.domain.Account
-import ro.jf.funds.account.service.persistence.AccountTransactionRepository.AccountRecordTable
 import ro.jf.funds.commons.model.toFinancialUnit
-import ro.jf.funds.commons.service.persistence.blockingTransaction
+import ro.jf.funds.commons.persistence.blockingTransaction
 import java.util.*
 
 class AccountRepository(

@@ -8,7 +8,7 @@ import org.jetbrains.exposed.sql.javatime.date
 import ro.jf.funds.commons.model.asLabels
 import ro.jf.funds.commons.model.asString
 import ro.jf.funds.commons.model.toFinancialUnit
-import ro.jf.funds.commons.service.persistence.blockingTransaction
+import ro.jf.funds.commons.persistence.blockingTransaction
 import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
 import ro.jf.funds.reporting.service.domain.ReportRecord
