@@ -14,7 +14,7 @@ import ro.jf.funds.account.service.persistence.AccountRepository.AccountTable
 import ro.jf.funds.commons.model.asLabels
 import ro.jf.funds.commons.model.asString
 import ro.jf.funds.commons.model.toFinancialUnit
-import ro.jf.funds.commons.service.persistence.blockingTransaction
+import ro.jf.funds.commons.persistence.blockingTransaction
 import java.util.*
 
 class AccountTransactionRepository(

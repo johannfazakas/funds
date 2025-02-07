@@ -27,6 +27,11 @@ dependencies {
     api(libs.postgresql)
     api(libs.flyway)
 
+    api(libs.exposed.core)
+    api(libs.exposed.jdbc)
+    api(libs.exposed.java.time)
+    api(libs.exposed.dao)
+
     api(libs.kafka.clients)
 
     api(libs.kotlin.logging)

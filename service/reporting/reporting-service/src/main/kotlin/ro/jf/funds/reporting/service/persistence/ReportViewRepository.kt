@@ -7,7 +7,7 @@ import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.asLabels
 import ro.jf.funds.commons.model.asString
-import ro.jf.funds.commons.service.persistence.blockingTransaction
+import ro.jf.funds.commons.persistence.blockingTransaction
 import ro.jf.funds.reporting.api.model.ReportViewType
 import ro.jf.funds.reporting.service.domain.ReportView
 import java.util.*
