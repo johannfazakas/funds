@@ -13,6 +13,7 @@ import ro.jf.funds.account.service.domain.Property
 import ro.jf.funds.account.service.persistence.AccountRepository.AccountTable
 import ro.jf.funds.commons.model.asLabels
 import ro.jf.funds.commons.model.asString
+import ro.jf.funds.commons.model.toFinancialUnit
 import ro.jf.funds.commons.service.persistence.blockingTransaction
 import java.util.*
 
@@ -196,7 +197,7 @@ class AccountTransactionRepository(
             it[accountId] = record.accountId
             it[amount] = record.amount
             it[unit] = record.unit.value
-            it[unitType] = record.unit.toUnitType()
+            it[unitType] = record.unit.unitType.value
             it[labels] = record.labels.asString()
         }
             .let {
