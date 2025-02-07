@@ -21,6 +21,7 @@ fun FundMatcherTO.matches(importAccountName: String, importLabels: List<String>)
         is FundMatcherTO.ByAccount -> this.importAccountName == importAccountName
         is FundMatcherTO.ByLabel -> this.importLabel in importLabels
         is FundMatcherTO.ByAccountLabel -> this.importAccountName == importAccountName && this.importLabel in importLabels
+        is FundMatcherTO.ByLabelWithTransfer -> this.importLabel in importLabels
         is FundMatcherTO.ByAccountLabelWithTransfer -> this.importAccountName == importAccountName && this.importLabel in importLabels
     }
 }

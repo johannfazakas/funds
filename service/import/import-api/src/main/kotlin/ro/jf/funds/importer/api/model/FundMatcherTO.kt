@@ -16,14 +16,14 @@ sealed class FundMatcherTO {
     @SerialName("by_account")
     data class ByAccount(
         val importAccountName: String,
-        override val fundName: FundName
+        override val fundName: FundName,
     ) : FundMatcherTO()
 
     @Serializable
     @SerialName("by_label")
     data class ByLabel(
         val importLabel: String,
-        override val fundName: FundName
+        override val fundName: FundName,
     ) : FundMatcherTO()
 
     @Serializable
@@ -31,7 +31,15 @@ sealed class FundMatcherTO {
     data class ByAccountLabel(
         val importAccountName: String,
         val importLabel: String,
-        override val fundName: FundName
+        override val fundName: FundName,
+    ) : FundMatcherTO()
+
+    @Serializable
+    @SerialName("by_label_with_transfer")
+    data class ByLabelWithTransfer(
+        val importLabel: String,
+        val initialFundName: FundName,
+        override val fundName: FundName,
     ) : FundMatcherTO()
 
     @Serializable

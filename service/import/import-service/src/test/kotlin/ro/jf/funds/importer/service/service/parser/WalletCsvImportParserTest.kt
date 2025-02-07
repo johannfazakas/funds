@@ -129,7 +129,49 @@ class WalletCsvImportParserTest {
     }
 
     @Test
-    fun `should parse wallet csv import item with implicit fund transfer`() {
+    fun `should parse wallet csv import item with implicit fund transfer based on label`() {
+        val fileContent = generateFileContent(
+            WalletCsvRowContent("ING old", "RON", "740.00", "Gift income", "2019-01-06 02:00:23")
+        )
+        val importConfiguration = ImportConfigurationTO(
+            fileType = ImportFileTypeTO.WALLET_CSV,
+            accountMatchers = listOf(
+                AccountMatcherTO("ING old", AccountName("ING"))
+            ),
+            fundMatchers = listOf(
+                FundMatcherTO.ByLabelWithTransfer(
+                    importLabel = "Gift income", FundName("Gift income"), FundName("Expenses")
+                ),
+            ),
+            exchangeMatchers = emptyList(),
+            labelMatchers = listOf(LabelMatcherTO("Gift income", Label("gifts")))
+        )
+
+        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+
+        assertThat(importTransactions).hasSize(1)
+        assertThat(importTransactions[0].transactionId).isNotNull()
+        assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-06T02:00:23")
+        assertThat(importTransactions[0].records).hasSize(3)
+
+        assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
+        assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Gift income"))
+        assertThat(importTransactions[0].records[0].unit).isEqualTo(Currency.RON)
+        assertThat(importTransactions[0].records[0].amount).isEqualTo("740.00".toBigDecimal())
+
+        assertThat(importTransactions[0].records[1].accountName).isEqualTo(AccountName("ING"))
+        assertThat(importTransactions[0].records[1].fundName).isEqualTo(FundName("Gift income"))
+        assertThat(importTransactions[0].records[1].unit).isEqualTo(Currency.RON)
+        assertThat(importTransactions[0].records[1].amount).isEqualTo("-740.00".toBigDecimal())
+
+        assertThat(importTransactions[0].records[2].accountName).isEqualTo(AccountName("ING"))
+        assertThat(importTransactions[0].records[2].fundName).isEqualTo(FundName("Expenses"))
+        assertThat(importTransactions[0].records[2].unit).isEqualTo(Currency.RON)
+        assertThat(importTransactions[0].records[2].amount).isEqualTo("740.00".toBigDecimal())
+    }
+
+    @Test
+    fun `should parse wallet csv import item with implicit fund transfer based on account and label`() {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "6740.00", "Work Income", "2019-01-06 02:00:23")
         )
