@@ -36,14 +36,16 @@ val CREATE_ACCOUNT_TRANSACTIONS_RESPONSE_CONSUMER: Qualifier =
 val CREATE_FUND_TRANSACTIONS_RESPONSE_PRODUCER: Qualifier =
     StringQualifier("CreateFundTransactionsResponse")
 
-val Application.fundDependencyModules
-    get() = arrayOf(
-        fundPersistenceDependencies,
-        fundIntegrationDependencies,
-        fundEventProducerDependencies,
-        fundServiceDependencies,
-        fundEventConsumerDependencies,
-    )
+val Application.fundDependencies
+    get() = module {
+        includes(
+            fundPersistenceDependencies,
+            fundIntegrationDependencies,
+            fundEventProducerDependencies,
+            fundServiceDependencies,
+            fundEventConsumerDependencies,
+        )
+    }
 
 private val Application.fundPersistenceDependencies
     get() = module {

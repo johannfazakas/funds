@@ -10,15 +10,17 @@ import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.koin.dsl.module
 import org.koin.ktor.ext.get
-import org.mockserver.client.MockServerClient
-import org.mockserver.model.Header
-import org.mockserver.model.HttpRequest.request
-import org.mockserver.model.HttpResponse.response
-import org.mockserver.model.MediaType
+import org.mockito.Mockito.mock
+import org.mockito.kotlin.whenever
+import ro.jf.funds.account.api.model.AccountName
+import ro.jf.funds.account.api.model.AccountTO
+import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
@@ -32,17 +34,16 @@ import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.service.config.configureFundErrorHandling
 import ro.jf.funds.fund.service.config.configureFundRouting
-import ro.jf.funds.fund.service.config.fundDependencyModules
+import ro.jf.funds.fund.service.config.fundDependencies
 import ro.jf.funds.fund.service.persistence.FundRepository
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
-@ExtendWith(MockServerContainerExtension::class)
 @ExtendWith(KafkaContainerExtension::class)
 class FundApiTest {
-
     private val fundRepository = createFundRepository()
+    private val accountSdk = mock<AccountSdk>()
 
     @Test
     fun `test list funds`() = testApplication {
@@ -82,35 +83,14 @@ class FundApiTest {
     }
 
     @Test
-    fun `test create fund`(mockServerClient: MockServerClient): Unit = testApplication {
+    fun `test create fund`(): Unit = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, appConfig)
 
         val userId = randomUUID()
         val accountId = randomUUID()
 
-        // TODO(Johann) should this be tested here? it is already tested in sdk
-        mockServerClient
-            .`when`(
-                request()
-                    .withMethod("GET")
-                    .withPath("/funds-api/account/v1/accounts/$accountId")
-                    .withHeader(Header(USER_ID_HEADER, userId.toString()))
-            )
-            .respond(
-                response()
-                    .withStatusCode(200)
-                    .withContentType(MediaType.APPLICATION_JSON)
-                    .withBody(
-                        """
-                        {
-                            "id": "$accountId",
-                            "name": "Savings Account",
-                            "type": "currency",
-                            "currency": "RON"   
-                        }
-                        """.trimIndent()
-                    )
-            )
+        whenever(accountSdk.findAccountById(userId, accountId))
+            .thenReturn(AccountTO(accountId, AccountName("Savings Account"), Currency.RON))
 
         val response = createJsonHttpClient().post("/funds-api/fund/v1/funds") {
             contentType(ContentType.Application.Json)
@@ -148,7 +128,10 @@ class FundApiTest {
     )
 
     private fun Application.testModule() {
-        configureDependencies(*fundDependencyModules)
+        val fundAppTestModule = module {
+            single<AccountSdk> { accountSdk }
+        }
+        configureDependencies(fundDependencies, fundAppTestModule)
         configureFundErrorHandling()
         configureContentNegotiation()
         configureDatabaseMigration(get<DataSource>())
