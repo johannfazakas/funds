@@ -30,6 +30,7 @@ class ImportService(
             importTask
         } catch (e: Exception) {
             log.warn(e) { "Error while importing files >> user = $userId configuration = $configuration files = $files." }
+            // TODO(Johann) if the message is longer than varchar 255, storage will fail
             importTaskRepository
                 .update(userId, importTask.copy(status = ImportTaskTO.Status.FAILED, reason = e.message))
         }

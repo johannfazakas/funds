@@ -10,4 +10,5 @@ fun ReportView.toTO(): ReportViewTO = ReportViewTO(
     type = type,
     currency = currency,
     labels = labels,
+    features = emptyList()
 )

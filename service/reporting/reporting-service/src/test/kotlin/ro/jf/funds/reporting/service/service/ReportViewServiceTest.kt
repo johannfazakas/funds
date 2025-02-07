@@ -53,7 +53,7 @@ class ReportViewServiceTest {
     @Test
     fun `create report view should create report view`(): Unit = runBlocking {
         val request =
-            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
+            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels, emptyList())
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
             reportViewRepository.save(
@@ -81,7 +81,8 @@ class ReportViewServiceTest {
 
     @Test
     fun `create report view should store single fund report records`(): Unit = runBlocking {
-        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
+        val request =
+            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels, emptyList())
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
             reportViewRepository.save(
@@ -137,7 +138,8 @@ class ReportViewServiceTest {
 
     @Test
     fun `create report view should store single fund report records with conversions`(): Unit = runBlocking {
-        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
+        val request =
+            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels, emptyList())
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
             reportViewRepository.save(
@@ -177,7 +179,8 @@ class ReportViewServiceTest {
 
     @Test
     fun `create report view with same name should raise error`(): Unit = runBlocking {
-        val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
+        val request =
+            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels, emptyList())
         whenever(reportViewRepository.findByName(userId, reportViewName))
             .thenReturn(
                 ReportView(
