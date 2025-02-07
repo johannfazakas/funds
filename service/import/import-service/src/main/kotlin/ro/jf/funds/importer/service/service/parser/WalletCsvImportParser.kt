@@ -94,6 +94,16 @@ class WalletCsvImportParser(
                     ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount, emptyList())
                 )
             }
+
+            is ByLabelWithTransfer -> {
+                listOf(
+                    ImportParsedRecord(accountName, fundMatcher.initialFundName, Currency(currency), amount, labels),
+                    ImportParsedRecord(
+                        accountName, fundMatcher.initialFundName, Currency(currency), amount.negate(), emptyList()
+                    ),
+                    ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount, emptyList())
+                )
+            }
         }
     }
 
