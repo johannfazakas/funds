@@ -15,4 +15,5 @@ data class CreateReportViewTO(
     val currency: Currency,
     // TODO(Johann) should this be applied only on certain features or on all features? will figure it out later
     val labels: List<Label>,
+    val features: List<ReportingFeatureTO>
 )

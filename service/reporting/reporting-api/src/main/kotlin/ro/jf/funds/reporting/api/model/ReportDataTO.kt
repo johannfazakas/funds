@@ -33,3 +33,33 @@ data class ExpenseReportDataTO(
         val amount: BigDecimal,
     )
 }
+
+// TODO(Johann) will probably not need sealed derivates, this could be inlined
+@Serializable
+@SerialName("FEATURES")
+data class FeaturesReportDataTO(
+    @Serializable(with = UUIDSerializer::class)
+    override val viewId: UUID,
+    override val granularInterval: GranularDateInterval,
+    val features: List<FeatureReportDataTO>,
+) : ReportDataTO()
+
+@OptIn(ExperimentalSerializationApi::class)
+@JsonClassDiscriminator("type")
+@Serializable
+sealed class FeatureReportDataTO {
+    @Serializable
+    @SerialName("min_max_total_value")
+    data class MinMaxTotalValue(
+        val data: List<DataItem>,
+    ) : FeatureReportDataTO() {
+        @Serializable
+        data class DataItem(
+            val timeBucket: LocalDate,
+            @Serializable(with = BigDecimalSerializer::class)
+            val minValue: BigDecimal,
+            @Serializable(with = BigDecimalSerializer::class)
+            val maxValue: BigDecimal,
+        )
+    }
+}

@@ -13,17 +13,15 @@ import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.JsonSchemaBody.jsonSchema
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.reporting.api.model.*
 import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID
-
-import ro.jf.funds.commons.model.labelsOf
 
 @ExtendWith(MockServerContainerExtension::class)
 class ReportingSdkTest {
@@ -42,7 +40,10 @@ class ReportingSdkTest {
             type = ReportViewType.EXPENSE,
             fundId = fundId,
             currency = RON,
-            labels = labelsOf("need", "want")
+            labels = labelsOf("need", "want"),
+            features = listOf(
+                ReportingFeatureTO.MinMaxTotalValue
+            )
         )
         mockServerClient.mockCreateReportViewTask(request, taskId, "IN_PROGRESS")
 
@@ -65,7 +66,8 @@ class ReportingSdkTest {
     @Test
     fun `get report view`(mockServerClient: MockServerClient): Unit = runBlocking {
         val expectedResponse = ReportViewTO(
-            viewId, viewName, fundId, ReportViewType.EXPENSE, RON, labelsOf("need", "want")
+            viewId, viewName, fundId, ReportViewType.EXPENSE, RON,
+            labelsOf("need", "want"), listOf(ReportingFeatureTO.MinMaxTotalValue)
         )
         mockServerClient.mockGetReportView(expectedResponse)
 
@@ -77,7 +79,10 @@ class ReportingSdkTest {
     @Test
     fun `list report views`(mockServerClient: MockServerClient): Unit = runBlocking {
         val expectedResponse = ListTO.of(
-            ReportViewTO(viewId, viewName, fundId, ReportViewType.EXPENSE, RON,  labelsOf("need", "want"))
+            ReportViewTO(
+                viewId, viewName, fundId, ReportViewType.EXPENSE, RON,
+                labelsOf("need", "want"), listOf(ReportingFeatureTO.MinMaxTotalValue)
+            )
         )
         mockServerClient.mockListReportViews(expectedResponse)
 
@@ -87,7 +92,7 @@ class ReportingSdkTest {
     }
 
     @Test
-    fun `get report view data`(mockServerClient: MockServerClient): Unit = runBlocking {
+    fun `get expense report view data`(mockServerClient: MockServerClient): Unit = runBlocking {
         val granularInterval = GranularDateInterval(
             interval = DateInterval(LocalDate.parse("2024-11-01"), LocalDate.parse("2025-01-31")),
             granularity = TimeGranularity.MONTHLY
@@ -107,6 +112,44 @@ class ReportingSdkTest {
                 ExpenseReportDataTO.DataItem(
                     timeBucket = LocalDate.parse("2025-01-01"),
                     amount = BigDecimal("400.0")
+                )
+            )
+        )
+        mockServerClient.mockGetReportData(expectedResponse)
+
+        val response = reportingSdk.getReportViewData(userId, viewId, granularInterval)
+
+        assertThat(response).isEqualTo(expectedResponse)
+    }
+
+    @Test
+    fun `get report view data`(mockServerClient: MockServerClient): Unit = runBlocking {
+        val granularInterval = GranularDateInterval(
+            interval = DateInterval(LocalDate.parse("2024-11-01"), LocalDate.parse("2025-01-31")),
+            granularity = TimeGranularity.MONTHLY
+        )
+        val expectedResponse = FeaturesReportDataTO(
+            viewId = viewId,
+            granularInterval = granularInterval,
+            features = listOf(
+                FeatureReportDataTO.MinMaxTotalValue(
+                    listOf(
+                        FeatureReportDataTO.MinMaxTotalValue.DataItem(
+                            timeBucket = LocalDate.parse("2024-11-01"),
+                            minValue = BigDecimal("100.0"),
+                            maxValue = BigDecimal("200.0"),
+                        ),
+                        FeatureReportDataTO.MinMaxTotalValue.DataItem(
+                            timeBucket = LocalDate.parse("2024-12-01"),
+                            minValue = BigDecimal("200.0"),
+                            maxValue = BigDecimal("350.0"),
+                        ),
+                        FeatureReportDataTO.MinMaxTotalValue.DataItem(
+                            timeBucket = LocalDate.parse("2025-01-01"),
+                            minValue = BigDecimal("300.0"),
+                            maxValue = BigDecimal("420.0"),
+                        )
+                    )
                 )
             )
         )
@@ -142,12 +185,18 @@ class ReportingSdkTest {
                                         put("type", JsonPrimitive("string"))
                                         put("value", JsonPrimitive(request.fundId.toString()))
                                     })
+                                    put("featues", buildJsonArray {
+                                        add(buildJsonObject {
+                                            put("type", JsonPrimitive("min_max_total_value"))
+                                        })
+                                    })
                                 }
                             )
                             put("required", buildJsonArray {
                                 add(JsonPrimitive("name"))
                                 add(JsonPrimitive("type"))
                                 add(JsonPrimitive("fundId"))
+                                add(JsonPrimitive("features"))
                             })
                         }.toString()
                     )
@@ -198,20 +247,7 @@ class ReportingSdkTest {
                     .withStatusCode(200)
                     .withContentType(MediaType.APPLICATION_JSON)
                     .withBody(
-                        buildJsonObject {
-                            put("id", JsonPrimitive(response.id.toString()))
-                            put("name", JsonPrimitive(response.name))
-                            put("fundId", JsonPrimitive(response.fundId.toString()))
-                            put("type", JsonPrimitive(response.type.name))
-                            put("currency", buildJsonObject {
-                                put("value", JsonPrimitive(response.currency.value))
-                            })
-                            put("labels", buildJsonArray {
-                                response.labels.forEach { label ->
-                                    add(JsonPrimitive(label.value))
-                                }
-                            })
-                        }.toString()
+                        reportViewJsonObject(response).toString()
                     )
             )
     }
@@ -232,18 +268,7 @@ class ReportingSdkTest {
                             put("items", buildJsonArray {
                                 response.items.forEach { item ->
                                     add(
-                                        buildJsonObject {
-                                            put("id", JsonPrimitive(item.id.toString()))
-                                            put("name", JsonPrimitive(item.name))
-                                            put("fundId", JsonPrimitive(item.fundId.toString()))
-                                            put("type", JsonPrimitive(item.type.name))
-                                            put("currency", buildJsonObject { put("value", JsonPrimitive(item.currency.value)) })
-                                            put("labels", buildJsonArray {
-                                                item.labels.forEach { label ->
-                                                    add(JsonPrimitive(label.value))
-                                                }
-                                            })
-                                        }
+                                        reportViewJsonObject(item)
                                     )
                                 }
                             })
@@ -252,7 +277,32 @@ class ReportingSdkTest {
             )
     }
 
-    private fun MockServerClient.mockGetReportData(expectedResponse: ReportDataTO) {
+    private fun reportViewJsonObject(response: ReportViewTO) =
+        buildJsonObject({
+            put("id", JsonPrimitive(response.id.toString()))
+            put("name", JsonPrimitive(response.name))
+            put("fundId", JsonPrimitive(response.fundId.toString()))
+            put("type", JsonPrimitive(response.type.name))
+            put("currency", buildJsonObject {
+                put("value", JsonPrimitive(response.currency.value))
+            })
+            put("labels", buildJsonArray {
+                response.labels.forEach { label ->
+                    add(JsonPrimitive(label.value))
+                }
+            })
+            put("features", buildJsonArray {
+                response.features.forEach { feature ->
+                    when (feature) {
+                        is ReportingFeatureTO.MinMaxTotalValue -> add(buildJsonObject {
+                            put("type", JsonPrimitive("min_max_total_value"))
+                        })
+                    }
+                }
+            })
+        })
+
+    private fun MockServerClient.mockGetReportData(expectedResponse: ExpenseReportDataTO) {
         `when`(
             request()
                 .withMethod("GET")
@@ -273,13 +323,7 @@ class ReportingSdkTest {
                     .withBody(
                         buildJsonObject {
                             put("viewId", JsonPrimitive(expectedResponse.viewId.toString()))
-                            put(
-                                "type", JsonPrimitive(
-                                    when (expectedResponse) {
-                                        is ExpenseReportDataTO -> "EXPENSE"
-                                    }
-                                )
-                            )
+                            put("type", JsonPrimitive("EXPENSE"))
                             put("granularInterval", buildJsonObject {
                                 put("interval", buildJsonObject {
                                     put(
@@ -298,6 +342,63 @@ class ReportingSdkTest {
                                             put("amount", JsonPrimitive(item.amount.toString()))
                                         }
                                     )
+                                }
+                            })
+                        }.toString()
+                    )
+            )
+    }
+
+    private fun MockServerClient.mockGetReportData(expectedResponse: FeaturesReportDataTO) {
+        `when`(
+            request()
+                .withMethod("GET")
+                .withPath("/funds-api/reporting/v1/report-views/$viewId/data")
+                .withQueryStringParameters(
+                    mapOf(
+                        "from" to listOf(expectedResponse.granularInterval.interval.from.toString()),
+                        "to" to listOf(expectedResponse.granularInterval.interval.to.toString()),
+                        "granularity" to listOf(expectedResponse.granularInterval.granularity.name)
+                    )
+                )
+                .withHeader(USER_ID_HEADER, userId.toString())
+        )
+            .respond(
+                response()
+                    .withStatusCode(200)
+                    .withContentType(MediaType.APPLICATION_JSON)
+                    .withBody(
+                        buildJsonObject {
+                            put("viewId", JsonPrimitive(expectedResponse.viewId.toString()))
+                            put("type", JsonPrimitive("FEATURES"))
+                            put("granularInterval", buildJsonObject {
+                                put("interval", buildJsonObject {
+                                    put(
+                                        "from",
+                                        JsonPrimitive(expectedResponse.granularInterval.interval.from.toString())
+                                    )
+                                    put("to", JsonPrimitive(expectedResponse.granularInterval.interval.to.toString()))
+                                })
+                                put("granularity", JsonPrimitive(expectedResponse.granularInterval.granularity.name))
+                            })
+                            put("features", buildJsonArray {
+                                expectedResponse.features.forEach { feature ->
+                                    when (feature) {
+                                        is FeatureReportDataTO.MinMaxTotalValue -> add(buildJsonObject {
+                                            put("type", JsonPrimitive("min_max_total_value"))
+                                            put("data", buildJsonArray {
+                                                feature.data.forEach { item ->
+                                                    add(
+                                                        buildJsonObject {
+                                                            put("timeBucket", JsonPrimitive(item.timeBucket.toString()))
+                                                            put("minValue", JsonPrimitive(item.minValue.toString()))
+                                                            put("maxValue", JsonPrimitive(item.maxValue.toString()))
+                                                        }
+                                                    )
+                                                }
+                                            })
+                                        })
+                                    }
                                 }
                             })
                         }.toString()

@@ -94,8 +94,9 @@ class ReportingApiTest {
                     name = expenseReportName,
                     fundId = expenseFundId,
                     type = ReportViewType.EXPENSE,
-                    currency = Currency.RON,
-                    labels = labels
+                    currency = RON,
+                    labels = labels,
+                    features = emptyList()
                 )
             )
         }
