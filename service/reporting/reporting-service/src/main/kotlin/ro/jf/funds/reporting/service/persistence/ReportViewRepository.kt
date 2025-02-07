@@ -24,7 +24,7 @@ class ReportViewRepository(
         val labels = varchar("labels", 100)
     }
 
-    suspend fun create(
+    suspend fun save(
         userId: UUID,
         name: String,
         fundId: UUID,

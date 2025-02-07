@@ -56,7 +56,7 @@ class ReportViewServiceTest {
             CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
-            reportViewRepository.create(
+            reportViewRepository.save(
                 userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
             )
         )
@@ -76,7 +76,7 @@ class ReportViewServiceTest {
         assertThat(reportView.type).isEqualTo(ReportViewType.EXPENSE)
 
         verify(reportViewRepository, times(1))
-            .create(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
+            .save(userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
     }
 
     @Test
@@ -84,7 +84,7 @@ class ReportViewServiceTest {
         val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
-            reportViewRepository.create(
+            reportViewRepository.save(
                 userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
             )
         )
@@ -117,9 +117,9 @@ class ReportViewServiceTest {
 
         val reportView = reportViewService.createReportView(userId, request)
 
-        val commandCaptor = argumentCaptor<CreateReportRecordCommand>()
-        verify(reportRecordRepository, times(3)).create(commandCaptor.capture())
-        assertThat(commandCaptor.allValues).containsExactlyInAnyOrder(
+        val commandCaptor = argumentCaptor<List<CreateReportRecordCommand>>()
+        verify(reportRecordRepository, times(1)).saveAll(commandCaptor.capture())
+        assertThat(commandCaptor.firstValue).containsExactlyInAnyOrder(
             CreateReportRecordCommand(
                 userId, reportView.id, dateTime1.date, RON,
                 BigDecimal("100.0"), BigDecimal("100.0"), labelsOf("need")
@@ -140,7 +140,7 @@ class ReportViewServiceTest {
         val request = CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
-            reportViewRepository.create(
+            reportViewRepository.save(
                 userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
             )
         )
@@ -165,9 +165,9 @@ class ReportViewServiceTest {
 
         val reportView = reportViewService.createReportView(userId, request)
 
-        val commandCaptor = argumentCaptor<CreateReportRecordCommand>()
-        verify(reportRecordRepository, times(1)).create(commandCaptor.capture())
-        assertThat(commandCaptor.allValues).containsExactlyInAnyOrder(
+        val commandCaptor = argumentCaptor<List<CreateReportRecordCommand>>()
+        verify(reportRecordRepository, times(1)).saveAll(commandCaptor.capture())
+        assertThat(commandCaptor.firstValue).containsExactlyInAnyOrder(
             CreateReportRecordCommand(
                 userId, reportView.id, dateTime1.date, EUR,
                 BigDecimal("100.0"), BigDecimal("500.00"), labelsOf("need")
@@ -188,7 +188,7 @@ class ReportViewServiceTest {
         assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, request) } }
             .isInstanceOf(ReportingException.ReportViewAlreadyExists::class.java)
 
-        verify(reportViewRepository, never()).create(
+        verify(reportViewRepository, never()).save(
             userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
         )
     }
