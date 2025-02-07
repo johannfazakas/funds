@@ -7,6 +7,7 @@ import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.account.service.domain.Account
 import ro.jf.funds.account.service.persistence.AccountTransactionRepository.AccountRecordTable
+import ro.jf.funds.commons.model.toFinancialUnit
 import ro.jf.funds.commons.service.persistence.blockingTransaction
 import java.util.*
 
@@ -44,7 +45,7 @@ class AccountRepository(
         AccountTable.insert {
             it[AccountTable.userId] = userId
             it[name] = command.name.value
-            it[unitType] = command.unit.toUnitType()
+            it[unitType] = command.unit.unitType.value
             it[unit] = command.unit.value
         }.let {
             Account(
