@@ -29,11 +29,17 @@ data class ExpenseReportDataTO(
     @Serializable
     data class DataItem(
         val timeBucket: LocalDate,
+        // TODO(Johann) should also have a `net` and a `groupedDataNet`
         @Serializable(with = BigDecimalSerializer::class)
         val amount: BigDecimal,
+        @Serializable(with = BigDecimalSerializer::class)
+        val minValue: BigDecimal,
+        @Serializable(with = BigDecimalSerializer::class)
+        val maxValue: BigDecimal,
     )
 }
 
+// TODO(Johann) will features still be used?
 // TODO(Johann) will probably not need sealed derivates, this could be inlined
 @Serializable
 @SerialName("FEATURES")

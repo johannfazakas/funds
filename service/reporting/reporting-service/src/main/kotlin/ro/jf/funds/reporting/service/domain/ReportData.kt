@@ -24,4 +24,6 @@ data class ExpenseReportData(
 data class ExpenseReportDataBucket(
     override val timeBucket: LocalDate,
     val amount: BigDecimal,
+    val minValue: BigDecimal = BigDecimal.ZERO,
+    val maxValue: BigDecimal = BigDecimal.ZERO,
 ) : ReportDataBucket()
