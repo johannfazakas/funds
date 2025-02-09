@@ -103,15 +103,21 @@ class ReportingSdkTest {
             data = listOf(
                 ExpenseReportDataTO.DataItem(
                     timeBucket = LocalDate.parse("2024-11-01"),
-                    amount = BigDecimal("200.0")
+                    amount = BigDecimal("200.0"),
+                    minValue = BigDecimal("150.0"),
+                    maxValue = BigDecimal("220.0")
                 ),
                 ExpenseReportDataTO.DataItem(
                     timeBucket = LocalDate.parse("2024-12-01"),
-                    amount = BigDecimal("300.0")
+                    amount = BigDecimal("300.0"),
+                    minValue = BigDecimal("250.0"),
+                    maxValue = BigDecimal("320.0")
                 ),
                 ExpenseReportDataTO.DataItem(
                     timeBucket = LocalDate.parse("2025-01-01"),
-                    amount = BigDecimal("400.0")
+                    amount = BigDecimal("400.0"),
+                    minValue = BigDecimal("350.0"),
+                    maxValue = BigDecimal("420.0")
                 )
             )
         )
@@ -340,6 +346,8 @@ class ReportingSdkTest {
                                         buildJsonObject {
                                             put("timeBucket", JsonPrimitive(item.timeBucket.toString()))
                                             put("amount", JsonPrimitive(item.amount.toString()))
+                                            put("minValue", JsonPrimitive(item.minValue.toString()))
+                                            put("maxValue", JsonPrimitive(item.maxValue.toString()))
                                         }
                                     )
                                 }
