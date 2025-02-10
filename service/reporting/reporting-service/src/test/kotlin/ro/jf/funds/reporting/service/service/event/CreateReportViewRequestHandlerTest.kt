@@ -57,7 +57,7 @@ class CreateReportViewRequestHandlerTest {
     @Test
     fun `handle create report view request`(): Unit = runBlocking {
         val initialTask = reportViewTaskRepository.create(userId)
-        val payload = CreateReportViewTO(viewName, fundId, ReportViewType.EXPENSE, Currency.RON, labels, emptyList())
+        val payload = CreateReportViewTO(viewName, fundId, ReportViewType.EXPENSE, Currency.RON, labels)
         val event = Event(userId, payload, initialTask.taskId)
 
         val transaction =

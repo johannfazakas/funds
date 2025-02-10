@@ -16,5 +16,4 @@ data class ReportViewTO(
     val type: ReportViewType,
     val currency: Currency,
     val labels: List<Label>,
-    val features: List<ReportingFeatureTO>,
 )

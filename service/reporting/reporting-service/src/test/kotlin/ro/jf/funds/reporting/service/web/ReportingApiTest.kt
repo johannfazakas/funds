@@ -95,7 +95,6 @@ class ReportingApiTest {
                     type = ReportViewType.EXPENSE,
                     currency = RON,
                     labels = labels,
-                    features = emptyList()
                 )
             )
         }

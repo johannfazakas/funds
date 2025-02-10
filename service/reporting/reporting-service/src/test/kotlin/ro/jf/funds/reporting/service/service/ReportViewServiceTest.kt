@@ -1,7 +1,6 @@
 package ro.jf.funds.reporting.service.service
 
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -11,8 +10,6 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
-import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.fund.sdk.FundTransactionSdk
@@ -21,8 +18,11 @@ import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
-import ro.jf.funds.reporting.api.model.*
-import ro.jf.funds.reporting.service.domain.*
+import ro.jf.funds.reporting.api.model.CreateReportViewTO
+import ro.jf.funds.reporting.api.model.ReportViewType
+import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
+import ro.jf.funds.reporting.service.domain.ReportView
+import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.utils.record
@@ -53,7 +53,7 @@ class ReportViewServiceTest {
     @Test
     fun `create report view should create report view`(): Unit = runBlocking {
         val request =
-            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels, emptyList())
+            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
             reportViewRepository.save(
@@ -82,7 +82,7 @@ class ReportViewServiceTest {
     @Test
     fun `create report view should store single fund report records`(): Unit = runBlocking {
         val request =
-            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels, emptyList())
+            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
             reportViewRepository.save(
@@ -139,7 +139,7 @@ class ReportViewServiceTest {
     @Test
     fun `create report view should store single fund report records with conversions`(): Unit = runBlocking {
         val request =
-            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels, emptyList())
+            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
             reportViewRepository.save(
@@ -180,7 +180,7 @@ class ReportViewServiceTest {
     @Test
     fun `create report view with same name should raise error`(): Unit = runBlocking {
         val request =
-            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels, emptyList())
+            CreateReportViewTO(reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels)
         whenever(reportViewRepository.findByName(userId, reportViewName))
             .thenReturn(
                 ReportView(
