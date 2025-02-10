@@ -195,48 +195,4 @@ class ReportViewServiceTest {
             userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
         )
     }
-
-    @Test
-    fun `get expense report view data grouped by months`(): Unit = runBlocking {
-        whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(
-                ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
-                )
-            )
-        val interval = DateInterval(from = LocalDate.parse("2021-09-03"), to = LocalDate.parse("2021-11-25"))
-        whenever(reportRecordRepository.findByViewInInterval(userId, reportViewId, interval))
-            .thenReturn(
-                listOf(
-                    reportRecord(
-                        LocalDate.parse("2021-09-03"), RON, BigDecimal("-100.0"), BigDecimal("-100.0"), labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-09-15"), EUR, BigDecimal("-40.0"), BigDecimal("-200.0"), labelsOf("want")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-10-07"), RON, BigDecimal("-30.0"), BigDecimal("-30.0"), labelsOf("want")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-10-08"), RON, BigDecimal("-16.0"), BigDecimal("-16.0"), labelsOf("other")
-                    ),
-                )
-            )
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
-
-        val data = reportViewService.getReportViewData(userId, reportViewId, granularInterval)
-
-        assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.granularInterval).isEqualTo(granularInterval)
-        assertThat(data.data).containsExactly(
-            ExpenseReportDataBucket(LocalDate.parse("2021-09-01"), BigDecimal("-300.0")),
-            ExpenseReportDataBucket(LocalDate.parse("2021-10-01"), BigDecimal("-30.0")),
-            ExpenseReportDataBucket(LocalDate.parse("2021-11-01"), BigDecimal.ZERO),
-        )
-    }
-
-    private fun reportRecord(
-        date: LocalDate, unit: FinancialUnit, amount: BigDecimal, reportCurrencyAmount: BigDecimal, labels: List<Label>,
-    ) =
-        ReportRecord(randomUUID(), userId, reportViewId, date, unit, amount, reportCurrencyAmount, labels)
 }

@@ -11,6 +11,28 @@ fun getTimeBucket(date: LocalDate, granularity: TimeGranularity): LocalDate = wh
     TimeGranularity.YEARLY -> LocalDate(date.year, 1, 1)
 }
 
+fun <D> generateTimeBucketedData(
+    interval: GranularDateInterval,
+    seedFunction: (LocalDate) -> D,
+    nextFunction: (LocalDate, D) -> D,
+): List<Pair<LocalDate, D>> {
+    val firstBucketData = {
+        val timeBucket = getTimeBucket(interval.interval.from, interval.granularity)
+        timeBucket to seedFunction(timeBucket)
+    }
+    val nextBucketData: (Pair<LocalDate, D>) -> Pair<LocalDate, D> = { (previousDate, previousData) ->
+        val nextDate = when (interval.granularity) {
+            TimeGranularity.DAILY -> previousDate + DatePeriod(days = 1)
+            TimeGranularity.MONTHLY -> previousDate + DatePeriod(months = 1)
+            TimeGranularity.YEARLY -> previousDate + DatePeriod(years = 1)
+        }
+        nextDate to nextFunction(nextDate, previousData)
+    }
+    return generateSequence(firstBucketData, nextBucketData)
+        .takeWhile { (date, _) -> date <= interval.interval.to }
+        .toList()
+}
+
 @Serializable
 data class GranularDateInterval(
     val interval: DateInterval,

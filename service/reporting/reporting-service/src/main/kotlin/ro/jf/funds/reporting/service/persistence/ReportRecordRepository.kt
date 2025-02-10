@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.service.persistence
 
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
 import org.jetbrains.exposed.dao.id.UUIDTable
@@ -37,6 +38,16 @@ class ReportRecordRepository(
         blockingTransaction {
             commands.map { saveRecord(it) }
         }
+
+    suspend fun findByViewUntil(userId: UUID, reportViewId: UUID, until: LocalDate) = blockingTransaction {
+        ReportRecordTable
+            .select {
+                (ReportRecordTable.userId eq userId) and
+                        (ReportRecordTable.reportViewId eq reportViewId) and
+                        (ReportRecordTable.date lessEq until.toJavaLocalDate())
+            }
+            .map { it.toModel() }
+    }
 
     suspend fun findByViewInInterval(userId: UUID, reportViewId: UUID, interval: DateInterval) = blockingTransaction {
         ReportRecordTable

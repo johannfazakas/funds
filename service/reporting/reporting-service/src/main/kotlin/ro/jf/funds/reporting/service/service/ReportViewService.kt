@@ -52,38 +52,6 @@ class ReportViewService(
         reportViewRepository.delete(userId, reportViewId)
     }
 
-    suspend fun getReportViewData(
-        userId: UUID,
-        reportViewId: UUID,
-        granularInterval: GranularDateInterval,
-    ): ReportData {
-        // TODO(Johann) dive into logging a bit. how can it be controlled in a ktor service? This should probably be a DEBUG
-        log.info { "Get report view data for user $userId, report $reportViewId and interval $granularInterval" }
-        val reportView = reportViewRepository.findById(userId, reportViewId)
-        reportView
-            ?: throw ReportingException.ReportViewNotFound(userId, reportViewId)
-
-        val reportRecords = reportRecordRepository
-            .findByViewInInterval(userId, reportViewId, granularInterval.interval)
-        log.info { "Found ${reportRecords.size} records for report $reportViewId in interval ${granularInterval.interval}" }
-        val reportRecordsByBucket = reportRecords
-            .groupBy { getTimeBucket(it.date, granularInterval.granularity) }
-
-        val dataBuckets = granularInterval
-            .getTimeBuckets()
-            .map { timeBucket ->
-                ExpenseReportDataBucket(
-                    timeBucket,
-                    reportRecordsByBucket[timeBucket]
-                        ?.filter { it.labels.any { label -> label in reportView.labels } }
-                        ?.sumOf { it.reportCurrencyAmount }
-                        ?: BigDecimal.ZERO
-                )
-            }
-
-        return ExpenseReportData(reportViewId, granularInterval, dataBuckets)
-    }
-
     suspend fun listReportViews(userId: UUID): List<ReportView> {
         return reportViewRepository.findAll(userId)
     }

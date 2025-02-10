@@ -17,6 +17,7 @@ import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
+import ro.jf.funds.reporting.service.service.ReportDataService
 import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
 import ro.jf.funds.reporting.service.service.event.CreateReportViewRequestHandler
@@ -69,6 +70,7 @@ private val Application.serviceDependencies
     get() = module {
         single<ReportViewService> { ReportViewService(get(), get(), get(), get()) }
         single<ReportViewTaskService> { ReportViewTaskService(get(), get(), get()) }
+        single<ReportDataService> { ReportDataService(get(), get()) }
         single<CreateReportViewRequestHandler> { CreateReportViewRequestHandler(get()) }
     }
 
