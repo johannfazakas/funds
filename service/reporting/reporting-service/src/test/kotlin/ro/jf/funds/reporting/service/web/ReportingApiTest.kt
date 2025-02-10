@@ -22,7 +22,6 @@ import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.event.ConsumerProperties
 import ro.jf.funds.commons.event.asEvent
 import ro.jf.funds.commons.event.createKafkaConsumer
-import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.model.ListTO
@@ -233,20 +232,21 @@ class ReportingApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val reportData = response.body<ReportDataTO>()
         assertThat(reportData.viewId).isEqualTo(reportView.id)
-        val expenseReportData = reportData as ExpenseReportDataTO
-        assertThat(expenseReportData.data).hasSize(28)
-        assertThat(expenseReportData.data[0])
+        assertThat(reportData.data).hasSize(28)
+        assertThat(reportData.data[0])
             .isEqualTo(
-                ExpenseReportDataTO.DataItem(
-                    LocalDate.parse("2021-01-01"),
-                    BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0")
+                ReportDataItemTO(
+                    timeBucket = LocalDate.parse("2021-01-01"),
+                    amount = BigDecimal("0.0"),
+                    value = ValueReportTO(BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"))
                 )
             )
-        assertThat(expenseReportData.data[1])
+        assertThat(reportData.data[1])
             .isEqualTo(
-                ExpenseReportDataTO.DataItem(
-                    LocalDate.parse("2021-01-02"),
-                    BigDecimal("-75.0"), BigDecimal("-75.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0")
+                ReportDataItemTO(
+                    timeBucket = LocalDate.parse("2021-01-02"),
+                    amount = BigDecimal("-75.0"),
+                    value = ValueReportTO(BigDecimal("0.0"), BigDecimal("-75.0"), BigDecimal("0.0"), BigDecimal("0.0"))
                 )
             )
     }

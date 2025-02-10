@@ -1,77 +1,37 @@
 package ro.jf.funds.reporting.api.model
 
 import kotlinx.datetime.LocalDate
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonClassDiscriminator
 import ro.jf.funds.commons.serialization.BigDecimalSerializer
 import ro.jf.funds.commons.serialization.UUIDSerializer
 import java.math.BigDecimal
 import java.util.*
 
-@OptIn(ExperimentalSerializationApi::class)
-@JsonClassDiscriminator("type")
 @Serializable
-sealed class ReportDataTO {
-    abstract val viewId: UUID
-
-    // TODO(Johann) should add a currency field probably
-    abstract val granularInterval: GranularDateInterval
-}
-
-@Serializable
-@SerialName("EXPENSE")
-data class ExpenseReportDataTO(
+data class ReportDataTO(
     @Serializable(with = UUIDSerializer::class)
-    override val viewId: UUID,
-    override val granularInterval: GranularDateInterval,
-    val data: List<DataItem>,
-) : ReportDataTO() {
-    @Serializable
-    data class DataItem(
-        val timeBucket: LocalDate,
-        // TODO(Johann) should also have a `net` and a `groupedDataNet`
-        @Serializable(with = BigDecimalSerializer::class)
-        val amount: BigDecimal,
-        @Serializable(with = BigDecimalSerializer::class)
-        val endValue: BigDecimal,
-        @Serializable(with = BigDecimalSerializer::class)
-        val startValue: BigDecimal,
-        @Serializable(with = BigDecimalSerializer::class)
-        val minValue: BigDecimal,
-        @Serializable(with = BigDecimalSerializer::class)
-        val maxValue: BigDecimal,
-    )
-}
+    val viewId: UUID,
+    val granularInterval: GranularDateInterval,
+    val data: List<ReportDataItemTO>,
+)
 
-// TODO(Johann) will features still be used?
-// TODO(Johann) will probably not need sealed derivates, this could be inlined
 @Serializable
-@SerialName("FEATURES")
-data class FeaturesReportDataTO(
-    @Serializable(with = UUIDSerializer::class)
-    override val viewId: UUID,
-    override val granularInterval: GranularDateInterval,
-    val features: List<FeatureReportDataTO>,
-) : ReportDataTO()
+data class ReportDataItemTO(
+    val timeBucket: LocalDate,
+    // TODO(Johann) should also have a `net` and a `groupedDataNet`
+    @Serializable(with = BigDecimalSerializer::class)
+    val amount: BigDecimal,
+    val value: ValueReportTO,
+)
 
-@OptIn(ExperimentalSerializationApi::class)
-@JsonClassDiscriminator("type")
 @Serializable
-sealed class FeatureReportDataTO {
-    @Serializable
-    @SerialName("min_max_total_value")
-    data class MinMaxTotalValue(
-        val data: List<DataItem>,
-    ) : FeatureReportDataTO() {
-        @Serializable
-        data class DataItem(
-            val timeBucket: LocalDate,
-            @Serializable(with = BigDecimalSerializer::class)
-            val minValue: BigDecimal,
-            @Serializable(with = BigDecimalSerializer::class)
-            val maxValue: BigDecimal,
-        )
-    }
-}
+data class ValueReportTO(
+    @Serializable(with = BigDecimalSerializer::class)
+    val start: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val end: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val min: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val max: BigDecimal = BigDecimal.ZERO,
+)
