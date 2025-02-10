@@ -239,14 +239,14 @@ class ReportingApiTest {
             .isEqualTo(
                 ExpenseReportDataTO.DataItem(
                     LocalDate.parse("2021-01-01"),
-                    BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0")
+                    BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0")
                 )
             )
         assertThat(expenseReportData.data[1])
             .isEqualTo(
                 ExpenseReportDataTO.DataItem(
                     LocalDate.parse("2021-01-02"),
-                    BigDecimal("-75.0"), BigDecimal("0.0"), BigDecimal("0.0")
+                    BigDecimal("-75.0"), BigDecimal("-75.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0")
                 )
             )
     }

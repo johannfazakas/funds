@@ -15,6 +15,8 @@ import java.util.*
 @Serializable
 sealed class ReportDataTO {
     abstract val viewId: UUID
+
+    // TODO(Johann) should add a currency field probably
     abstract val granularInterval: GranularDateInterval
 }
 
@@ -32,6 +34,10 @@ data class ExpenseReportDataTO(
         // TODO(Johann) should also have a `net` and a `groupedDataNet`
         @Serializable(with = BigDecimalSerializer::class)
         val amount: BigDecimal,
+        @Serializable(with = BigDecimalSerializer::class)
+        val endValue: BigDecimal,
+        @Serializable(with = BigDecimalSerializer::class)
+        val startValue: BigDecimal,
         @Serializable(with = BigDecimalSerializer::class)
         val minValue: BigDecimal,
         @Serializable(with = BigDecimalSerializer::class)

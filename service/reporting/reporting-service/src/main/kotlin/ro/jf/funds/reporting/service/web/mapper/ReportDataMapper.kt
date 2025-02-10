@@ -15,6 +15,8 @@ fun ReportData.toTO(): ReportDataTO {
                     ExpenseReportDataTO.DataItem(
                         timeBucket = dataItem.timeBucket,
                         amount = dataItem.amount,
+                        startValue = dataItem.startValue,
+                        endValue = dataItem.endValue,
                         minValue = dataItem.minValue,
                         maxValue = dataItem.maxValue
                     )

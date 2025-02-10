@@ -11,6 +11,7 @@ import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.web.userId
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.domain.ReportingException
+import ro.jf.funds.reporting.service.service.ReportDataService
 import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
 import ro.jf.funds.reporting.service.web.mapper.toTO
@@ -21,6 +22,7 @@ private val log = logger { }
 fun Routing.reportingApiRouting(
     reportViewService: ReportViewService,
     reportViewTaskService: ReportViewTaskService,
+    reportDataService: ReportDataService,
 ) {
     route("/funds-api/reporting/v1/report-views") {
         post("/tasks") {
@@ -67,7 +69,7 @@ fun Routing.reportingApiRouting(
                 call.parameters["reportViewId"]?.let(UUID::fromString) ?: error("Missing reportViewId path parameter")
             val granularInterval = call.granularTimeInterval()
             log.info { "Get report view data request for user $userId and report view $reportViewId in interval $granularInterval." }
-            val reportData = reportViewService.getReportViewData(userId, reportViewId, granularInterval).toTO()
+            val reportData = reportDataService.getReportViewData(userId, reportViewId, granularInterval).toTO()
             call.respond(status = HttpStatusCode.OK, message = reportData)
         }
     }
