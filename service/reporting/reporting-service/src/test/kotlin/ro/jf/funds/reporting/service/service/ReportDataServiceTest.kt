@@ -15,7 +15,6 @@ import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.api.model.GranularDateInterval
 import ro.jf.funds.reporting.api.model.ReportViewType
 import ro.jf.funds.reporting.api.model.TimeGranularity
-import ro.jf.funds.reporting.service.domain.ExpenseReportDataBucket
 import ro.jf.funds.reporting.service.domain.ReportRecord
 import ro.jf.funds.reporting.service.domain.ReportView
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
@@ -67,11 +66,11 @@ class ReportDataServiceTest {
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.granularInterval).isEqualTo(granularInterval)
         assertThat(data.data[0].timeBucket).isEqualTo(LocalDate.parse("2021-09-01"))
-        assertThat((data.data[0] as ExpenseReportDataBucket).amount).isEqualByComparingTo(BigDecimal("-300.0"))
+        assertThat(data.data[0].amount).isEqualByComparingTo(BigDecimal("-300.0"))
         assertThat(data.data[1].timeBucket).isEqualTo(LocalDate.parse("2021-10-01"))
-        assertThat((data.data[1] as ExpenseReportDataBucket).amount).isEqualByComparingTo(BigDecimal("-30.0"))
+        assertThat(data.data[1].amount).isEqualByComparingTo(BigDecimal("-30.0"))
         assertThat(data.data[2].timeBucket).isEqualTo(LocalDate.parse("2021-11-01"))
-        assertThat((data.data[2] as ExpenseReportDataBucket).amount).isEqualByComparingTo(BigDecimal.ZERO)
+        assertThat(data.data[2].amount).isEqualByComparingTo(BigDecimal.ZERO)
     }
 
     @Test
@@ -116,17 +115,17 @@ class ReportDataServiceTest {
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.granularInterval).isEqualTo(granularInterval)
-        assertThat((data.data[0] as ExpenseReportDataBucket).startValue)
+        assertThat(data.data[0].value.start)
             .isEqualByComparingTo(BigDecimal("100.0"))
-        assertThat((data.data[0] as ExpenseReportDataBucket).endValue)
+        assertThat(data.data[0].value.end)
             .isEqualByComparingTo(BigDecimal("160.0"))
-        assertThat((data.data[1] as ExpenseReportDataBucket).startValue)
+        assertThat(data.data[1].value.start)
             .isEqualByComparingTo(BigDecimal("160.0"))
-        assertThat((data.data[1] as ExpenseReportDataBucket).endValue)
+        assertThat(data.data[1].value.end)
             .isEqualByComparingTo(BigDecimal("514.0"))
-        assertThat((data.data[2] as ExpenseReportDataBucket).startValue)
+        assertThat(data.data[2].value.start)
             .isEqualByComparingTo(BigDecimal("514.0"))
-        assertThat((data.data[2] as ExpenseReportDataBucket).endValue)
+        assertThat(data.data[2].value.end)
             .isEqualByComparingTo(BigDecimal("514.0"))
     }
 

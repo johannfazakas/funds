@@ -46,20 +46,22 @@ class ReportDataService(
         val dataBuckets = granularInterval
             .getTimeBuckets()
             .map { timeBucket ->
-                ExpenseReportDataBucket(
+                ReportDataBucket(
                     timeBucket = timeBucket,
                     amount = reportRecordsByBucket[timeBucket]
                         ?.filter { it.labels.any { label -> label in reportView.labels } }
                         ?.sumOf { it.reportCurrencyAmount }
                         ?: BigDecimal.ZERO,
-                    startValue = valuesReports[timeBucket]?.startValue ?: BigDecimal.ZERO,
-                    endValue = valuesReports[timeBucket]?.endValue ?: BigDecimal.ZERO,
-                    minValue = BigDecimal.ZERO,
-                    maxValue = BigDecimal.ZERO,
+                    value = ValueReport(
+                        start = valuesReports[timeBucket]?.start ?: BigDecimal.ZERO,
+                        end = valuesReports[timeBucket]?.end ?: BigDecimal.ZERO,
+                        min = BigDecimal.ZERO,
+                        max = BigDecimal.ZERO,
+                    )
                 )
             }
 
-        return ExpenseReportData(reportViewId, granularInterval, dataBuckets)
+        return ReportData(reportViewId, granularInterval, dataBuckets)
     }
 
     private fun getValueReports(
@@ -74,16 +76,16 @@ class ReportDataService(
         val nextValueReport: (LocalDate, ValueReport) -> ValueReport = { date, previousValueReport ->
             val bucket = reportRecordsByBucket[date] ?: emptyList()
             ValueReport(
-                startValue = previousValueReport.endValue,
-                endValue = previousValueReport.endValue + bucket.sumOf { it.reportCurrencyAmount },
-                minValue = BigDecimal.ZERO,
-                maxValue = BigDecimal.ZERO,
+                start = previousValueReport.end,
+                end = previousValueReport.end + bucket.sumOf { it.reportCurrencyAmount },
+                min = BigDecimal.ZERO,
+                max = BigDecimal.ZERO,
             )
         }
 
         return generateTimeBucketedData(
             granularInterval,
-            { date -> nextValueReport(date, ValueReport(endValue = previousValue)) },
+            { date -> nextValueReport(date, ValueReport(end = previousValue)) },
             nextValueReport,
         )
             .associateBy { it.first }
