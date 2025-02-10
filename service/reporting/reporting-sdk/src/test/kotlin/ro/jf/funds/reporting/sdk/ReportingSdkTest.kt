@@ -41,9 +41,6 @@ class ReportingSdkTest {
             fundId = fundId,
             currency = RON,
             labels = labelsOf("need", "want"),
-            features = listOf(
-                ReportingFeatureTO.MinMaxTotalValue
-            )
         )
         mockServerClient.mockCreateReportViewTask(request, taskId, "IN_PROGRESS")
 
@@ -66,8 +63,7 @@ class ReportingSdkTest {
     @Test
     fun `get report view`(mockServerClient: MockServerClient): Unit = runBlocking {
         val expectedResponse = ReportViewTO(
-            viewId, viewName, fundId, ReportViewType.EXPENSE, RON,
-            labelsOf("need", "want"), listOf(ReportingFeatureTO.MinMaxTotalValue)
+            viewId, viewName, fundId, ReportViewType.EXPENSE, RON, labelsOf("need", "want")
         )
         mockServerClient.mockGetReportView(expectedResponse)
 
@@ -81,7 +77,7 @@ class ReportingSdkTest {
         val expectedResponse = ListTO.of(
             ReportViewTO(
                 viewId, viewName, fundId, ReportViewType.EXPENSE, RON,
-                labelsOf("need", "want"), listOf(ReportingFeatureTO.MinMaxTotalValue)
+                labelsOf("need", "want")
             )
         )
         mockServerClient.mockListReportViews(expectedResponse)
@@ -165,18 +161,12 @@ class ReportingSdkTest {
                                         put("type", JsonPrimitive("string"))
                                         put("value", JsonPrimitive(request.fundId.toString()))
                                     })
-                                    put("featues", buildJsonArray {
-                                        add(buildJsonObject {
-                                            put("type", JsonPrimitive("min_max_total_value"))
-                                        })
-                                    })
                                 }
                             )
                             put("required", buildJsonArray {
                                 add(JsonPrimitive("name"))
                                 add(JsonPrimitive("type"))
                                 add(JsonPrimitive("fundId"))
-                                add(JsonPrimitive("features"))
                             })
                         }.toString()
                     )
@@ -269,15 +259,6 @@ class ReportingSdkTest {
             put("labels", buildJsonArray {
                 response.labels.forEach { label ->
                     add(JsonPrimitive(label.value))
-                }
-            })
-            put("features", buildJsonArray {
-                response.features.forEach { feature ->
-                    when (feature) {
-                        is ReportingFeatureTO.MinMaxTotalValue -> add(buildJsonObject {
-                            put("type", JsonPrimitive("min_max_total_value"))
-                        })
-                    }
                 }
             })
         })
