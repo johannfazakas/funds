@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":commons:commons-api"))
+    implementation(project(":commons:commons"))
     api(project(":account:account-api"))
     testImplementation(project(":commons:commons-test"))
 }

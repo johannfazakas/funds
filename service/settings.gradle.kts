@@ -3,8 +3,7 @@ plugins {
 }
 rootProject.name = "funds"
 
-include("commons:commons-api")
-include("commons:commons-service")
+include("commons:commons")
 include("commons:commons-test")
 
 include("historical-pricing:historical-pricing-api")

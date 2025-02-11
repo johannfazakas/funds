@@ -23,7 +23,7 @@ repositories {
 
 dependencies {
     implementation(project(":historical-pricing:historical-pricing-api"))
-    implementation(project(":commons:commons-service"))
+    implementation(project(":commons:commons"))
 
     implementation("org.jsoup:jsoup:$jsoup_version")
     implementation("org.apache.poi:poi-ooxml:$poi_version")

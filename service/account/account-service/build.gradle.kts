@@ -8,7 +8,7 @@ plugins {
 
 dependencies {
     implementation(project(":account:account-api"))
-    implementation(project(":commons:commons-service"))
+    implementation(project(":commons:commons"))
     testImplementation(project(":commons:commons-test"))
 }
 
