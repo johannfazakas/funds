@@ -21,6 +21,7 @@ class ReportRecordRepository(
     object ReportRecordTable : UUIDTable("report_record") {
         val userId = uuid("user_id")
         val reportViewId = uuid("report_view_id")
+        val record_id = uuid("record_id")
         val date = date("date")
         val unit = varchar("unit", 50)
         val unitType = varchar("unit_type", 50)
@@ -65,6 +66,7 @@ class ReportRecordRepository(
             id = this[ReportRecordTable.id].value,
             userId = this[ReportRecordTable.userId],
             reportViewId = this[ReportRecordTable.reportViewId],
+            recordId = this[ReportRecordTable.record_id],
             date = this[ReportRecordTable.date].toKotlinLocalDate(),
             unit = toFinancialUnit(this[ReportRecordTable.unitType], this[ReportRecordTable.unit]),
             amount = this[ReportRecordTable.amount],
@@ -76,6 +78,7 @@ class ReportRecordRepository(
         val reportRecord = ReportRecordTable.insert {
             it[userId] = command.userId
             it[reportViewId] = command.reportViewId
+            it[record_id] = command.recordId
             it[date] = command.date.toJavaLocalDate()
             it[unit] = command.unit.value
             it[unitType] = command.unit.unitType.value
@@ -87,6 +90,7 @@ class ReportRecordRepository(
             ReportRecord(
                 id = it[ReportRecordTable.id].value,
                 userId = it[ReportRecordTable.userId],
+                recordId = it[ReportRecordTable.record_id],
                 reportViewId = it[ReportRecordTable.reportViewId],
                 date = it[ReportRecordTable.date].toKotlinLocalDate(),
                 unit = toFinancialUnit(it[ReportRecordTable.unitType], it[ReportRecordTable.unit]),

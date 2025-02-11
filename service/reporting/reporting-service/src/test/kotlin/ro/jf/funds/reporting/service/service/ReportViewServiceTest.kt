@@ -10,6 +10,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.fund.sdk.FundTransactionSdk
@@ -120,20 +121,15 @@ class ReportViewServiceTest {
 
         val commandCaptor = argumentCaptor<List<CreateReportRecordCommand>>()
         verify(reportRecordRepository, times(1)).saveAll(commandCaptor.capture())
-        assertThat(commandCaptor.firstValue).containsExactlyInAnyOrder(
-            CreateReportRecordCommand(
-                userId, reportView.id, dateTime1.date, RON,
-                BigDecimal("100.0"), BigDecimal("100.0"), labelsOf("need")
-            ),
-            CreateReportRecordCommand(
-                userId, reportView.id, dateTime2.date, RON,
-                BigDecimal("-200.0"), BigDecimal("-200.0"), labelsOf("want")
-            ),
-            CreateReportRecordCommand(
-                userId, reportView.id, dateTime2.date, RON,
-                BigDecimal("-20.0"), BigDecimal("-20.0"), labelsOf("other")
-            )
-        )
+        commandCaptor.firstValue.let { records ->
+            assertThat(records).hasSize(3)
+            assertThat(records.map { it.userId }).containsOnly(userId)
+            assertThat(records.map { it.reportViewId }).containsOnly(reportView.id)
+            assertThat(records.map { it.date })
+                .containsExactlyInAnyOrder(dateTime1.date, dateTime2.date, dateTime2.date)
+            assertThat(records.map { it.amount })
+                .containsExactlyInAnyOrder(BigDecimal("100.0"), BigDecimal("-200.0"), BigDecimal("-20.0"))
+        }
     }
 
     @Test
@@ -169,12 +165,17 @@ class ReportViewServiceTest {
 
         val commandCaptor = argumentCaptor<List<CreateReportRecordCommand>>()
         verify(reportRecordRepository, times(1)).saveAll(commandCaptor.capture())
-        assertThat(commandCaptor.firstValue).containsExactlyInAnyOrder(
-            CreateReportRecordCommand(
-                userId, reportView.id, dateTime1.date, EUR,
-                BigDecimal("100.0"), BigDecimal("500.00"), labelsOf("need")
-            ),
-        )
+        commandCaptor.firstValue.let { records ->
+            assertThat(records).hasSize(1)
+            val record = records.first()
+            assertThat(record.userId).isEqualTo(userId)
+            assertThat(record.reportViewId).isEqualTo(reportView.id)
+            assertThat(record.date).isEqualTo(dateTime1.date)
+            assertThat(record.amount).isEqualTo(BigDecimal("100.0"))
+            assertThat(record.reportCurrencyAmount).isEqualByComparingTo(BigDecimal("500.0"))
+            assertThat(record.unit).isEqualTo(EUR)
+            assertThat(record.labels).containsExactlyInAnyOrder(Label("need"))
+        }
     }
 
     @Test

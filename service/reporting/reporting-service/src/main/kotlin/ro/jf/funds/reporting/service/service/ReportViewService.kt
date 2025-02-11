@@ -71,17 +71,18 @@ class ReportViewService(
             .flatMap { transaction ->
                 transaction.records
                     .filter { it.fundId == fundId }
-                    .map {
+                    .map { record ->
                         CreateReportRecordCommand(
                             userId = userId,
                             reportViewId = reportViewId,
+                            recordId = record.id,
                             date = transaction.dateTime.date,
-                            unit = it.unit,
-                            amount = it.amount,
-                            reportCurrencyAmount = it.amount * getConversionRate(
-                                it, currency, conversions, transaction.dateTime.date
+                            unit = record.unit,
+                            amount = record.amount,
+                            reportCurrencyAmount = record.amount * getConversionRate(
+                                record, currency, conversions, transaction.dateTime.date
                             ),
-                            labels = it.labels
+                            labels = record.labels
                         )
                     }
             }
