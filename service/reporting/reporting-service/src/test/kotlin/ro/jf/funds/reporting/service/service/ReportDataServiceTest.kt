@@ -132,5 +132,5 @@ class ReportDataServiceTest {
     private fun reportRecord(
         date: LocalDate, unit: FinancialUnit, amount: BigDecimal, reportCurrencyAmount: BigDecimal, labels: List<Label>,
     ) =
-        ReportRecord(randomUUID(), userId, reportViewId, date, unit, amount, reportCurrencyAmount, labels)
+        ReportRecord(randomUUID(), userId, randomUUID(), reportViewId, date, unit, amount, reportCurrencyAmount, labels)
 }

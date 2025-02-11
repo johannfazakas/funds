@@ -9,8 +9,8 @@ import java.util.*
 data class ReportRecord(
     val id: UUID,
     val userId: UUID,
-    // TODO(Johann) add fund record id or something for visibility purposes
     val reportViewId: UUID,
+    val recordId: UUID,
     val date: LocalDate,
     val unit: FinancialUnit,
     val amount: BigDecimal,

@@ -9,6 +9,7 @@ import java.util.*
 data class CreateReportRecordCommand(
     val userId: UUID,
     val reportViewId: UUID,
+    val recordId: UUID,
     val date: LocalDate,
     val unit: FinancialUnit,
     val amount: BigDecimal,

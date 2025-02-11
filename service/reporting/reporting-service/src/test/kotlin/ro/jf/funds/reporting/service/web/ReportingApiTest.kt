@@ -210,13 +210,13 @@ class ReportingApiTest {
             reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
         reportRecordRepository.save(
             CreateReportRecordCommand(
-                userId, reportView.id, LocalDate.parse("2021-01-02"), RON,
+                userId, reportView.id, randomUUID(), LocalDate(2021, 1, 2), RON,
                 BigDecimal("-25.0"), BigDecimal("-25.0"), labelsOf("need")
             ),
         )
         reportRecordRepository.save(
             CreateReportRecordCommand(
-                userId, reportView.id, LocalDate.parse("2021-01-02"), EUR,
+                userId, reportView.id, randomUUID(), LocalDate.parse("2021-01-02"), EUR,
                 BigDecimal("-10.0"), BigDecimal("-50.0"), labelsOf("want")
             )
         )
