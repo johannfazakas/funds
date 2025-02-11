@@ -4,6 +4,6 @@ plugins {
 
 dependencies {
     api(project(":reporting:reporting-api"))
-    implementation(project(":commons:commons-api"))
+    implementation(project(":commons:commons"))
     testImplementation(project(":commons:commons-test"))
 }
