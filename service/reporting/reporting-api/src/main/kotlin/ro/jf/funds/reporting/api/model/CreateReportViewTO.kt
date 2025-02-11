@@ -13,6 +13,6 @@ data class CreateReportViewTO(
     val fundId: UUID,
     val type: ReportViewType,
     val currency: Currency,
-    // TODO(Johann) should this be applied only on certain features or on all features? will figure it out later
+    // TODO(Johann) should this be applied only on certain features or on all features? will figure it out later. it might be affected by grouping also
     val labels: List<Label>,
 )

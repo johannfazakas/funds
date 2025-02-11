@@ -9,7 +9,7 @@ import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import java.math.BigDecimal
 
 data class ImportParsedTransaction(
-    // TODO(Johann) should this be called a hash? How will it be used downstream? Will it be?
+    // TODO(Johann) should this be called a hash? How will it be used downstream? Will it be? It might be when deduplication will be added
     val transactionId: String,
     val dateTime: LocalDateTime,
     val records: List<ImportParsedRecord>,
