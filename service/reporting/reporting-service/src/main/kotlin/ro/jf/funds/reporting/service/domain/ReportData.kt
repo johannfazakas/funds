@@ -1,7 +1,7 @@
 package ro.jf.funds.reporting.service.domain
 
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.reporting.api.model.GranularDateInterval
 import java.math.BigDecimal
 import java.util.*
@@ -23,5 +23,5 @@ data class ValueReport(
     val end: BigDecimal = BigDecimal.ZERO,
     val min: BigDecimal = BigDecimal.ZERO,
     val max: BigDecimal = BigDecimal.ZERO,
-    val endByCurrency: Map<Currency, BigDecimal> = emptyMap(),
+    val endAmountByUnit: Map<FinancialUnit, BigDecimal>,
 )

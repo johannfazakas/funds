@@ -3,9 +3,12 @@ package ro.jf.funds.reporting.service.service
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
@@ -68,6 +71,9 @@ class ReportDataServiceTest {
                 )
             )
         val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
+        val conversionsResponse = mock<ConversionsResponse>()
+        whenever(conversionsResponse.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
+        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
 
         val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
 
@@ -137,7 +143,6 @@ class ReportDataServiceTest {
             .isEqualByComparingTo(BigDecimal("514.0"))
     }
 
-    @Disabled("TODO(Johann) enable")
     @Test
     fun `get monthly value data with multiple currencies`(): Unit = runBlocking {
         whenever(reportViewRepository.findById(userId, reportViewId))
@@ -170,7 +175,7 @@ class ReportDataServiceTest {
                 ConversionRequest(EUR, RON, LocalDate(2021, 9, 2)),
                 ConversionRequest(EUR, RON, LocalDate(2021, 9, 30)),
                 ConversionRequest(EUR, RON, LocalDate(2021, 10, 1)),
-                ConversionRequest(EUR, RON, LocalDate(2021, 10, 31)),
+                ConversionRequest(EUR, RON, LocalDate(2021, 10, 30)),
             )
         )
         val conversionsResponse = ConversionsResponse(
@@ -178,10 +183,10 @@ class ReportDataServiceTest {
                 ConversionResponse(EUR, RON, LocalDate(2021, 9, 2), BigDecimal("4.85")),
                 ConversionResponse(EUR, RON, LocalDate(2021, 9, 30), BigDecimal("4.9")),
                 ConversionResponse(EUR, RON, LocalDate(2021, 10, 1), BigDecimal("4.95")),
-                ConversionResponse(EUR, RON, LocalDate(2021, 10, 31), BigDecimal("5.0")),
+                ConversionResponse(EUR, RON, LocalDate(2021, 10, 30), BigDecimal("5.0")),
             )
         )
-        whenever(historicalPricingSdk.convert(userId, conversionRequest)).thenReturn(conversionsResponse)
+        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
         val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
 
         val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
@@ -190,10 +195,14 @@ class ReportDataServiceTest {
         assertThat(data.granularInterval).isEqualTo(granularInterval)
         assertThat(data.data[0].timeBucket).isEqualTo(LocalDate(2021, 9, 2))
         assertThat(data.data[0].value.start).isEqualByComparingTo(BigDecimal("197.0"))
-        assertThat(data.data[0].value.end).isEqualByComparingTo(BigDecimal("160.0"))
+        assertThat(data.data[0].value.end).isEqualByComparingTo(BigDecimal("200.0") + BigDecimal("4.9") * BigDecimal("40.0"))
         assertThat(data.data[1].timeBucket).isEqualTo(LocalDate(2021, 10, 1))
-        assertThat(data.data[1].value.start).isEqualByComparingTo(BigDecimal("160.0"))
-        assertThat(data.data[1].value.end).isEqualByComparingTo(BigDecimal("514.0"))
+        assertThat(data.data[1].value.start).isEqualByComparingTo(BigDecimal("200.0") + BigDecimal("4.95") * BigDecimal("40.0"))
+        assertThat(data.data[1].value.end).isEqualByComparingTo(BigDecimal("200.0") + BigDecimal("5.0") * BigDecimal("40.0"))
+
+        val conversionsRequestCaptor = argumentCaptor<ConversionsRequest>()
+        verify(historicalPricingSdk).convert(eq(userId), conversionsRequestCaptor.capture())
+        assertThat(conversionsRequestCaptor.firstValue.conversions).containsExactlyInAnyOrderElementsOf(conversionRequest.conversions)
     }
 
     private fun reportRecord(
