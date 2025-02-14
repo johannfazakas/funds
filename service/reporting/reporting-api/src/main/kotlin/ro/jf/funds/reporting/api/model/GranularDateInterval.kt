@@ -17,14 +17,19 @@ fun <D> generateTimeBucketedData(
     nextFunction: (LocalDate, D) -> D,
 ): List<Pair<LocalDate, D>> {
     val firstBucketData = {
-        val timeBucket = getTimeBucket(interval.interval.from, interval.granularity)
+        val timeBucket = interval.interval.from
         timeBucket to seedFunction(timeBucket)
     }
     val nextBucketData: (Pair<LocalDate, D>) -> Pair<LocalDate, D> = { (previousDate, previousData) ->
         val nextDate = when (interval.granularity) {
-            TimeGranularity.DAILY -> previousDate + DatePeriod(days = 1)
-            TimeGranularity.MONTHLY -> previousDate + DatePeriod(months = 1)
-            TimeGranularity.YEARLY -> previousDate + DatePeriod(years = 1)
+            TimeGranularity.DAILY ->
+                previousDate + DatePeriod(days = 1)
+
+            TimeGranularity.MONTHLY ->
+                LocalDate(previousDate.year, previousDate.monthNumber, 1) + DatePeriod(months = 1)
+
+            TimeGranularity.YEARLY ->
+                LocalDate(previousDate.year, 1, 1) + DatePeriod(years = 1)
         }
         nextDate to nextFunction(nextDate, previousData)
     }
@@ -38,13 +43,14 @@ data class GranularDateInterval(
     val interval: DateInterval,
     val granularity: TimeGranularity,
 ) {
+    // TODO(Johann)
     fun getTimeBuckets(): List<LocalDate> {
-        val firstBucket = getTimeBucket(interval.from, granularity)
+        val firstBucket = interval.from
         val nextBucket = { previous: LocalDate ->
             when (granularity) {
-                TimeGranularity.DAILY -> previous + DatePeriod(days = 1)
-                TimeGranularity.MONTHLY -> previous + DatePeriod(months = 1)
-                TimeGranularity.YEARLY -> previous + DatePeriod(years = 1)
+                TimeGranularity.DAILY -> getTimeBucket(previous, granularity) + DatePeriod(days = 1)
+                TimeGranularity.MONTHLY -> getTimeBucket(previous, granularity) + DatePeriod(months = 1)
+                TimeGranularity.YEARLY -> getTimeBucket(previous, granularity) + DatePeriod(years = 1)
             }
         }
         return generateSequence(firstBucket, nextBucket)
