@@ -3,6 +3,7 @@ package ro.jf.funds.reporting.service.service
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
@@ -11,6 +12,11 @@ import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.labelsOf
+import ro.jf.funds.historicalpricing.api.model.ConversionRequest
+import ro.jf.funds.historicalpricing.api.model.ConversionResponse
+import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
+import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
+import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.api.model.GranularDateInterval
 import ro.jf.funds.reporting.api.model.ReportViewType
@@ -25,7 +31,9 @@ import java.util.UUID.randomUUID
 class ReportDataServiceTest {
     private val reportViewRepository = mock<ReportViewRepository>()
     private val reportRecordRepository = mock<ReportRecordRepository>()
-    private val reportDataService = ReportDataService(reportViewRepository, reportRecordRepository)
+    private val historicalPricingSdk = mock<HistoricalPricingSdk>()
+    private val reportDataService =
+        ReportDataService(reportViewRepository, reportRecordRepository, historicalPricingSdk)
 
     private val userId = randomUUID()
     private val reportViewId = randomUUID()
@@ -65,7 +73,7 @@ class ReportDataServiceTest {
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.granularInterval).isEqualTo(granularInterval)
-        assertThat(data.data[0].timeBucket).isEqualTo(LocalDate.parse("2021-09-01"))
+        assertThat(data.data[0].timeBucket).isEqualTo(LocalDate.parse("2021-09-03"))
         assertThat(data.data[0].amount).isEqualByComparingTo(BigDecimal("-300.0"))
         assertThat(data.data[1].timeBucket).isEqualTo(LocalDate.parse("2021-10-01"))
         assertThat(data.data[1].amount).isEqualByComparingTo(BigDecimal("-30.0"))
@@ -74,7 +82,7 @@ class ReportDataServiceTest {
     }
 
     @Test
-    fun `get value data with single currency`(): Unit = runBlocking {
+    fun `get monthly value data with single currency`(): Unit = runBlocking {
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(
                 ReportView(
@@ -127,6 +135,65 @@ class ReportDataServiceTest {
             .isEqualByComparingTo(BigDecimal("514.0"))
         assertThat(data.data[2].value.end)
             .isEqualByComparingTo(BigDecimal("514.0"))
+    }
+
+    @Disabled("TODO(Johann) enable")
+    @Test
+    fun `get monthly value data with multiple currencies`(): Unit = runBlocking {
+        whenever(reportViewRepository.findById(userId, reportViewId))
+            .thenReturn(
+                ReportView(
+                    reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
+                )
+            )
+        val to = LocalDate.parse("2021-10-30")
+        val interval = DateInterval(from = LocalDate.parse("2021-09-02"), to = to)
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, to))
+            .thenReturn(
+                listOf(
+                    reportRecord(
+                        LocalDate.parse("2021-08-02"), RON, BigDecimal("100.0"), BigDecimal("100.0"), labelsOf("need")
+                    ),
+                    reportRecord(
+                        LocalDate.parse("2021-08-05"), EUR, BigDecimal("20.0"), BigDecimal("98.3"), labelsOf("need")
+                    ),
+                    reportRecord(
+                        LocalDate.parse("2021-09-02"), RON, BigDecimal("100.0"), BigDecimal("200.0"), labelsOf("need")
+                    ),
+                    reportRecord(
+                        LocalDate.parse("2021-09-03"), EUR, BigDecimal("20.0"), BigDecimal("99.1"), labelsOf("need")
+                    ),
+                )
+            )
+        val conversionRequest = ConversionsRequest(
+            listOf(
+                ConversionRequest(EUR, RON, LocalDate(2021, 9, 2)),
+                ConversionRequest(EUR, RON, LocalDate(2021, 9, 30)),
+                ConversionRequest(EUR, RON, LocalDate(2021, 10, 1)),
+                ConversionRequest(EUR, RON, LocalDate(2021, 10, 31)),
+            )
+        )
+        val conversionsResponse = ConversionsResponse(
+            listOf(
+                ConversionResponse(EUR, RON, LocalDate(2021, 9, 2), BigDecimal("4.85")),
+                ConversionResponse(EUR, RON, LocalDate(2021, 9, 30), BigDecimal("4.9")),
+                ConversionResponse(EUR, RON, LocalDate(2021, 10, 1), BigDecimal("4.95")),
+                ConversionResponse(EUR, RON, LocalDate(2021, 10, 31), BigDecimal("5.0")),
+            )
+        )
+        whenever(historicalPricingSdk.convert(userId, conversionRequest)).thenReturn(conversionsResponse)
+        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
+
+        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+
+        assertThat(data.reportViewId).isEqualTo(reportViewId)
+        assertThat(data.granularInterval).isEqualTo(granularInterval)
+        assertThat(data.data[0].timeBucket).isEqualTo(LocalDate(2021, 9, 2))
+        assertThat(data.data[0].value.start).isEqualByComparingTo(BigDecimal("197.0"))
+        assertThat(data.data[0].value.end).isEqualByComparingTo(BigDecimal("160.0"))
+        assertThat(data.data[1].timeBucket).isEqualTo(LocalDate(2021, 10, 1))
+        assertThat(data.data[1].value.start).isEqualByComparingTo(BigDecimal("160.0"))
+        assertThat(data.data[1].value.end).isEqualByComparingTo(BigDecimal("514.0"))
     }
 
     private fun reportRecord(

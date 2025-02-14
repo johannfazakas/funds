@@ -70,7 +70,7 @@ private val Application.serviceDependencies
     get() = module {
         single<ReportViewService> { ReportViewService(get(), get(), get(), get()) }
         single<ReportViewTaskService> { ReportViewTaskService(get(), get(), get()) }
-        single<ReportDataService> { ReportDataService(get(), get()) }
+        single<ReportDataService> { ReportDataService(get(), get(), get()) }
         single<CreateReportViewRequestHandler> { CreateReportViewRequestHandler(get()) }
     }
 
