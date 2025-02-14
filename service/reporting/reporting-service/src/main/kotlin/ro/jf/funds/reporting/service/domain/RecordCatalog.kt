@@ -3,7 +3,7 @@ package ro.jf.funds.reporting.service.domain
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.reporting.api.model.GranularDateInterval
-import ro.jf.funds.reporting.api.model.getTimeBucket
+import ro.jf.funds.reporting.api.model.getTimeBucketStart
 
 class RecordCatalog(
     private val reportRecords: List<ReportRecord>,
@@ -19,7 +19,7 @@ class RecordCatalog(
         this.intervalRecords = intervalRecords
             .mapValues { (_, records) ->
                 records.groupBy {
-                    maxOf(getTimeBucket(it.date, granularInterval.granularity), granularInterval.interval.from)
+                    maxOf(getTimeBucketStart(it.date, granularInterval.granularity), granularInterval.interval.from)
                 }
             }
     }
