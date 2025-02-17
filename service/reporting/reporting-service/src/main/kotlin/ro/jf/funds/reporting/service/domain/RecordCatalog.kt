@@ -1,32 +1,30 @@
 package ro.jf.funds.reporting.service.domain
 
-import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.FinancialUnit
+import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.api.model.GranularDateInterval
-import ro.jf.funds.reporting.api.model.getTimeBucketStart
 
 class RecordCatalog(
     private val reportRecords: List<ReportRecord>,
     private val granularInterval: GranularDateInterval,
 ) {
     val previousRecords: Map<FinancialUnit, List<ReportRecord>>
-    private val intervalRecords: Map<FinancialUnit, Map<LocalDate, List<ReportRecord>>>
+
+    private val recordsGrouped: Map<FinancialUnit, Map<DateInterval, List<ReportRecord>>>
 
     init {
         val (previousRecords, intervalRecords) =
             splitRecordsBeforeAndDuring(reportRecords, granularInterval)
         this.previousRecords = previousRecords
-        this.intervalRecords = intervalRecords
+        this.recordsGrouped = intervalRecords
             .mapValues { (_, records) ->
-                records.groupBy {
-                    maxOf(getTimeBucketStart(it.date, granularInterval.granularity), granularInterval.interval.from)
-                }
+                records.groupBy { granularInterval.getBucket(it.date) }
             }
     }
 
-    fun getRecordsByBucket(date: LocalDate): Map<FinancialUnit, List<ReportRecord>> {
-        return intervalRecords.mapValues { (_, recordsByBucket) ->
-            recordsByBucket[date] ?: emptyList()
+    fun getRecordsByBucket(bucket: DateInterval): Map<FinancialUnit, List<ReportRecord>> {
+        return recordsGrouped.mapValues { (_, recordsByBucket) ->
+            recordsByBucket[bucket] ?: emptyList()
         }
     }
 

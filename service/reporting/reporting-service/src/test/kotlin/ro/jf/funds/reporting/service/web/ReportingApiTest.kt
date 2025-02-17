@@ -14,6 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.dsl.module
 import org.koin.ktor.ext.get
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import ro.jf.funds.commons.config.configureContentNegotiation
@@ -31,6 +33,7 @@ import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.*
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
@@ -208,6 +211,9 @@ class ReportingApiTest {
         val httpClient = createJsonHttpClient()
         val reportView =
             reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
+        val conversions = mock<ConversionsResponse>()
+        whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
+        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
         reportRecordRepository.save(
             CreateReportRecordCommand(
                 userId, reportView.id, randomUUID(), LocalDate(2021, 1, 2), RON,

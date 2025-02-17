@@ -42,36 +42,44 @@ class ReportDataService(
         val conversions = getConversions(userId, reportView.currency, reportRecords, granularInterval)
 
         val dataBuckets = granularInterval.generateBucketedData(
-            seedFunction = { bucket ->
-                ReportDataBucket(
-                    timeBucket = bucket.from,
-                    amount = getNet(catalog.getRecordsByBucket(bucket.from), reportView.labels),
-                    value = getSeedValueReport(
-                        bucket,
-                        reportView.currency,
-                        catalog.previousRecords,
-                        catalog.getRecordsByBucket(bucket.from),
-                        conversions
-                    )
-                )
-            },
-            nextFunction = { bucket, previous ->
-                ReportDataBucket(
-                    timeBucket = bucket.from,
-                    amount = getNet(catalog.getRecordsByBucket(bucket.from), reportView.labels),
-                    value = getNextValueReport(
-                        bucket,
-                        reportView.currency,
-                        previous.value,
-                        catalog.getRecordsByBucket(bucket.from),
-                        conversions
-                    )
-                )
-            }
-        ).map { it.second }
+            seedFunction = { bucket -> getSeedData(bucket, catalog, reportView, conversions) },
+            nextFunction = { bucket, previous -> getNextData(bucket, catalog, reportView, previous, conversions) }
+        )
 
         return ReportData(reportViewId, granularInterval, dataBuckets)
     }
+
+    private fun getSeedData(
+        interval: DateInterval, catalog: RecordCatalog, reportView: ReportView, conversions: ConversionsResponse,
+    ) = ReportDataBucket(
+        timeBucket = interval.from,
+        amount = getNet(catalog.getRecordsByBucket(interval), reportView.labels),
+        value = getSeedValueReport(
+            interval,
+            reportView.currency,
+            catalog.previousRecords,
+            catalog.getRecordsByBucket(interval),
+            conversions
+        )
+    )
+
+    private fun getNextData(
+        interval: DateInterval,
+        catalog: RecordCatalog,
+        reportView: ReportView,
+        previous: ReportDataBucket,
+        conversions: ConversionsResponse,
+    ) = ReportDataBucket(
+        timeBucket = interval.from,
+        amount = getNet(catalog.getRecordsByBucket(interval), reportView.labels),
+        value = getNextValueReport(
+            interval,
+            reportView.currency,
+            previous.value,
+            catalog.getRecordsByBucket(interval),
+            conversions
+        )
+    )
 
     private suspend fun getConversions(
         userId: UUID,
@@ -125,6 +133,22 @@ class ReportDataService(
     }
 
     private fun getNextValueReport(
+        bucket: DateInterval,
+        targetUnit: Currency,
+        previousReport: ValueReport,
+        bucketRecords: Map<FinancialUnit, List<ReportRecord>>,
+        conversions: ConversionsResponse,
+    ): ValueReport {
+        val startAmountByUnit = previousReport.endAmountByUnit
+        val endAmountByUnit = getAmountByUnit(bucketRecords) + startAmountByUnit
+
+        val startValue = startAmountByUnit.valueAt(bucket.from, targetUnit, conversions)
+        val endValue = endAmountByUnit.valueAt(bucket.to, targetUnit, conversions)
+
+        return ValueReport(startValue, endValue, BigDecimal.ZERO, BigDecimal.ZERO, endAmountByUnit)
+    }
+
+    private fun getValueReport(
         bucket: DateInterval,
         targetUnit: Currency,
         previousReport: ValueReport,
