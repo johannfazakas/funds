@@ -1,7 +1,6 @@
 package ro.jf.funds.reporting.service.domain
 
-import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.model.FinancialUnit
+import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.api.model.GranularDateInterval
 import java.math.BigDecimal
 import java.util.*
@@ -9,11 +8,15 @@ import java.util.*
 data class ReportData(
     val reportViewId: UUID,
     val granularInterval: GranularDateInterval,
-    val data: List<ReportDataBucket>,
+    val data: List<BucketData<ReportDataAggregate>>,
 )
 
-data class ReportDataBucket(
-    val timeBucket: LocalDate,
+data class BucketData<D>(
+    val timeBucket: DateInterval,
+    val aggregate: D,
+)
+
+data class ReportDataAggregate(
     val amount: BigDecimal,
     val value: ValueReport,
 )
@@ -23,5 +26,5 @@ data class ValueReport(
     val end: BigDecimal = BigDecimal.ZERO,
     val min: BigDecimal = BigDecimal.ZERO,
     val max: BigDecimal = BigDecimal.ZERO,
-    val endAmountByUnit: Map<FinancialUnit, BigDecimal>,
+    val endAmountByUnit: ByUnit<BigDecimal>,
 )

@@ -79,12 +79,15 @@ class ReportDataServiceTest {
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.granularInterval).isEqualTo(granularInterval)
-        assertThat(data.data[0].timeBucket).isEqualTo(LocalDate.parse("2021-09-03"))
-        assertThat(data.data[0].amount).isEqualByComparingTo(BigDecimal("-300.0"))
-        assertThat(data.data[1].timeBucket).isEqualTo(LocalDate.parse("2021-10-01"))
-        assertThat(data.data[1].amount).isEqualByComparingTo(BigDecimal("-30.0"))
-        assertThat(data.data[2].timeBucket).isEqualTo(LocalDate.parse("2021-11-01"))
-        assertThat(data.data[2].amount).isEqualByComparingTo(BigDecimal.ZERO)
+        assertThat(data.data[0].timeBucket)
+            .isEqualTo(DateInterval(LocalDate.parse("2021-09-03"), LocalDate.parse("2021-09-30")))
+        assertThat(data.data[0].aggregate.amount).isEqualByComparingTo(BigDecimal("-300.0"))
+        assertThat(data.data[1].timeBucket)
+            .isEqualTo(DateInterval(LocalDate.parse("2021-10-01"), LocalDate.parse("2021-10-31")))
+        assertThat(data.data[1].aggregate.amount).isEqualByComparingTo(BigDecimal("-30.0"))
+        assertThat(data.data[2].timeBucket)
+            .isEqualTo(DateInterval(LocalDate.parse("2021-11-01"), LocalDate.parse("2021-11-25")))
+        assertThat(data.data[2].aggregate.amount).isEqualByComparingTo(BigDecimal.ZERO)
     }
 
     @Test
@@ -129,17 +132,17 @@ class ReportDataServiceTest {
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.granularInterval).isEqualTo(granularInterval)
-        assertThat(data.data[0].value.start)
+        assertThat(data.data[0].aggregate.value.start)
             .isEqualByComparingTo(BigDecimal("100.0"))
-        assertThat(data.data[0].value.end)
+        assertThat(data.data[0].aggregate.value.end)
             .isEqualByComparingTo(BigDecimal("160.0"))
-        assertThat(data.data[1].value.start)
+        assertThat(data.data[1].aggregate.value.start)
             .isEqualByComparingTo(BigDecimal("160.0"))
-        assertThat(data.data[1].value.end)
+        assertThat(data.data[1].aggregate.value.end)
             .isEqualByComparingTo(BigDecimal("514.0"))
-        assertThat(data.data[2].value.start)
+        assertThat(data.data[2].aggregate.value.start)
             .isEqualByComparingTo(BigDecimal("514.0"))
-        assertThat(data.data[2].value.end)
+        assertThat(data.data[2].aggregate.value.end)
             .isEqualByComparingTo(BigDecimal("514.0"))
     }
 
@@ -193,16 +196,32 @@ class ReportDataServiceTest {
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.granularInterval).isEqualTo(granularInterval)
-        assertThat(data.data[0].timeBucket).isEqualTo(LocalDate(2021, 9, 2))
-        assertThat(data.data[0].value.start).isEqualByComparingTo(BigDecimal("197.0"))
-        assertThat(data.data[0].value.end).isEqualByComparingTo(BigDecimal("200.0") + BigDecimal("4.9") * BigDecimal("40.0"))
-        assertThat(data.data[1].timeBucket).isEqualTo(LocalDate(2021, 10, 1))
-        assertThat(data.data[1].value.start).isEqualByComparingTo(BigDecimal("200.0") + BigDecimal("4.95") * BigDecimal("40.0"))
-        assertThat(data.data[1].value.end).isEqualByComparingTo(BigDecimal("200.0") + BigDecimal("5.0") * BigDecimal("40.0"))
+        assertThat(data.data[0].timeBucket)
+            .isEqualTo(DateInterval(LocalDate(2021, 9, 2), LocalDate(2021, 9, 30)))
+        assertThat(data.data[0].aggregate.value.start).isEqualByComparingTo(BigDecimal("197.0"))
+        assertThat(data.data[0].aggregate.value.end).isEqualByComparingTo(
+            BigDecimal("200.0") + BigDecimal("4.9") * BigDecimal(
+                "40.0"
+            )
+        )
+        assertThat(data.data[1].timeBucket)
+            .isEqualTo(DateInterval(LocalDate(2021, 10, 1), LocalDate(2021, 10, 30)))
+        assertThat(data.data[1].aggregate.value.start).isEqualByComparingTo(
+            BigDecimal("200.0") + BigDecimal("4.95") * BigDecimal(
+                "40.0"
+            )
+        )
+        assertThat(data.data[1].aggregate.value.end).isEqualByComparingTo(
+            BigDecimal("200.0") + BigDecimal("5.0") * BigDecimal(
+                "40.0"
+            )
+        )
 
         val conversionsRequestCaptor = argumentCaptor<ConversionsRequest>()
         verify(historicalPricingSdk).convert(eq(userId), conversionsRequestCaptor.capture())
-        assertThat(conversionsRequestCaptor.firstValue.conversions).containsExactlyInAnyOrderElementsOf(conversionRequest.conversions)
+        assertThat(conversionsRequestCaptor.firstValue.conversions).containsExactlyInAnyOrderElementsOf(
+            conversionRequest.conversions
+        )
     }
 
     private fun reportRecord(

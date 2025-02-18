@@ -17,6 +17,7 @@ data class ReportDataTO(
 
 @Serializable
 data class ReportDataItemTO(
+    // TODO(Johann) could use a DateInterval instead
     val timeBucket: LocalDate,
     // TODO(Johann) should also have a `net` and a `groupedDataNet`
     @Serializable(with = BigDecimalSerializer::class)

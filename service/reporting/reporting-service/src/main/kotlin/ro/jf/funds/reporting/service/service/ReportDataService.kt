@@ -3,7 +3,6 @@ package ro.jf.funds.reporting.service.service
 import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
@@ -37,49 +36,52 @@ class ReportDataService(
         val reportRecords = reportRecordRepository
             .findByViewUntil(userId, reportViewId, granularInterval.interval.to)
         log.info { "Found ${reportRecords.size} records for report $reportViewId in interval ${granularInterval.interval}" }
-        // TODO(Johann) might be nicer if catalog would also work on DateInterval buckets
         val catalog = RecordCatalog(reportRecords, granularInterval)
         val conversions = getConversions(userId, reportView.currency, reportRecords, granularInterval)
 
-        val dataBuckets = granularInterval.generateBucketedData(
-            seedFunction = { bucket -> getSeedData(bucket, catalog, reportView, conversions) },
-            nextFunction = { bucket, previous -> getNextData(bucket, catalog, reportView, previous, conversions) }
-        )
+        val dataBuckets = granularInterval
+            .generateBucketedData(
+                seedFunction = { bucket -> getSeedData(bucket, catalog, reportView, conversions) },
+                nextFunction = { bucket, previous -> getNextData(bucket, catalog, reportView, previous, conversions) }
+            )
+            .toList()
 
         return ReportData(reportViewId, granularInterval, dataBuckets)
     }
 
     private fun getSeedData(
         interval: DateInterval, catalog: RecordCatalog, reportView: ReportView, conversions: ConversionsResponse,
-    ) = ReportDataBucket(
-        timeBucket = interval.from,
-        amount = getNet(catalog.getRecordsByBucket(interval), reportView.labels),
-        value = getSeedValueReport(
-            interval,
-            reportView.currency,
-            catalog.previousRecords,
-            catalog.getRecordsByBucket(interval),
-            conversions
+    ): ReportDataAggregate {
+        return ReportDataAggregate(
+            amount = getNet(catalog.getRecordsByBucket(interval), reportView.labels),
+            value = getValueReport(
+                interval,
+                reportView.currency,
+                getAmountByUnit(catalog.previousRecords),
+                catalog.getRecordsByBucket(interval),
+                conversions
+            )
         )
-    )
+    }
 
     private fun getNextData(
         interval: DateInterval,
         catalog: RecordCatalog,
         reportView: ReportView,
-        previous: ReportDataBucket,
+        previous: ReportDataAggregate,
         conversions: ConversionsResponse,
-    ) = ReportDataBucket(
-        timeBucket = interval.from,
-        amount = getNet(catalog.getRecordsByBucket(interval), reportView.labels),
-        value = getNextValueReport(
-            interval,
-            reportView.currency,
-            previous.value,
-            catalog.getRecordsByBucket(interval),
-            conversions
+    ): ReportDataAggregate {
+        return ReportDataAggregate(
+            amount = getNet(catalog.getRecordsByBucket(interval), reportView.labels),
+            value = getValueReport(
+                interval,
+                reportView.currency,
+                previous.value.endAmountByUnit,
+                catalog.getRecordsByBucket(interval),
+                conversions
+            )
         )
-    )
+    }
 
     private suspend fun getConversions(
         userId: UUID,
@@ -93,7 +95,7 @@ class ReportDataService(
             .filter { it != targetUnit }
             .distinct().toList()
 
-        val dates = granularInterval.getBuckets().flatMap { listOf(it.from, it.to) }
+        val dates = granularInterval.getBuckets().flatMap { listOf(it.from, it.to) }.toList()
 
         val conversionsRequest = ConversionsRequest(
             conversions = sourceUnits
@@ -107,7 +109,7 @@ class ReportDataService(
         return historicalPricingSdk.convert(userId, conversionsRequest)
     }
 
-    private fun getNet(records: Map<FinancialUnit, List<ReportRecord>>, labels: List<Label>): BigDecimal {
+    private fun getNet(records: ByUnit<List<ReportRecord>>, labels: List<Label>): BigDecimal {
         return records
             .flatMap { it.value }
             .filter { it.labels.any { label -> label in labels } }
@@ -115,48 +117,15 @@ class ReportDataService(
             .sumOf { it.reportCurrencyAmount }
     }
 
-    // TODO(Johann) extract duplicate
-    private fun getSeedValueReport(
-        bucket: DateInterval,
-        targetUnit: Currency,
-        previousRecords: Map<FinancialUnit, List<ReportRecord>>,
-        bucketRecords: Map<FinancialUnit, List<ReportRecord>>,
-        conversions: ConversionsResponse,
-    ): ValueReport {
-        val startAmountByUnit = getAmountByUnit(previousRecords)
-        val endAmountByUnit = getAmountByUnit(bucketRecords) + startAmountByUnit
-
-        val startValue = startAmountByUnit.valueAt(bucket.from, targetUnit, conversions)
-        val endValue = endAmountByUnit.valueAt(bucket.to, targetUnit, conversions)
-
-        return ValueReport(startValue, endValue, BigDecimal.ZERO, BigDecimal.ZERO, endAmountByUnit)
-    }
-
-    private fun getNextValueReport(
-        bucket: DateInterval,
-        targetUnit: Currency,
-        previousReport: ValueReport,
-        bucketRecords: Map<FinancialUnit, List<ReportRecord>>,
-        conversions: ConversionsResponse,
-    ): ValueReport {
-        val startAmountByUnit = previousReport.endAmountByUnit
-        val endAmountByUnit = getAmountByUnit(bucketRecords) + startAmountByUnit
-
-        val startValue = startAmountByUnit.valueAt(bucket.from, targetUnit, conversions)
-        val endValue = endAmountByUnit.valueAt(bucket.to, targetUnit, conversions)
-
-        return ValueReport(startValue, endValue, BigDecimal.ZERO, BigDecimal.ZERO, endAmountByUnit)
-    }
-
     private fun getValueReport(
         bucket: DateInterval,
         targetUnit: Currency,
-        previousReport: ValueReport,
-        bucketRecords: Map<FinancialUnit, List<ReportRecord>>,
+        startAmountByUnit: ByUnit<BigDecimal>,
+        bucketRecords: ByUnit<List<ReportRecord>>,
         conversions: ConversionsResponse,
     ): ValueReport {
-        val startAmountByUnit = previousReport.endAmountByUnit
-        val endAmountByUnit = getAmountByUnit(bucketRecords) + startAmountByUnit
+        val amountByUnit = getAmountByUnit(bucketRecords)
+        val endAmountByUnit = amountByUnit + startAmountByUnit
 
         val startValue = startAmountByUnit.valueAt(bucket.from, targetUnit, conversions)
         val endValue = endAmountByUnit.valueAt(bucket.to, targetUnit, conversions)
@@ -164,19 +133,19 @@ class ReportDataService(
         return ValueReport(startValue, endValue, BigDecimal.ZERO, BigDecimal.ZERO, endAmountByUnit)
     }
 
-    private fun getAmountByUnit(records: Map<FinancialUnit, List<ReportRecord>>): Map<FinancialUnit, BigDecimal> {
-        return records.mapValues { (_, records) -> records.sumOf { it.amount } }
-    }
+    private fun getAmountByUnit(records: ByUnit<List<ReportRecord>>): ByUnit<BigDecimal> =
+        records.mapValues { _, items -> items.sumOf { it.amount } }
 
-    private operator fun Map<FinancialUnit, BigDecimal>.plus(other: Map<FinancialUnit, BigDecimal>): Map<FinancialUnit, BigDecimal> {
+    private operator fun ByUnit<BigDecimal>.plus(other: ByUnit<BigDecimal>): ByUnit<BigDecimal> {
         return listOf(this, other)
             .asSequence()
-            .flatMap { it.entries.map { entry -> entry.key to entry.value } }
+            .flatMap { it.asSequence().map { (unit, value) -> unit to value } }
             .groupBy { it.first }
             .mapValues { (_, values) -> values.sumOf { it.second } }
+            .let(::ByUnit)
     }
 
-    private fun Map<FinancialUnit, BigDecimal>.valueAt(
+    private fun ByUnit<BigDecimal>.valueAt(
         date: LocalDate,
         currency: Currency,
         conversions: ConversionsResponse,
