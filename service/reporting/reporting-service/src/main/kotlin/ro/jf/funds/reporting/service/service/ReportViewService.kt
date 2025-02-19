@@ -11,7 +11,9 @@ import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.service.domain.*
+import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
+import ro.jf.funds.reporting.service.domain.ReportView
+import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import java.math.BigDecimal
@@ -63,7 +65,6 @@ class ReportViewService(
     ) {
         val conversions = getConversions(userId, transactions, currency)
 
-        // TODO(Johann) could be done in a single call to the db
         transactions
             .asSequence()
             .flatMap { transaction ->

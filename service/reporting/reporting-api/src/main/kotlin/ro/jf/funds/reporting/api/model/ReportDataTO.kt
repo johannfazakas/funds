@@ -1,6 +1,5 @@
 package ro.jf.funds.reporting.api.model
 
-import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import ro.jf.funds.commons.serialization.BigDecimalSerializer
 import ro.jf.funds.commons.serialization.UUIDSerializer
@@ -17,8 +16,7 @@ data class ReportDataTO(
 
 @Serializable
 data class ReportDataItemTO(
-    // TODO(Johann) could use a DateInterval instead
-    val timeBucket: LocalDate,
+    val timeBucket: DateInterval,
     // TODO(Johann) should also have a `net` and a `groupedDataNet`
     @Serializable(with = BigDecimalSerializer::class)
     val amount: BigDecimal,

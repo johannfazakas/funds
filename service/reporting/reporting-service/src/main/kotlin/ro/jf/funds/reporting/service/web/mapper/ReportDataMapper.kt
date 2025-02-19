@@ -11,7 +11,7 @@ fun ReportData.toTO(): ReportDataTO {
         granularInterval = granularInterval,
         data = data.map { dataItem ->
             ReportDataItemTO(
-                timeBucket = dataItem.timeBucket.from,
+                timeBucket = dataItem.timeBucket,
                 amount = dataItem.aggregate.amount,
                 value = ValueReportTO(
                     start = dataItem.aggregate.value.start,
