@@ -4,7 +4,6 @@ plugins {
 }
 
 dependencies {
-    // TODO(Johann) revisit these
     api(libs.kotlinx.serialization.json)
     api(libs.kotlinx.datetime)
 
