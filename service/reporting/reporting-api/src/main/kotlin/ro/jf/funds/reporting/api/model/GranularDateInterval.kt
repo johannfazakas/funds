@@ -9,6 +9,7 @@ data class GranularDateInterval(
     val granularity: TimeGranularity,
 )
 
+// TODO(Johann) could have some helper constructors for month & year
 @Serializable
 data class DateInterval(
     val from: LocalDate,

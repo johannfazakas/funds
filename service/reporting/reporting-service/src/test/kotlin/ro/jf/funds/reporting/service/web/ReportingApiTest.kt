@@ -241,7 +241,7 @@ class ReportingApiTest {
         assertThat(reportData.data[0])
             .isEqualTo(
                 ReportDataItemTO(
-                    timeBucket = LocalDate.parse("2021-01-01"),
+                    timeBucket = DateInterval(LocalDate(2021, 1, 1), LocalDate(2021, 1, 1)),
                     amount = BigDecimal("0.0"),
                     value = ValueReportTO(BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"))
                 )
@@ -249,7 +249,7 @@ class ReportingApiTest {
         assertThat(reportData.data[1])
             .isEqualTo(
                 ReportDataItemTO(
-                    timeBucket = LocalDate.parse("2021-01-02"),
+                    timeBucket = DateInterval(LocalDate(2021, 1, 2), LocalDate(2021, 1, 2)),
                     amount = BigDecimal("-75.0"),
                     value = ValueReportTO(BigDecimal("0.0"), BigDecimal("-75.0"), BigDecimal("0.0"), BigDecimal("0.0"))
                 )

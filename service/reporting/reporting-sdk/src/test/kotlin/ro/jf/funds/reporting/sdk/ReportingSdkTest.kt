@@ -98,7 +98,7 @@ class ReportingSdkTest {
             granularInterval = granularInterval,
             data = listOf(
                 ReportDataItemTO(
-                    timeBucket = LocalDate.parse("2024-11-01"),
+                    timeBucket = DateInterval(LocalDate(2024, 11, 1), LocalDate(2024, 11, 30)),
                     amount = BigDecimal("200.0"),
                     value = ValueReportTO(
                         start = BigDecimal("210.0"),
@@ -108,7 +108,7 @@ class ReportingSdkTest {
                     )
                 ),
                 ReportDataItemTO(
-                    timeBucket = LocalDate.parse("2024-12-01"),
+                    timeBucket = DateInterval(LocalDate(2024, 12, 1), LocalDate(2024, 12, 31)),
                     amount = BigDecimal("300.0"),
                     value = ValueReportTO(
                         start = BigDecimal("310.0"),
@@ -118,7 +118,7 @@ class ReportingSdkTest {
                     )
                 ),
                 ReportDataItemTO(
-                    timeBucket = LocalDate.parse("2025-01-01"),
+                    timeBucket = DateInterval(LocalDate(2025, 1, 1), LocalDate(2025, 1, 31)),
                     amount = BigDecimal("400.0"),
                     value = ValueReportTO(
                         start = BigDecimal("410.0"),
@@ -298,7 +298,10 @@ class ReportingSdkTest {
                                 expectedResponse.data.forEach { item ->
                                     add(
                                         buildJsonObject {
-                                            put("timeBucket", JsonPrimitive(item.timeBucket.toString()))
+                                            put("timeBucket", buildJsonObject {
+                                                put("from", JsonPrimitive(item.timeBucket.from.toString()))
+                                                put("to", JsonPrimitive(item.timeBucket.to.toString()))
+                                            })
                                             put("amount", JsonPrimitive(item.amount.toString()))
                                             put("value", buildJsonObject {
                                                 put("start", JsonPrimitive(item.value.start.toString()))
