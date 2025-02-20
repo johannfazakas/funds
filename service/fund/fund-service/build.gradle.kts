@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 // TODO(Johann) why do I have this? Task 'wrapper' not found in project ':fund:fund-service'.
 
 plugins {
-    id("funds.kotlin-application-conventions")
+    id("funds.kotlin-service-conventions")
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.serialization)
 }
@@ -29,6 +29,7 @@ ktor {
     }
 }
 
+// TODO(Johann) what is this again? shouldn't it be added to all projects somehow?
 tasks.named("compileKotlin", KotlinCompilationTask::class.java) {
     compilerOptions {
         freeCompilerArgs.add("-Xdebug")
