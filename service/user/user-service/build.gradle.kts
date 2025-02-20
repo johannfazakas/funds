@@ -1,8 +1,7 @@
-import io.ktor.plugin.features.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
-    id("funds.kotlin-application-conventions")
+    id("funds.kotlin-service-conventions")
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.serialization)
 }

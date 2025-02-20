@@ -6,6 +6,7 @@ group = "ro.jf.funds"
 version = "1.0.0"
 
 allprojects {
+    // TODO(Johann) could I leverage this build to add plugins to all projects? instead of using buildSrc?
     repositories {
         mavenCentral()
         mavenLocal()

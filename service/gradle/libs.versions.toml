@@ -18,6 +18,8 @@ assertj = "3.26.0"
 kotlin-mockito = "5.4.0"
 testcontainers = "1.19.8"
 mockserver-client = "5.15.0"
+jsoup = "1.15.3"
+poi = "5.2.5"
 
 [libraries]
 
@@ -59,6 +61,8 @@ logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
 # other libraries
 kotlin-csv = { module = "com.jsoizo:kotlin-csv", version.ref = "kotlin-csv" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+poi = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
 
 # test libraries
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
