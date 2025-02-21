@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-
 plugins {
     id("funds.kotlin-service-conventions")
     alias(libs.plugins.ktor)
@@ -22,11 +20,5 @@ ktor {
     docker {
         jreVersion.set(JavaVersion.VERSION_17)
         localImageName.set("funds/user-service")
-    }
-}
-
-tasks.named("compileKotlin", KotlinCompilationTask::class.java) {
-    compilerOptions {
-        freeCompilerArgs.add("-Xdebug")
     }
 }

@@ -28,10 +28,3 @@ ktor {
         localImageName.set("funds/fund-service")
     }
 }
-
-// TODO(Johann) what is this again? shouldn't it be added to all projects somehow?
-tasks.named("compileKotlin", KotlinCompilationTask::class.java) {
-    compilerOptions {
-        freeCompilerArgs.add("-Xdebug")
-    }
-}

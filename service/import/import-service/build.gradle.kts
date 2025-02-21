@@ -28,9 +28,3 @@ ktor {
         localImageName.set("funds/import-service")
     }
 }
-
-tasks.named("compileKotlin", KotlinCompilationTask::class.java) {
-    compilerOptions {
-        freeCompilerArgs.add("-Xdebug")
-    }
-}

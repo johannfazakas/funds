@@ -25,8 +25,3 @@ ktor {
     }
 }
 
-tasks.named("compileKotlin", KotlinCompilationTask::class.java) {
-    compilerOptions {
-        freeCompilerArgs.add("-Xdebug")
-    }
-}
