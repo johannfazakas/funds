@@ -1,3 +1,7 @@
+plugins {
+    id("funds.kotlin-library-conventions")
+}
+
 dependencies {
     implementation(project(":commons:commons"))
 
