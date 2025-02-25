@@ -30,6 +30,7 @@ dependencies {
     api(libs.exposed.jdbc)
     api(libs.exposed.java.time)
     api(libs.exposed.dao)
+    api(libs.exposed.json)
 
     api(libs.kafka.clients)
 
