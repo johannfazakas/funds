@@ -1,4 +1,5 @@
 [versions]
+# TODO(Johann) upgrade kotlin
 kotlin = "2.0.0"
 # TODO(Johann) upgrade ktor
 ktor = "2.3.12"
@@ -8,7 +9,8 @@ koin = "3.5.6"
 postgres = "42.7.3"
 kafka = "3.8.0"
 flyway = "6.5.2"
-exposed = "0.41.1"
+# TODO(Johann) upgrade exposed version and solve deprecations
+exposed = "0.53.0"
 kotlin-csv = "1.10.0"
 kotlin-logging = "3.0.5"
 logback = "1.4.14"
@@ -51,6 +53,7 @@ exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "e
 exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
 exposed-java-time = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposed" }
+exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
 
 # kafka
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
