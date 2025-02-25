@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-
 // TODO(Johann) why do I have this? Task 'wrapper' not found in project ':fund:fund-service'.
 
 plugins {

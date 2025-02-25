@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-
 plugins {
     id("funds.kotlin-service-conventions")
     alias(libs.plugins.ktor)
