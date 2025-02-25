@@ -5,9 +5,9 @@ plugins {
     application
 }
 
-// TODO(Johann) what is this doing?
 tasks.named("compileKotlin", KotlinCompilationTask::class.java) {
     compilerOptions {
+        // this enables debugging suspend method variables before the last suspension point
         freeCompilerArgs.add("-Xdebug")
     }
 }
