@@ -34,11 +34,15 @@ class ReportViewService(
             throw ReportingException.ReportViewAlreadyExists(userId, payload.name)
         }
         val reportView = reportViewRepository.save(
-            userId, payload.name, payload.fundId, payload.type, payload.currency, payload.labels
+            userId,
+            payload.name,
+            payload.fundId,
+            payload.dataConfiguration.currency,
+            payload.dataConfiguration.filter.labels ?: emptyList()
         )
 
         val transactions = fundTransactionSdk.listTransactions(userId, payload.fundId).items
-        persistReportRecords(userId, reportView.id, transactions, payload.fundId, payload.currency)
+        persistReportRecords(userId, reportView.id, transactions, payload.fundId, payload.dataConfiguration.currency)
 
         return reportView
     }

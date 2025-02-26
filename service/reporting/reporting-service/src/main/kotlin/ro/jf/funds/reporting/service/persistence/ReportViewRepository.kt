@@ -8,7 +8,6 @@ import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.asLabels
 import ro.jf.funds.commons.model.asString
 import ro.jf.funds.commons.persistence.blockingTransaction
-import ro.jf.funds.reporting.api.model.ReportViewType
 import ro.jf.funds.reporting.service.domain.ReportView
 import java.util.*
 
@@ -19,16 +18,16 @@ class ReportViewRepository(
         val userId = uuid("user_id")
         val name = varchar("name", 50)
         val fundId = uuid("fund_id")
-        val type = varchar("type", 50)
         val currency = varchar("currency", 50)
         val labels = varchar("labels", 100)
+//        TODO(Johann-11) add configuration in db
+//        val configuration = json("configuration", )
     }
 
     suspend fun save(
         userId: UUID,
         name: String,
         fundId: UUID,
-        type: ReportViewType,
         currency: Currency,
         labels: List<Label>,
     ): ReportView = blockingTransaction {
@@ -36,7 +35,6 @@ class ReportViewRepository(
             it[ReportViewTable.userId] = userId
             it[ReportViewTable.name] = name
             it[ReportViewTable.fundId] = fundId
-            it[ReportViewTable.type] = type.name
             it[ReportViewTable.currency] = currency.value
             it[ReportViewTable.labels] = labels.asString()
         }.let {
@@ -45,7 +43,6 @@ class ReportViewRepository(
                 userId = it[ReportViewTable.userId],
                 name = it[ReportViewTable.name],
                 fundId = it[ReportViewTable.fundId],
-                type = it[ReportViewTable.type].let(ReportViewType::fromString),
                 currency = Currency(it[ReportViewTable.currency]),
                 labels = it[ReportViewTable.labels].asLabels(),
             )
@@ -57,6 +54,7 @@ class ReportViewRepository(
         name: String,
     ): ReportView? = blockingTransaction {
         ReportViewTable
+            // TODO(Johann) Fix deprecated select calls
             .select { (ReportViewTable.userId eq userId) and (ReportViewTable.name eq name) }
             .map { it.toModel() }
             .singleOrNull()
@@ -92,7 +90,6 @@ class ReportViewRepository(
             userId = this[ReportViewTable.userId],
             name = this[ReportViewTable.name],
             fundId = this[ReportViewTable.fundId],
-            type = this[ReportViewTable.type].let(ReportViewType::fromString),
             currency = Currency(this[ReportViewTable.currency]),
             labels = this[ReportViewTable.labels].asLabels(),
         )

@@ -95,9 +95,16 @@ class ReportingApiTest {
                 CreateReportViewTO(
                     name = expenseReportName,
                     fundId = expenseFundId,
-                    type = ReportViewType.EXPENSE,
-                    currency = RON,
-                    labels = labels,
+                    dataConfiguration = ReportDataConfigurationTO(
+                        currency = RON,
+                        filter = RecordFilterTO(labels),
+                        // TODO(Johann-11) add some groups here
+                        groups = null,
+                        features = ReportDataFeaturesConfigurationTO(
+                            net = NetReportFeatureTO(enabled = true, applyFilter = true),
+                            valueReport = GenericReportFeatureTO(true)
+                        )
+                    )
                 )
             )
         }
@@ -134,7 +141,6 @@ class ReportingApiTest {
             createReportView as ReportView
             assertThat(createReportView.name).isEqualTo(expenseReportName)
             assertThat(createReportView.fundId).isEqualTo(expenseFundId)
-            assertThat(createReportView.type).isEqualTo(ReportViewType.EXPENSE)
         }
     }
 
@@ -144,7 +150,7 @@ class ReportingApiTest {
         val httpClient = createJsonHttpClient()
         val reportViewTask = reportViewTaskRepository.create(userId)
         val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, RON, labels)
         reportViewTaskRepository.complete(userId, reportViewTask.taskId, reportView.id)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/tasks/${reportViewTask.taskId}") {
@@ -160,7 +166,6 @@ class ReportingApiTest {
         assertThat(reportViewTaskTO.report.id).isEqualTo(reportView.id)
         assertThat(reportViewTaskTO.report.fundId).isEqualTo(expenseFundId)
         assertThat(reportViewTaskTO.report.name).isEqualTo(expenseReportName)
-        assertThat(reportViewTaskTO.report.type).isEqualTo(ReportViewType.EXPENSE)
     }
 
     @Test
@@ -168,7 +173,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, RON, labels)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}") {
             header(USER_ID_HEADER, userId.toString())
@@ -180,7 +185,6 @@ class ReportingApiTest {
         assertThat(reportViewTO.id).isEqualTo(reportView.id)
         assertThat(reportViewTO.fundId).isEqualTo(expenseFundId)
         assertThat(reportViewTO.name).isEqualTo(expenseReportName)
-        assertThat(reportViewTO.type).isEqualTo(ReportViewType.EXPENSE)
     }
 
     @Test
@@ -188,7 +192,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, RON, labels)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
@@ -202,7 +206,6 @@ class ReportingApiTest {
         assertThat(reportViewTO.id).isEqualTo(reportView.id)
         assertThat(reportViewTO.fundId).isEqualTo(expenseFundId)
         assertThat(reportViewTO.name).isEqualTo(expenseReportName)
-        assertThat(reportViewTO.type).isEqualTo(ReportViewType.EXPENSE)
     }
 
     @Test
@@ -210,7 +213,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, RON, labels)
         val conversions = mock<ConversionsResponse>()
         whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
@@ -261,7 +264,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, ReportViewType.EXPENSE, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, RON, labels)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
             header(USER_ID_HEADER, userId.toString())

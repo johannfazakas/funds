@@ -15,8 +15,7 @@ import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
-import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.ReportViewType
+import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.domain.ReportViewTask
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
@@ -57,7 +56,19 @@ class CreateReportViewRequestHandlerTest {
     @Test
     fun `handle create report view request`(): Unit = runBlocking {
         val initialTask = reportViewTaskRepository.create(userId)
-        val payload = CreateReportViewTO(viewName, fundId, ReportViewType.EXPENSE, Currency.RON, labels)
+        val payload = CreateReportViewTO(
+            name = viewName,
+            fundId = fundId,
+            dataConfiguration = ReportDataConfigurationTO(
+                currency = Currency.RON,
+                filter = RecordFilterTO(labels),
+                groups = null,
+                features = ReportDataFeaturesConfigurationTO(
+                    net = NetReportFeatureTO(true, true),
+                    valueReport = GenericReportFeatureTO(true)
+                )
+            )
+        )
         val event = Event(userId, payload, initialTask.taskId)
 
         val transaction =
@@ -78,6 +89,5 @@ class CreateReportViewRequestHandlerTest {
         val reportView = reportViewRepository.findById(userId, reportViewId) ?: error("Report view not found")
         assertThat(reportView.fundId).isEqualTo(fundId)
         assertThat(reportView.name).isEqualTo(viewName)
-        assertThat(reportView.type).isEqualTo(ReportViewType.EXPENSE)
     }
 }
