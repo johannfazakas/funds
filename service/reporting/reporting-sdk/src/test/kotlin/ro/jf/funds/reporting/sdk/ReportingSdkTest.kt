@@ -37,10 +37,19 @@ class ReportingSdkTest {
     fun `create report view task`(mockServerClient: MockServerClient): Unit = runBlocking {
         val request = CreateReportViewTO(
             name = viewName,
-            type = ReportViewType.EXPENSE,
             fundId = fundId,
-            currency = RON,
-            labels = labelsOf("need", "want"),
+            dataConfiguration = ReportDataConfigurationTO(
+                currency = RON,
+                filter = RecordFilterTO(labels = labelsOf("need", "want")),
+                groups = listOf(
+                    ReportGroupTO(name = "need", filter = RecordFilterTO.byLabels("need")),
+                    ReportGroupTO(name = "want", filter = RecordFilterTO.byLabels("want"))
+                ),
+                features = ReportDataFeaturesConfigurationTO(
+                    net = NetReportFeatureTO(enabled = true, applyFilter = true),
+                    valueReport = GenericReportFeatureTO(enabled = true)
+                )
+            ),
         )
         mockServerClient.mockCreateReportViewTask(request, taskId, "IN_PROGRESS")
 
@@ -63,7 +72,21 @@ class ReportingSdkTest {
     @Test
     fun `get report view`(mockServerClient: MockServerClient): Unit = runBlocking {
         val expectedResponse = ReportViewTO(
-            viewId, viewName, fundId, ReportViewType.EXPENSE, RON, labelsOf("need", "want")
+            id = viewId,
+            name = viewName,
+            fundId = fundId,
+            dataConfiguration = ReportDataConfigurationTO(
+                currency = RON,
+                filter = RecordFilterTO(labels = labelsOf("need", "want")),
+                groups = listOf(
+                    ReportGroupTO(name = "need", filter = RecordFilterTO.byLabels("need")),
+                    ReportGroupTO(name = "want", filter = RecordFilterTO.byLabels("want"))
+                ),
+                features = ReportDataFeaturesConfigurationTO(
+                    NetReportFeatureTO(enabled = true, applyFilter = true),
+                    GenericReportFeatureTO(enabled = true)
+                )
+            )
         )
         mockServerClient.mockGetReportView(expectedResponse)
 
@@ -76,8 +99,21 @@ class ReportingSdkTest {
     fun `list report views`(mockServerClient: MockServerClient): Unit = runBlocking {
         val expectedResponse = ListTO.of(
             ReportViewTO(
-                viewId, viewName, fundId, ReportViewType.EXPENSE, RON,
-                labelsOf("need", "want")
+                id = viewId,
+                name = viewName,
+                fundId = fundId,
+                dataConfiguration = ReportDataConfigurationTO(
+                    currency = RON,
+                    filter = RecordFilterTO(labels = labelsOf("need", "want")),
+                    groups = listOf(
+                        ReportGroupTO(name = "need", RecordFilterTO.byLabels("need")),
+                        ReportGroupTO(name = "want", RecordFilterTO.byLabels("want"))
+                    ),
+                    features = ReportDataFeaturesConfigurationTO(
+                        NetReportFeatureTO(enabled = true, applyFilter = true),
+                        GenericReportFeatureTO(enabled = true)
+                    )
+                )
             )
         )
         mockServerClient.mockListReportViews(expectedResponse)
@@ -153,20 +189,102 @@ class ReportingSdkTest {
                                         put("type", JsonPrimitive("string"))
                                         put("value", JsonPrimitive(request.name))
                                     })
-                                    put("type", buildJsonObject {
-                                        put("type", JsonPrimitive("string"))
-                                        put("value", JsonPrimitive(request.type.name))
-                                    })
                                     put("fundId", buildJsonObject {
                                         put("type", JsonPrimitive("string"))
                                         put("value", JsonPrimitive(request.fundId.toString()))
+                                    })
+                                    put("dataConfiguration", buildJsonObject {
+                                        put("type", JsonPrimitive("object"))
+                                        put("properties", buildJsonObject {
+                                            put("currency", buildJsonObject {
+                                                put("type", JsonPrimitive("object"))
+                                                put("properties", buildJsonObject {
+                                                    put("value", buildJsonObject {
+                                                        put("type", JsonPrimitive("string"))
+                                                        put(
+                                                            "value",
+                                                            JsonPrimitive(request.dataConfiguration.currency.value)
+                                                        )
+                                                    })
+                                                })
+                                            })
+                                            put("filter", buildJsonObject {
+                                                put("type", JsonPrimitive("object"))
+                                                put("properties", buildJsonObject {
+                                                    put("labels", buildJsonObject {
+                                                        put("type", JsonPrimitive("array"))
+                                                        put("items", buildJsonObject {
+                                                            put("type", JsonPrimitive("string"))
+                                                        })
+                                                    })
+                                                })
+                                            })
+                                            put("groups", buildJsonObject {
+                                                put("type", JsonPrimitive("array"))
+                                                put("items", buildJsonObject {
+                                                    put("type", JsonPrimitive("object"))
+                                                    put("properties", buildJsonObject {
+                                                        put("name", buildJsonObject {
+                                                            put("type", JsonPrimitive("string"))
+                                                        })
+                                                        put("filter", buildJsonObject {
+                                                            put("type", JsonPrimitive("object"))
+                                                            put("properties", buildJsonObject {
+                                                                put("labels", buildJsonObject {
+                                                                    put("type", JsonPrimitive("array"))
+                                                                    put("items", buildJsonObject {
+                                                                        put("type", JsonPrimitive("string"))
+                                                                    })
+                                                                })
+                                                            })
+                                                        })
+                                                    })
+                                                })
+                                            })
+                                            put("features", buildJsonObject {
+                                                put("type", JsonPrimitive("object"))
+                                                put("properties", buildJsonObject {
+                                                    put("net", buildJsonObject {
+                                                        put("type", JsonPrimitive("object"))
+                                                        put("properties", buildJsonObject {
+                                                            put("enabled", buildJsonObject {
+                                                                put("type", JsonPrimitive("boolean"))
+                                                                put(
+                                                                    "value",
+                                                                    JsonPrimitive(request.dataConfiguration.features.net.enabled)
+                                                                )
+                                                            })
+                                                            put("applyFilter", buildJsonObject {
+                                                                put("type", JsonPrimitive("boolean"))
+                                                                put(
+                                                                    "value",
+                                                                    JsonPrimitive(request.dataConfiguration.features.net.applyFilter)
+                                                                )
+                                                            })
+                                                        })
+                                                    })
+                                                    put("valueReport", buildJsonObject {
+                                                        put("type", JsonPrimitive("object"))
+                                                        put("properties", buildJsonObject {
+                                                            put("enabled", buildJsonObject {
+                                                                put("type", JsonPrimitive("boolean"))
+                                                                put(
+                                                                    "value",
+                                                                    JsonPrimitive(request.dataConfiguration.features.valueReport.enabled)
+                                                                )
+                                                            })
+                                                        })
+                                                    })
+                                                })
+                                            })
+                                        })
                                     })
                                 }
                             )
                             put("required", buildJsonArray {
                                 add(JsonPrimitive("name"))
-                                add(JsonPrimitive("type"))
                                 add(JsonPrimitive("fundId"))
+                                add(JsonPrimitive("dataConfiguration"))
                             })
                         }.toString()
                     )
@@ -252,14 +370,42 @@ class ReportingSdkTest {
             put("id", JsonPrimitive(response.id.toString()))
             put("name", JsonPrimitive(response.name))
             put("fundId", JsonPrimitive(response.fundId.toString()))
-            put("type", JsonPrimitive(response.type.name))
-            put("currency", buildJsonObject {
-                put("value", JsonPrimitive(response.currency.value))
-            })
-            put("labels", buildJsonArray {
-                response.labels.forEach { label ->
-                    add(JsonPrimitive(label.value))
-                }
+            put("dataConfiguration", buildJsonObject {
+                put("currency", buildJsonObject {
+                    put("value", JsonPrimitive(response.dataConfiguration.currency.value))
+                })
+                put("filter", buildJsonObject {
+                    put("labels", buildJsonArray {
+                        response.dataConfiguration.filter.labels?.forEach { label ->
+                            add(JsonPrimitive(label.value))
+                        }
+                    })
+                })
+                put("groups", buildJsonArray {
+                    response.dataConfiguration.groups?.forEach { group ->
+                        add(
+                            buildJsonObject {
+                                put("name", JsonPrimitive(group.name))
+                                put("filter", buildJsonObject {
+                                    put("labels", buildJsonArray {
+                                        group.filter.labels?.forEach { label ->
+                                            add(JsonPrimitive(label.value))
+                                        }
+                                    })
+                                })
+                            }
+                        )
+                    }
+                })
+                put("features", buildJsonObject {
+                    put("net", buildJsonObject {
+                        put("enabled", JsonPrimitive(response.dataConfiguration.features.net.enabled))
+                        put("applyFilter", JsonPrimitive(response.dataConfiguration.features.net.applyFilter))
+                    })
+                    put("valueReport", buildJsonObject {
+                        put("enabled", JsonPrimitive(response.dataConfiguration.features.valueReport.enabled))
+                    })
+                })
             })
         })
 

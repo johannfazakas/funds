@@ -22,7 +22,6 @@ import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.api.model.GranularDateInterval
-import ro.jf.funds.reporting.api.model.ReportViewType
 import ro.jf.funds.reporting.api.model.TimeGranularity
 import ro.jf.funds.reporting.service.domain.ReportRecord
 import ro.jf.funds.reporting.service.domain.ReportView
@@ -49,7 +48,7 @@ class ReportDataServiceTest {
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(
                 ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
+                    reportViewId, userId, reportViewName, expensesFundId, RON, allLabels
                 )
             )
         val interval = DateInterval(from = LocalDate.parse("2021-09-03"), to = LocalDate.parse("2021-11-25"))
@@ -95,7 +94,7 @@ class ReportDataServiceTest {
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(
                 ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
+                    reportViewId, userId, reportViewName, expensesFundId, RON, allLabels
                 )
             )
         val to = LocalDate.parse("2021-11-25")
@@ -151,7 +150,7 @@ class ReportDataServiceTest {
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(
                 ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, ReportViewType.EXPENSE, RON, allLabels
+                    reportViewId, userId, reportViewName, expensesFundId, RON, allLabels
                 )
             )
         val to = LocalDate.parse("2021-10-30")
