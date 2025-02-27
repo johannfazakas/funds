@@ -11,9 +11,8 @@ import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
-import ro.jf.funds.reporting.service.domain.ReportView
-import ro.jf.funds.reporting.service.domain.ReportingException
+import ro.jf.funds.reporting.api.model.ReportDataConfigurationTO
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import java.math.BigDecimal
@@ -37,8 +36,9 @@ class ReportViewService(
             userId,
             payload.name,
             payload.fundId,
-            payload.dataConfiguration.currency,
-            payload.dataConfiguration.filter.labels ?: emptyList()
+            payload.dataConfiguration.toModel()
+//            payload.dataConfiguration.currency,
+//            payload.dataConfiguration.filter.labels ?: emptyList()
         )
 
         val transactions = fundTransactionSdk.listTransactions(userId, payload.fundId).items
@@ -122,4 +122,16 @@ class ReportViewService(
     else
         conversions.getRate(record.unit, currency, date)
             ?: throw ReportingException.ReportRecordConversionRateNotFound(record.id)
+
+    // TODO(Johann-11) maybe TOs could be removed completely from the service. but I'll probably need serialization annotations on the model
+    private fun ReportDataConfigurationTO.toModel() =
+        ReportDataConfiguration(
+            currency = currency,
+            filter = RecordFilter(filter.labels),
+            groups = groups?.map { ReportGroup(it.name, RecordFilter(it.filter.labels)) },
+            features = ReportDataFeaturesConfiguration(
+                net = NetReportFeature(features.net.enabled, features.net.applyFilter),
+                valueReport = GenericReportFeature(features.valueReport.enabled),
+            ),
+        )
 }

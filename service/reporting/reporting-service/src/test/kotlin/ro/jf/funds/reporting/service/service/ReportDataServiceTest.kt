@@ -23,8 +23,7 @@ import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.api.model.GranularDateInterval
 import ro.jf.funds.reporting.api.model.TimeGranularity
-import ro.jf.funds.reporting.service.domain.ReportRecord
-import ro.jf.funds.reporting.service.domain.ReportView
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import java.math.BigDecimal
@@ -45,11 +44,17 @@ class ReportDataServiceTest {
 
     @Test
     fun `get expense report view data grouped by months`(): Unit = runBlocking {
+        val reportDataConfiguration = ReportDataConfiguration(
+            currency = RON,
+            filter = RecordFilter(labels = allLabels),
+            groups = null,
+            features = ReportDataFeaturesConfiguration()
+                .withNet(enabled = true, applyFilter = true)
+                .withValueReport(enabled = true),
+        )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(
-                ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, RON, allLabels
-                )
+                ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration)
             )
         val interval = DateInterval(from = LocalDate.parse("2021-09-03"), to = LocalDate.parse("2021-11-25"))
         whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
@@ -91,11 +96,17 @@ class ReportDataServiceTest {
 
     @Test
     fun `get monthly value data with single currency`(): Unit = runBlocking {
+        val reportDataConfiguration = ReportDataConfiguration(
+            currency = RON,
+            filter = RecordFilter(labels = allLabels),
+            groups = null,
+            features = ReportDataFeaturesConfiguration()
+                .withNet(enabled = true, applyFilter = true)
+                .withValueReport(enabled = true),
+        )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(
-                ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, RON, allLabels
-                )
+                ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration)
             )
         val to = LocalDate.parse("2021-11-25")
         val interval = DateInterval(from = LocalDate.parse("2021-09-02"), to = to)
@@ -147,10 +158,18 @@ class ReportDataServiceTest {
 
     @Test
     fun `get monthly value data with multiple currencies`(): Unit = runBlocking {
+        val reportDataConfiguration = ReportDataConfiguration(
+            currency = RON,
+            filter = RecordFilter(labels = allLabels),
+            groups = null,
+            features = ReportDataFeaturesConfiguration()
+                .withNet(enabled = true, applyFilter = true)
+                .withValueReport(enabled = true),
+        )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(
                 ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, RON, allLabels
+                    reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration
                 )
             )
         val to = LocalDate.parse("2021-10-30")

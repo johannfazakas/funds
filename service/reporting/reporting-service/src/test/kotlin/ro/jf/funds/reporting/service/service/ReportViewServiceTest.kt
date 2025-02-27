@@ -20,9 +20,7 @@ import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.model.*
-import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
-import ro.jf.funds.reporting.service.domain.ReportView
-import ro.jf.funds.reporting.service.domain.ReportingException
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.utils.record
@@ -49,9 +47,19 @@ class ReportViewServiceTest {
     private val dateTime1 = LocalDateTime.parse("2021-09-01T12:00:00")
     private val dateTime2 = LocalDateTime.parse("2021-09-03T12:00:00")
     private val allLabels = labelsOf("need", "want")
+    private val reportDataConfiguration = ReportDataConfiguration(
+        currency = RON,
+        filter = RecordFilter(labels = allLabels),
+        groups = null,
+        features = ReportDataFeaturesConfiguration(
+            net = NetReportFeature(enabled = true, applyFilter = true),
+            valueReport = GenericReportFeature(enabled = true),
+        ),
+    )
 
     @Test
     fun `create report view should create report view`(): Unit = runBlocking {
+        // TODO(Johann-11) will this be required? or should it be replaced by model?
         val request =
             CreateReportViewTO(
                 name = reportViewName,
@@ -67,16 +75,13 @@ class ReportViewServiceTest {
                     ),
                 )
             )
+
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
-            reportViewRepository.save(
-                userId, reportViewName, expensesFundId, RON, allLabels
-            )
+            reportViewRepository.save(userId, reportViewName, expensesFundId, reportDataConfiguration)
         )
             .thenReturn(
-                ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, RON, allLabels
-                )
+                ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration)
             )
         whenever(fundTransactionSdk.listTransactions(userId, expensesFundId)).thenReturn(ListTO.of())
 
@@ -88,7 +93,7 @@ class ReportViewServiceTest {
         assertThat(reportView.fundId).isEqualTo(expensesFundId)
 
         verify(reportViewRepository, times(1))
-            .save(userId, reportViewName, expensesFundId, RON, allLabels)
+            .save(userId, reportViewName, expensesFundId, reportDataConfiguration)
     }
 
     @Test
@@ -111,12 +116,12 @@ class ReportViewServiceTest {
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
             reportViewRepository.save(
-                userId, reportViewName, expensesFundId, RON, allLabels
+                userId, reportViewName, expensesFundId, reportDataConfiguration
             )
         )
             .thenReturn(
                 ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, RON, allLabels
+                    reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration
                 )
             )
 
@@ -176,12 +181,12 @@ class ReportViewServiceTest {
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
         whenever(
             reportViewRepository.save(
-                userId, reportViewName, expensesFundId, RON, allLabels
+                userId, reportViewName, expensesFundId, reportDataConfiguration
             )
         )
             .thenReturn(
                 ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, RON, allLabels
+                    reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration
                 )
             )
 
@@ -234,7 +239,7 @@ class ReportViewServiceTest {
         whenever(reportViewRepository.findByName(userId, reportViewName))
             .thenReturn(
                 ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, RON, allLabels
+                    reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration
                 )
             )
 
@@ -242,7 +247,7 @@ class ReportViewServiceTest {
             .isInstanceOf(ReportingException.ReportViewAlreadyExists::class.java)
 
         verify(reportViewRepository, never()).save(
-            userId, reportViewName, expensesFundId, RON, allLabels
+            userId, reportViewName, expensesFundId, reportDataConfiguration
         )
     }
 }

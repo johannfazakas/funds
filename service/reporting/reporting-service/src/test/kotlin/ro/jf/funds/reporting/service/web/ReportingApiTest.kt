@@ -42,9 +42,7 @@ import ro.jf.funds.reporting.service.config.configureReportingErrorHandling
 import ro.jf.funds.reporting.service.config.configureReportingEventHandling
 import ro.jf.funds.reporting.service.config.configureReportingRouting
 import ro.jf.funds.reporting.service.config.reportingDependencies
-import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
-import ro.jf.funds.reporting.service.domain.ReportView
-import ro.jf.funds.reporting.service.domain.ReportViewTask
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
@@ -72,6 +70,14 @@ class ReportingApiTest {
     private val cashAccountId = randomUUID()
     private val dateTime = LocalDateTime.parse("2021-09-01T12:00:00")
     private val labels = labelsOf("need", "want")
+    private val reportDataConfiguration = ReportDataConfiguration(
+        currency = RON,
+        filter = RecordFilter(labels),
+        groups = null,
+        features = ReportDataFeaturesConfiguration()
+            .withNet(enabled = true, applyFilter = true)
+            .withValueReport(enabled = true)
+    )
 
     @Test
     fun `create report view should create it async`() = testApplication {
@@ -150,7 +156,7 @@ class ReportingApiTest {
         val httpClient = createJsonHttpClient()
         val reportViewTask = reportViewTaskRepository.create(userId)
         val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, reportDataConfiguration)
         reportViewTaskRepository.complete(userId, reportViewTask.taskId, reportView.id)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/tasks/${reportViewTask.taskId}") {
@@ -173,7 +179,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, reportDataConfiguration)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}") {
             header(USER_ID_HEADER, userId.toString())
@@ -192,7 +198,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, reportDataConfiguration)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
@@ -213,7 +219,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, RON, labels)
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, reportDataConfiguration)
         val conversions = mock<ConversionsResponse>()
         whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
@@ -264,8 +270,7 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, RON, labels)
-
+            reportViewRepository.save(userId, expenseReportName, expenseFundId, reportDataConfiguration)
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
             header(USER_ID_HEADER, userId.toString())
             parameter("from", "2021-01-01")
