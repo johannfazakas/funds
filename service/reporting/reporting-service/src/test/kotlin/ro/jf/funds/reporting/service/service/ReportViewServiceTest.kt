@@ -224,7 +224,8 @@ class ReportViewServiceTest {
     fun `create report view with same name should raise error`(): Unit = runBlocking {
         val request =
             CreateReportViewTO(
-                reportViewName, expensesFundId,
+                name = reportViewName,
+                fundId = expensesFundId,
                 dataConfiguration = ReportDataConfigurationTO(
                     currency = RON,
                     filter = RecordFilterTO(labels = allLabels),

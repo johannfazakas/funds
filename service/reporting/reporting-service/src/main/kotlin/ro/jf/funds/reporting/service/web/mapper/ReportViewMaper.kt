@@ -8,8 +8,8 @@ fun ReportView.toTO(): ReportViewTO = ReportViewTO(
     name = name,
     fundId = fundId,
     dataConfiguration = ReportDataConfigurationTO(
-        currency = currency,
-        filter = RecordFilterTO.byLabels(*labels.map { it.value }.toTypedArray()),
+        currency = dataConfiguration.currency,
+        filter = RecordFilterTO(dataConfiguration.filter.labels ?: emptyList()),
         features = ReportDataFeaturesConfigurationTO(
             net = NetReportFeatureTO(enabled = true, applyFilter = true),
             valueReport = GenericReportFeatureTO(enabled = true),
