@@ -7,7 +7,7 @@ import ro.jf.funds.importer.api.model.ImportTaskTO
 import java.util.*
 
 class ImportTaskRepository(
-    private val database: Database
+    private val database: Database,
 ) {
     object ImportTaskTable : UUIDTable("import_task") {
         val userId = uuid("user_id")
@@ -17,13 +17,15 @@ class ImportTaskRepository(
 
     suspend fun list(userId: UUID): List<ImportTaskTO> = blockingTransaction {
         ImportTaskTable
-            .select { ImportTaskTable.userId eq userId }
+            .selectAll()
+            .where { ImportTaskTable.userId eq userId }
             .toImportTasks()
     }
 
     suspend fun findById(userId: UUID, taskId: UUID): ImportTaskTO? = blockingTransaction {
         ImportTaskTable
-            .select { (ImportTaskTable.userId eq userId) and (ImportTaskTable.id eq taskId) }
+            .selectAll()
+            .where { (ImportTaskTable.userId eq userId) and (ImportTaskTable.id eq taskId) }
             .toImportTasks()
             .singleOrNull()
     }

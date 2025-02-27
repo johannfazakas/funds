@@ -10,7 +10,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.javatime.date
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.historicalpricing.service.domain.CurrencyPairHistoricalPrice
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyPairHistoricalPriceRepository
@@ -43,7 +43,8 @@ class CurrencyPairHistoricalPriceExposedRepository(
         date: LocalDate,
     ): CurrencyPairHistoricalPrice? = blockingTransaction {
         Table
-            .select {
+            .selectAll()
+            .where {
                 (Table.sourceCurrency eq sourceCurrency.value) and
                         (Table.targetCurrency eq targetCurrency.value) and
                         (Table.date eq date.toJavaLocalDate())
@@ -58,7 +59,8 @@ class CurrencyPairHistoricalPriceExposedRepository(
         dates: List<LocalDate>,
     ): List<CurrencyPairHistoricalPrice> = blockingTransaction {
         Table
-            .select {
+            .selectAll()
+            .where {
                 (Table.sourceCurrency eq sourceCurrency.value) and
                         (Table.targetCurrency eq targetCurrency.value) and
                         (Table.date inList dates.map { it.toJavaLocalDate() })

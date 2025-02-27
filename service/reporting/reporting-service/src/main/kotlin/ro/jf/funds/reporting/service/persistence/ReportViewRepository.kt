@@ -17,6 +17,7 @@ class ReportViewRepository(
         val userId = uuid("user_id")
         val name = varchar("name", 50)
         val fundId = uuid("fund_id")
+
         // TODO(Johann-11) extract that Json format parameter. version bump might allow it to be moved outside the table
         val dataConfiguration = json<ReportDataConfiguration>("data_configuration", Json { prettyPrint = true })
     }
@@ -49,7 +50,8 @@ class ReportViewRepository(
     ): ReportView? = blockingTransaction {
         ReportViewTable
             // TODO(Johann) Fix deprecated select calls
-            .select { (ReportViewTable.userId eq userId) and (ReportViewTable.name eq name) }
+            .selectAll()
+            .where { (ReportViewTable.userId eq userId) and (ReportViewTable.name eq name) }
             .map { it.toModel() }
             .singleOrNull()
     }
@@ -59,7 +61,8 @@ class ReportViewRepository(
         reportViewId: UUID,
     ): ReportView? = blockingTransaction {
         ReportViewTable
-            .select { (ReportViewTable.userId eq userId) and (ReportViewTable.id eq reportViewId) }
+            .selectAll()
+            .where { (ReportViewTable.userId eq userId) and (ReportViewTable.id eq reportViewId) }
             .map { it.toModel() }
             .singleOrNull()
     }
@@ -74,7 +77,8 @@ class ReportViewRepository(
 
     suspend fun findAll(userId: UUID): List<ReportView> = blockingTransaction {
         ReportViewTable
-            .select { ReportViewTable.userId eq userId }
+            .selectAll()
+            .where { ReportViewTable.userId eq userId }
             .map { it.toModel() }
     }
 

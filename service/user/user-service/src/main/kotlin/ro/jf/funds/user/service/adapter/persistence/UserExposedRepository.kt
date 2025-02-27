@@ -35,14 +35,16 @@ class UserExposedRepository(
 
     override suspend fun findById(id: UUID): User? = blockingTransaction {
         Table
-            .select { Table.id eq id }
+            .selectAll()
+            .where { Table.id eq id }
             .map { it.toModel() }
             .singleOrNull()
     }
 
     override suspend fun findByUsername(username: String): User? = blockingTransaction {
         Table
-            .select { Table.username eq username }
+            .selectAll()
+            .where { Table.username eq username }
             .map { it.toModel() }
             .singleOrNull()
     }

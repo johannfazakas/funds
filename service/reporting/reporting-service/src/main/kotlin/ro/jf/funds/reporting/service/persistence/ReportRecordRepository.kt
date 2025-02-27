@@ -42,7 +42,8 @@ class ReportRecordRepository(
 
     suspend fun findByViewUntil(userId: UUID, reportViewId: UUID, until: LocalDate) = blockingTransaction {
         ReportRecordTable
-            .select {
+            .selectAll()
+            .where {
                 (ReportRecordTable.userId eq userId) and
                         (ReportRecordTable.reportViewId eq reportViewId) and
                         (ReportRecordTable.date lessEq until.toJavaLocalDate())
@@ -52,7 +53,8 @@ class ReportRecordRepository(
 
     suspend fun findByViewInInterval(userId: UUID, reportViewId: UUID, interval: DateInterval) = blockingTransaction {
         ReportRecordTable
-            .select {
+            .selectAll()
+            .where {
                 (ReportRecordTable.userId eq userId) and
                         (ReportRecordTable.reportViewId eq reportViewId) and
                         (ReportRecordTable.date greaterEq interval.from.toJavaLocalDate()) and

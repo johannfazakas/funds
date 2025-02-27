@@ -55,7 +55,8 @@ class AccountTransactionRepository(
                 leftJoin AccountRecordTable
                 leftJoin TransactionPropertyTable
                 leftJoin RecordPropertyTable)
-            .select { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id eq transactionId) }
+            .selectAll()
+            .where { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id eq transactionId) }
             .toTransactions()
             .singleOrNull()
     }
@@ -70,7 +71,8 @@ class AccountTransactionRepository(
             .leftJoin(AccountRecordTable)
             .leftJoin(TransactionPropertyTable)
             .leftJoin(RecordPropertyTable)
-            .select { AccountTransactionTable.userId eq userId }
+            .selectAll()
+            .where { AccountTransactionTable.userId eq userId }
             .toTransactions()
     }
 
@@ -118,8 +120,8 @@ class AccountTransactionRepository(
             }
             .reduce { acc, op -> acc or op }
         val matchingSubquery = TransactionPropertyTable
-            .slice(TransactionPropertyTable.transactionId)
-            .select { TransactionPropertyTable.userId eq userId and transactionPropertiesMatcher }
+            .select(TransactionPropertyTable.transactionId)
+            .where { TransactionPropertyTable.userId eq userId and transactionPropertiesMatcher }
             .groupBy(TransactionPropertyTable.transactionId)
             .having { TransactionPropertyTable.key.countDistinct() eq transactionProperties.size.toLong() }
             .alias("matchingTransactionProperties")
@@ -141,8 +143,8 @@ class AccountTransactionRepository(
             }
             .reduce { acc, op -> acc or op }
         val matchingSubquery = RecordPropertyTable
-            .slice(RecordPropertyTable.transactionId)
-            .select { RecordPropertyTable.userId eq userId and recordPropertiesMatcher }
+            .select(RecordPropertyTable.transactionId)
+            .where { RecordPropertyTable.userId eq userId and recordPropertiesMatcher }
             .groupBy(RecordPropertyTable.transactionId)
             .having { RecordPropertyTable.key.countDistinct() eq recordProperties.size.toLong() }
             .alias("matchingRecordProperties")
