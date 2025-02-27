@@ -1,13 +1,12 @@
 package ro.jf.funds.reporting.service.persistence
 
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Label
-import ro.jf.funds.commons.model.asLabels
-import ro.jf.funds.commons.model.asString
+import org.jetbrains.exposed.sql.json.json
 import ro.jf.funds.commons.persistence.blockingTransaction
+import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
 import ro.jf.funds.reporting.service.domain.ReportView
 import java.util.*
 
@@ -18,33 +17,30 @@ class ReportViewRepository(
         val userId = uuid("user_id")
         val name = varchar("name", 50)
         val fundId = uuid("fund_id")
-        val currency = varchar("currency", 50)
-        val labels = varchar("labels", 100)
-//        TODO(Johann-11) add configuration in db
-//        val configuration = json("configuration", )
+        // TODO(Johann-11) extract that Json format parameter. version bump might allow it to be moved outside the table
+        val dataConfiguration = json<ReportDataConfiguration>("data_configuration", Json { prettyPrint = true })
     }
 
     suspend fun save(
         userId: UUID,
         name: String,
         fundId: UUID,
-        currency: Currency,
-        labels: List<Label>,
+        dataConfiguration: ReportDataConfiguration,
     ): ReportView = blockingTransaction {
         ReportViewTable.insert {
             it[ReportViewTable.userId] = userId
             it[ReportViewTable.name] = name
             it[ReportViewTable.fundId] = fundId
-            it[ReportViewTable.currency] = currency.value
-            it[ReportViewTable.labels] = labels.asString()
+            it[ReportViewTable.dataConfiguration] = dataConfiguration
         }.let {
             ReportView(
                 id = it[ReportViewTable.id].value,
                 userId = it[ReportViewTable.userId],
                 name = it[ReportViewTable.name],
                 fundId = it[ReportViewTable.fundId],
-                currency = Currency(it[ReportViewTable.currency]),
-                labels = it[ReportViewTable.labels].asLabels(),
+                dataConfiguration = it[ReportViewTable.dataConfiguration],
+                currency = it[ReportViewTable.dataConfiguration].currency,
+                labels = it[ReportViewTable.dataConfiguration].filter.labels ?: emptyList(),
             )
         }
     }
@@ -90,7 +86,8 @@ class ReportViewRepository(
             userId = this[ReportViewTable.userId],
             name = this[ReportViewTable.name],
             fundId = this[ReportViewTable.fundId],
-            currency = Currency(this[ReportViewTable.currency]),
-            labels = this[ReportViewTable.labels].asLabels(),
+            dataConfiguration = this[ReportViewTable.dataConfiguration],
+            currency = this[ReportViewTable.dataConfiguration].currency,
+            labels = this[ReportViewTable.dataConfiguration].filter.labels ?: emptyList(),
         )
 }
