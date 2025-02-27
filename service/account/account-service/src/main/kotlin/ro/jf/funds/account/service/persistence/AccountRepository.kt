@@ -22,20 +22,23 @@ class AccountRepository(
 
     suspend fun list(userId: UUID): List<Account> = blockingTransaction {
         AccountTable
-            .select { AccountTable.userId eq userId }
+            .selectAll()
+            .where { AccountTable.userId eq userId }
             .map { it.toModel() }
     }
 
     suspend fun findById(userId: UUID, accountId: UUID): Account? = blockingTransaction {
         AccountTable
-            .select { (AccountTable.userId eq userId) and (AccountTable.id eq accountId) }
+            .selectAll()
+            .where { (AccountTable.userId eq userId) and (AccountTable.id eq accountId) }
             .map { it.toModel() }
             .singleOrNull()
     }
 
     suspend fun findByName(userId: UUID, name: AccountName): Account? = blockingTransaction {
         AccountTable
-            .select { (AccountTable.userId eq userId) and (AccountTable.name eq name.value) }
+            .selectAll()
+            .where { (AccountTable.userId eq userId) and (AccountTable.name eq name.value) }
             .map { it.toModel() }
             .singleOrNull()
     }

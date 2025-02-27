@@ -59,7 +59,8 @@ class ReportViewTaskRepository(
 
     suspend fun findById(userId: UUID, reportViewTaskId: UUID): ReportViewTask? = blockingTransaction {
         ReportViewTaskTable
-            .select { (ReportViewTaskTable.userId eq userId) and (ReportViewTaskTable.id eq reportViewTaskId) }
+            .selectAll()
+            .where { (ReportViewTaskTable.userId eq userId) and (ReportViewTaskTable.id eq reportViewTaskId) }
             .map { it.toModel() }
             .singleOrNull()
     }

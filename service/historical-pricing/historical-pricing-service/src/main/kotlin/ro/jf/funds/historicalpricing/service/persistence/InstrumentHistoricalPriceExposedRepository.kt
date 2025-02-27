@@ -10,7 +10,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.javatime.date
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import ro.jf.funds.historicalpricing.service.domain.InstrumentHistoricalPrice
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentHistoricalPriceRepository
 import java.util.*
@@ -40,7 +40,8 @@ class InstrumentHistoricalPriceExposedRepository(
         date: LocalDate
     ): InstrumentHistoricalPrice? = blockingTransaction {
         Table
-            .select {
+            .selectAll()
+            .where {
                 (Table.symbol eq symbol) and
                         (Table.currency eq currency) and
                         (Table.date eq date.toJavaLocalDate())
@@ -55,7 +56,8 @@ class InstrumentHistoricalPriceExposedRepository(
         dates: List<LocalDate>
     ): List<InstrumentHistoricalPrice> = blockingTransaction {
         Table
-            .select {
+            .selectAll()
+            .where {
                 (Table.symbol eq symbol) and
                         (Table.currency eq currency) and
                         (Table.date inList dates.map { it.toJavaLocalDate() })

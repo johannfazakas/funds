@@ -19,20 +19,23 @@ class FundRepository(
 
     suspend fun list(userId: UUID): List<Fund> = blockingTransaction {
         FundTable
-            .select { FundTable.userId eq userId }
+            .selectAll()
+            .where { FundTable.userId eq userId }
             .toFunds()
     }
 
     suspend fun findById(userId: UUID, fundId: UUID): Fund? = blockingTransaction {
         FundTable
-            .select { (FundTable.userId eq userId) and (FundTable.id eq fundId) }
+            .selectAll()
+            .where { (FundTable.userId eq userId) and (FundTable.id eq fundId) }
             .toFunds()
             .singleOrNull()
     }
 
     suspend fun findByName(userId: UUID, name: FundName): Fund? = blockingTransaction {
         FundTable
-            .select { (FundTable.userId eq userId) and (FundTable.name eq name.value) }
+            .selectAll()
+            .where { (FundTable.userId eq userId) and (FundTable.name eq name.value) }
             .toFunds()
             .singleOrNull()
     }
