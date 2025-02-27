@@ -37,7 +37,7 @@ class ReportDataService(
             .findByViewUntil(userId, reportViewId, granularInterval.interval.to)
         log.info { "Found ${reportRecords.size} records for report $reportViewId in interval ${granularInterval.interval}" }
         val catalog = RecordCatalog(reportRecords, granularInterval)
-        val conversions = getConversions(userId, reportView.currency, reportRecords, granularInterval)
+        val conversions = getConversions(userId, reportView.dataConfiguration.currency, reportRecords, granularInterval)
 
         val dataBuckets = granularInterval
             .generateBucketedData(
@@ -53,10 +53,11 @@ class ReportDataService(
         interval: DateInterval, catalog: RecordCatalog, reportView: ReportView, conversions: ConversionsResponse,
     ): ReportDataAggregate {
         return ReportDataAggregate(
-            amount = getNet(catalog.getRecordsByBucket(interval), reportView.labels),
+            // TODO(Johann-11) is ?: emptyList() required?
+            amount = getNet(catalog.getRecordsByBucket(interval), reportView.dataConfiguration.filter.labels ?: emptyList()),
             value = getValueReport(
                 interval,
-                reportView.currency,
+                reportView.dataConfiguration.currency,
                 getAmountByUnit(catalog.previousRecords),
                 catalog.getRecordsByBucket(interval),
                 conversions
@@ -72,10 +73,11 @@ class ReportDataService(
         conversions: ConversionsResponse,
     ): ReportDataAggregate {
         return ReportDataAggregate(
-            amount = getNet(catalog.getRecordsByBucket(interval), reportView.labels),
+            // TODO(Johann-11) is ?: emptyList() required?
+            amount = getNet(catalog.getRecordsByBucket(interval), reportView.dataConfiguration.filter.labels ?: emptyList()),
             value = getValueReport(
                 interval,
-                reportView.currency,
+                reportView.dataConfiguration.currency,
                 previous.value.endAmountByUnit,
                 catalog.getRecordsByBucket(interval),
                 conversions

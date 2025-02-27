@@ -39,8 +39,6 @@ class ReportViewRepository(
                 name = it[ReportViewTable.name],
                 fundId = it[ReportViewTable.fundId],
                 dataConfiguration = it[ReportViewTable.dataConfiguration],
-                currency = it[ReportViewTable.dataConfiguration].currency,
-                labels = it[ReportViewTable.dataConfiguration].filter.labels ?: emptyList(),
             )
         }
     }
@@ -87,7 +85,5 @@ class ReportViewRepository(
             name = this[ReportViewTable.name],
             fundId = this[ReportViewTable.fundId],
             dataConfiguration = this[ReportViewTable.dataConfiguration],
-            currency = this[ReportViewTable.dataConfiguration].currency,
-            labels = this[ReportViewTable.dataConfiguration].filter.labels ?: emptyList(),
         )
 }

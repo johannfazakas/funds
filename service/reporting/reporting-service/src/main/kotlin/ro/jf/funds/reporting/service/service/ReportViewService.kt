@@ -37,8 +37,6 @@ class ReportViewService(
             payload.name,
             payload.fundId,
             payload.dataConfiguration.toModel()
-//            payload.dataConfiguration.currency,
-//            payload.dataConfiguration.filter.labels ?: emptyList()
         )
 
         val transactions = fundTransactionSdk.listTransactions(userId, payload.fundId).items
