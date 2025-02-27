@@ -93,7 +93,6 @@ class ReportingApiTest {
             )
         whenever(fundTransactionSdk.listTransactions(userId, expenseFundId)).thenReturn(ListTO.of(transaction))
 
-
         val response = httpClient.post("/funds-api/reporting/v1/report-views/tasks") {
             header(USER_ID_HEADER, userId.toString())
             contentType(ContentType.Application.Json)
