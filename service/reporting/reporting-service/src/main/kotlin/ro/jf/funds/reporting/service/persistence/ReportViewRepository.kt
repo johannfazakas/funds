@@ -10,6 +10,8 @@ import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
 import ro.jf.funds.reporting.service.domain.ReportView
 import java.util.*
 
+private val jsonBConfig = Json { prettyPrint = true }
+
 class ReportViewRepository(
     private val database: Database,
 ) {
@@ -17,9 +19,7 @@ class ReportViewRepository(
         val userId = uuid("user_id")
         val name = varchar("name", 50)
         val fundId = uuid("fund_id")
-
-        // TODO(Johann-11) extract that Json format parameter. version bump might allow it to be moved outside the table
-        val dataConfiguration = json<ReportDataConfiguration>("data_configuration", Json { prettyPrint = true })
+        val dataConfiguration = json<ReportDataConfiguration>("data_configuration", jsonBConfig)
     }
 
     suspend fun save(

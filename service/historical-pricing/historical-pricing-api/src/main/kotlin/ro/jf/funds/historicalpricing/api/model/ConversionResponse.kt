@@ -19,6 +19,10 @@ data class ConversionResponse(
 data class ConversionsResponse(
     val conversions: List<ConversionResponse>,
 ) {
+    companion object {
+        fun empty() = ConversionsResponse(emptyList())
+    }
+
     private val conversionsByRequest by lazy {
         conversions.associateBy({ ConversionRequest(it.sourceUnit, it.targetUnit, it.date) }, { it.rate })
     }

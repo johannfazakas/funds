@@ -103,8 +103,16 @@ class ReportingApiTest {
                     dataConfiguration = ReportDataConfigurationTO(
                         currency = RON,
                         filter = RecordFilterTO(labels),
-                        // TODO(Johann-11) add some groups here
-                        groups = null,
+                        groups = listOf(
+                            ReportGroupTO(
+                                name = "Need group",
+                                filter = RecordFilterTO.byLabels("need")
+                            ),
+                            ReportGroupTO(
+                                name = "Want group",
+                                filter = RecordFilterTO.byLabels("want")
+                            )
+                        ),
                         features = ReportDataFeaturesConfigurationTO(
                             net = NetReportFeatureTO(enabled = true, applyFilter = true),
                             valueReport = GenericReportFeatureTO(true)
@@ -146,6 +154,11 @@ class ReportingApiTest {
             createReportView as ReportView
             assertThat(createReportView.name).isEqualTo(expenseReportName)
             assertThat(createReportView.fundId).isEqualTo(expenseFundId)
+            assertThat(createReportView.dataConfiguration.currency).isEqualTo(RON)
+            assertThat(createReportView.dataConfiguration.filter.labels).containsExactlyElementsOf(labels)
+            assertThat(createReportView.dataConfiguration.groups).hasSize(2)
+            assertThat(createReportView.dataConfiguration.features.net.enabled).isTrue()
+            assertThat(createReportView.dataConfiguration.features.net.applyFilter).isTrue()
         }
     }
 
