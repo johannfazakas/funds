@@ -29,8 +29,8 @@ data class RecordFilterTO(
 
 @Serializable
 data class ReportDataFeaturesConfigurationTO(
-    val net: NetReportFeatureTO,
-    val valueReport: GenericReportFeatureTO,
+    val net: NetReportFeatureTO = NetReportFeatureTO(enabled = false, applyFilter = false),
+    val valueReport: GenericReportFeatureTO = GenericReportFeatureTO(false),
 )
 
 @Serializable

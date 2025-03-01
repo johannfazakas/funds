@@ -5,7 +5,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.datetime.LocalDate
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
 import okhttp3.MediaType.Companion.toMediaType
@@ -30,6 +29,9 @@ class HistoricalPricingSdk(
     private val blockingHttpClient = OkHttpClient()
 
     suspend fun convert(userId: UUID, request: ConversionsRequest): ConversionsResponse {
+        if (request.conversions.isEmpty()) {
+            return ConversionsResponse.empty()
+        }
         val response = httpClient.post("${baseUrl}/funds-api/historical-pricing/v1/conversions") {
             headers {
                 append(USER_ID_HEADER, userId.toString())

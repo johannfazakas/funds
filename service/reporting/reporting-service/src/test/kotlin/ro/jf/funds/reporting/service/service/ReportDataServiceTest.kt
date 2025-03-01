@@ -108,6 +108,8 @@ class ReportDataServiceTest {
             .thenReturn(
                 ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration)
             )
+        whenever(historicalPricingSdk.convert(eq(userId), eq(ConversionsRequest(emptyList()))))
+            .thenReturn(ConversionsResponse(emptyList()))
         val to = LocalDate.parse("2021-11-25")
         val interval = DateInterval(from = LocalDate.parse("2021-09-02"), to = to)
         whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, to))
