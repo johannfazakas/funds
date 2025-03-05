@@ -13,12 +13,9 @@ fun ReportData.toTO(): ReportDataTO {
             ReportDataItemTO(
                 timeBucket = dataItem.timeBucket,
                 amount = dataItem.aggregate.amount,
-                value = ValueReportTO(
-                    start = dataItem.aggregate.value.start,
-                    end = dataItem.aggregate.value.end,
-                    min = dataItem.aggregate.value.min,
-                    max = dataItem.aggregate.value.max
-                ),
+                value = dataItem.aggregate.value?.let {
+                    ValueReportTO(start = it.start, end = it.end, min = it.min, max = it.max)
+                },
             )
         }
     )
