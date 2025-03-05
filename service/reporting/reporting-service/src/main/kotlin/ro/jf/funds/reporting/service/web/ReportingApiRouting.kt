@@ -10,10 +10,12 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.web.userId
 import ro.jf.funds.reporting.api.model.*
+import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.service.ReportDataService
 import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
+import ro.jf.funds.reporting.service.web.mapper.toDomain
 import ro.jf.funds.reporting.service.web.mapper.toTO
 import java.util.*
 
@@ -30,7 +32,7 @@ fun Routing.reportingApiRouting(
             val request = call.receive<CreateReportViewTO>()
             log.info { "Create report view request for user $userId: $request" }
             val response = reportViewTaskService
-                .triggerReportViewTask(userId, request)
+                .triggerReportViewTask(request.toDomain(userId))
                 .toTO { reportViewId -> reportViewService.getReportView(userId, reportViewId) }
             call.respond(status = HttpStatusCode.Accepted, message = response)
         }

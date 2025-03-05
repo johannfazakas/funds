@@ -50,42 +50,28 @@ class ReportViewServiceTest {
     private val reportDataConfiguration = ReportDataConfiguration(
         currency = RON,
         filter = RecordFilter(labels = allLabels),
+        // TODO(Johann-11)
         groups = null,
         features = ReportDataFeaturesConfiguration(
             net = NetReportFeature(enabled = true, applyFilter = true),
             valueReport = GenericReportFeature(enabled = true),
         ),
     )
+    private val reportViewCommand = CreateReportViewCommand(
+        userId = userId,
+        name = reportViewName,
+        fundId = expensesFundId,
+        dataConfiguration = reportDataConfiguration
+    )
 
     @Test
     fun `create report view should create report view`(): Unit = runBlocking {
-        // TODO(Johann-11) will this be required? or should it be replaced by model?
-        val request =
-            CreateReportViewTO(
-                name = reportViewName,
-                fundId = expensesFundId,
-                dataConfiguration = ReportDataConfigurationTO(
-                    currency = RON,
-                    filter = RecordFilterTO(labels = allLabels),
-                    // TODO(Johann-11) should also create it with groups
-                    groups = null,
-                    features = ReportDataFeaturesConfigurationTO(
-                        net = NetReportFeatureTO(enabled = true, applyFilter = true),
-                        valueReport = GenericReportFeatureTO(enabled = true),
-                    ),
-                )
-            )
-
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
-        whenever(
-            reportViewRepository.save(userId, reportViewName, expensesFundId, reportDataConfiguration)
-        )
-            .thenReturn(
-                ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration)
-            )
+        whenever(reportViewRepository.save(reportViewCommand))
+            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration))
         whenever(fundTransactionSdk.listTransactions(userId, expensesFundId)).thenReturn(ListTO.of())
 
-        val reportView = reportViewService.createReportView(userId, request)
+        val reportView = reportViewService.createReportView(userId, reportViewCommand)
 
         assertThat(reportView.id).isEqualTo(reportViewId)
         assertThat(reportView.userId).isEqualTo(userId)
@@ -93,32 +79,13 @@ class ReportViewServiceTest {
         assertThat(reportView.fundId).isEqualTo(expensesFundId)
 
         verify(reportViewRepository, times(1))
-            .save(userId, reportViewName, expensesFundId, reportDataConfiguration)
+            .save(reportViewCommand)
     }
 
     @Test
     fun `create report view should store single fund report records`(): Unit = runBlocking {
-        val request =
-            CreateReportViewTO(
-                name = reportViewName,
-                fundId = expensesFundId,
-                dataConfiguration = ReportDataConfigurationTO(
-                    currency = RON,
-                    filter = RecordFilterTO(labels = allLabels),
-                    // TODO(Johann-11)
-                    groups = null,
-                    features = ReportDataFeaturesConfigurationTO(
-                        net = NetReportFeatureTO(enabled = true, applyFilter = true),
-                        valueReport = GenericReportFeatureTO(enabled = true),
-                    ),
-                )
-            )
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
-        whenever(
-            reportViewRepository.save(
-                userId, reportViewName, expensesFundId, reportDataConfiguration
-            )
-        )
+        whenever(reportViewRepository.save(reportViewCommand))
             .thenReturn(
                 ReportView(
                     reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration
@@ -146,7 +113,7 @@ class ReportViewServiceTest {
         whenever(fundTransactionSdk.listTransactions(userId, expensesFundId))
             .thenReturn(ListTO.of(transaction1, transaction2, transaction3))
 
-        val reportView = reportViewService.createReportView(userId, request)
+        val reportView = reportViewService.createReportView(userId, reportViewCommand)
 
         val commandCaptor = argumentCaptor<List<CreateReportRecordCommand>>()
         verify(reportRecordRepository, times(1)).saveAll(commandCaptor.capture())
@@ -163,27 +130,8 @@ class ReportViewServiceTest {
 
     @Test
     fun `create report view should store single fund report records with conversions`(): Unit = runBlocking {
-        val request =
-            CreateReportViewTO(
-                name = reportViewName,
-                fundId = expensesFundId,
-                dataConfiguration = ReportDataConfigurationTO(
-                    currency = RON,
-                    filter = RecordFilterTO(labels = allLabels),
-                    // TODO(Johann-11)
-                    groups = null,
-                    features = ReportDataFeaturesConfigurationTO(
-                        net = NetReportFeatureTO(enabled = true, applyFilter = true),
-                        valueReport = GenericReportFeatureTO(enabled = true),
-                    ),
-                )
-            )
         whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
-        whenever(
-            reportViewRepository.save(
-                userId, reportViewName, expensesFundId, reportDataConfiguration
-            )
-        )
+        whenever(reportViewRepository.save(reportViewCommand))
             .thenReturn(
                 ReportView(
                     reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration
@@ -203,7 +151,7 @@ class ReportViewServiceTest {
         whenever(historicalPricingSdk.convert(userId, conversionsRequest))
             .thenReturn(ConversionsResponse(listOf(ConversionResponse(EUR, RON, dateTime1.date, BigDecimal("5.0")))))
 
-        val reportView = reportViewService.createReportView(userId, request)
+        val reportView = reportViewService.createReportView(userId, reportViewCommand)
 
         val commandCaptor = argumentCaptor<List<CreateReportRecordCommand>>()
         verify(reportRecordRepository, times(1)).saveAll(commandCaptor.capture())
@@ -222,21 +170,6 @@ class ReportViewServiceTest {
 
     @Test
     fun `create report view with same name should raise error`(): Unit = runBlocking {
-        val request =
-            CreateReportViewTO(
-                name = reportViewName,
-                fundId = expensesFundId,
-                dataConfiguration = ReportDataConfigurationTO(
-                    currency = RON,
-                    filter = RecordFilterTO(labels = allLabels),
-                    // TODO(Johann-11)
-                    groups = null,
-                    features = ReportDataFeaturesConfigurationTO(
-                        net = NetReportFeatureTO(enabled = true, applyFilter = true),
-                        valueReport = GenericReportFeatureTO(enabled = true),
-                    ),
-                )
-            )
         whenever(reportViewRepository.findByName(userId, reportViewName))
             .thenReturn(
                 ReportView(
@@ -244,11 +177,9 @@ class ReportViewServiceTest {
                 )
             )
 
-        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, request) } }
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
             .isInstanceOf(ReportingException.ReportViewAlreadyExists::class.java)
 
-        verify(reportViewRepository, never()).save(
-            userId, reportViewName, expensesFundId, reportDataConfiguration
-        )
+        verify(reportViewRepository, never()).save(reportViewCommand)
     }
 }

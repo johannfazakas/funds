@@ -15,8 +15,7 @@ import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
-import ro.jf.funds.reporting.api.model.*
-import ro.jf.funds.reporting.service.domain.ReportViewTask
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
@@ -56,16 +55,17 @@ class CreateReportViewRequestHandlerTest {
     @Test
     fun `handle create report view request`(): Unit = runBlocking {
         val initialTask = reportViewTaskRepository.create(userId)
-        val payload = CreateReportViewTO(
+        val payload = CreateReportViewCommand(
+            userId = userId,
             name = viewName,
             fundId = fundId,
-            dataConfiguration = ReportDataConfigurationTO(
+            dataConfiguration = ReportDataConfiguration(
                 currency = Currency.RON,
-                filter = RecordFilterTO(labels),
+                filter = RecordFilter(labels),
                 groups = null,
-                features = ReportDataFeaturesConfigurationTO(
-                    net = NetReportFeatureTO(true, true),
-                    valueReport = GenericReportFeatureTO(true)
+                features = ReportDataFeaturesConfiguration(
+                    net = NetReportFeature(true, true),
+                    valueReport = GenericReportFeature(true)
                 )
             )
         )

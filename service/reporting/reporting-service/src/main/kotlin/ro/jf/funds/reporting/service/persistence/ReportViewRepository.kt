@@ -6,6 +6,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.json.json
 import ro.jf.funds.commons.persistence.blockingTransaction
+import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
 import ro.jf.funds.reporting.service.domain.ReportView
 import java.util.*
@@ -23,16 +24,13 @@ class ReportViewRepository(
     }
 
     suspend fun save(
-        userId: UUID,
-        name: String,
-        fundId: UUID,
-        dataConfiguration: ReportDataConfiguration,
+        command: CreateReportViewCommand,
     ): ReportView = blockingTransaction {
         ReportViewTable.insert {
-            it[ReportViewTable.userId] = userId
-            it[ReportViewTable.name] = name
-            it[ReportViewTable.fundId] = fundId
-            it[ReportViewTable.dataConfiguration] = dataConfiguration
+            it[ReportViewTable.userId] = command.userId
+            it[ReportViewTable.name] = command.name
+            it[ReportViewTable.fundId] = command.fundId
+            it[ReportViewTable.dataConfiguration] = command.dataConfiguration
         }.let {
             ReportView(
                 id = it[ReportViewTable.id].value,
