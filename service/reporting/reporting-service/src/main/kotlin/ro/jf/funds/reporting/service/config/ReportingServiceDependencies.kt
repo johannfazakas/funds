@@ -13,7 +13,7 @@ import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
-import ro.jf.funds.reporting.api.model.CreateReportViewTO
+import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
@@ -50,7 +50,7 @@ private val Application.eventProducerDependencies
     get() = module {
         single<TopicSupplier> { TopicSupplier(environment.getEnvironmentProperty()) }
         single<ProducerProperties> { ProducerProperties.fromEnv(environment) }
-        single<Producer<CreateReportViewTO>> {
+        single<Producer<CreateReportViewCommand>> {
             createProducer(get(), get<TopicSupplier>().topic(REPORTING_DOMAIN, REPORT_VIEW_REQUEST))
         }
     }
@@ -77,7 +77,7 @@ private val Application.serviceDependencies
 private val Application.eventConsumerDependencies
     get() = module {
         single<ConsumerProperties> { ConsumerProperties.fromEnv(environment) }
-        single<Consumer<CreateReportViewTO>> {
+        single<Consumer<CreateReportViewCommand>> {
             createConsumer(
                 get(),
                 get<TopicSupplier>().topic(REPORTING_DOMAIN, REPORT_VIEW_REQUEST),

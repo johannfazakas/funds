@@ -78,6 +78,12 @@ class ReportingApiTest {
             .withNet(enabled = true, applyFilter = true)
             .withValueReport(enabled = true)
     )
+    private val reportViewCommand = CreateReportViewCommand(
+        userId = userId,
+        name = expenseReportName,
+        fundId = expenseFundId,
+        dataConfiguration = reportDataConfiguration
+    )
 
     @Test
     fun `create report view should create it async`() = testApplication {
@@ -128,14 +134,14 @@ class ReportingApiTest {
         assertThat(reportViewTaskTO).isInstanceOf(ReportViewTaskTO.InProgress::class.java)
         reportViewTaskTO as ReportViewTaskTO.InProgress
 
-        val createReportViewTOConsumer = createKafkaConsumer(consumerProperties)
-        createReportViewTOConsumer.subscribe(listOf(createReportViewTopic.value))
+        val createReportViewCommandConsumer = createKafkaConsumer(consumerProperties)
+        createReportViewCommandConsumer.subscribe(listOf(createReportViewTopic.value))
 
         await().atMost(ofSeconds(5)).untilAsserted {
-            val createReportViewTO = createReportViewTOConsumer.poll(ofSeconds(1))
-                .map { it.asEvent<CreateReportViewTO>() }
+            val createReportViewCommand = createReportViewCommandConsumer.poll(ofSeconds(1))
+                .map { it.asEvent<CreateReportViewCommand>() }
                 .firstOrNull { it.payload.fundId == expenseFundId }
-            assertThat(createReportViewTO).isNotNull
+            assertThat(createReportViewCommand).isNotNull
         }
 
         await().atMost(ofSeconds(10)).untilAsserted {
@@ -168,7 +174,7 @@ class ReportingApiTest {
         val httpClient = createJsonHttpClient()
         val reportViewTask = reportViewTaskRepository.create(userId)
         val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, reportDataConfiguration)
+            reportViewRepository.save(reportViewCommand)
         reportViewTaskRepository.complete(userId, reportViewTask.taskId, reportView.id)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/tasks/${reportViewTask.taskId}") {
@@ -190,8 +196,7 @@ class ReportingApiTest {
     fun `get report view`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
-        val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, reportDataConfiguration)
+        val reportView = reportViewRepository.save(reportViewCommand)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}") {
             header(USER_ID_HEADER, userId.toString())
@@ -209,8 +214,7 @@ class ReportingApiTest {
     fun `list report views`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
-        val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, reportDataConfiguration)
+        val reportView = reportViewRepository.save(reportViewCommand)
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
@@ -230,8 +234,7 @@ class ReportingApiTest {
     fun `get report view data`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
-        val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, reportDataConfiguration)
+        val reportView = reportViewRepository.save(reportViewCommand)
         val conversions = mock<ConversionsResponse>()
         whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
@@ -281,8 +284,7 @@ class ReportingApiTest {
     fun `get report view without granularity`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
-        val reportView =
-            reportViewRepository.save(userId, expenseReportName, expenseFundId, reportDataConfiguration)
+        val reportView = reportViewRepository.save(reportViewCommand)
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
             header(USER_ID_HEADER, userId.toString())
             parameter("from", "2021-01-01")

@@ -10,9 +10,10 @@ import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
-import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.ReportDataConfigurationTO
-import ro.jf.funds.reporting.service.domain.*
+import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
+import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
+import ro.jf.funds.reporting.service.domain.ReportView
+import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import java.math.BigDecimal
@@ -26,18 +27,13 @@ class ReportViewService(
     private val fundTransactionSdk: FundTransactionSdk,
     private val historicalPricingSdk: HistoricalPricingSdk,
 ) {
-    suspend fun createReportView(userId: UUID, payload: CreateReportViewTO): ReportView {
+    suspend fun createReportView(userId: UUID, payload: CreateReportViewCommand): ReportView {
         log.info { "Create report view for user $userId: $payload" }
 
         reportViewRepository.findByName(userId, payload.name)?.let {
             throw ReportingException.ReportViewAlreadyExists(userId, payload.name)
         }
-        val reportView = reportViewRepository.save(
-            userId,
-            payload.name,
-            payload.fundId,
-            payload.dataConfiguration.toModel()
-        )
+        val reportView = reportViewRepository.save(payload)
 
         val transactions = fundTransactionSdk.listTransactions(userId, payload.fundId).items
         persistReportRecords(userId, reportView.id, transactions, payload.fundId, payload.dataConfiguration.currency)
@@ -120,16 +116,4 @@ class ReportViewService(
     else
         conversions.getRate(record.unit, currency, date)
             ?: throw ReportingException.ReportRecordConversionRateNotFound(record.id)
-
-    // TODO(Johann-11) maybe TOs could be removed completely from the service. but I'll probably need serialization annotations on the model
-    private fun ReportDataConfigurationTO.toModel() =
-        ReportDataConfiguration(
-            currency = currency,
-            filter = RecordFilter(filter.labels),
-            groups = groups?.map { ReportGroup(it.name, RecordFilter(it.filter.labels)) },
-            features = ReportDataFeaturesConfiguration(
-                net = NetReportFeature(features.net.enabled, features.net.applyFilter),
-                valueReport = GenericReportFeature(features.valueReport.enabled),
-            ),
-        )
 }
