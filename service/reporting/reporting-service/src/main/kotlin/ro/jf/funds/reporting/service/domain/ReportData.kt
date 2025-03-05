@@ -17,8 +17,8 @@ data class BucketData<D>(
 )
 
 data class ReportDataAggregate(
-    val amount: BigDecimal,
-    val value: ValueReport,
+    val amount: BigDecimal?,
+    val value: ValueReport?,
 )
 
 data class ValueReport(

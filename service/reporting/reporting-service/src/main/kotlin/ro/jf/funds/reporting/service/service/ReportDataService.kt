@@ -3,7 +3,6 @@ package ro.jf.funds.reporting.service.service
 import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Label
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
@@ -53,14 +52,16 @@ class ReportDataService(
         interval: DateInterval, catalog: RecordCatalog, reportView: ReportView, conversions: ConversionsResponse,
     ): ReportDataAggregate {
         return ReportDataAggregate(
-            // TODO(Johann-11) is ?: emptyList() required?
-            amount = getNet(catalog.getRecordsByBucket(interval), reportView.dataConfiguration.filter.labels ?: emptyList()),
+            amount = getNet(
+                catalog.getRecordsByBucket(interval),
+                reportView.dataConfiguration
+            ),
             value = getValueReport(
                 interval,
-                reportView.dataConfiguration.currency,
                 getAmountByUnit(catalog.previousRecords),
                 catalog.getRecordsByBucket(interval),
-                conversions
+                conversions,
+                reportView.dataConfiguration
             )
         )
     }
@@ -73,14 +74,16 @@ class ReportDataService(
         conversions: ConversionsResponse,
     ): ReportDataAggregate {
         return ReportDataAggregate(
-            // TODO(Johann-11) is ?: emptyList() required?
-            amount = getNet(catalog.getRecordsByBucket(interval), reportView.dataConfiguration.filter.labels ?: emptyList()),
+            amount = getNet(
+                catalog.getRecordsByBucket(interval),
+                reportView.dataConfiguration
+            ),
             value = getValueReport(
                 interval,
-                reportView.dataConfiguration.currency,
-                previous.value.endAmountByUnit,
+                previous.value?.endAmountByUnit ?: ByUnit(emptyMap()),
                 catalog.getRecordsByBucket(interval),
-                conversions
+                conversions,
+                reportView.dataConfiguration
             )
         )
     }
@@ -111,26 +114,39 @@ class ReportDataService(
         return historicalPricingSdk.convert(userId, conversionsRequest)
     }
 
-    private fun getNet(records: ByUnit<List<ReportRecord>>, labels: List<Label>): BigDecimal {
+    private fun getNet(
+        records: ByUnit<List<ReportRecord>>,
+        reportDataConfiguration: ReportDataConfiguration,
+    ): BigDecimal? {
+        if (!reportDataConfiguration.features.net.enabled) {
+            return null
+        }
+        val recordFilter: (ReportRecord) -> Boolean = if (reportDataConfiguration.features.net.applyFilter)
+            { record -> record.labels.any { label -> label in (reportDataConfiguration.filter.labels ?: emptyList()) } }
+        else
+            { _ -> true }
         return records
             .flatMap { it.value }
-            .filter { it.labels.any { label -> label in labels } }
+            .filter(recordFilter)
             // TODO(Johann) is this correct?
             .sumOf { it.reportCurrencyAmount }
     }
 
     private fun getValueReport(
         bucket: DateInterval,
-        targetUnit: Currency,
         startAmountByUnit: ByUnit<BigDecimal>,
         bucketRecords: ByUnit<List<ReportRecord>>,
         conversions: ConversionsResponse,
-    ): ValueReport {
+        reportDataConfiguration: ReportDataConfiguration,
+    ): ValueReport? {
+        if (!reportDataConfiguration.features.valueReport.enabled) {
+            return null
+        }
         val amountByUnit = getAmountByUnit(bucketRecords)
         val endAmountByUnit = amountByUnit + startAmountByUnit
 
-        val startValue = startAmountByUnit.valueAt(bucket.from, targetUnit, conversions)
-        val endValue = endAmountByUnit.valueAt(bucket.to, targetUnit, conversions)
+        val startValue = startAmountByUnit.valueAt(bucket.from, reportDataConfiguration.currency, conversions)
+        val endValue = endAmountByUnit.valueAt(bucket.to, reportDataConfiguration.currency, conversions)
 
         return ValueReport(startValue, endValue, BigDecimal.ZERO, BigDecimal.ZERO, endAmountByUnit)
     }

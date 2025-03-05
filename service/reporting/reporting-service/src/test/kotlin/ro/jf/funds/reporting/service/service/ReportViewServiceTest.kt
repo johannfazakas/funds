@@ -19,7 +19,6 @@ import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
-import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
@@ -50,7 +49,7 @@ class ReportViewServiceTest {
     private val reportDataConfiguration = ReportDataConfiguration(
         currency = RON,
         filter = RecordFilter(labels = allLabels),
-        // TODO(Johann-11)
+        // TODO(Johann-12)
         groups = null,
         features = ReportDataFeaturesConfiguration(
             net = NetReportFeature(enabled = true, applyFilter = true),
