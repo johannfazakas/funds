@@ -135,7 +135,7 @@ class ReportingSdkTest {
             data = listOf(
                 ReportDataItemTO(
                     timeBucket = DateInterval(LocalDate(2024, 11, 1), LocalDate(2024, 11, 30)),
-                    amount = BigDecimal("200.0"),
+                    net = BigDecimal("200.0"),
                     value = ValueReportTO(
                         start = BigDecimal("210.0"),
                         end = BigDecimal("200.0"),
@@ -145,7 +145,7 @@ class ReportingSdkTest {
                 ),
                 ReportDataItemTO(
                     timeBucket = DateInterval(LocalDate(2024, 12, 1), LocalDate(2024, 12, 31)),
-                    amount = BigDecimal("300.0"),
+                    net = BigDecimal("300.0"),
                     value = ValueReportTO(
                         start = BigDecimal("310.0"),
                         end = BigDecimal("300.0"),
@@ -155,7 +155,7 @@ class ReportingSdkTest {
                 ),
                 ReportDataItemTO(
                     timeBucket = DateInterval(LocalDate(2025, 1, 1), LocalDate(2025, 1, 31)),
-                    amount = BigDecimal("400.0"),
+                    net = BigDecimal("400.0"),
                     value = ValueReportTO(
                         start = BigDecimal("410.0"),
                         end = BigDecimal("400.0"),
@@ -448,12 +448,12 @@ class ReportingSdkTest {
                                                 put("from", JsonPrimitive(item.timeBucket.from.toString()))
                                                 put("to", JsonPrimitive(item.timeBucket.to.toString()))
                                             })
-                                            put("amount", JsonPrimitive(item.amount.toString()))
+                                            put("net", JsonPrimitive(item.net.toString()))
                                             put("value", buildJsonObject {
-                                                put("start", JsonPrimitive(item.value.start.toString()))
-                                                put("end", JsonPrimitive(item.value.end.toString()))
-                                                put("min", JsonPrimitive(item.value.min.toString()))
-                                                put("max", JsonPrimitive(item.value.max.toString()))
+                                                put("start", JsonPrimitive(item.value?.start.toString()))
+                                                put("end", JsonPrimitive(item.value?.end.toString()))
+                                                put("min", JsonPrimitive(item.value?.min.toString()))
+                                                put("max", JsonPrimitive(item.value?.max.toString()))
                                             })
                                         }
                                     )

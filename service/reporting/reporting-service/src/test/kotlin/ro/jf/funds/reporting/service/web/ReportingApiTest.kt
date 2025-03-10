@@ -266,7 +266,7 @@ class ReportingApiTest {
             .isEqualTo(
                 ReportDataItemTO(
                     timeBucket = DateInterval(LocalDate(2021, 1, 1), LocalDate(2021, 1, 1)),
-                    amount = BigDecimal("0.0"),
+                    net = BigDecimal("0.0"),
                     value = ValueReportTO(BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"))
                 )
             )
@@ -274,7 +274,7 @@ class ReportingApiTest {
             .isEqualTo(
                 ReportDataItemTO(
                     timeBucket = DateInterval(LocalDate(2021, 1, 2), LocalDate(2021, 1, 2)),
-                    amount = BigDecimal("-75.0"),
+                    net = BigDecimal("-75.0"),
                     value = ValueReportTO(BigDecimal("0.0"), BigDecimal("-75.0"), BigDecimal("0.0"), BigDecimal("0.0"))
                 )
             )

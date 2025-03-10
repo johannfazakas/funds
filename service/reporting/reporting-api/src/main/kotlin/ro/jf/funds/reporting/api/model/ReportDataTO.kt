@@ -17,9 +17,8 @@ data class ReportDataTO(
 @Serializable
 data class ReportDataItemTO(
     val timeBucket: DateInterval,
-    // TODO(Johann) should also have a `net` and a `groupedDataNet`
     @Serializable(with = BigDecimalSerializer::class)
-    val amount: BigDecimal?,
+    val net: BigDecimal?,
     val value: ValueReportTO?,
 )
 
