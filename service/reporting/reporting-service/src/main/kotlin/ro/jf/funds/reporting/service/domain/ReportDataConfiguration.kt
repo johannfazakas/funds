@@ -30,14 +30,19 @@ data class RecordFilter(
     companion object {
         fun byLabels(vararg labels: String): RecordFilter = RecordFilter(labels.map(::Label))
     }
+
+    fun test(reportRecord: ReportRecord): Boolean =
+        labels?.any { reportRecord.labels.contains(it) } ?: true
 }
 
 @Serializable
 data class ReportDataFeaturesConfiguration(
     val net: NetReportFeature = NetReportFeature(enabled = false, applyFilter = false),
+    val groupedNet: GenericReportFeature = GenericReportFeature(enabled = false),
     val valueReport: GenericReportFeature = GenericReportFeature(enabled = false),
 ) {
     fun withNet(enabled: Boolean, applyFilter: Boolean) = copy(net = NetReportFeature(enabled, applyFilter))
+    fun withGroupedNet(enabled: Boolean) = copy(groupedNet = GenericReportFeature(enabled))
     fun withValueReport(enabled: Boolean) = copy(valueReport = GenericReportFeature(enabled))
 }
 

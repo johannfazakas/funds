@@ -20,6 +20,14 @@ data class ReportDataItemTO(
     @Serializable(with = BigDecimalSerializer::class)
     val net: BigDecimal?,
     val value: ValueReportTO?,
+    val groups: List<ReportDataGroupItemTO>?,
+)
+
+@Serializable
+data class ReportDataGroupItemTO(
+    val group: String,
+    @Serializable(with = BigDecimalSerializer::class)
+    val net: BigDecimal?,
 )
 
 @Serializable

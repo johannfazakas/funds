@@ -33,6 +33,7 @@ class ReportViewService(
         reportViewRepository.findByName(userId, payload.name)?.let {
             throw ReportingException.ReportViewAlreadyExists(userId, payload.name)
         }
+        // TODO(Johann-12) don't allow creating report view with groupedNet without grouping
         val reportView = reportViewRepository.save(payload)
 
         val transactions = fundTransactionSdk.listTransactions(userId, payload.fundId).items

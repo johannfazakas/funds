@@ -43,7 +43,7 @@ class ReportDataServiceTest {
     private val allLabels = labelsOf("need", "want")
 
     @Test
-    fun `get expense report view data grouped by months`(): Unit = runBlocking {
+    fun `get net data grouped by months`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
             filter = RecordFilter(labels = allLabels),
@@ -53,9 +53,7 @@ class ReportDataServiceTest {
                 .withValueReport(enabled = true),
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(
-                ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration)
-            )
+            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration))
         val interval = DateInterval(from = LocalDate.parse("2021-09-03"), to = LocalDate.parse("2021-11-25"))
         whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
             .thenReturn(
@@ -92,6 +90,61 @@ class ReportDataServiceTest {
         assertThat(data.data[2].timeBucket)
             .isEqualTo(DateInterval(LocalDate.parse("2021-11-01"), LocalDate.parse("2021-11-25")))
         assertThat(data.data[2].aggregate.net).isEqualByComparingTo(BigDecimal.ZERO)
+    }
+
+    @Test
+    fun `get grouped net data grouped by months`(): Unit = runBlocking {
+        val reportDataConfiguration = ReportDataConfiguration(
+            currency = RON,
+            filter = RecordFilter(labels = allLabels),
+            groups = listOf(
+                ReportGroup("Need", RecordFilter.byLabels("need")),
+                ReportGroup("Want", RecordFilter.byLabels("want"))
+            ),
+            features = ReportDataFeaturesConfiguration()
+                .withGroupedNet(enabled = true)
+        )
+        whenever(reportViewRepository.findById(userId, reportViewId))
+            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration))
+        val interval = DateInterval(from = LocalDate.parse("2021-09-01"), to = LocalDate.parse("2021-10-31"))
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+            .thenReturn(
+                listOf(
+                    reportRecord(
+                        LocalDate.parse("2021-09-03"), RON, BigDecimal("-100.0"), BigDecimal("-100.0"), labelsOf("need")
+                    ),
+                    reportRecord(
+                        LocalDate.parse("2021-09-04"), EUR, BigDecimal("-10.0"), BigDecimal("-50.0"), labelsOf("need")
+                    ),
+                    reportRecord(
+                        LocalDate.parse("2021-09-15"), EUR, BigDecimal("-40.0"), BigDecimal("-200.0"), labelsOf("want")
+                    ),
+                    reportRecord(
+                        LocalDate.parse("2021-10-18"), RON, BigDecimal("-30.0"), BigDecimal("-30.0"), labelsOf("want")
+                    ),
+                    reportRecord(
+                        LocalDate.parse("2021-09-28"), RON, BigDecimal("-16.0"), BigDecimal("-16.0"), labelsOf("other")
+                    ),
+                )
+            )
+        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
+        val conversionsResponse = mock<ConversionsResponse>()
+        whenever(conversionsResponse.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
+        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
+
+        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+
+        assertThat(data.reportViewId).isEqualTo(reportViewId)
+        assertThat(data.granularInterval).isEqualTo(granularInterval)
+        assertThat(data.data).hasSize(2)
+        assertThat(data.data[0].timeBucket)
+            .isEqualTo(DateInterval(LocalDate.parse("2021-09-01"), LocalDate.parse("2021-09-30")))
+        assertThat(data.data[0].aggregate.groupedNet?.get("Need")).isEqualByComparingTo(BigDecimal("-150.0"))
+        assertThat(data.data[0].aggregate.groupedNet?.get("Want")).isEqualByComparingTo(BigDecimal("-200.0"))
+        assertThat(data.data[1].timeBucket)
+            .isEqualTo(DateInterval(LocalDate.parse("2021-10-01"), LocalDate.parse("2021-10-31")))
+        assertThat(data.data[1].aggregate.groupedNet?.get("Need")).isEqualByComparingTo(BigDecimal.ZERO)
+        assertThat(data.data[1].aggregate.groupedNet?.get("Want")).isEqualByComparingTo("-30.0")
     }
 
     @Test
