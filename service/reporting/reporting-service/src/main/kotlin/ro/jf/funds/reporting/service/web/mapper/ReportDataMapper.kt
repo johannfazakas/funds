@@ -12,7 +12,7 @@ fun ReportData.toTO(): ReportDataTO {
         data = data.map { dataItem ->
             ReportDataItemTO(
                 timeBucket = dataItem.timeBucket,
-                amount = dataItem.aggregate.amount,
+                net = dataItem.aggregate.net,
                 value = dataItem.aggregate.value?.let {
                     ValueReportTO(start = it.start, end = it.end, min = it.min, max = it.max)
                 },

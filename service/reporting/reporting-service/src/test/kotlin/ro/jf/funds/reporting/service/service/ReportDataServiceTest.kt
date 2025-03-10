@@ -85,13 +85,13 @@ class ReportDataServiceTest {
         assertThat(data.granularInterval).isEqualTo(granularInterval)
         assertThat(data.data[0].timeBucket)
             .isEqualTo(DateInterval(LocalDate.parse("2021-09-03"), LocalDate.parse("2021-09-30")))
-        assertThat(data.data[0].aggregate.amount).isEqualByComparingTo(BigDecimal("-300.0"))
+        assertThat(data.data[0].aggregate.net).isEqualByComparingTo(BigDecimal("-300.0"))
         assertThat(data.data[1].timeBucket)
             .isEqualTo(DateInterval(LocalDate.parse("2021-10-01"), LocalDate.parse("2021-10-31")))
-        assertThat(data.data[1].aggregate.amount).isEqualByComparingTo(BigDecimal("-30.0"))
+        assertThat(data.data[1].aggregate.net).isEqualByComparingTo(BigDecimal("-30.0"))
         assertThat(data.data[2].timeBucket)
             .isEqualTo(DateInterval(LocalDate.parse("2021-11-01"), LocalDate.parse("2021-11-25")))
-        assertThat(data.data[2].aggregate.amount).isEqualByComparingTo(BigDecimal.ZERO)
+        assertThat(data.data[2].aggregate.net).isEqualByComparingTo(BigDecimal.ZERO)
     }
 
     @Test

@@ -52,7 +52,7 @@ class ReportDataService(
         interval: DateInterval, catalog: RecordCatalog, reportView: ReportView, conversions: ConversionsResponse,
     ): ReportDataAggregate {
         return ReportDataAggregate(
-            amount = getNet(
+            net = getNet(
                 catalog.getRecordsByBucket(interval),
                 reportView.dataConfiguration
             ),
@@ -74,7 +74,7 @@ class ReportDataService(
         conversions: ConversionsResponse,
     ): ReportDataAggregate {
         return ReportDataAggregate(
-            amount = getNet(
+            net = getNet(
                 catalog.getRecordsByBucket(interval),
                 reportView.dataConfiguration
             ),
