@@ -9,6 +9,7 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.toListTO
 import ro.jf.funds.commons.web.userId
 import ro.jf.funds.fund.api.model.CreateFundTO
+import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.service.domain.Fund
 import ro.jf.funds.fund.service.mapper.toTO
 import java.util.*
@@ -28,6 +29,14 @@ fun Routing.fundApiRouting(fundService: ro.jf.funds.fund.service.service.FundSer
             val fundId = call.parameters["fundId"]?.let(UUID::fromString) ?: error("Fund id is missing.")
             log.debug { "Get account by id $fundId for user id $userId." }
             val fund = fundService.findById(userId, fundId)
+                ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respond(status = HttpStatusCode.OK, message = fund.toTO())
+        }
+        get("/name/{name}") {
+            val userId = call.userId()
+            val name = call.parameters["name"]?.let(::FundName) ?: error("Name is missing.")
+            log.debug { "Get account by name $name for user id $userId." }
+            val fund = fundService.findByName(userId, name)
                 ?: return@get call.respond(HttpStatusCode.NotFound)
             call.respond(status = HttpStatusCode.OK, message = fund.toTO())
         }
