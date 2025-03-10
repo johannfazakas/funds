@@ -141,6 +141,16 @@ class ReportingSdkTest {
                         end = BigDecimal("200.0"),
                         min = BigDecimal("150.0"),
                         max = BigDecimal("220.0")
+                    ),
+                    groups = listOf(
+                        ReportDataGroupItemTO(
+                            group = "need",
+                            net = BigDecimal("100.0")
+                        ),
+                        ReportDataGroupItemTO(
+                            group = "want",
+                            net = BigDecimal("100.0")
+                        )
                     )
                 ),
                 ReportDataItemTO(
@@ -151,6 +161,16 @@ class ReportingSdkTest {
                         end = BigDecimal("300.0"),
                         min = BigDecimal("250.0"),
                         max = BigDecimal("320.0")
+                    ),
+                    groups = listOf(
+                        ReportDataGroupItemTO(
+                            group = "need",
+                            net = BigDecimal("150.0")
+                        ),
+                        ReportDataGroupItemTO(
+                            group = "want",
+                            net = BigDecimal("150.0")
+                        )
                     )
                 ),
                 ReportDataItemTO(
@@ -161,6 +181,16 @@ class ReportingSdkTest {
                         end = BigDecimal("400.0"),
                         min = BigDecimal("350.0"),
                         max = BigDecimal("420.0")
+                    ),
+                    groups = listOf(
+                        ReportDataGroupItemTO(
+                            group = "need",
+                            net = BigDecimal("200.0")
+                        ),
+                        ReportDataGroupItemTO(
+                            group = "want",
+                            net = BigDecimal("200.0")
+                        )
                     )
                 )
             )
@@ -454,6 +484,16 @@ class ReportingSdkTest {
                                                 put("end", JsonPrimitive(item.value?.end.toString()))
                                                 put("min", JsonPrimitive(item.value?.min.toString()))
                                                 put("max", JsonPrimitive(item.value?.max.toString()))
+                                            })
+                                            put("groups", buildJsonArray {
+                                                item.groups?.forEach { group ->
+                                                    add(
+                                                        buildJsonObject {
+                                                            put("group", JsonPrimitive(group.group))
+                                                            put("net", JsonPrimitive(group.net.toString()))
+                                                        }
+                                                    )
+                                                }
                                             })
                                         }
                                     )

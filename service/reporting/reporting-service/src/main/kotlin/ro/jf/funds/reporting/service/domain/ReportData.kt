@@ -11,6 +11,7 @@ data class ReportData(
     val data: List<BucketData<ReportDataAggregate>>,
 )
 
+// TODO(Johann) is this bucket data generic class worth it?
 data class BucketData<D>(
     val timeBucket: DateInterval,
     val aggregate: D,
@@ -18,6 +19,7 @@ data class BucketData<D>(
 
 data class ReportDataAggregate(
     val net: BigDecimal?,
+    val groupedNet: Map<String, BigDecimal>?,
     val value: ValueReport?,
 )
 

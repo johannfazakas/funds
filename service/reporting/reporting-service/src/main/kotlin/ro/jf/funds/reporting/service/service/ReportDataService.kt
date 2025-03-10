@@ -56,6 +56,10 @@ class ReportDataService(
                 catalog.getRecordsByBucket(interval),
                 reportView.dataConfiguration
             ),
+            groupedNet = getGroupedNet(
+                catalog.getRecordsByBucket(interval),
+                reportView.dataConfiguration
+            ),
             value = getValueReport(
                 interval,
                 getAmountByUnit(catalog.previousRecords),
@@ -75,6 +79,10 @@ class ReportDataService(
     ): ReportDataAggregate {
         return ReportDataAggregate(
             net = getNet(
+                catalog.getRecordsByBucket(interval),
+                reportView.dataConfiguration
+            ),
+            groupedNet = getGroupedNet(
                 catalog.getRecordsByBucket(interval),
                 reportView.dataConfiguration
             ),
@@ -125,6 +133,25 @@ class ReportDataService(
             { record -> record.labels.any { label -> label in (reportDataConfiguration.filter.labels ?: emptyList()) } }
         else
             { _ -> true }
+        return getFilteredNet(records, recordFilter)
+    }
+
+    private fun getGroupedNet(
+        records: ByUnit<List<ReportRecord>>,
+        reportDataConfiguration: ReportDataConfiguration,
+    ): Map<String, BigDecimal>? {
+        if (!reportDataConfiguration.features.groupedNet.enabled || reportDataConfiguration.groups == null) {
+            return null
+        }
+        return reportDataConfiguration.groups.associate { group ->
+            group.name to getFilteredNet(records, group.filter::test)
+        }
+    }
+
+    private fun getFilteredNet(
+        records: ByUnit<List<ReportRecord>>,
+        recordFilter: (ReportRecord) -> Boolean,
+    ): BigDecimal {
         return records
             .flatMap { it.value }
             .filter(recordFilter)

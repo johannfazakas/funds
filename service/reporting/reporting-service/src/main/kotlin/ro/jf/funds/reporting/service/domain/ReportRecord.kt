@@ -14,6 +14,7 @@ data class ReportRecord(
     val date: LocalDate,
     val unit: FinancialUnit,
     val amount: BigDecimal,
+    // TODO(Johann) is the report currency amount needed? not sure
     val reportCurrencyAmount: BigDecimal,
     val labels: List<Label>,
 )
