@@ -31,6 +31,7 @@ data class RecordFilterTO(
 data class ReportDataFeaturesConfigurationTO(
     val net: NetReportFeatureTO = NetReportFeatureTO(enabled = false, applyFilter = false),
     val valueReport: GenericReportFeatureTO = GenericReportFeatureTO(false),
+    val groupedNet: GenericReportFeatureTO = GenericReportFeatureTO(false),
 )
 
 @Serializable

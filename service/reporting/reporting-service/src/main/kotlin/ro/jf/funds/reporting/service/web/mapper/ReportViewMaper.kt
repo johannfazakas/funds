@@ -32,5 +32,6 @@ fun ReportDataConfigurationTO.toDomain() = ReportDataConfiguration(
     features = ReportDataFeaturesConfiguration(
         net = NetReportFeature(features.net.enabled, features.net.applyFilter),
         valueReport = GenericReportFeature(features.valueReport.enabled),
+        groupedNet = GenericReportFeature(features.groupedNet.enabled),
     ),
 )
