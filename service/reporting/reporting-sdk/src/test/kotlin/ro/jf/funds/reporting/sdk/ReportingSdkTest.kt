@@ -1,7 +1,6 @@
 package ro.jf.funds.reporting.sdk
 
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -126,7 +125,7 @@ class ReportingSdkTest {
     @Test
     fun `get report view data`(mockServerClient: MockServerClient): Unit = runBlocking {
         val granularInterval = GranularDateInterval(
-            interval = DateInterval(LocalDate.parse("2024-11-01"), LocalDate.parse("2025-01-31")),
+            interval = DateInterval(YearMonth(2024, 11), YearMonth(2025, 1)),
             granularity = TimeGranularity.MONTHLY
         )
         val expectedResponse = ReportDataTO(
@@ -134,7 +133,7 @@ class ReportingSdkTest {
             granularInterval = granularInterval,
             data = listOf(
                 ReportDataItemTO(
-                    timeBucket = DateInterval(LocalDate(2024, 11, 1), LocalDate(2024, 11, 30)),
+                    timeBucket = DateInterval(YearMonth(2024, 11), YearMonth(2024, 11)),
                     net = BigDecimal("200.0"),
                     value = ValueReportTO(
                         start = BigDecimal("210.0"),
@@ -154,7 +153,7 @@ class ReportingSdkTest {
                     )
                 ),
                 ReportDataItemTO(
-                    timeBucket = DateInterval(LocalDate(2024, 12, 1), LocalDate(2024, 12, 31)),
+                    timeBucket = DateInterval(YearMonth(2024, 12), YearMonth(2024, 12)),
                     net = BigDecimal("300.0"),
                     value = ValueReportTO(
                         start = BigDecimal("310.0"),
@@ -174,7 +173,7 @@ class ReportingSdkTest {
                     )
                 ),
                 ReportDataItemTO(
-                    timeBucket = DateInterval(LocalDate(2025, 1, 1), LocalDate(2025, 1, 31)),
+                    timeBucket = DateInterval(YearMonth(2025, 1), YearMonth(2025, 1)),
                     net = BigDecimal("400.0"),
                     value = ValueReportTO(
                         start = BigDecimal("410.0"),
