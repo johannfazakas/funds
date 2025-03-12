@@ -33,6 +33,7 @@ class ReportViewService(
         reportViewRepository.findByName(userId, payload.name)?.let {
             throw ReportingException.ReportViewAlreadyExists(userId, payload.name)
         }
+        validateCreateReportViewRequest(payload, userId)
         // TODO(Johann-12) don't allow creating report view with groupedNet without grouping
         val reportView = reportViewRepository.save(payload)
 
@@ -117,4 +118,11 @@ class ReportViewService(
     else
         conversions.getRate(record.unit, currency, date)
             ?: throw ReportingException.ReportRecordConversionRateNotFound(record.id)
+
+    private fun validateCreateReportViewRequest(payload: CreateReportViewCommand, userId: UUID) {
+        val dataConfiguration = payload.dataConfiguration
+        if (dataConfiguration.features.groupedNet.enabled && dataConfiguration.groups.isNullOrEmpty()) {
+            throw ReportingException.MissingGroupsRequiredForFeature(userId, "groupedNet")
+        }
+    }
 }

@@ -49,8 +49,16 @@ class ReportViewServiceTest {
     private val reportDataConfiguration = ReportDataConfiguration(
         currency = RON,
         filter = RecordFilter(labels = allLabels),
-        // TODO(Johann-12)
-        groups = null,
+        groups = listOf(
+            ReportGroup(
+                name = "need",
+                filter = RecordFilter(labels = labelsOf("need"))
+            ),
+            ReportGroup(
+                name = "want",
+                filter = RecordFilter(labels = labelsOf("want"))
+            ),
+        ),
         features = ReportDataFeaturesConfiguration(
             net = NetReportFeature(enabled = true, applyFilter = true),
             valueReport = GenericReportFeature(enabled = true),
@@ -178,6 +186,27 @@ class ReportViewServiceTest {
 
         assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
             .isInstanceOf(ReportingException.ReportViewAlreadyExists::class.java)
+
+        verify(reportViewRepository, never()).save(reportViewCommand)
+    }
+
+    @Test
+    fun `create report view with grouped feature without groups should raise error`(): Unit = runBlocking {
+        val reportViewCommand = CreateReportViewCommand(
+            userId = userId,
+            name = reportViewName,
+            fundId = expensesFundId,
+            dataConfiguration = reportDataConfiguration.copy(
+                groups = emptyList(),
+                features = ReportDataFeaturesConfiguration(
+                    groupedNet = GenericReportFeature(enabled = true)
+                )
+            )
+        )
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
+
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
+            .isInstanceOf(ReportingException.MissingGroupsRequiredForFeature::class.java)
 
         verify(reportViewRepository, never()).save(reportViewCommand)
     }
