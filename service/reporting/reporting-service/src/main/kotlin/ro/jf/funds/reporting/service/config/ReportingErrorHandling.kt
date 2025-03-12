@@ -34,6 +34,7 @@ fun ReportingException.toStatusCode(): HttpStatusCode = when (this) {
     is ReportingException.MissingGranularity -> HttpStatusCode.BadRequest
     is ReportingException.MissingIntervalEnd -> HttpStatusCode.BadRequest
     is ReportingException.MissingIntervalStart -> HttpStatusCode.BadRequest
+    is ReportingException.MissingGroupsRequiredForFeature -> HttpStatusCode.BadRequest
     is ReportingException.ReportViewNotFound -> HttpStatusCode.NotFound
     is ReportingException.ReportViewAlreadyExists -> HttpStatusCode.Conflict
     is ReportingException.ReportRecordConversionRateNotFound -> HttpStatusCode.UnprocessableEntity
@@ -51,6 +52,10 @@ fun ReportingException.toError(): ErrorTO {
         is ReportingException.MissingGranularity -> ErrorTO(title = "Missing granularity", detail = null)
         is ReportingException.MissingIntervalEnd -> ErrorTO(title = "Missing interval end", detail = null)
         is ReportingException.MissingIntervalStart -> ErrorTO(title = "Missing interval start", detail = null)
+        is ReportingException.MissingGroupsRequiredForFeature -> ErrorTO(
+            title = "Missing groups required for feature",
+            detail = "Feature ${this.featureName} requires groups for user ${this.userId}"
+        )
         is ReportingException.ReportViewNotFound -> ErrorTO(
             title = "Report view not found",
             detail = "Report view ${this.reportViewId} not found for user ${this.userId}"
