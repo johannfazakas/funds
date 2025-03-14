@@ -46,7 +46,41 @@ class ReportingSdkTest {
                 ),
                 features = ReportDataFeaturesConfigurationTO(
                     net = NetReportFeatureTO(enabled = true, applyFilter = true),
-                    valueReport = GenericReportFeatureTO(enabled = true)
+                    valueReport = GenericReportFeatureTO(enabled = true),
+                    groupedNet = GenericReportFeatureTO(enabled = true),
+                    groupedBudget = GroupedBudgetReportFeatureTO(
+                        enabled = true,
+                        distributions = listOf(
+                            GroupedBudgetReportFeatureTO.BudgetDistributionTO(
+                                default = true,
+                                from = null,
+                                groups = listOf(
+                                    GroupedBudgetReportFeatureTO.GroupBudgetPercentageTO(
+                                        group = "need",
+                                        percentage = 60
+                                    ),
+                                    GroupedBudgetReportFeatureTO.GroupBudgetPercentageTO(
+                                        group = "want",
+                                        percentage = 40
+                                    )
+                                )
+                            ),
+                            GroupedBudgetReportFeatureTO.BudgetDistributionTO(
+                                default = false,
+                                from = YearMonth(2020, 1),
+                                groups = listOf(
+                                    GroupedBudgetReportFeatureTO.GroupBudgetPercentageTO(
+                                        group = "need",
+                                        percentage = 70
+                                    ),
+                                    GroupedBudgetReportFeatureTO.GroupBudgetPercentageTO(
+                                        group = "want",
+                                        percentage = 30
+                                    )
+                                )
+                            )
+                        )
+                    )
                 )
             ),
         )
