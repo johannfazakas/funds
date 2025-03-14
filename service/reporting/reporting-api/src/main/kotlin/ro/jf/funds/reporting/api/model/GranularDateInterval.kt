@@ -21,14 +21,13 @@ data class DateInterval(
     }
 
     constructor(from: YearMonth, to: YearMonth) : this(
-        LocalDate(from.year, from.month.value, 1),
-        LocalDate(to.year, to.month.value, 1).plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY),
+        LocalDate(from.year, from.month, 1),
+        LocalDate(to.year, to.month, 1).plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY),
     )
 }
 
+@Serializable
 data class YearMonth(
     val year: Int,
-    val month: Month,
-) {
-    constructor(year: Int, monthNumber: Int) : this(year, Month(monthNumber))
-}
+    val month: Int,
+)

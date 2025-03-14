@@ -19,6 +19,7 @@ import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
+import ro.jf.funds.reporting.api.model.YearMonth
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
@@ -191,7 +192,7 @@ class ReportViewServiceTest {
     }
 
     @Test
-    fun `create report view with grouped feature without groups should raise error`(): Unit = runBlocking {
+    fun `create report view with grouped net feature without groups should raise error`(): Unit = runBlocking {
         val reportViewCommand = CreateReportViewCommand(
             userId = userId,
             name = reportViewName,
@@ -209,5 +210,375 @@ class ReportViewServiceTest {
             .isInstanceOf(ReportingException.MissingGroupsRequiredForFeature::class.java)
 
         verify(reportViewRepository, never()).save(reportViewCommand)
+    }
+
+    @Test
+    fun `create report view with grouped budgets feature without groups should raise error`(): Unit = runBlocking {
+        val reportViewCommand = CreateReportViewCommand(
+            userId = userId,
+            name = reportViewName,
+            fundId = expensesFundId,
+            dataConfiguration = reportDataConfiguration.copy(
+                groups = emptyList(),
+                features = ReportDataFeaturesConfiguration(
+                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = emptyList())
+                )
+            )
+        )
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
+
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
+            .isInstanceOf(ReportingException.MissingGroupsRequiredForFeature::class.java)
+    }
+
+    @Test
+    fun `create report view with grouped budgets feature with empty distributions should raise error`(
+    ): Unit = runBlocking {
+        val reportViewCommand = CreateReportViewCommand(
+            userId = userId,
+            name = reportViewName,
+            fundId = expensesFundId,
+            dataConfiguration = reportDataConfiguration.copy(
+                groups = listOf(
+                    ReportGroup(
+                        name = "need",
+                        filter = RecordFilter(labels = labelsOf("need"))
+                    ),
+                    ReportGroup(
+                        name = "want",
+                        filter = RecordFilter(labels = labelsOf("want"))
+                    ),
+                ),
+                features = ReportDataFeaturesConfiguration(
+                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = emptyList())
+                )
+            )
+        )
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
+
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
+            .isInstanceOf(ReportingException.MissingGroupBudgetDistributions::class.java)
+    }
+
+    @Test
+    fun `create report view with grouped budgets feature without default distribution should raise error`(
+    ): Unit = runBlocking {
+        val reportViewCommand = CreateReportViewCommand(
+            userId = userId,
+            name = reportViewName,
+            fundId = expensesFundId,
+            dataConfiguration = reportDataConfiguration.copy(
+                groups = listOf(
+                    ReportGroup(
+                        name = "need",
+                        filter = RecordFilter(labels = labelsOf("need"))
+                    ),
+                    ReportGroup(
+                        name = "want",
+                        filter = RecordFilter(labels = labelsOf("want"))
+                    ),
+                ),
+                features = ReportDataFeaturesConfiguration(
+                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = false,
+                            from = YearMonth(2020, 2),
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                            )
+                        )
+                    ))
+                )
+            )
+        )
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
+
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
+            .isInstanceOf(ReportingException.NoUniqueGroupBudgetDefaultDistribution::class.java)
+    }
+
+    @Test
+    fun `create report view with grouped budgets feature with multiple default distributions should raise error`(
+    ): Unit = runBlocking {
+        val reportViewCommand = CreateReportViewCommand(
+            userId = userId,
+            name = reportViewName,
+            fundId = expensesFundId,
+            dataConfiguration = reportDataConfiguration.copy(
+                groups = listOf(
+                    ReportGroup(
+                        name = "need",
+                        filter = RecordFilter(labels = labelsOf("need"))
+                    ),
+                    ReportGroup(
+                        name = "want",
+                        filter = RecordFilter(labels = labelsOf("want"))
+                    ),
+                ),
+                features = ReportDataFeaturesConfiguration(
+                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = true,
+                            from = YearMonth(2020, 2),
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                            )
+                        ),
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = true,
+                            from = YearMonth(2020, 2),
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                            )
+                        )
+                    ))
+                )
+            )
+        )
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
+
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
+            .isInstanceOf(ReportingException.NoUniqueGroupBudgetDefaultDistribution::class.java)
+    }
+
+    @Test
+    fun `create report view with grouped budgets feature with non default distribution without from year month should raise error`(
+    ): Unit = runBlocking {
+        val reportViewCommand = CreateReportViewCommand(
+            userId = userId,
+            name = reportViewName,
+            fundId = expensesFundId,
+            dataConfiguration = reportDataConfiguration.copy(
+                groups = listOf(
+                    ReportGroup(
+                        name = "need",
+                        filter = RecordFilter(labels = labelsOf("need"))
+                    ),
+                    ReportGroup(
+                        name = "want",
+                        filter = RecordFilter(labels = labelsOf("want"))
+                    ),
+                ),
+                features = ReportDataFeaturesConfiguration(
+                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = true,
+                            from = YearMonth(2020, 2),
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                            )
+                        ),
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = false,
+                            from = null,
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                            )
+                        )
+                    ))
+                )
+            )
+        )
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
+
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
+            .isInstanceOf(ReportingException.MissingStartYearMonthOnGroupBudgetDistribution::class.java)
+    }
+
+    @Test
+    fun `create report view with grouped budgets feature with multiple distributions with same from date should raise error`(
+    ): Unit = runBlocking {
+        val reportViewCommand = CreateReportViewCommand(
+            userId = userId,
+            name = reportViewName,
+            fundId = expensesFundId,
+            dataConfiguration = reportDataConfiguration.copy(
+                groups = listOf(
+                    ReportGroup(
+                        name = "need",
+                        filter = RecordFilter(labels = labelsOf("need"))
+                    ),
+                    ReportGroup(
+                        name = "want",
+                        filter = RecordFilter(labels = labelsOf("want"))
+                    ),
+                ),
+                features = ReportDataFeaturesConfiguration(
+                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = true,
+                            from = null,
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                            )
+                        ),
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = false,
+                            from = YearMonth(2020, 2),
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                            )
+                        ),
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = false,
+                            from = YearMonth(2020, 2),
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 60),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 40)
+                            )
+                        )
+                    ))
+                )
+            )
+        )
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
+
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
+            .isInstanceOf(ReportingException.ConflictingStartYearMonthOnGroupBudgetDistribution::class.java)
+    }
+
+    @Test
+    fun `create report view with grouped budgets feature with distribution not covering all groups should raise error`(
+    ): Unit = runBlocking {
+        val reportViewCommand = CreateReportViewCommand(
+            userId = userId,
+            name = reportViewName,
+            fundId = expensesFundId,
+            dataConfiguration = reportDataConfiguration.copy(
+                groups = listOf(
+                    ReportGroup(
+                        name = "need",
+                        filter = RecordFilter(labels = labelsOf("need"))
+                    ),
+                    ReportGroup(
+                        name = "want",
+                        filter = RecordFilter(labels = labelsOf("want"))
+                    ),
+                ),
+                features = ReportDataFeaturesConfiguration(
+                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = true,
+                            from = null,
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                            )
+                        ),
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = false,
+                            from = YearMonth(2020, 2),
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50)
+                            )
+                        )
+                    ))
+                )
+            )
+        )
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
+
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
+            .isInstanceOf(ReportingException.GroupBudgetDistributionGroupsDoNotMatch::class.java)
+    }
+
+    @Test
+    fun `create report view with grouped budgets feature with distribution covering not existing groups should raise error`(
+    ): Unit = runBlocking {
+        val reportViewCommand = CreateReportViewCommand(
+            userId = userId,
+            name = reportViewName,
+            fundId = expensesFundId,
+            dataConfiguration = reportDataConfiguration.copy(
+                groups = listOf(
+                    ReportGroup(
+                        name = "need",
+                        filter = RecordFilter(labels = labelsOf("need"))
+                    ),
+                    ReportGroup(
+                        name = "want",
+                        filter = RecordFilter(labels = labelsOf("want"))
+                    ),
+                ),
+                features = ReportDataFeaturesConfiguration(
+                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = true,
+                            from = null,
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                            )
+                        ),
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = false,
+                            from = YearMonth(2020, 2),
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("other", 50)
+                            )
+                        )
+                    ))
+                )
+            )
+        )
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
+
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
+            .isInstanceOf(ReportingException.GroupBudgetDistributionGroupsDoNotMatch::class.java)
+    }
+
+    @Test
+    fun `create report view with grouped budgets feature with distribution percentage sum not equal to 100 should raise error`(
+    ): Unit = runBlocking {
+        val reportViewCommand = CreateReportViewCommand(
+            userId = userId,
+            name = reportViewName,
+            fundId = expensesFundId,
+            dataConfiguration = reportDataConfiguration.copy(
+                groups = listOf(
+                    ReportGroup(
+                        name = "need",
+                        filter = RecordFilter(labels = labelsOf("need"))
+                    ),
+                    ReportGroup(
+                        name = "want",
+                        filter = RecordFilter(labels = labelsOf("want"))
+                    ),
+                ),
+                features = ReportDataFeaturesConfiguration(
+                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = true,
+                            from = null,
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                            )
+                        ),
+                        GroupedBudgetReportFeature.BudgetDistribution(
+                            default = false,
+                            from = YearMonth(2020, 2),
+                            groups = listOf(
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 40)
+                            )
+                        )
+                    ))
+                )
+            )
+        )
+        whenever(reportViewRepository.findByName(userId, reportViewName)).thenReturn(null)
+
+        assertThatThrownBy { runBlocking { reportViewService.createReportView(userId, reportViewCommand) } }
+            .isInstanceOf(ReportingException.GroupBudgetPercentageSumInvalid::class.java)
     }
 }

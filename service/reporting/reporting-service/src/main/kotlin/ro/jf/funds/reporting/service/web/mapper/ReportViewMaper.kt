@@ -33,5 +33,20 @@ fun ReportDataConfigurationTO.toDomain() = ReportDataConfiguration(
         net = NetReportFeature(features.net.enabled, features.net.applyFilter),
         valueReport = GenericReportFeature(features.valueReport.enabled),
         groupedNet = GenericReportFeature(features.groupedNet.enabled),
+        groupedBudget = features.groupedBudget.toDomain(),
     ),
 )
+
+private fun GroupedBudgetReportFeatureTO.toDomain() =
+    GroupedBudgetReportFeature(
+        enabled = enabled,
+        distributions = distributions.map { distribution ->
+            GroupedBudgetReportFeature.BudgetDistribution(
+                default = distribution.default,
+                from = distribution.from,
+                groups = distribution.groups.map { group ->
+                    GroupedBudgetReportFeature.GroupBudgetPercentage(group.group, group.percentage)
+                }
+            )
+        }
+    )

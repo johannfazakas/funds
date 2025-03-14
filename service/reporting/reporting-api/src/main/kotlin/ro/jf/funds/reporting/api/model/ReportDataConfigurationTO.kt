@@ -32,6 +32,7 @@ data class ReportDataFeaturesConfigurationTO(
     val net: NetReportFeatureTO = NetReportFeatureTO(enabled = false, applyFilter = false),
     val valueReport: GenericReportFeatureTO = GenericReportFeatureTO(false),
     val groupedNet: GenericReportFeatureTO = GenericReportFeatureTO(false),
+    val groupedBudget: GroupedBudgetReportFeatureTO = GroupedBudgetReportFeatureTO(false, listOf()),
 )
 
 @Serializable
@@ -44,3 +45,23 @@ data class NetReportFeatureTO(
     val enabled: Boolean,
     val applyFilter: Boolean,
 )
+
+@Serializable
+data class GroupedBudgetReportFeatureTO(
+    val enabled: Boolean,
+    // TODO(Johann-13) validate configuration
+    val distributions: List<BudgetDistributionTO>,
+) {
+    @Serializable
+    data class BudgetDistributionTO(
+        val default: Boolean,
+        val from: YearMonth?,
+        val groups: List<GroupBudgetPercentageTO>,
+    )
+
+    @Serializable
+    data class GroupBudgetPercentageTO(
+        val group: String,
+        val percentage: Int,
+    )
+}

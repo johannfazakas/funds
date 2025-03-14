@@ -3,6 +3,7 @@ package ro.jf.funds.reporting.service.domain
 import kotlinx.serialization.Serializable
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Label
+import ro.jf.funds.reporting.api.model.YearMonth
 
 @Serializable
 data class ReportDataConfiguration(
@@ -38,8 +39,9 @@ data class RecordFilter(
 @Serializable
 data class ReportDataFeaturesConfiguration(
     val net: NetReportFeature = NetReportFeature(enabled = false, applyFilter = false),
-    val groupedNet: GenericReportFeature = GenericReportFeature(enabled = false),
     val valueReport: GenericReportFeature = GenericReportFeature(enabled = false),
+    val groupedNet: GenericReportFeature = GenericReportFeature(enabled = false),
+    val groupedBudget: GroupedBudgetReportFeature = GroupedBudgetReportFeature(enabled = false, listOf()),
 ) {
     fun withNet(enabled: Boolean, applyFilter: Boolean) = copy(net = NetReportFeature(enabled, applyFilter))
     fun withGroupedNet(enabled: Boolean) = copy(groupedNet = GenericReportFeature(enabled))
@@ -56,3 +58,22 @@ data class NetReportFeature(
     val enabled: Boolean,
     val applyFilter: Boolean,
 )
+
+@Serializable
+data class GroupedBudgetReportFeature(
+    val enabled: Boolean,
+    val distributions: List<BudgetDistribution>,
+) {
+    @Serializable
+    data class BudgetDistribution(
+        val default: Boolean,
+        val from: YearMonth?,
+        val groups: List<GroupBudgetPercentage>,
+    )
+
+    @Serializable
+    data class GroupBudgetPercentage(
+        val group: String,
+        val percentage: Int,
+    )
+}

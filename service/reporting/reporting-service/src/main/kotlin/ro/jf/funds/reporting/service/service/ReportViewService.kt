@@ -10,10 +10,7 @@ import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
-import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
-import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
-import ro.jf.funds.reporting.service.domain.ReportView
-import ro.jf.funds.reporting.service.domain.ReportingException
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import java.math.BigDecimal
@@ -120,8 +117,45 @@ class ReportViewService(
 
     private fun validateCreateReportViewRequest(payload: CreateReportViewCommand, userId: UUID) {
         val dataConfiguration = payload.dataConfiguration
+        validateGroupedNetFeature(dataConfiguration, userId)
+        validateGroupedBudgetFeature(dataConfiguration, userId)
+    }
+
+    private fun validateGroupedNetFeature(dataConfiguration: ReportDataConfiguration, userId: UUID) {
         if (dataConfiguration.features.groupedNet.enabled && dataConfiguration.groups.isNullOrEmpty()) {
             throw ReportingException.MissingGroupsRequiredForFeature(userId, "groupedNet")
         }
+    }
+
+    private fun validateGroupedBudgetFeature(dataConfiguration: ReportDataConfiguration, userId: UUID) {
+        val groupedBudget = dataConfiguration.features.groupedBudget
+        if (!groupedBudget.enabled) {
+            return
+        }
+        if (dataConfiguration.groups.isNullOrEmpty()) {
+            throw ReportingException.MissingGroupsRequiredForFeature(userId, "groupedBudget")
+        }
+        if (groupedBudget.distributions.isEmpty()) {
+            throw ReportingException.MissingGroupBudgetDistributions(userId)
+        }
+        if (groupedBudget.distributions.count { it.default } != 1) {
+            throw ReportingException.NoUniqueGroupBudgetDefaultDistribution(userId)
+        }
+        if (groupedBudget.distributions.any { !it.default && it.from == null }) {
+            throw ReportingException.MissingStartYearMonthOnGroupBudgetDistribution(userId)
+        }
+        if (groupedBudget.distributions.mapNotNull { it.from }.groupBy { it }.any { it.value.size > 1 }) {
+            throw ReportingException.ConflictingStartYearMonthOnGroupBudgetDistribution(userId)
+        }
+        val groupNames = dataConfiguration.groups.map { it.name }.sorted()
+        if (groupedBudget.distributions.any { it.groups.map { group -> group.group }.sorted() != groupNames }) {
+            throw ReportingException.GroupBudgetDistributionGroupsDoNotMatch(userId)
+        }
+        groupedBudget.distributions
+            .map { it to it.groups.sumOf { group -> group.percentage } }
+            .firstOrNull { (_, sum) -> sum != 100 }
+            ?.let { (distribution, sum) ->
+                throw ReportingException.GroupBudgetPercentageSumInvalid(userId, distribution.from, sum)
+            }
     }
 }
