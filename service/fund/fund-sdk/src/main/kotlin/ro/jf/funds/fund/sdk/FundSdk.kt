@@ -11,6 +11,7 @@ import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
 import ro.jf.funds.fund.api.FundApi
 import ro.jf.funds.fund.api.model.CreateFundTO
+import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import java.util.*
 
@@ -37,7 +38,7 @@ class FundSdk(
         return response.body()
     }
 
-    override suspend fun getFundByName(userId: UUID, name: String): FundTO? {
+    override suspend fun getFundByName(userId: UUID, name: FundName): FundTO? {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds/name/${name}") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
