@@ -18,8 +18,9 @@ data class BucketData<D>(
 
 data class ReportDataAggregate(
     val net: BigDecimal?,
-    val groupedNet: Map<String, BigDecimal>?,
     val value: ValueReport?,
+    val groupedNet: Map<String, BigDecimal>?,
+    val groupedBudget: Map<String, ByUnit<Budget>>?,
 )
 
 data class ValueReport(
@@ -28,4 +29,9 @@ data class ValueReport(
     val min: BigDecimal = BigDecimal.ZERO,
     val max: BigDecimal = BigDecimal.ZERO,
     val endAmountByUnit: ByUnit<BigDecimal>,
+)
+
+data class Budget(
+    val allocated: BigDecimal,
+    val left: BigDecimal,
 )
