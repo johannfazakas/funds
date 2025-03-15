@@ -46,6 +46,10 @@ data class ReportDataFeaturesConfiguration(
     fun withNet(enabled: Boolean, applyFilter: Boolean) = copy(net = NetReportFeature(enabled, applyFilter))
     fun withGroupedNet(enabled: Boolean) = copy(groupedNet = GenericReportFeature(enabled))
     fun withValueReport(enabled: Boolean) = copy(valueReport = GenericReportFeature(enabled))
+    fun withGroupedBudget(
+        enabled: Boolean,
+        distributions: List<GroupedBudgetReportFeature.BudgetDistribution> = listOf(),
+    ) = copy(groupedBudget = GroupedBudgetReportFeature(enabled, distributions))
 }
 
 @Serializable

@@ -22,13 +22,13 @@ fun GranularDateInterval.getBuckets(): Sequence<DateInterval> {
 fun <D> GranularDateInterval.generateBucketedData(
     seedFunction: (DateInterval) -> D,
     nextFunction: (DateInterval, D) -> D,
-): Sequence<BucketData<D>> {
+): Map<DateInterval, D> {
     return generateSequence(
-        seedFunction = { firstBucket().let { BucketData(it, seedFunction(it)) } },
+        seedFunction = { firstBucket().let { it to seedFunction(it) } },
         nextFunction = { (previousBucket, previousData) ->
-            getNextBucket(previousBucket)?.let { BucketData(it, nextFunction(it, previousData)) }
+            getNextBucket(previousBucket)?.let { it to nextFunction(it, previousData) }
         }
-    )
+    ).toMap()
 }
 
 private fun GranularDateInterval.getNextBucket(previousBucket: DateInterval): DateInterval? {

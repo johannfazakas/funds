@@ -26,6 +26,7 @@ class RecordCatalog(
             .let { ByUnit(it.toMap()) }
     }
 
+    // TODO(Johann-14) could add caching to this method
     fun getRecordsByBucket(bucket: DateInterval): ByUnit<List<ReportRecord>> =
         recordsGrouped
             .iterator().asSequence()
