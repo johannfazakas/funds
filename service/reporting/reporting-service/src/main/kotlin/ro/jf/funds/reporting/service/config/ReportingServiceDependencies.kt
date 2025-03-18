@@ -19,7 +19,8 @@ import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
-import ro.jf.funds.reporting.service.service.data.ReportDataService
+import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
+import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
 import ro.jf.funds.reporting.service.service.event.CreateReportViewRequestHandler
 import javax.sql.DataSource
 
@@ -70,6 +71,7 @@ private val Application.serviceDependencies
     get() = module {
         single<ReportViewService> { ReportViewService(get(), get(), get(), get()) }
         single<ReportViewTaskService> { ReportViewTaskService(get(), get(), get()) }
+        single<ReportDataResolverRegistry> { ReportDataResolverRegistry() }
         single<ReportDataService> { ReportDataService(get(), get(), get(), get()) }
         single<CreateReportViewRequestHandler> { CreateReportViewRequestHandler(get()) }
     }
