@@ -11,7 +11,7 @@ import java.math.BigDecimal
 class ValueReportDataResolver : ReportDataResolver<ValueReport> {
     override fun resolve(
         input: ReportDataResolverInput,
-    ): Map<DateInterval, ValueReport>? {
+    ): ByBucket<ValueReport>? {
         if (!input.dataConfiguration.features.valueReport.enabled) {
             return null
         }
@@ -36,6 +36,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
                     )
                 }
             )
+            .let(::ByBucket)
     }
 
 
