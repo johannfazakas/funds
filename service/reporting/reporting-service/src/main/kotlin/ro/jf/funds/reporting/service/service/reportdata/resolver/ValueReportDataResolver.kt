@@ -48,7 +48,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
         reportDataConfiguration: ReportDataConfiguration,
     ): ValueReport {
         val amountByUnit = getAmountByUnit(bucketRecords)
-        val endAmountByUnit = amountByUnit + startAmountByUnit
+        val endAmountByUnit = amountByUnit.add(startAmountByUnit)
 
         val startValue = startAmountByUnit.valueAt(bucket.from, reportDataConfiguration.currency, conversions)
         val endValue = endAmountByUnit.valueAt(bucket.to, reportDataConfiguration.currency, conversions)
@@ -73,8 +73,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
             .sumOf { it }
     }
 
-    // TODO(Johann-14) could be extracted to a utility class. should it be an operator? not sure
-    private operator fun ByUnit<BigDecimal>.plus(other: ByUnit<BigDecimal>): ByUnit<BigDecimal> {
+    private fun ByUnit<BigDecimal>.add(other: ByUnit<BigDecimal>): ByUnit<BigDecimal> {
         return listOf(this, other)
             .asSequence()
             .flatMap { it.asSequence().map { (unit, value) -> unit to value } }

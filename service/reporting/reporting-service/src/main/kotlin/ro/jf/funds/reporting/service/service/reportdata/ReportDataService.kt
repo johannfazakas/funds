@@ -17,7 +17,6 @@ import java.util.*
 
 private val log = logger { }
 
-// TODO(Johann-14) refactor all classes
 class ReportDataService(
     private val reportViewRepository: ReportViewRepository,
     private val reportRecordRepository: ReportRecordRepository,
