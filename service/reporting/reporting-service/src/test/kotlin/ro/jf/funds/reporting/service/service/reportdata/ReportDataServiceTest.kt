@@ -56,23 +56,15 @@ class ReportDataServiceTest {
                 .withValueReport(enabled = true),
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration))
+            .thenReturn(reportView(reportDataConfiguration))
         val interval = DateInterval(LocalDate.parse("2021-09-03"), LocalDate.parse("2021-11-25"))
         whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
             .thenReturn(
                 listOf(
-                    reportRecord(
-                        LocalDate.parse("2021-09-03"), RON, BigDecimal("-100.0"), BigDecimal("-100.0"), labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-09-15"), EUR, BigDecimal("-40.0"), BigDecimal("-200.0"), labelsOf("want")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-10-07"), RON, BigDecimal("-30.0"), BigDecimal("-30.0"), labelsOf("want")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-10-08"), RON, BigDecimal("-16.0"), BigDecimal("-16.0"), labelsOf("other")
-                    ),
+                    ronReportRecord(LocalDate(2021, 9, 3), -100, labelsOf("need")),
+                    eurReportRecord(LocalDate(2021, 9, 15), -40, -200, labelsOf("want")),
+                    ronReportRecord(LocalDate(2021, 10, 7), -30, labelsOf("want")),
+                    ronReportRecord(LocalDate(2021, 10, 8), -16, labelsOf("other")),
                 )
             )
         val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
@@ -108,26 +100,16 @@ class ReportDataServiceTest {
                 .withGroupedNet(enabled = true)
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration))
+            .thenReturn(reportView(reportDataConfiguration))
         val interval = DateInterval(YearMonth(2021, 9), YearMonth(2021, 10))
         whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
             .thenReturn(
                 listOf(
-                    reportRecord(
-                        LocalDate.parse("2021-09-03"), RON, BigDecimal("-100.0"), BigDecimal("-100.0"), labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-09-04"), EUR, BigDecimal("-10.0"), BigDecimal("-50.0"), labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-09-15"), EUR, BigDecimal("-40.0"), BigDecimal("-200.0"), labelsOf("want")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-10-18"), RON, BigDecimal("-30.0"), BigDecimal("-30.0"), labelsOf("want")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-09-28"), RON, BigDecimal("-16.0"), BigDecimal("-16.0"), labelsOf("other")
-                    ),
+                    ronReportRecord(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
+                    eurReportRecord(LocalDate.parse("2021-09-04"), -10, -50, labelsOf("need")),
+                    eurReportRecord(LocalDate.parse("2021-09-15"), -40, -200, labelsOf("want")),
+                    ronReportRecord(LocalDate.parse("2021-10-18"), -30, labelsOf("want")),
+                    ronReportRecord(LocalDate.parse("2021-09-28"), -16, labelsOf("other")),
                 )
             )
         val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
@@ -150,7 +132,6 @@ class ReportDataServiceTest {
         assertThat(data.data[1].aggregate.groupedNet?.get("Want")).isEqualByComparingTo("-30.0")
     }
 
-    // TODO(Johann) this test is way too long
     @Test
     fun `get grouped budget`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
@@ -164,89 +145,28 @@ class ReportDataServiceTest {
                 .withGroupedBudget(
                     enabled = true,
                     distributions = listOf(
-                        GroupedBudgetReportFeature.BudgetDistribution(
-                            true, null, listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 60),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 40),
-                            )
-                        ),
-                        GroupedBudgetReportFeature.BudgetDistribution(
-                            false, YearMonth(2020, 3), listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 70),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 30),
-                            )
-                        )
+                        needWantDistribution(true, null, 60, 40),
+                        needWantDistribution(false, YearMonth(2020, 3), 70, 30),
                     ),
                 )
         )
-        whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration))
+        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
         val interval = DateInterval(YearMonth(2020, 2), YearMonth(2020, 3))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(ConversionsResponse.empty())
         whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
             .thenReturn(
                 listOf(
-                    reportRecord(LocalDate(2020, 1, 5), RON, BigDecimal("1000.0"), BigDecimal("1000.0"), labelsOf()),
-                    reportRecord(
-                        LocalDate(2020, 1, 10),
-                        RON,
-                        BigDecimal("-100.0"),
-                        BigDecimal("-100.0"),
-                        labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate(2020, 1, 15),
-                        RON,
-                        BigDecimal("-150.0"),
-                        BigDecimal("-150.0"),
-                        labelsOf("want")
-                    ),
-                    reportRecord(
-                        LocalDate(2020, 1, 18),
-                        RON,
-                        BigDecimal("-200.0"),
-                        BigDecimal("-200.0"),
-                        labelsOf("need")
-                    ),
-
-                    reportRecord(LocalDate(2020, 2, 5), RON, BigDecimal("1200.0"), BigDecimal("1200.0"), labelsOf()),
-                    reportRecord(
-                        LocalDate(2020, 2, 10),
-                        RON,
-                        BigDecimal("-500.0"),
-                        BigDecimal("-500.0"),
-                        labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate(2020, 2, 15),
-                        RON,
-                        BigDecimal("-400.0"),
-                        BigDecimal("-400.0"),
-                        labelsOf("want")
-                    ),
-                    reportRecord(
-                        LocalDate(2020, 2, 18),
-                        RON,
-                        BigDecimal("-50.0"),
-                        BigDecimal("-50.0"),
-                        labelsOf("want")
-                    ),
-
-                    reportRecord(LocalDate(2020, 3, 5), RON, BigDecimal("1500.0"), BigDecimal("1500.0"), labelsOf()),
-                    reportRecord(
-                        LocalDate(2020, 3, 5),
-                        RON,
-                        BigDecimal("-250.0"),
-                        BigDecimal("-250.0"),
-                        labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate(2020, 3, 5),
-                        RON,
-                        BigDecimal("-350.0"),
-                        BigDecimal("-350.0"),
-                        labelsOf("want")
-                    ),
+                    ronReportRecord(LocalDate(2020, 1, 5), 1000, labelsOf()),
+                    ronReportRecord(LocalDate(2020, 1, 10), -100, labelsOf("need")),
+                    ronReportRecord(LocalDate(2020, 1, 15), -150, labelsOf("want")),
+                    ronReportRecord(LocalDate(2020, 1, 18), -200, labelsOf("need")),
+                    ronReportRecord(LocalDate(2020, 2, 5), 1200, labelsOf()),
+                    ronReportRecord(LocalDate(2020, 2, 10), -500, labelsOf("need")),
+                    ronReportRecord(LocalDate(2020, 2, 15), -400, labelsOf("want")),
+                    ronReportRecord(LocalDate(2020, 2, 18), -50, labelsOf("want")),
+                    ronReportRecord(LocalDate(2020, 3, 5), 1500, labelsOf()),
+                    ronReportRecord(LocalDate(2020, 3, 5), -250, labelsOf("need")),
+                    ronReportRecord(LocalDate(2020, 3, 5), -350, labelsOf("want")),
                 )
             )
         val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
@@ -274,9 +194,7 @@ class ReportDataServiceTest {
                 .withValueReport(enabled = true),
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(
-                ReportView(reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration)
-            )
+            .thenReturn(reportView(reportDataConfiguration))
         whenever(historicalPricingSdk.convert(eq(userId), eq(ConversionsRequest(emptyList()))))
             .thenReturn(ConversionsResponse(emptyList()))
         val to = LocalDate.parse("2021-11-25")
@@ -284,27 +202,13 @@ class ReportDataServiceTest {
         whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, to))
             .thenReturn(
                 listOf(
-                    reportRecord(
-                        LocalDate.parse("2021-08-02"), RON, BigDecimal("100.0"), BigDecimal("100.0"), labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-09-02"), RON, BigDecimal("200.0"), BigDecimal("200.0"), labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-09-03"), RON, BigDecimal("-100.0"), BigDecimal("-100.0"), labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-09-15"), RON, BigDecimal("-40.0"), BigDecimal("-40.0"), labelsOf("want")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-10-07"), RON, BigDecimal("400.0"), BigDecimal("400.0"), labelsOf("want")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-10-07"), RON, BigDecimal("-30.0"), BigDecimal("-30.0"), labelsOf("want")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-10-08"), RON, BigDecimal("-16.0"), BigDecimal("-16.0"), labelsOf("other")
-                    ),
+                    ronReportRecord(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
+                    ronReportRecord(LocalDate.parse("2021-09-02"), 200, labelsOf("need")),
+                    ronReportRecord(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
+                    ronReportRecord(LocalDate.parse("2021-09-15"), -40, labelsOf("want")),
+                    ronReportRecord(LocalDate.parse("2021-10-07"), 400, labelsOf("want")),
+                    ronReportRecord(LocalDate.parse("2021-10-07"), -30, labelsOf("want")),
+                    ronReportRecord(LocalDate.parse("2021-10-08"), -16, labelsOf("other")),
                 )
             )
         val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
@@ -340,28 +244,16 @@ class ReportDataServiceTest {
                 .withValueReport(enabled = true),
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(
-                ReportView(
-                    reportViewId, userId, reportViewName, expensesFundId, reportDataConfiguration
-                )
-            )
+            .thenReturn(reportView(reportDataConfiguration))
         val to = LocalDate.parse("2021-10-30")
         val interval = DateInterval(from = LocalDate.parse("2021-09-02"), to = to)
         whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, to))
             .thenReturn(
                 listOf(
-                    reportRecord(
-                        LocalDate.parse("2021-08-02"), RON, BigDecimal("100.0"), BigDecimal("100.0"), labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-08-05"), EUR, BigDecimal("20.0"), BigDecimal("98.3"), labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-09-02"), RON, BigDecimal("100.0"), BigDecimal("200.0"), labelsOf("need")
-                    ),
-                    reportRecord(
-                        LocalDate.parse("2021-09-03"), EUR, BigDecimal("20.0"), BigDecimal("99.1"), labelsOf("need")
-                    ),
+                    ronReportRecord(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
+                    eurReportRecord(LocalDate.parse("2021-08-05"), 20, 98, labelsOf("need")),
+                    ronReportRecord(LocalDate.parse("2021-09-02"), 100, labelsOf("need")),
+                    eurReportRecord(LocalDate.parse("2021-09-03"), 20, 99, labelsOf("need")),
                 )
             )
         val conversionRequest = ConversionsRequest(
@@ -415,8 +307,29 @@ class ReportDataServiceTest {
         )
     }
 
+    private fun reportView(
+        dataConfiguration: ReportDataConfiguration,
+    ) = ReportView(reportViewId, userId, reportViewName, expensesFundId, dataConfiguration)
+
+    private fun ronReportRecord(
+        date: LocalDate, amount: Int, labels: List<Label>,
+    ) = reportRecord(date, RON, BigDecimal(amount), BigDecimal(amount), labels)
+
+    private fun eurReportRecord(
+        date: LocalDate, amount: Int, reportCurrencyAmount: Int, labels: List<Label>,
+    ) = reportRecord(date, EUR, BigDecimal(amount), BigDecimal(reportCurrencyAmount), labels)
+
     private fun reportRecord(
         date: LocalDate, unit: FinancialUnit, amount: BigDecimal, reportCurrencyAmount: BigDecimal, labels: List<Label>,
     ) =
         ReportRecord(randomUUID(), userId, randomUUID(), reportViewId, date, unit, amount, reportCurrencyAmount, labels)
+
+    private fun needWantDistribution(
+        default: Boolean, from: YearMonth?, needPercentage: Int, wantPercentage: Int,
+    ) = GroupedBudgetReportFeature.BudgetDistribution(
+        default, from, listOf(
+            GroupedBudgetReportFeature.GroupBudgetPercentage("need", needPercentage),
+            GroupedBudgetReportFeature.GroupBudgetPercentage("want", wantPercentage),
+        )
+    )
 }
