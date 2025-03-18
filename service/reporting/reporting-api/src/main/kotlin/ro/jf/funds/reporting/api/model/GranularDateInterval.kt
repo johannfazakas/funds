@@ -16,8 +16,6 @@ data class DateInterval(
 ) {
     init {
         require(from <= to) { "From date must be before or equal to the to date" }
-        1..2
-        1 to 2
     }
 
     constructor(from: YearMonth, to: YearMonth) : this(
