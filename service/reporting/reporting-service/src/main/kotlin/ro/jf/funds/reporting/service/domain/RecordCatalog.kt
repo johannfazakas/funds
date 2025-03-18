@@ -11,8 +11,8 @@ class RecordCatalog(
 ) {
     val previousRecords: ByUnit<List<ReportRecord>>
 
-    private val recordsGrouped: ByUnit<Map<DateInterval, List<ReportRecord>>>
-    private val recordsByBucket: Map<DateInterval, ByUnit<List<ReportRecord>>>
+    private val recordsGrouped: ByUnit<ByBucket<List<ReportRecord>>>
+    private val recordsByBucket: ByBucket<ByUnit<List<ReportRecord>>>
 
     init {
         val (previousRecords, intervalRecords) =
@@ -21,13 +21,13 @@ class RecordCatalog(
         this.recordsGrouped = intervalRecords
             .iterator().asSequence()
             .map { (unit, records) ->
-                unit to records.groupBy { granularInterval.getBucket(it.date) }
-
+                unit to records.groupBy { granularInterval.getBucket(it.date) }.let { ByBucket(it) }
             }
             .let { ByUnit(it.toMap()) }
 
         this.recordsByBucket = granularInterval.getBuckets()
             .associateWith { calculateRecordsByBucket(it) }
+            .let { ByBucket(it) }
     }
 
     fun getRecordsByBucket(bucket: DateInterval): ByUnit<List<ReportRecord>> {

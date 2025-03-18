@@ -1,16 +1,13 @@
 package ro.jf.funds.reporting.service.service.reportdata.resolver
 
-import ro.jf.funds.reporting.api.model.DateInterval
-import ro.jf.funds.reporting.service.domain.ByUnit
-import ro.jf.funds.reporting.service.domain.ReportGroup
-import ro.jf.funds.reporting.service.domain.ReportRecord
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import java.math.BigDecimal
 
-class GroupedNetDataResolver : ReportDataResolver<Map<String, BigDecimal>> {
+class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
     override fun resolve(
         input: ReportDataResolverInput,
-    ): Map<DateInterval, Map<String, BigDecimal>>? {
+    ): ByBucket<ByGroup<BigDecimal>>? {
         if (!input.dataConfiguration.features.groupedNet.enabled || input.dataConfiguration.groups == null) {
             return null
         }
@@ -29,15 +26,16 @@ class GroupedNetDataResolver : ReportDataResolver<Map<String, BigDecimal>> {
                     )
                 }
             )
+            .let(::ByBucket)
     }
 
     private fun getGroupedNet(
         records: ByUnit<List<ReportRecord>>,
         groups: List<ReportGroup>,
-    ): Map<String, BigDecimal> {
+    ): ByGroup<BigDecimal> {
         return groups.associate { group ->
             group.name to getFilteredNet(records, group.filter::test)
-        }
+        }.let(::ByGroup)
     }
 
     private fun getFilteredNet(

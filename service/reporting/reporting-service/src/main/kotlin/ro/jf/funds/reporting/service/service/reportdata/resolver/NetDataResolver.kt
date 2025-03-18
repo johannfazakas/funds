@@ -1,6 +1,6 @@
 package ro.jf.funds.reporting.service.service.reportdata.resolver
 
-import ro.jf.funds.reporting.api.model.DateInterval
+import ro.jf.funds.reporting.service.domain.ByBucket
 import ro.jf.funds.reporting.service.domain.ByUnit
 import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
 import ro.jf.funds.reporting.service.domain.ReportRecord
@@ -11,7 +11,7 @@ import java.math.BigDecimal
 class NetDataResolver : ReportDataResolver<BigDecimal> {
     override fun resolve(
         input: ReportDataResolverInput,
-    ): Map<DateInterval, BigDecimal>? {
+    ): ByBucket<BigDecimal>? {
         if (!input.dataConfiguration.features.net.enabled) {
             return null
         }
@@ -20,6 +20,7 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
                 { interval -> getNet(input.catalog.getRecordsByBucket(interval), input.dataConfiguration) },
                 { interval, _ -> getNet(input.catalog.getRecordsByBucket(interval), input.dataConfiguration) }
             )
+            .let { ByBucket(it) }
     }
 
     private fun getNet(
