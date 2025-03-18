@@ -49,7 +49,6 @@ data class NetReportFeatureTO(
 @Serializable
 data class GroupedBudgetReportFeatureTO(
     val enabled: Boolean,
-    // TODO(Johann-13) validate configuration
     val distributions: List<BudgetDistributionTO>,
 ) {
     @Serializable

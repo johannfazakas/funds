@@ -1,9 +1,9 @@
 package ro.jf.funds.reporting.service.domain
 
-import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.api.model.GranularDateInterval
 import ro.jf.funds.reporting.service.service.getBucket
+import ro.jf.funds.reporting.service.service.getBuckets
 
 class RecordCatalog(
     reportRecords: List<ReportRecord>,
@@ -12,6 +12,7 @@ class RecordCatalog(
     val previousRecords: ByUnit<List<ReportRecord>>
 
     private val recordsGrouped: ByUnit<Map<DateInterval, List<ReportRecord>>>
+    private val recordsByBucket: Map<DateInterval, ByUnit<List<ReportRecord>>>
 
     init {
         val (previousRecords, intervalRecords) =
@@ -24,16 +25,23 @@ class RecordCatalog(
 
             }
             .let { ByUnit(it.toMap()) }
+
+        this.recordsByBucket = granularInterval.getBuckets()
+            .associateWith { calculateRecordsByBucket(it) }
     }
 
-    // TODO(Johann-14) could add caching to this method
-    fun getRecordsByBucket(bucket: DateInterval): ByUnit<List<ReportRecord>> =
-        recordsGrouped
+    fun getRecordsByBucket(bucket: DateInterval): ByUnit<List<ReportRecord>> {
+        return recordsByBucket[bucket] ?: ByUnit(emptyMap())
+    }
+
+    private fun calculateRecordsByBucket(bucket: DateInterval): ByUnit<List<ReportRecord>> {
+        return recordsGrouped
             .iterator().asSequence()
             .associate { (unit, recordsByBucket) ->
                 unit to (recordsByBucket[bucket] ?: emptyList())
             }
-            .let { it: Map<FinancialUnit, List<ReportRecord>> -> ByUnit(it) }
+            .let { ByUnit(it) }
+    }
 
     private fun splitRecordsBeforeAndDuring(
         records: List<ReportRecord>,
