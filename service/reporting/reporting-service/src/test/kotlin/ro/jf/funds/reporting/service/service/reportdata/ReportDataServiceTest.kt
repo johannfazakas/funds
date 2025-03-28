@@ -145,7 +145,8 @@ class ReportDataServiceTest {
                 .withGroupedBudget(
                     enabled = true,
                     distributions = listOf(
-                        needWantDistribution(true, null, 60, 40),
+                        needWantDistribution(true, null, 50, 50),
+                        needWantDistribution(false, YearMonth(2020, 1), 60, 40),
                         needWantDistribution(false, YearMonth(2020, 3), 70, 30),
                     ),
                 )
@@ -156,14 +157,20 @@ class ReportDataServiceTest {
         whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
             .thenReturn(
                 listOf(
+                    // previous period with default distribution
+                    ronReportRecord(LocalDate(2019, 12, 5), 3000, labelsOf()),
+                    eurReportRecord(LocalDate(2019, 12, 10), 200, 1000, labelsOf()),
+                    // previous month with specific distribution
                     ronReportRecord(LocalDate(2020, 1, 5), 1000, labelsOf()),
                     ronReportRecord(LocalDate(2020, 1, 10), -100, labelsOf("need")),
                     ronReportRecord(LocalDate(2020, 1, 15), -150, labelsOf("want")),
                     ronReportRecord(LocalDate(2020, 1, 18), -200, labelsOf("need")),
+                    // month 1
                     ronReportRecord(LocalDate(2020, 2, 5), 1200, labelsOf()),
                     ronReportRecord(LocalDate(2020, 2, 10), -500, labelsOf("need")),
                     ronReportRecord(LocalDate(2020, 2, 15), -400, labelsOf("want")),
                     ronReportRecord(LocalDate(2020, 2, 18), -50, labelsOf("want")),
+                    // month 2
                     ronReportRecord(LocalDate(2020, 3, 5), 1500, labelsOf()),
                     ronReportRecord(LocalDate(2020, 3, 5), -250, labelsOf("need")),
                     ronReportRecord(LocalDate(2020, 3, 5), -350, labelsOf("want")),
@@ -176,11 +183,30 @@ class ReportDataServiceTest {
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.granularInterval).isEqualTo(granularInterval)
         assertThat(data.data).hasSize(2)
+        // TODO(Johann-14) also check data
         assertThat(data.data[0].timeBucket)
             .isEqualTo(DateInterval(YearMonth(2020, 2), YearMonth(2020, 2)))
-        // TODO(Johann-14) also check data
+        val groupedBudget1 = data.data[0].aggregate.groupedBudget
+        assertThat(groupedBudget1?.get("Need")?.get(RON)?.left)
+            .isEqualByComparingTo(BigDecimal(3000 * 0.5 + 1000 * 0.6 + 1200 * 0.6 - 100 - 200 - 500))
+        assertThat(groupedBudget1?.get("Need")?.get(RON)?.allocated)
+            .isEqualByComparingTo(BigDecimal(1200 * 0.6))
+        assertThat(groupedBudget1?.get("Want")?.get(RON)?.left)
+            .isEqualByComparingTo(BigDecimal(3000 * 0.5 + 1000 * 0.4 + 1200 * 0.4 - 150 - 400 - 50))
+        assertThat(groupedBudget1?.get("Want")?.get(RON)?.allocated)
+            .isEqualByComparingTo(BigDecimal(1200 * 0.4))
+
         assertThat(data.data[1].timeBucket)
             .isEqualTo(DateInterval(YearMonth(2020, 3), YearMonth(2020, 3)))
+        val groupedBudget2 = data.data[1].aggregate.groupedBudget
+        assertThat(groupedBudget2?.get("Need")?.get(RON)?.left)
+            .isEqualByComparingTo(BigDecimal(3000 * 0.5 + 1000 * 0.6 + 1200 * 0.6 - 100 - 200 - 500 + 1500 * 0.7 - 250))
+        assertThat(groupedBudget2?.get("Need")?.get(RON)?.allocated)
+            .isEqualByComparingTo(BigDecimal(1500 * 0.7))
+        assertThat(groupedBudget2?.get("Want")?.get(RON)?.left)
+            .isEqualByComparingTo(BigDecimal(3000 * 0.5 + 1000 * 0.4 + 1200 * 0.4 + 1500 * 0.3 - 150 - 400 - 50 - 350))
+        assertThat(groupedBudget2?.get("Want")?.get(RON)?.allocated)
+            .isEqualByComparingTo(BigDecimal(1500 * 0.3))
     }
 
     @Test
@@ -328,8 +354,10 @@ class ReportDataServiceTest {
         default: Boolean, from: YearMonth?, needPercentage: Int, wantPercentage: Int,
     ) = GroupedBudgetReportFeature.BudgetDistribution(
         default, from, listOf(
-            GroupedBudgetReportFeature.GroupBudgetPercentage("need", needPercentage),
-            GroupedBudgetReportFeature.GroupBudgetPercentage("want", wantPercentage),
+            GroupedBudgetReportFeature.GroupBudgetPercentage("Need", needPercentage),
+            GroupedBudgetReportFeature.GroupBudgetPercentage("Want", wantPercentage),
         )
     )
+
+    private fun budget(allocated: Int, left: Int): Budget = Budget(BigDecimal(allocated), BigDecimal(left))
 }

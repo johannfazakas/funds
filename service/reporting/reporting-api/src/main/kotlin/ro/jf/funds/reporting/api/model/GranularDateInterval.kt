@@ -1,6 +1,9 @@
 package ro.jf.funds.reporting.api.model
 
-import kotlinx.datetime.*
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -28,4 +31,8 @@ data class DateInterval(
 data class YearMonth(
     val year: Int,
     val month: Int,
-)
+) : Comparable<YearMonth> {
+    override fun compareTo(other: YearMonth): Int {
+        return LocalDate(year, month, 1).compareTo(LocalDate(other.year, other.month, 1))
+    }
+}
