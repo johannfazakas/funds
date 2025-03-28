@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.service.service.reportdata.resolver
 
+import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import java.math.BigDecimal
@@ -44,20 +45,8 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
             .mapValues { (_, byUnit) -> byUnit.mapValues { (_, left) -> Budget(BigDecimal.ZERO, left.left) } }
         val newRecords = records.asSequence()
             .flatMap { (unit, records) ->
-                records.asSequence().flatMap { record ->
-                    val group = getMatchingGroup(record, groups)
-                    if (group != null) {
-                        listOf(ByGroup(group.name to ByUnit(unit to Budget(BigDecimal.ZERO, record.amount))))
-                    } else {
-                        feature.getDistributionByDate(record.date).groups
-                            .map { (group, percentage) ->
-                                ByGroup(
-                                    group to ByUnit(
-                                        unit to record.amount.percentage(percentage).let { Budget(it, it) })
-                                )
-                            }
-                    }
-                }
+                records.asSequence().flatMap { record -> asBudgetRecords(record, groups, unit, feature) }
+
             }
         val newRecordsMerged = newRecords
             .fold(previousRecords) { acc, groupedData ->
@@ -76,24 +65,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
         val previousLeftBudget = previousRecords
             .asSequence()
             .flatMap { (unit, records) ->
-                records.asSequence().flatMap { record ->
-                    val group = getMatchingGroup(record, groups)
-                    if (group != null) {
-                        listOf(ByGroup(group.name to ByUnit(unit to Budget(BigDecimal.ZERO, record.amount))))
-                    } else {
-                        feature.getDistributionByDate(record.date).groups
-                            .map { (group, percentage) ->
-                                ByGroup(
-                                    group to ByUnit(
-                                        unit to Budget(
-                                            BigDecimal.ZERO,
-                                            record.amount.percentage(percentage)
-                                        )
-                                    )
-                                )
-                            }
-                    }
-                }
+                records.asSequence().flatMap { record -> asBudgetRecords(record, groups, unit, feature) }
             }
         val previousLeftBudgetMerged = previousLeftBudget
             .fold(ByGroup<ByUnit<Budget>>()) { acc, groupedData ->
@@ -103,8 +75,41 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
         return previousLeftBudgetMerged
     }
 
+    private fun asBudgetRecords(
+        record: ReportRecord,
+        groups: List<ReportGroup>,
+        unit: FinancialUnit,
+        feature: GroupedBudgetReportFeature,
+    ) = (getMatchingGroup(record, groups)
+        ?.let { listOf(asBudgetExpense(it, unit, record)) }
+        ?: asBudgetAllocations(unit, record, feature))
+
     private fun getMatchingGroup(record: ReportRecord, groups: List<ReportGroup>): ReportGroup? {
         return groups.find { it.filter.test(record) }
+    }
+
+    // TODO(Johann-14) is unit required here? couldn't it be used from report record?
+    private fun asBudgetExpense(
+        group: ReportGroup,
+        unit: FinancialUnit,
+        record: ReportRecord,
+    ): ByGroup<ByUnit<Budget>> {
+        return ByGroup(group.name to ByUnit(unit to Budget(BigDecimal.ZERO, record.amount)))
+    }
+
+    // TODO(Johann-14) is unit required here? couldn't it be used from report record?
+    private fun asBudgetAllocations(
+        unit: FinancialUnit,
+        record: ReportRecord,
+        feature: GroupedBudgetReportFeature,
+    ): List<ByGroup<ByUnit<Budget>>> {
+        return feature.getDistributionByDate(record.date).groups
+            .map { (group, percentage) ->
+                ByGroup(
+                    group to ByUnit(
+                        unit to record.amount.percentage(percentage).let { Budget(it, it) })
+                )
+            }
     }
 
     private fun BigDecimal.percentage(percentage: Int): BigDecimal {
