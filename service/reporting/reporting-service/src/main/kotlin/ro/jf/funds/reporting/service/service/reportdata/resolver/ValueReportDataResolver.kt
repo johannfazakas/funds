@@ -57,7 +57,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
     }
 
     private fun getAmountByUnit(records: ByUnit<List<ReportRecord>>): ByUnit<BigDecimal> =
-        records.mapValues { _, items -> items.sumOf { it.amount } }
+        records.mapValues { (_, items) -> items.sumOf { it.amount } }
 
     private fun ByUnit<BigDecimal>.valueAt(
         date: LocalDate,
