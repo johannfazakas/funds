@@ -34,4 +34,8 @@ data class ValueReport(
 data class Budget(
     val allocated: BigDecimal,
     val left: BigDecimal,
-)
+) {
+    operator fun plus(other: Budget): Budget {
+        return Budget(allocated + other.allocated, left + other.left)
+    }
+}

@@ -26,7 +26,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
                     getGroupedBudget(
                         input.catalog.getRecordsByBucket(interval),
                         input.dataConfiguration.groups,
-                        previous.mapValues { (_, byUnit) -> byUnit.mapValues { (_, budget) -> budget.left } },
+                        previous,
                         groupedBudgetFeature
                     )
                 }
@@ -37,12 +37,11 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
     private fun getGroupedBudget(
         records: ByUnit<List<ReportRecord>>,
         groups: List<ReportGroup>,
-        // TODO(Johann-14) might be easier with Budget type
-        previousLeft: ByGroup<ByUnit<BigDecimal>>,
+        previousLeft: ByGroup<ByUnit<Budget>>,
         feature: GroupedBudgetReportFeature,
     ): ByGroup<ByUnit<Budget>> {
         val previousRecords = previousLeft
-            .mapValues { (_, byUnit) -> byUnit.mapValues { (_, left) -> Budget(BigDecimal.ZERO, left) } }
+            .mapValues { (_, byUnit) -> byUnit.mapValues { (_, left) -> Budget(BigDecimal.ZERO, left.left) } }
         val newRecords = records.asSequence()
             .flatMap { (unit, records) ->
                 records.asSequence().flatMap { record ->
@@ -60,51 +59,48 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
                     }
                 }
             }
-            // TODO(Johann-14) remove this toList
-            .toList()
-        return newRecords
+        val newRecordsMerged = newRecords
             .fold(previousRecords) { acc, groupedData ->
-                acc.plus(groupedData) { a, b ->
-                    a.plus(b) { x, y ->
-                        Budget(
-                            x.allocated + y.allocated,
-                            x.left + y.left
-                        )
-                    }
-                }
+                acc.plus(groupedData) { a, b -> a.plus(b) { x, y -> x + y } }
             }
+        return newRecordsMerged
     }
 
     private fun calculatePreviousLeftBudgets(
         reportCatalog: RecordCatalog,
         groups: List<ReportGroup>,
         feature: GroupedBudgetReportFeature,
-    ): ByGroup<ByUnit<BigDecimal>> {
+    ): ByGroup<ByUnit<Budget>> {
         val previousRecords = reportCatalog.previousRecords
 
-        val flatMap = previousRecords
+        val previousLeftBudget = previousRecords
             .asSequence()
             .flatMap { (unit, records) ->
                 records.asSequence().flatMap { record ->
                     val group = getMatchingGroup(record, groups)
                     if (group != null) {
-                        listOf(ByGroup(group.name to ByUnit(unit to record.amount)))
+                        listOf(ByGroup(group.name to ByUnit(unit to Budget(BigDecimal.ZERO, record.amount))))
                     } else {
                         feature.getDistributionByDate(record.date).groups
                             .map { (group, percentage) ->
-                                ByGroup(group to ByUnit(unit to record.amount.percentage(percentage)))
+                                ByGroup(
+                                    group to ByUnit(
+                                        unit to Budget(
+                                            BigDecimal.ZERO,
+                                            record.amount.percentage(percentage)
+                                        )
+                                    )
+                                )
                             }
                     }
                 }
             }
-            // TODO(Johann-14) remove toList, inline
-            .toList()
-        val previousLeftBudget = flatMap
-            .fold(ByGroup<ByUnit<BigDecimal>>()) { acc, groupedData ->
+        val previousLeftBudgetMerged = previousLeftBudget
+            .fold(ByGroup<ByUnit<Budget>>()) { acc, groupedData ->
                 acc.plus(groupedData) { a, b -> a.plus(b) { x, y -> x + y } }
             }
 
-        return previousLeftBudget
+        return previousLeftBudgetMerged
     }
 
     private fun getMatchingGroup(record: ReportRecord, groups: List<ReportGroup>): ReportGroup? {
