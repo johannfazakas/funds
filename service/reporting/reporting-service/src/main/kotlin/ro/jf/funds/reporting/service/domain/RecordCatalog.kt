@@ -30,7 +30,7 @@ class RecordCatalog(
             .let { ByBucket(it) }
     }
 
-    fun getRecordsByBucket(bucket: DateInterval): ByUnit<List<ReportRecord>> {
+    fun getByBucket(bucket: DateInterval): ByUnit<List<ReportRecord>> {
         return recordsByBucket[bucket] ?: ByUnit(emptyMap())
     }
 
