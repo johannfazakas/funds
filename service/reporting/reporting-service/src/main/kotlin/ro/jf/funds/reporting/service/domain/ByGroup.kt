@@ -7,6 +7,7 @@ data class ByGroup<T>(
 
     operator fun get(group: String): T? = itemByBucket[group]
 
+    // TODO(Johann-14) double check if this will be useful
     fun plus(other: ByGroup<T>, plusFunction: (T, T) -> T): ByGroup<T> {
         return sequenceOf(this, other)
             .flatMap { it.asSequence() }

@@ -21,7 +21,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
                     getValueReport(
                         interval,
                         getAmountByUnit(input.catalog.previousRecords),
-                        input.catalog.getRecordsByBucket(interval),
+                        input.catalog.getByBucket(interval),
                         input.conversions,
                         input.dataConfiguration
                     )
@@ -30,7 +30,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
                     getValueReport(
                         interval,
                         previous.endAmountByUnit,
-                        input.catalog.getRecordsByBucket(interval),
+                        input.catalog.getByBucket(interval),
                         input.conversions,
                         input.dataConfiguration
                     )

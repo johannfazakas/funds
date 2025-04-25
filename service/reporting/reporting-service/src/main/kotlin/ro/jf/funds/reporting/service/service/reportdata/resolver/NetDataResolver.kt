@@ -17,8 +17,8 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
         }
         return input.dateInterval
             .generateBucketedData(
-                { interval -> getNet(input.catalog.getRecordsByBucket(interval), input.dataConfiguration) },
-                { interval, _ -> getNet(input.catalog.getRecordsByBucket(interval), input.dataConfiguration) }
+                { interval -> getNet(input.catalog.getByBucket(interval), input.dataConfiguration) },
+                { interval, _ -> getNet(input.catalog.getByBucket(interval), input.dataConfiguration) }
             )
             .let { ByBucket(it) }
     }
