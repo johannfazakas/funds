@@ -2,9 +2,9 @@ package ro.jf.funds.reporting.service.service.reportdata
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
@@ -258,8 +258,7 @@ class ReportDataServiceTest {
         assertThat(data.data).hasSize(1)
 
         val groupedBudget1 = data.data[0].aggregate.groupedBudget ?: error("First grouped budget is null")
-//        TODO(Johann-14) introduce in tests
-//        TODO(Johann-14) how would the same work for 3 currencies?
+
         /**
          * Total left = 2200 RON + 400 EUR
          * RON/EUR ratio = 2200 / 400 = 5.5
@@ -295,60 +294,7 @@ class ReportDataServiceTest {
     }
 
     @Test
-    fun `get grouped budget should adapt to changing currency exchange rates`() {
-        // TODO(Johann-14) define
-    }
-
-    @Test
-    fun `get grouped budget should adapt to budget distribution change`() {
-        // TODO(Johann-14) define
-        /*
-        Budget distributions
-- default - N: 60, W: 40
-- T1 - N: 70, W: 30
-Exchange rates
-- default - 1 EUR = 5 RON
-Records
-- income 1000 RON
-- income 400 EUR
-- expense N: 200 RON
----T1---
-- income 2000 RON
-- income 500 EUR
-- expense N: 800 RON
-- expense W: 100 EUR
----T2---
-
-Result T1
-- Left total: 800 RON + 400 EUR (2/1)
-- N
-	- Left (i): 400 RON + 240 EUR
-	- 400 + 5A = 2(240-A) => -80 = -7A => A = 11.429
-	- Left: 457.145 RON + 228.571 EUR
-- W
-	- Left (i): 400 RON + 160 EUR
-	- 400 + 5A = 2(160-A) => 80A => 80 = -7A => A = 11.429
-	- Left: 342.855 RON + 171.429 EUR
-Result T2
-- Left total: 2000 RON + 800 EUR (2.5/1)
-- N
-	- Budget: 1400 RON + 350 EUR
-	- Spent: 800 RON
-	- Left(i): 1057.145 + 578.571 EUR
-	- same as on expense distribution
-- W
-	- Budget: 600 RON + 150 EUR
-	- Spent: 100 EUR
-	- Left(i): 942.855 RON + 221.429 EUR
-	- same as on expense distribution
-
-         */
-    }
-
-    @Test
-    // TODO(Johann-14) remove this test, the rest should be enough
-    @Disabled
-    fun `get grouped budget with single currency`(): Unit = runBlocking {
+    fun `get grouped budget should adapt to changing currency exchange rates`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
             filter = RecordFilter(labels = allLabels),
@@ -360,67 +306,228 @@ Result T2
                 .withGroupedBudget(
                     enabled = true,
                     distributions = listOf(
-                        needWantDistribution(true, null, 50, 50),
-                        needWantDistribution(false, YearMonth(2020, 1), 60, 40),
+                        needWantDistribution(true, null, 60, 40),
+                    ),
+                )
+        )
+        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
+        val conversions = mock<ConversionsResponse>()
+        whenever(conversions.getRate(eq(EUR), eq(RON), any()))
+            .thenAnswer {
+                val date = it.getArgument<LocalDate>(2)
+                if (date.month in listOf(Month.JANUARY, Month.FEBRUARY)) {
+                    BigDecimal("4.8")
+                } else {
+                    BigDecimal("4.9")
+                }
+            }
+        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
+        val interval = DateInterval(YearMonth(2020, 2), YearMonth(2020, 3))
+        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+            .thenReturn(
+                listOf(
+                    // first month
+                    ronReportRecord(LocalDate(2020, 2, 5), 2000, labelsOf()),
+                    eurReportRecord(LocalDate(2020, 2, 15), 500, 2500, labelsOf()),
+                    ronReportRecord(LocalDate(2020, 2, 10), -800, labelsOf("need")),
+                    eurReportRecord(LocalDate(2020, 2, 25), -100, -500, labelsOf("want")),
+                    // second month
+                    ronReportRecord(LocalDate(2020, 3, 5), 2500, labelsOf()),
+                    eurReportRecord(LocalDate(2020, 3, 15), 400, 2000, labelsOf()),
+                    ronReportRecord(LocalDate(2020, 3, 20), -300, labelsOf("want")),
+                    eurReportRecord(LocalDate(2020, 3, 25), -200, -1000, labelsOf("need")),
+                )
+            )
+
+        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+
+        assertThat(data.data).hasSize(2)
+
+        val acceptedOffset = within(BigDecimal("0.01"))
+
+        /**
+         * 2020 February
+         * Total left = 1200 RON + 400 EUR
+         * RON/EUR rate = 4.8
+         * Need:
+         *      Allocated: 1200 RON + 300 EUR
+         *      Spent: 800 RON
+         *      Initial Left = 400 RON + 300 EUR
+         *          400 + 4.8 * 300 = X (1200 + 400 * 4.8) => X = 1840 / 3120 = 0,58974
+         *      Real Left = 707,688 RON + 235.896 EUR
+         * Want:
+         *      Allocated: 800 RON + 200 EUR
+         *      Spent: 100 EUR
+         *      Initial Left = 800 RON + 100 EUR
+         *          800 + 4.8 * 100 = X (1200 + 400 * 4.8) => X = 1280 / 3120 = 0,41026
+         *      Real Left = 492.3120 RON + 164.104 EUR
+         */
+
+        val groupedBudget1 = data.data[0].aggregate.groupedBudget ?: error("First grouped budget is null")
+        assertThat(groupedBudget1["Need"]).isNotNull
+        groupedBudget1["Need"]?.let {
+            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("1200"), acceptedOffset)
+            assertThat(it[RON]?.left).isCloseTo(BigDecimal("707.688"), acceptedOffset)
+            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("300"), acceptedOffset)
+            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("235.896"), acceptedOffset)
+        }
+        assertThat(groupedBudget1["Want"]).isNotNull
+        groupedBudget1["Want"]?.let {
+            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("800"), acceptedOffset)
+            assertThat(it[RON]?.left).isCloseTo(BigDecimal("492.312"), acceptedOffset)
+            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("200"), acceptedOffset)
+            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("164.104"), acceptedOffset)
+        }
+
+        /**
+         * March 2020
+         * Total left = 3400 RON + 600 EUR
+         * RON/EUR rate = 4.9
+         * Need
+         *      Allocated: 1500 RON + 240 EUR
+         *      Spent: -200 EUR
+         *      Initial Left = 707,688 RON + 235.896 EUR + 1500 RON + 40 EUR = 2207,688 RON + 275.896 EUR
+         *          2207,688 RON + 275.896 EUR * 4.9 = X (3400 + 600 * 4.9) => X = 3.559,5784 / 6340 = 0,5614476972
+         *      Real Left = 1.908,92217 RON + 336,86862 EUR
+         *  Want
+         *      Allocated: 1000 RON + 160 EUR
+         *      Spent: -300 RON
+         *      Initial Left = 492.3120 RON + 164.104 EUR + 700 RON + 160 EUR = 1192.312 RON + 324.104 EUR
+         *          1192.312 RON + 324.104 EUR * 4.9 = X (3400 + 600 * 4.9) => X = 2.780,4216 / 6340 = 0,4385523028
+         *      Real Left = 1.491,0778 RON + 263,13138 EUR
+         */
+        val groupedBudget2 = data.data[1].aggregate.groupedBudget ?: error("First grouped budget is null")
+        assertThat(groupedBudget2["Need"]).isNotNull
+        groupedBudget2["Need"]?.let {
+            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("1500"), acceptedOffset)
+            assertThat(it[RON]?.left).isCloseTo(BigDecimal("1908.92217"), acceptedOffset)
+            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("240"), acceptedOffset)
+            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("336.86862"), acceptedOffset)
+        }
+        assertThat(groupedBudget2["Want"]).isNotNull
+        groupedBudget2["Want"]?.let {
+            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("1000"), acceptedOffset)
+            assertThat(it[RON]?.left).isCloseTo(BigDecimal("1491.0778"), acceptedOffset)
+            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("160"), acceptedOffset)
+            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("263.13138"), acceptedOffset)
+        }
+    }
+
+    @Test
+    fun `get grouped budget should adapt to budget distribution change`(): Unit = runBlocking {
+        val reportDataConfiguration = ReportDataConfiguration(
+            currency = RON,
+            filter = RecordFilter(labels = allLabels),
+            groups = listOf(
+                ReportGroup("Need", RecordFilter.byLabels("need")),
+                ReportGroup("Want", RecordFilter.byLabels("want"))
+            ),
+            features = ReportDataFeaturesConfiguration()
+                .withGroupedBudget(
+                    enabled = true,
+                    distributions = listOf(
+                        needWantDistribution(true, null, 60, 40),
                         needWantDistribution(false, YearMonth(2020, 3), 70, 30),
                     ),
                 )
         )
         whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
+        val conversions = mock<ConversionsResponse>()
+        whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.00"))
+        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
         val interval = DateInterval(YearMonth(2020, 2), YearMonth(2020, 3))
-        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(ConversionsResponse.empty())
+        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
         whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
             .thenReturn(
                 listOf(
-                    // previous period with default distribution
-                    ronReportRecord(LocalDate(2019, 12, 5), 3000, labelsOf()),
-                    // previous month with specific distribution
-                    ronReportRecord(LocalDate(2020, 1, 5), 1000, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 1, 10), -100, labelsOf("need")),
-                    ronReportRecord(LocalDate(2020, 1, 15), -150, labelsOf("want")),
-                    ronReportRecord(LocalDate(2020, 1, 18), -200, labelsOf("need")),
-                    // month 1
-                    ronReportRecord(LocalDate(2020, 2, 5), 1200, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 2, 10), -500, labelsOf("need")),
-                    ronReportRecord(LocalDate(2020, 2, 15), -400, labelsOf("want")),
-                    ronReportRecord(LocalDate(2020, 2, 18), -50, labelsOf("want")),
-                    // month 2
-                    ronReportRecord(LocalDate(2020, 3, 5), 1500, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 3, 5), -250, labelsOf("need")),
-                    ronReportRecord(LocalDate(2020, 3, 5), -350, labelsOf("want")),
+                    // first month
+                    ronReportRecord(LocalDate(2020, 2, 5), 2000, labelsOf()),
+                    eurReportRecord(LocalDate(2020, 2, 15), 500, 2500, labelsOf()),
+                    ronReportRecord(LocalDate(2020, 2, 10), -800, labelsOf("need")),
+                    eurReportRecord(LocalDate(2020, 2, 25), -100, -500, labelsOf("want")),
+                    // second month
+                    ronReportRecord(LocalDate(2020, 3, 5), 2500, labelsOf()),
+                    eurReportRecord(LocalDate(2020, 3, 15), 400, 2000, labelsOf()),
+                    ronReportRecord(LocalDate(2020, 3, 20), -300, labelsOf("want")),
+                    eurReportRecord(LocalDate(2020, 3, 25), -200, -1000, labelsOf("need")),
                 )
             )
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
 
         val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
 
-        assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.granularInterval).isEqualTo(granularInterval)
         assertThat(data.data).hasSize(2)
-        // TODO(Johann-14) also check data
-        assertThat(data.data[0].timeBucket)
-            .isEqualTo(DateInterval(YearMonth(2020, 2), YearMonth(2020, 2)))
-        val groupedBudget1 = data.data[0].aggregate.groupedBudget
-        assertThat(groupedBudget1?.get("Need")?.get(RON)?.left)
-            .isEqualByComparingTo(BigDecimal(3000 * 0.5 + 1000 * 0.6 + 1200 * 0.6 - 100 - 200 - 500))
-        assertThat(groupedBudget1?.get("Need")?.get(RON)?.allocated)
-            .isEqualByComparingTo(BigDecimal(1200 * 0.6))
-        assertThat(groupedBudget1?.get("Want")?.get(RON)?.left)
-            .isEqualByComparingTo(BigDecimal(3000 * 0.5 + 1000 * 0.4 + 1200 * 0.4 - 150 - 400 - 50))
-        assertThat(groupedBudget1?.get("Want")?.get(RON)?.allocated)
-            .isEqualByComparingTo(BigDecimal(1200 * 0.4))
 
-        assertThat(data.data[1].timeBucket)
-            .isEqualTo(DateInterval(YearMonth(2020, 3), YearMonth(2020, 3)))
-        val groupedBudget2 = data.data[1].aggregate.groupedBudget
-        assertThat(groupedBudget2?.get("Need")?.get(RON)?.left)
-            .isEqualByComparingTo(BigDecimal(3000 * 0.5 + 1000 * 0.6 + 1200 * 0.6 - 100 - 200 - 500 + 1500 * 0.7 - 250))
-        assertThat(groupedBudget2?.get("Need")?.get(RON)?.allocated)
-            .isEqualByComparingTo(BigDecimal(1500 * 0.7))
-        assertThat(groupedBudget2?.get("Want")?.get(RON)?.left)
-            .isEqualByComparingTo(BigDecimal(3000 * 0.5 + 1000 * 0.4 + 1200 * 0.4 + 1500 * 0.3 - 150 - 400 - 50 - 350))
-        assertThat(groupedBudget2?.get("Want")?.get(RON)?.allocated)
-            .isEqualByComparingTo(BigDecimal(1500 * 0.3))
+        val acceptedOffset = within(BigDecimal("0.01"))
+
+        /**
+         * 2020 February
+         * Total left = 1200 RON + 400 EUR
+         * RON/EUR rate = 5
+         * Distribution: 60% Need, 40% Want
+         * Need:
+         *      Allocated: 1200 RON + 300 EUR
+         *      Spent: 800 RON
+         *      Initial Left = 400 RON + 300 EUR
+         *          400 + 5 * 300 = X (1200 + 400 * 5) => X = 1900 / 3200 = 0,59375
+         *      Real Left = 712.5 RON + 237,5 EUR
+         * Want:
+         *      Allocated: 800 RON + 200 EUR
+         *      Spent: 100 EUR
+         *      Initial Left = 800 RON + 100 EUR
+         *          800 + 5 * 100 = X (1200 + 400 * 5) => X = 1300 / 3200 = 0,40625 = 0,41026
+         *      Real Left = 487.5 RON + 162.5 EUR
+         */
+
+        val groupedBudget1 = data.data[0].aggregate.groupedBudget ?: error("First grouped budget is null")
+        assertThat(groupedBudget1["Need"]).isNotNull
+        groupedBudget1["Need"]?.let {
+            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("1200"), acceptedOffset)
+            assertThat(it[RON]?.left).isCloseTo(BigDecimal("712.5"), acceptedOffset)
+            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("300"), acceptedOffset)
+            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("237.5"), acceptedOffset)
+        }
+        assertThat(groupedBudget1["Want"]).isNotNull
+        groupedBudget1["Want"]?.let {
+            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("800"), acceptedOffset)
+            assertThat(it[RON]?.left).isCloseTo(BigDecimal("487.5"), acceptedOffset)
+            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("200"), acceptedOffset)
+            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("162.5"), acceptedOffset)
+        }
+
+        /**
+         * March 2020
+         * Total left = 3400 RON + 600 EUR
+         * RON/EUR rate = 5
+         * Distribution: 70% Need, 30% Want
+         * Need
+         *      Allocated: 1750 RON + 280 EUR
+         *      Spent: -200 EUR
+         *      Initial Left = 712.5 RON + 237,5 EUR + 1750 RON + 80 EUR = 2462.5 RON + 317.5 EUR
+         *          2462.5 RON + 317.5 EUR * 5 = X (3400 + 600 * 5) => X = 4.050 / 6400 = 0,6328125
+         *      Real Left = 2151.5625 RON + 379.6875 EUR
+         *  Want
+         *      Allocated: 750 RON + 120 EUR
+         *      Spent: -300 RON
+         *      Initial Left = 487.5 RON + 162.5 EUR + 450 RON + 120 EUR = 937.5 RON + 282.5 EUR
+         *          937.5 RON + 282.5 EUR * 5 = X (3400 + 600 * 59) => X = 2350 / 6400 = 0,3671875
+         *      Real Left = 1248.4375 RON + 220.3125 EUR
+         */
+        val groupedBudget2 = data.data[1].aggregate.groupedBudget ?: error("First grouped budget is null")
+        assertThat(groupedBudget2["Need"]).isNotNull
+        groupedBudget2["Need"]?.let {
+            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("1750"), acceptedOffset)
+            assertThat(it[RON]?.left).isCloseTo(BigDecimal("2151.5625"), acceptedOffset)
+            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("280"), acceptedOffset)
+            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("379.6875"), acceptedOffset)
+        }
+        assertThat(groupedBudget2["Want"]).isNotNull
+        groupedBudget2["Want"]?.let {
+            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("750"), acceptedOffset)
+            assertThat(it[RON]?.left).isCloseTo(BigDecimal("1248.4375"), acceptedOffset)
+            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("120"), acceptedOffset)
+            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("220.3125"), acceptedOffset)
+        }
     }
 
     @Test

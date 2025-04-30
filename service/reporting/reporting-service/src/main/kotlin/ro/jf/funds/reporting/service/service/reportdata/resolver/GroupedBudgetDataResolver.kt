@@ -113,7 +113,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
     ): ByGroup<ByUnit<Budget>> {
         return ByGroup(matchingGroup to ByUnit(record.unit to Budget(BigDecimal.ZERO, record.amount)))
             .let { it.plus(this) { a, b -> a.plus(b) { x, y -> x + y } } }
-            // TODO(Johann-14) what if normalization would happen just once at the end of a bucket?
+            // TODO(Johann) this could be done once at the end of the bucket as an optimization. currency conversion should also be available then
             .normalizeGroupCurrencyRatio(record.date, reportCurrency, conversions)
     }
 
@@ -123,7 +123,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
         conversions: ConversionsResponse,
     ): ByGroup<ByUnit<Budget>> {
         // TODO(Johann-14) but maybe this map could contain converted value rates?
-        val leftWeightByUnit = this
+        val leftByUnit = this
             .flatMap { it.value }
             .map { (unit, budget) -> unit to budget.left }
             .groupBy(Pair<FinancialUnit, BigDecimal>::first, Pair<FinancialUnit, BigDecimal>::second)
@@ -137,11 +137,11 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
             // X * W1 * R1 + X * W2 * R2 = T => X (W1 * R1 + W2 * R2) = T => X = T / (W1 * R1 + W2 * R2)
             val multiplicationFactor = budgetByUnit
                 .sumOf { (unit, _) ->
-                    leftWeightByUnit[unit]!! * getConversionRate(date, unit, reportCurrency, conversions)
+                    leftByUnit[unit]!! * getConversionRate(date, unit, reportCurrency, conversions)
                 }
                 .let { convertedGroupLeftValue.divide(it, MATH_PRECISION) }
             budgetByUnit.mapValues { (unit, budget) ->
-                budget.copy(left = multiplicationFactor * leftWeightByUnit[unit]!!)
+                budget.copy(left = multiplicationFactor * leftByUnit[unit]!!)
             }
         }
 

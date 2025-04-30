@@ -21,7 +21,7 @@ class RecordCatalog(
         this.recordsGrouped = intervalRecords
             .iterator().asSequence()
             .map { (unit, records) ->
-                unit to records.groupBy { granularInterval.getBucket(it.date) }.let { ByBucket(it) }
+                unit to ByBucket(records.groupBy { granularInterval.getBucket(it.date) })
             }
             .let { ByUnit(it.toMap()) }
 
