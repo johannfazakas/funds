@@ -15,13 +15,13 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
             .generateBucketedData(
                 { interval ->
                     getGroupedNet(
-                        input.catalog.getByBucket(interval),
+                        input.catalog.getBucketRecordsGroupedByUnit(interval),
                         input.dataConfiguration.groups
                     )
                 },
                 { interval, _ ->
                     getGroupedNet(
-                        input.catalog.getByBucket(interval),
+                        input.catalog.getBucketRecordsGroupedByUnit(interval),
                         input.dataConfiguration.groups
                     )
                 }
