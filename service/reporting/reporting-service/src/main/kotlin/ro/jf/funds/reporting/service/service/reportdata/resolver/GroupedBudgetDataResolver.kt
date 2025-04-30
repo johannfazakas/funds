@@ -20,35 +20,19 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
         val reportCatalog = input.catalog
         val previousLeftBudgets =
             getGroupedBudget(
-                // TODO(Johann-14) rething parameters, maybe dataConfiguration should be passed
-                reportCatalog.previousRecords,
-                groups,
-                ByGroup(),
-                input.conversions,
-                groupedBudgetFeature,
-                input.dataConfiguration.currency
+                reportCatalog.getPreviousRecords(), ByGroup(), input, groupedBudgetFeature
             )
 
         return input.dateInterval
             .generateBucketedData(
                 { interval ->
                     getGroupedBudget(
-                        reportCatalog.getByBucket(interval),
-                        groups,
-                        previousLeftBudgets,
-                        input.conversions,
-                        groupedBudgetFeature,
-                        input.dataConfiguration.currency
+                        reportCatalog.getBucketRecords(interval), previousLeftBudgets, input, groupedBudgetFeature
                     )
                 },
                 { interval, previous ->
                     getGroupedBudget(
-                        reportCatalog.getByBucket(interval),
-                        groups,
-                        previous,
-                        input.conversions,
-                        groupedBudgetFeature,
-                        input.dataConfiguration.currency
+                        reportCatalog.getBucketRecords(interval), previous, input, groupedBudgetFeature
                     )
                 }
             )
@@ -56,41 +40,24 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
     }
 
     private fun getGroupedBudget(
-        // TODO(Johann-14) why are records grouped by units if they are mixed again afterwards?
-        records: ByUnit<List<ReportRecord>>,
-        groups: List<ReportGroup>,
+        records: List<ReportRecord>,
         previousBudget: ByGroup<ByUnit<Budget>>,
-        conversions: ConversionsResponse,
+        input: ReportDataResolverInput,
         feature: GroupedBudgetReportFeature,
-        currency: Currency,
-    ): ByGroup<ByUnit<Budget>> {
-        val flattenRecords = records.asSequence()
-            .flatMap { (_, records) -> records.asSequence() }
-            .sortedBy { it.date }
-        val budget = flattenRecords
-            .fold(previousBudget.resetAllocatedAmount()) { budget, record ->
-                budget.addRecord(
-                    record,
-                    groups,
-                    conversions,
-                    feature,
-                    currency,
-                )
-            }
-        return budget
-    }
+    ): ByGroup<ByUnit<Budget>> = records
+        .fold(previousBudget.resetAllocatedAmount()) { budget, record -> budget.addRecord(record, input, feature) }
 
     private fun ByGroup<ByUnit<Budget>>.addRecord(
         record: ReportRecord,
-        // TODO(Johann-14) not sure about these arguments. are they needed in this form?
-        groups: List<ReportGroup>,
-        conversions: ConversionsResponse,
+        input: ReportDataResolverInput,
         feature: GroupedBudgetReportFeature,
-        reportCurrency: Currency,
     ): ByGroup<ByUnit<Budget>> {
-        return getMatchingGroup(record, groups)
-            ?.let { matchingGroup -> addGroupExpense(matchingGroup.name, record, reportCurrency, conversions) }
-            ?: allocateIncome(record, feature.getDistributionByDate(record.date))
+        val matchingGroup = getMatchingGroup(record, input.dataConfiguration.groups ?: emptyList())
+        return if (matchingGroup != null) {
+            addGroupExpense(matchingGroup.name, record, input.dataConfiguration.currency, input.conversions)
+        } else {
+            allocateIncome(record, feature.getDistributionByDate(record.date))
+        }
     }
 
     private fun ByGroup<ByUnit<Budget>>.allocateIncome(
@@ -122,7 +89,6 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
         reportCurrency: Currency,
         conversions: ConversionsResponse,
     ): ByGroup<ByUnit<Budget>> {
-        // TODO(Johann-14) but maybe this map could contain converted value rates?
         val leftByUnit = this
             .flatMap { it.value }
             .map { (unit, budget) -> unit to budget.left }
