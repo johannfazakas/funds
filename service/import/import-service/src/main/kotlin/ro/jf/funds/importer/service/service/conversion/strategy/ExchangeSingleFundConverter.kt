@@ -81,6 +81,7 @@ class ExchangeSingleFundConverter : ImportFundConverter {
             .first()
         val creditToDebitConversion = Conversion(date, creditRecord.unit, debitRecord.unit)
         val rate = conversions.getRate(creditRecord.unit, debitRecord.unit, date)
+            ?: error("Rate not found for ${creditRecord.unit} to ${debitRecord.unit} on $date.")
         val debitAmount = creditAmount.negate() * rate
         val debitFundRecord = CreateFundRecordTO(
             fundId = fundStore[debitRecord.fundName].id,
