@@ -36,6 +36,8 @@ import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
+import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.service.config.configureImportErrorHandling
@@ -98,6 +100,8 @@ class ImportApiTest {
             )
         )
         whenever(fundTransactionSdk.createTransaction(eq(userId), any())).thenReturn(mock())
+        whenever(historicalPricingSdk.convert(userId, ConversionsRequest(emptyList())))
+            .thenReturn(ConversionsResponse.empty())
 
         val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
             header(USER_ID_HEADER, userId.toString())

@@ -18,7 +18,7 @@ import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
+import ro.jf.funds.historicalpricing.api.model.*
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
@@ -37,7 +37,6 @@ class ImportFundConversionServiceTest {
     private val fundSdk = mock<FundSdk>()
     private val fundService = FundService(fundSdk)
     private val historicalPricingSdk = mock<HistoricalPricingSdk>()
-    private val conversionRateService = ConversionRateService(historicalPricingSdk)
     private val importFundConverterRegistry = ImportFundConverterRegistry(
         SingleRecordFundConverter(),
         TransferFundConverter(),
@@ -45,7 +44,7 @@ class ImportFundConversionServiceTest {
         ExchangeSingleFundConverter()
     )
     private val importFundConversionService =
-        ImportFundConversionService(accountService, fundService, conversionRateService, importFundConverterRegistry)
+        ImportFundConversionService(accountService, fundService, importFundConverterRegistry, historicalPricingSdk)
 
     private val userId: UUID = randomUUID()
 
@@ -71,6 +70,8 @@ class ImportFundConversionServiceTest {
         val expensedFund = fund("Expenses")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(bankAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
+        whenever(historicalPricingSdk.convert(userId, ConversionsRequest(emptyList())))
+            .thenReturn(ConversionsResponse.empty())
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
@@ -113,8 +114,10 @@ class ImportFundConversionServiceTest {
         val expensedFund = fund("Expenses")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(bankAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
-        whenever(historicalPricingSdk.convertCurrency(Currency.RON, Currency.EUR, listOf(transactionDate)))
-            .thenReturn(listOf(HistoricalPrice(transactionDate, BigDecimal("0.2"))))
+        val conversionRequest = ConversionRequest(Currency.RON, Currency.EUR, transactionDate)
+        val conversionResponse = ConversionResponse(Currency.RON, Currency.EUR, transactionDate, BigDecimal("0.2"))
+        whenever(historicalPricingSdk.convert(userId, ConversionsRequest(listOf(conversionRequest))))
+            .thenReturn(ConversionsResponse(listOf(conversionResponse)))
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
@@ -159,6 +162,8 @@ class ImportFundConversionServiceTest {
         val incomeFund = fund("Income")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, companyAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
+        whenever(historicalPricingSdk.convert(userId, ConversionsRequest(emptyList())))
+            .thenReturn(ConversionsResponse.empty())
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
@@ -211,14 +216,17 @@ class ImportFundConversionServiceTest {
                 )
             )
         )
-        whenever(historicalPricingSdk.convertCurrency(Currency.RON, Currency.EUR, listOf(transactionDate)))
-            .thenReturn(listOf(HistoricalPrice(transactionDate, BigDecimal("0.20"))))
         val cashAccount = account("Cash RON", Currency.EUR)
         val companyAccount = account("Company", Currency.EUR)
         val expensedFund = fund("Expenses")
         val incomeFund = fund("Income")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, companyAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
+
+        val conversionRequest = ConversionRequest(Currency.RON, Currency.EUR, transactionDate)
+        val conversionResponse = ConversionResponse(Currency.RON, Currency.EUR, transactionDate, BigDecimal("0.20"))
+        whenever(historicalPricingSdk.convert(userId, ConversionsRequest(listOf(conversionRequest))))
+            .thenReturn(ConversionsResponse(listOf(conversionResponse)))
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
@@ -266,6 +274,8 @@ class ImportFundConversionServiceTest {
         val incomeFund = fund("Income")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
+        whenever(historicalPricingSdk.convert(userId, ConversionsRequest(emptyList())))
+            .thenReturn(ConversionsResponse.empty())
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
@@ -331,10 +341,16 @@ class ImportFundConversionServiceTest {
 
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(eurAccount, ronAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expenses))
-        whenever(historicalPricingSdk.convertCurrency(Currency.RON, Currency.EUR, listOf(dateTime.date)))
-            .thenReturn(listOf(HistoricalPrice(dateTime.date, BigDecimal("0.20998"))))
-        whenever(historicalPricingSdk.convertCurrency(Currency.EUR, Currency.RON, listOf(dateTime.date)))
-            .thenReturn(listOf(HistoricalPrice(dateTime.date, BigDecimal("4.76235"))))
+
+        val conversionsRequest = ConversionsRequest(listOf(
+            ConversionRequest(Currency.RON, Currency.EUR, dateTime.date),
+            ConversionRequest(Currency.EUR, Currency.RON, dateTime.date),
+        ))
+        val conversionsResponse = ConversionsResponse(listOf(
+            ConversionResponse(Currency.RON, Currency.EUR, dateTime.date, BigDecimal("0.20998")),
+            ConversionResponse(Currency.EUR, Currency.RON, dateTime.date, BigDecimal("4.76235")),
+        ))
+        whenever(historicalPricingSdk.convert(userId, conversionsRequest)).thenReturn(conversionsResponse)
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
@@ -414,6 +430,8 @@ class ImportFundConversionServiceTest {
         )
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account("Revolut")))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(fund("Investments")))
+        whenever(historicalPricingSdk.convert(userId, ConversionsRequest(emptyList())))
+            .thenReturn(ConversionsResponse.empty())
 
         assertThatThrownBy {
             runBlocking {

@@ -5,6 +5,7 @@ import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
+import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
@@ -26,12 +27,12 @@ fun ImportParsedRecord.toImportCurrencyFundRecord(
     date: LocalDate,
     fundId: UUID,
     account: AccountTO,
-    conversionRateStore: Store<Conversion, BigDecimal>,
+    conversions: ConversionsResponse,
 ): CreateFundRecordTO {
     return CreateFundRecordTO(
         fundId = fundId,
         accountId = account.id,
-        amount = toFundRecordAmount(date, account, conversionRateStore),
+        amount = toFundRecordAmount(date, account, conversions),
         unit = account.unit as Currency,
         labels = labels,
     )
@@ -40,11 +41,12 @@ fun ImportParsedRecord.toImportCurrencyFundRecord(
 fun ImportParsedRecord.toFundRecordAmount(
     date: LocalDate,
     account: AccountTO,
-    conversionRateStore: Store<Conversion, BigDecimal>,
+    conversions: ConversionsResponse,
 ): BigDecimal {
     return if (unit == account.unit) {
         amount
     } else {
-        amount * conversionRateStore[Conversion(date, unit, account.unit)]
+        val rate = conversions.getRate(unit, account.unit, date)
+        amount * rate
     }
 }

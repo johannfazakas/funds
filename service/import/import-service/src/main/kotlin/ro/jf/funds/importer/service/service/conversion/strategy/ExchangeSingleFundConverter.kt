@@ -7,6 +7,7 @@ import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
@@ -55,15 +56,15 @@ class ExchangeSingleFundConverter : ImportFundConverter {
 
     override fun mapToFundTransaction(
         transaction: ImportParsedTransaction,
+        conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-        conversionRateStore: Store<Conversion, BigDecimal>,
     ): CreateFundTransactionTO {
         val date = transaction.dateTime.date
 
         val creditRecord = transaction.records.single { it.amount > BigDecimal.ZERO }
         val creditAmount = creditRecord
-            .toFundRecordAmount(date, accountStore[creditRecord.accountName], conversionRateStore)
+            .toFundRecordAmount(date, accountStore[creditRecord.accountName], conversions)
         val creditFundRecord = CreateFundRecordTO(
             fundId = fundStore[creditRecord.fundName].id,
             accountId = accountStore[creditRecord.accountName].id,
@@ -75,11 +76,12 @@ class ExchangeSingleFundConverter : ImportFundConverter {
         val (debitRecord, debitTotalAmount) = transaction.records
             .asSequence()
             .filter { it.amount < BigDecimal.ZERO }
-            .map { it to it.toFundRecordAmount(date, accountStore[it.accountName], conversionRateStore) }
+            .map { it to it.toFundRecordAmount(date, accountStore[it.accountName], conversions) }
             .sortedByDescending { (_, amount) -> (creditAmount + amount).abs() }
             .first()
         val creditToDebitConversion = Conversion(date, creditRecord.unit, debitRecord.unit)
-        val debitAmount = creditAmount.negate() * conversionRateStore[creditToDebitConversion]
+        val rate = conversions.getRate(creditRecord.unit, debitRecord.unit, date)
+        val debitAmount = creditAmount.negate() * rate
         val debitFundRecord = CreateFundRecordTO(
             fundId = fundStore[debitRecord.fundName].id,
             accountId = accountStore[debitRecord.accountName].id,

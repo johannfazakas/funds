@@ -5,10 +5,10 @@ import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
-import java.math.BigDecimal
 
 interface ImportFundConverter {
     fun matches(
@@ -23,8 +23,8 @@ interface ImportFundConverter {
 
     fun mapToFundTransaction(
         transaction: ImportParsedTransaction,
+        conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-        conversionRateStore: Store<Conversion, BigDecimal>,
     ): CreateFundTransactionTO
 }
