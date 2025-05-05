@@ -47,6 +47,7 @@ fun ImportParsedRecord.toFundRecordAmount(
         amount
     } else {
         val rate = conversions.getRate(unit, account.unit, date)
+            ?: error("Rate not found for $unit to ${account.unit} on $date.")
         amount * rate
     }
 }
