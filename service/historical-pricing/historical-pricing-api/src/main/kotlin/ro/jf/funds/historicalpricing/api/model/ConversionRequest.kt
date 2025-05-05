@@ -14,4 +14,6 @@ data class ConversionRequest(
 @Serializable
 data class ConversionsRequest(
     val conversions: List<ConversionRequest>,
-)
+) {
+    fun isEmpty(): Boolean = conversions.isEmpty()
+}

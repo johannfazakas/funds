@@ -6,6 +6,7 @@ import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
@@ -53,9 +54,9 @@ class ImplicitTransferFundConverter : ImportFundConverter {
 
     override fun mapToFundTransaction(
         transaction: ImportParsedTransaction,
+        conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-        conversionRateStore: Store<Conversion, BigDecimal>,
     ): CreateFundTransactionTO {
         return CreateFundTransactionTO(
             dateTime = transaction.dateTime,
@@ -64,7 +65,7 @@ class ImplicitTransferFundConverter : ImportFundConverter {
                     transaction.dateTime.date,
                     fundStore[record.fundName].id,
                     accountStore[record.accountName],
-                    conversionRateStore
+                    conversions
                 )
             }
         )

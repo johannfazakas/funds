@@ -90,7 +90,6 @@ private val Application.importServiceDependencies
         single<ImportParserRegistry> { ImportParserRegistry(get()) }
         single<AccountService> { AccountService(get()) }
         single<FundService> { FundService(get()) }
-        single<ConversionRateService> { ConversionRateService(get()) }
         single<SingleRecordFundConverter> { SingleRecordFundConverter() }
         single<TransferFundConverter> { TransferFundConverter() }
         single<ImplicitTransferFundConverter> { ImplicitTransferFundConverter() }

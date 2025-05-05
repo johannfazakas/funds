@@ -27,7 +27,8 @@ data class ConversionsResponse(
         conversions.associateBy({ ConversionRequest(it.sourceUnit, it.targetUnit, it.date) }, { it.rate })
     }
 
-    fun getRate(sourceUnit: FinancialUnit, targetUnit: FinancialUnit, date: LocalDate): BigDecimal? {
+    fun getRate(sourceUnit: FinancialUnit, targetUnit: FinancialUnit, date: LocalDate): BigDecimal {
         return conversionsByRequest[ConversionRequest(sourceUnit, targetUnit, date)]
+            ?: error("Rate not found for $sourceUnit to $targetUnit on $date.")
     }
 }
