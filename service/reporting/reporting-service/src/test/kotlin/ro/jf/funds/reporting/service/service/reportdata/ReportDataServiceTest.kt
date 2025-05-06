@@ -649,7 +649,7 @@ class ReportDataServiceTest {
 
         val conversionsRequestCaptor = argumentCaptor<ConversionsRequest>()
         verify(historicalPricingSdk).convert(eq(userId), conversionsRequestCaptor.capture())
-        assertThat(conversionsRequestCaptor.firstValue.conversions).containsExactlyInAnyOrderElementsOf(
+        assertThat(conversionsRequestCaptor.firstValue.conversions).containsOnlyOnceElementsOf(
             conversionRequest.conversions
         )
     }
