@@ -67,6 +67,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
         return this
             .map { (unit, amount) ->
                 val rate = if (unit == currency) BigDecimal.ONE else conversions.getRate(unit, currency, date)
+                // TODO(Johann) this error should be handled in API
                     ?: error("No conversion rate found for $unit to $currency at $date")
                 amount * rate
             }
