@@ -155,7 +155,7 @@ class ReportDataService(
         return valueReportData
     }
 
-    private fun resolveGroupedBudgetData(input: ReportDataResolverInput): ByBucket<ByGroup<ByUnit<Budget>>>? {
+    private fun resolveGroupedBudgetData(input: ReportDataResolverInput): ByBucket<ByGroup<Budget>>? {
         val (groupedBudgetData, groupedBudgetDataDuration) =
             measureTimedValue { resolverRegistry.groupedBudget.resolve(input) }
         if (groupedBudgetData != null) {

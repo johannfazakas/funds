@@ -183,17 +183,13 @@ class ReportDataServiceTest {
         val groupedBudget1 = data.data[0].aggregate.groupedBudget ?: error("First grouped budget is null")
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
-            assertThat(it[RON]?.allocated).isEqualByComparingTo(BigDecimal(1500 * 0.6 - 300 * 0.6))
-            assertThat(it[RON]?.left).isEqualByComparingTo(BigDecimal(1500 * 0.6 - 300 * 0.6 + 1000 * 0.6))
-            assertThat(it[EUR]?.allocated).isEqualByComparingTo(BigDecimal(300 * 0.6))
-            assertThat(it[EUR]?.left).isEqualByComparingTo(BigDecimal(300 * 0.6 + 500 * 0.6))
+            assertThat(it.allocated).isEqualByComparingTo(BigDecimal(1500 * 0.6 - 300 * 0.6 + 300 * 0.6 * 5))
+            assertThat(it.left).isEqualByComparingTo(BigDecimal(1500 * 0.6 - 300 * 0.6 + 1000 * 0.6 + 300 * 0.6 * 5 + 500 * 0.6 * 5))
         }
         assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
-            assertThat(it[RON]?.allocated).isEqualByComparingTo(BigDecimal(1500 * 0.4 - 300 * 0.4))
-            assertThat(it[RON]?.left).isEqualByComparingTo(BigDecimal(1500 * 0.4 - 300 * 0.4 + 1000 * 0.4))
-            assertThat(it[EUR]?.allocated).isEqualByComparingTo(BigDecimal(300 * 0.4))
-            assertThat(it[EUR]?.left).isEqualByComparingTo(BigDecimal(300 * 0.4 + 500 * 0.4))
+            assertThat(it.allocated).isEqualByComparingTo(BigDecimal(1500 * 0.4 - 300 * 0.4 + 300 * 0.4 * 5))
+            assertThat(it.left).isEqualByComparingTo(BigDecimal(1500 * 0.4 - 300 * 0.4 + 1000 * 0.4 + 300 * 0.4 * 5 + 500 * 0.4 * 5))
         }
 
         assertThat(data.data[1].timeBucket)
@@ -201,17 +197,13 @@ class ReportDataServiceTest {
         val groupedBudget2 = data.data[1].aggregate.groupedBudget ?: error("Second grouped budget is null")
         assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
-            assertThat(it[RON]?.allocated).isEqualByComparingTo(BigDecimal(2000 * 0.6))
-            assertThat(it[RON]?.left).isEqualByComparingTo(BigDecimal((2000 + 1500 - 300 + 1000) * 0.6))
-            assertThat(it[EUR]?.allocated).isEqualByComparingTo(BigDecimal(0))
-            assertThat(it[EUR]?.left).isEqualByComparingTo(BigDecimal(300 * 0.6 + 500 * 0.6))
+            assertThat(it.allocated).isEqualByComparingTo(BigDecimal(2000 * 0.6))
+            assertThat(it.left).isEqualByComparingTo(BigDecimal(2000 * 0.6 + 1500 * 0.6 - 300 * 0.6 + 1000 * 0.6 + 300 * 0.6 * 5 + 500 * 0.6 * 5))
         }
         assertThat(groupedBudget2["Want"]).isNotNull
         groupedBudget2["Want"]?.let {
-            assertThat(it[RON]?.allocated).isEqualByComparingTo(BigDecimal(2000 * 0.4))
-            assertThat(it[RON]?.left).isEqualByComparingTo(BigDecimal((2000 + 1500 - 300 + 1000) * 0.4))
-            assertThat(it[EUR]?.allocated).isEqualByComparingTo(BigDecimal(0))
-            assertThat(it[EUR]?.left).isEqualByComparingTo(BigDecimal(300 * 0.4 + 500 * 0.4))
+            assertThat(it.allocated).isEqualByComparingTo(BigDecimal(2000 * 0.4))
+            assertThat(it.left).isEqualByComparingTo(BigDecimal(2000 * 0.4 + 1500 * 0.4 - 300 * 0.4 + 1000 * 0.4 + 300 * 0.4 * 5 + 500 * 0.4 * 5))
         }
     }
 
@@ -279,17 +271,13 @@ class ReportDataServiceTest {
         val acceptedOffset = within(BigDecimal("0.01"))
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
-            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("1200"), acceptedOffset)
-            assertThat(it[RON]?.left).isCloseTo(BigDecimal("1309.525"), acceptedOffset)
-            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("300"), acceptedOffset)
-            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("238.095"), acceptedOffset)
+            assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 5), acceptedOffset)
+            assertThat(it.left).isCloseTo(BigDecimal(1309.525 + 238.095 * 5), acceptedOffset)
         }
         assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
-            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("800"), acceptedOffset)
-            assertThat(it[RON]?.left).isCloseTo(BigDecimal("890.475"), acceptedOffset)
-            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("200"), acceptedOffset)
-            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("161.905"), acceptedOffset)
+            assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 5), acceptedOffset)
+            assertThat(it.left).isCloseTo(BigDecimal(890.475 + 161.905 * 5), acceptedOffset)
         }
     }
 
@@ -344,7 +332,7 @@ class ReportDataServiceTest {
 
         assertThat(data.data).hasSize(2)
 
-        val acceptedOffset = within(BigDecimal("0.01"))
+        val acceptedOffset = within(BigDecimal("0.1"))
 
         /**
          * 2020 February
@@ -367,17 +355,13 @@ class ReportDataServiceTest {
         val groupedBudget1 = data.data[0].aggregate.groupedBudget ?: error("First grouped budget is null")
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
-            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("1200"), acceptedOffset)
-            assertThat(it[RON]?.left).isCloseTo(BigDecimal("707.688"), acceptedOffset)
-            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("300"), acceptedOffset)
-            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("235.896"), acceptedOffset)
+            assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 4.8), acceptedOffset)
+            assertThat(it.left).isCloseTo(BigDecimal(707.688 + 235.896 * 4.8), acceptedOffset)
         }
         assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
-            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("800"), acceptedOffset)
-            assertThat(it[RON]?.left).isCloseTo(BigDecimal("492.312"), acceptedOffset)
-            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("200"), acceptedOffset)
-            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("164.104"), acceptedOffset)
+            assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 4.8), acceptedOffset)
+            assertThat(it.left).isCloseTo(BigDecimal(492.312 + 164.104 * 4.8), acceptedOffset)
         }
 
         /**
@@ -400,17 +384,13 @@ class ReportDataServiceTest {
         val groupedBudget2 = data.data[1].aggregate.groupedBudget ?: error("First grouped budget is null")
         assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
-            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("1500"), acceptedOffset)
-            assertThat(it[RON]?.left).isCloseTo(BigDecimal("1908.92217"), acceptedOffset)
-            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("240"), acceptedOffset)
-            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("336.86862"), acceptedOffset)
+            assertThat(it.allocated).isCloseTo(BigDecimal(1500 + 240 * 4.9), acceptedOffset)
+            assertThat(it.left).isCloseTo(BigDecimal(1908.92217 + 336.86862 * 4.9), acceptedOffset)
         }
         assertThat(groupedBudget2["Want"]).isNotNull
         groupedBudget2["Want"]?.let {
-            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("1000"), acceptedOffset)
-            assertThat(it[RON]?.left).isCloseTo(BigDecimal("1491.0778"), acceptedOffset)
-            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("160"), acceptedOffset)
-            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("263.13138"), acceptedOffset)
+            assertThat(it.allocated).isCloseTo(BigDecimal(1000 + 160 * 4.9), acceptedOffset)
+            assertThat(it.left).isCloseTo(BigDecimal(1491.0778 + 263.13138 * 4.9), acceptedOffset)
         }
     }
 
@@ -482,17 +462,13 @@ class ReportDataServiceTest {
         val groupedBudget1 = data.data[0].aggregate.groupedBudget ?: error("First grouped budget is null")
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
-            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("1200"), acceptedOffset)
-            assertThat(it[RON]?.left).isCloseTo(BigDecimal("712.5"), acceptedOffset)
-            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("300"), acceptedOffset)
-            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("237.5"), acceptedOffset)
+            assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 5), acceptedOffset)
+            assertThat(it.left).isCloseTo(BigDecimal(712.5 + 237.5 * 5), acceptedOffset)
         }
         assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
-            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("800"), acceptedOffset)
-            assertThat(it[RON]?.left).isCloseTo(BigDecimal("487.5"), acceptedOffset)
-            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("200"), acceptedOffset)
-            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("162.5"), acceptedOffset)
+            assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 5), acceptedOffset)
+            assertThat(it.left).isCloseTo(BigDecimal(487.5 + 162.5 * 5), acceptedOffset)
         }
 
         /**
@@ -516,17 +492,13 @@ class ReportDataServiceTest {
         val groupedBudget2 = data.data[1].aggregate.groupedBudget ?: error("First grouped budget is null")
         assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
-            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("1750"), acceptedOffset)
-            assertThat(it[RON]?.left).isCloseTo(BigDecimal("2151.5625"), acceptedOffset)
-            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("280"), acceptedOffset)
-            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("379.6875"), acceptedOffset)
+            assertThat(it.allocated).isCloseTo(BigDecimal(1750 + 280 * 5), acceptedOffset)
+            assertThat(it.left).isCloseTo(BigDecimal(2151.5625 + 379.6875 * 5), acceptedOffset)
         }
         assertThat(groupedBudget2["Want"]).isNotNull
         groupedBudget2["Want"]?.let {
-            assertThat(it[RON]?.allocated).isCloseTo(BigDecimal("750"), acceptedOffset)
-            assertThat(it[RON]?.left).isCloseTo(BigDecimal("1248.4375"), acceptedOffset)
-            assertThat(it[EUR]?.allocated).isCloseTo(BigDecimal("120"), acceptedOffset)
-            assertThat(it[EUR]?.left).isCloseTo(BigDecimal("220.3125"), acceptedOffset)
+            assertThat(it.allocated).isCloseTo(BigDecimal(750 + 120 * 5), acceptedOffset)
+            assertThat(it.left).isCloseTo(BigDecimal(1248.4375 + 220.3125 * 5), acceptedOffset)
         }
     }
 

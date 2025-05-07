@@ -11,8 +11,8 @@ import java.math.MathContext
 
 private val MATH_PRECISION = MathContext.DECIMAL32
 
-class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
-    override fun resolve(input: ReportDataResolverInput): ByBucket<ByGroup<ByUnit<Budget>>>? {
+class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
+    override fun resolve(input: ReportDataResolverInput): ByBucket<ByGroup<Budget>>? {
         val groupedBudgetFeature = input.dataConfiguration.features.groupedBudget
         val groups = input.dataConfiguration.groups
         if (!groupedBudgetFeature.enabled || groups.isNullOrEmpty()) return null
@@ -23,7 +23,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
                 reportCatalog.getPreviousRecords(), ByGroup(), input, groupedBudgetFeature
             )
 
-        return input.dateInterval
+        val generateBucketedData = input.dateInterval
             .generateBucketedData(
                 { interval ->
                     getGroupedBudget(
@@ -36,6 +36,12 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
                     )
                 }
             )
+        return generateBucketedData
+            .mapValues { (interval, budgetByUnitByGroup) ->
+                budgetByUnitByGroup.mapValues { (_, budgetByUnit) ->
+                    budgetByUnit.convertToSingleCurrency(interval.to, input.dataConfiguration.currency, input.conversions)
+                }
+            }
             .let(::ByBucket)
     }
 
@@ -110,9 +116,22 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<ByUnit<Budget>>> {
                 budget.copy(left = multiplicationFactor * leftByUnit[unit]!!)
             }
         }
-
         return mapValues
     }
+
+    private fun ByUnit<Budget>.convertToSingleCurrency(
+        date: LocalDate,
+        reportCurrency: Currency,
+        conversions: ConversionsResponse,
+    ): Budget = this
+        .map { (unit, budget) ->
+            val rate = if (unit == reportCurrency)
+                BigDecimal.ONE
+            else
+                getConversionRate(date, unit, reportCurrency, conversions)
+            Budget(budget.allocated * rate, budget.left * rate)
+        }
+        .fold(Budget(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, budget -> acc + budget }
 
     private fun getMatchingGroup(record: ReportRecord, groups: List<ReportGroup>): ReportGroup? {
         return groups.find { it.filter.test(record) }
