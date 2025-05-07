@@ -20,7 +20,7 @@ data class ReportDataAggregate(
     val net: BigDecimal?,
     val value: ValueReport?,
     val groupedNet: ByGroup<BigDecimal>?,
-    val groupedBudget: ByGroup<ByUnit<Budget>>?,
+    val groupedBudget: ByGroup<Budget>?,
 )
 
 data class ValueReport(
