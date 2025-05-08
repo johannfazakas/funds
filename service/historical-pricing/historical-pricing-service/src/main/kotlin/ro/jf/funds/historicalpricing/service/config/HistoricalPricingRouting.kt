@@ -18,14 +18,5 @@ fun Application.configureHistoricalPricingRouting(
 ) {
     routing {
         historicalPricingApiRouting(conversionService)
-        // TODO(Johann) deprecated
-        route("/api/historical-pricing") {
-            post("/instruments/convert") {
-                call.respond(instrumentService.convert(call.receive<InstrumentConversionRequest>()))
-            }
-            post("/currencies/convert") {
-                call.respond(currencyService.convert(call.receive<CurrencyConversionRequest>()))
-            }
-        }
     }
 }
