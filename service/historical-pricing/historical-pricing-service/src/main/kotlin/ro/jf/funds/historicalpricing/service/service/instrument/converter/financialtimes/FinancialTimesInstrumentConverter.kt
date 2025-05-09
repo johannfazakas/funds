@@ -9,12 +9,12 @@ import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
-import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
+import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.Instrument
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.MonthlyCachedInstrumentConverterProxy
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.financialtimes.model.FTCell
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.financialtimes.model.FTHtmlResponse
-import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -22,21 +22,21 @@ import java.time.LocalDate as JavaLocalDate
 
 class FinancialTimesInstrumentConverter(
     private val httpClient: HttpClient,
-    private val cachedProxy: MonthlyCachedInstrumentConverterProxy = MonthlyCachedInstrumentConverterProxy()
+    private val cachedProxy: MonthlyCachedInstrumentConverterProxy = MonthlyCachedInstrumentConverterProxy(),
 ) : InstrumentConverter {
     private val cellFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")
     private val queryParamFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
 
-    private suspend fun convert(instrument: Instrument, date: LocalDate): HistoricalPrice {
+    private suspend fun convert(instrument: Instrument, date: LocalDate): ConversionResponse {
         return cachedProxy.getCachedOrConvert(instrument, date) { from, to ->
             convert(instrument, from, to)
         }
     }
 
-    override suspend fun convert(instrument: Instrument, dates: List<LocalDate>): List<HistoricalPrice> =
+    override suspend fun convert(instrument: Instrument, dates: List<LocalDate>): List<ConversionResponse> =
         dates.map { date -> convert(instrument, date) }
 
-    private suspend fun convert(instrument: Instrument, from: LocalDate, to: LocalDate): List<HistoricalPrice> {
+    private suspend fun convert(instrument: Instrument, from: LocalDate, to: LocalDate): List<ConversionResponse> {
         val response = httpClient
             .get("https://markets.ft.com/data/equities/ajax/get-historical-prices") {
                 parameter("startDate", from.asQueryParam())
@@ -48,7 +48,7 @@ class FinancialTimesInstrumentConverter(
         val document: Document = Jsoup.parse(response.html)
         return document.body()
             .asCells()
-            .chunkedAsPrices()
+            .chunkedAsPrices(instrument)
             .toList()
     }
 
@@ -81,11 +81,13 @@ class FinancialTimesInstrumentConverter(
         }
     }
 
-    private fun Sequence<FTCell>.chunkedAsPrices(): Sequence<HistoricalPrice> {
+    private fun Sequence<FTCell>.chunkedAsPrices(instrument: Instrument): Sequence<ConversionResponse> {
         return chunked(5) { (date, _, _, _, closedPrice) ->
-            HistoricalPrice(
+            ConversionResponse(
+                sourceUnit = instrument.symbol,
+                targetUnit = instrument.mainCurrency,
                 date = (date as FTCell.Date).value,
-                price = (closedPrice as FTCell.Price).value
+                rate = (closedPrice as FTCell.Price).value
             )
         }
     }

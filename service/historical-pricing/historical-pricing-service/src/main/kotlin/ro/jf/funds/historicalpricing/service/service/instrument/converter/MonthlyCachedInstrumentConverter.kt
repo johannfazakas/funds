@@ -1,35 +1,45 @@
 package ro.jf.funds.historicalpricing.service.service.instrument.converter
 
 import kotlinx.datetime.*
-import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
+import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.Instrument
 
 class MonthlyCachedInstrumentConverterProxy {
-    private val cache = mutableMapOf<Pair<Instrument, LocalDate>, HistoricalPrice>()
+    private val cache = mutableMapOf<Pair<Instrument, LocalDate>, ConversionResponse>()
 
     suspend fun getCachedOrConvert(
         instrument: Instrument,
         date: LocalDate,
-        historicalPricingProvider: suspend (from: LocalDate, to: LocalDate) -> List<HistoricalPrice>
-    ): HistoricalPrice {
+        historicalPricingProvider: suspend (from: LocalDate, to: LocalDate) -> List<ConversionResponse>,
+    ): ConversionResponse {
         cache[instrument to date]?.let { return@getCachedOrConvert it }
         val startOfMonth = date.startOfMonth()
         val monthlyHistoricalPrices =
             historicalPricingProvider(startOfMonth, min(startOfMonth.endOfMonth(), today()))
         monthlyHistoricalPrices
-            .fillGaps(startOfMonth)
+            .fillGaps(instrument, startOfMonth)
             .map { (instrument to it.date) to it }
             .also(cache::putAll)
         return cache[instrument to date] ?: throw IllegalArgumentException("No price found for $date")
     }
 
-    private fun List<HistoricalPrice>.fillGaps(startOfMonth: LocalDate): List<HistoricalPrice> {
+    private fun List<ConversionResponse>.fillGaps(
+        instrument: Instrument,
+        startOfMonth: LocalDate,
+    ): List<ConversionResponse> {
         val prices = sortedBy { it.date }
             .associateBy { it.date }
         var fallbackPrice = prices.values.firstOrNull() ?: return emptyList()
         return generateSequence(startOfMonth) { it.plus(1, DateTimeUnit.DAY) }
             .takeWhile { it <= today() && it.month == startOfMonth.month }
-            .map { date -> prices[date]?.also { fallbackPrice = it } ?: HistoricalPrice(date, fallbackPrice.price) }
+            .map { date ->
+                prices[date]?.also { fallbackPrice = it } ?: ConversionResponse(
+                    instrument.symbol,
+                    instrument.mainCurrency,
+                    date,
+                    fallbackPrice.rate
+                )
+            }
             .toList()
     }
 

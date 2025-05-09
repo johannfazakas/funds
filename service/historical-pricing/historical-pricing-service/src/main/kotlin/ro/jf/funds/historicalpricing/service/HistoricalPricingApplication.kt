@@ -20,6 +20,6 @@ fun Application.module() {
     configureDependencies(historicalPricingDependencies)
     configureContentNegotiation()
     configureDatabaseMigration(get<DataSource>())
-    configureHistoricalPricingRouting(get(), get(), get())
+    configureHistoricalPricingRouting(get())
     configureHistoricalPricingErrorHandling()
 }

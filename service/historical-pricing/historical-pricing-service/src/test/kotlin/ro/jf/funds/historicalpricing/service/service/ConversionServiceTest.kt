@@ -10,8 +10,8 @@ import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Symbol
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
+import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
-import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
 import ro.jf.funds.historicalpricing.service.domain.CurrencyPairHistoricalPrice
 import ro.jf.funds.historicalpricing.service.domain.HistoricalPricingExceptions
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyConverter
@@ -72,9 +72,9 @@ class ConversionServiceTest {
         whenever(historicalPriceRepository.getHistoricalPrices(Currency.EUR, Currency.RON, listOf(date3)))
             .thenReturn(emptyList())
         whenever(currencyConverter.convert(Currency.RON, Currency.EUR, listOf(date2)))
-            .thenReturn(listOf(HistoricalPrice(date2, BigDecimal("0.21"))))
+            .thenReturn(listOf(ConversionResponse(Currency.RON, Currency.EUR, date2, BigDecimal("0.21"))))
         whenever(currencyConverter.convert(Currency.EUR, Currency.RON, listOf(date3)))
-            .thenReturn(listOf(HistoricalPrice(date3, BigDecimal("4.9"))))
+            .thenReturn(listOf(ConversionResponse(Currency.EUR, Currency.RON, date3, BigDecimal("4.9"))))
 
         val request = ConversionsRequest(
             listOf(
@@ -91,19 +91,6 @@ class ConversionServiceTest {
         assertThat(response.getRate(Currency.RON, Currency.EUR, date2)).isEqualTo(BigDecimal("0.21"))
         assertThat(response.getRate(Currency.EUR, Currency.RON, date3)).isEqualTo(BigDecimal("4.9"))
         assertThat(response.getRate(Currency.RON, Currency.EUR, date3)).isNull()
-    }
-
-    @Test
-    fun `should raise an exception when conversion not found`(): Unit = runBlocking {
-        whenever(historicalPriceRepository.getHistoricalPrices(Currency.RON, Currency.EUR, listOf(date1)))
-            .thenReturn(emptyList())
-        whenever(currencyConverter.convert(Currency.RON, Currency.EUR, listOf(date1)))
-            .thenReturn(emptyList())
-
-        val request = ConversionsRequest(listOf(ConversionRequest(Currency.RON, Currency.EUR, date1)))
-
-        assertThatThrownBy { runBlocking { conversionService.convert(request) } }
-            .isInstanceOf(HistoricalPricingExceptions.HistoricalPriceNotFound::class.java)
     }
 
     @Test

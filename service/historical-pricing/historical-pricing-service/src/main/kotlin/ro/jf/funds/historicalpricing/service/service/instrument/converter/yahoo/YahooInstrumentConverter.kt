@@ -4,23 +4,22 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.datetime.*
-import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
+import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.Instrument
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.MonthlyCachedInstrumentConverterProxy
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.yahoo.model.YahooChartResponse
-import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
-import java.math.BigDecimal
 
 private const val ONE_DAY = "1d"
 
 class YahooInstrumentConverter(
     private val httpClient: HttpClient,
-    private val cachedProxy: MonthlyCachedInstrumentConverterProxy = MonthlyCachedInstrumentConverterProxy()
+    private val cachedProxy: MonthlyCachedInstrumentConverterProxy = MonthlyCachedInstrumentConverterProxy(),
 ) : InstrumentConverter {
-    override suspend fun convert(instrument: Instrument, dates: List<LocalDate>): List<HistoricalPrice> =
+    override suspend fun convert(instrument: Instrument, dates: List<LocalDate>): List<ConversionResponse> =
         dates.map { date -> convert(instrument, date) }
 
-    private suspend fun convert(instrument: Instrument, date: LocalDate): HistoricalPrice {
+    private suspend fun convert(instrument: Instrument, date: LocalDate): ConversionResponse {
         return cachedProxy.getCachedOrConvert(instrument, date) { from, to ->
             convert(instrument, from, to)
         }
@@ -29,7 +28,7 @@ class YahooInstrumentConverter(
     private suspend fun convert(
         instrument: Instrument,
         from: LocalDate,
-        to: LocalDate
+        to: LocalDate,
     ) = try {
         httpClient.get("https://query1.finance.yahoo.com/v8/finance/chart/${instrument.symbol}") {
             parameter("interval", ONE_DAY)
@@ -37,46 +36,26 @@ class YahooInstrumentConverter(
             parameter("period2", to.timestamp().toString())
             parameter("symbol", instrument.symbol)
         }.body<YahooChartResponse>()
-            .toHistoricalPrices()
+            .toConversionResponses(instrument)
     } catch (e: Exception) {
         throw IllegalArgumentException("Failed to fetch data for $instrument form $from to $to", e)
     }
 
-    private fun YahooChartResponse.toHistoricalPrices(): List<HistoricalPrice> {
+    private fun YahooChartResponse.toConversionResponses(instrument: Instrument): List<ConversionResponse> {
         val result = this.chart.result.first()
         val prices = result.indicators.quote.first().close
 
         return result.timestamp
             .mapIndexedNotNull { ix, timestamp ->
                 prices[ix]?.let {
-                    HistoricalPrice(
+                    ConversionResponse(
+                        instrument.symbol,
+                        instrument.mainCurrency,
                         timestamp.toLocalDate(),
                         it
                     )
                 }
             }
-    }
-
-    private fun YahooChartResponse.mappedPrices(
-        instrument: Instrument,
-        startDate: LocalDate,
-        endDate: LocalDate
-    ): Map<Pair<Instrument, LocalDate>, HistoricalPrice> {
-        val result = this.chart.result.first()
-        val prices = result.indicators.quote.first().close
-        val timestampsToIndex = result.timestamp.mapIndexed { ix, timestamp -> timestamp to ix }.toMap()
-        var fallbackPrice: BigDecimal = prices.filterNotNull().firstOrNull() ?: return emptyMap()
-
-        return generateSequence(startDate) { it.plus(1, DateTimeUnit.DAY) }
-            .takeWhile { it <= endDate }
-            .associateWith { date ->
-                timestampsToIndex[date.timestamp()]
-                    ?.let { prices[it] }
-                    ?.also { currentPrice -> fallbackPrice = currentPrice }
-                    ?: fallbackPrice
-            }
-            .mapValues { (date, price) -> HistoricalPrice(date, price) }
-            .mapKeys { (date, _) -> instrument to date }
     }
 
     private fun LocalDate.timestamp(): Long = atStartOfDayIn(TimeZone.UTC).epochSeconds
