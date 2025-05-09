@@ -17,5 +17,11 @@ enum class Instrument(val symbol: Symbol, val mainCurrency: Currency, val source
     BT_MAXIM(Symbol("bt-maxim"), Currency.RON, HistoricalPriceSource.BT_ASSET_MANAGEMENT),
     BT_INDEX(Symbol("bt-index-romania-rotx"), Currency.RON, HistoricalPriceSource.BT_ASSET_MANAGEMENT),
     BT_TECHNOLOGY(Symbol("bt-technology"), Currency.EUR, HistoricalPriceSource.BT_ASSET_MANAGEMENT),
-    BT_ENERGY(Symbol("bt-energy"), Currency.EUR, HistoricalPriceSource.BT_ASSET_MANAGEMENT);
+    BT_ENERGY(Symbol("bt-energy"), Currency.EUR, HistoricalPriceSource.BT_ASSET_MANAGEMENT),
+    ;
+
+    companion object {
+        fun fromSymbol(symbol: Symbol): Instrument = Instrument.entries.firstOrNull { it.symbol == symbol }
+            ?: throw IllegalArgumentException("Unknown instrument: $symbol")
+    }
 }

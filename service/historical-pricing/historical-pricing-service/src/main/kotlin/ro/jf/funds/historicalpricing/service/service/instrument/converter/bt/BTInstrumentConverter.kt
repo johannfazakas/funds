@@ -11,7 +11,7 @@ import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.ss.usermodel.Sheet
 import org.apache.poi.ss.usermodel.WorkbookFactory
-import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
+import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.Instrument
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import java.io.ByteArrayInputStream
@@ -23,35 +23,42 @@ import java.util.*
 import java.time.LocalDate as JavaLocalDate
 
 class BTInstrumentConverter(
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
 ) : InstrumentConverter {
-    private val cache = mutableMapOf<Pair<Instrument, LocalDate>, HistoricalPrice>()
+    private val cache = mutableMapOf<Pair<Instrument, LocalDate>, ConversionResponse>()
     private val localDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-    override suspend fun convert(instrument: Instrument, dates: List<LocalDate>): List<HistoricalPrice> =
+    override suspend fun convert(instrument: Instrument, dates: List<LocalDate>): List<ConversionResponse> =
         dates.map { date -> convert(instrument, date) }
 
-    private suspend fun convert(instrument: Instrument, date: LocalDate): HistoricalPrice {
+    private suspend fun convert(instrument: Instrument, date: LocalDate): ConversionResponse {
         cache[instrument to date]?.let { return it }
         putInCache(instrument, downloadHistoricalPrices(instrument))
         return cache[instrument to date] ?: error("Failed to convert $instrument at $date")
     }
 
-    private fun putInCache(instrument: Instrument, historicalPrices: List<HistoricalPrice>) {
+    private fun putInCache(instrument: Instrument, historicalPrices: List<ConversionResponse>) {
         if (historicalPrices.isEmpty()) return
         val firstPrice = historicalPrices.minBy { it.date }
         val pricesByDay = historicalPrices.associateBy { it.date }
         var fallbackValue = firstPrice
         generateSequence(firstPrice.date) { it + DatePeriod(days = 1) }
             .takeWhile { it < today() }
-            .map { pricesByDay[it]?.also { fallbackValue = it } ?: HistoricalPrice(it, fallbackValue.price) }
+            .map { conversion ->
+                pricesByDay[conversion]?.also { fallbackValue = it } ?: ConversionResponse(
+                    instrument.symbol,
+                    instrument.mainCurrency,
+                    conversion,
+                    fallbackValue.rate
+                )
+            }
             .forEach { cache[instrument to it.date] = it }
     }
 
-    private suspend fun downloadHistoricalPrices(instrument: Instrument): List<HistoricalPrice> {
+    private suspend fun downloadHistoricalPrices(instrument: Instrument): List<ConversionResponse> {
         val downloadSessionCookie = initiateDownloadSession(instrument)
         val downloadExcelInputStream = downloadExcelInputStream(downloadSessionCookie)
-        return processExcelFile(downloadExcelInputStream)
+        return processExcelFile(downloadExcelInputStream, instrument)
     }
 
     suspend fun initiateDownloadSession(instrument: Instrument): String {
@@ -73,15 +80,17 @@ class BTInstrumentConverter(
         return response.readBytes().let(::ByteArrayInputStream)
     }
 
-    private fun processExcelFile(inputStream: InputStream): List<HistoricalPrice> {
+    private fun processExcelFile(inputStream: InputStream, instrument: Instrument): List<ConversionResponse> {
         val sheet: Sheet = WorkbookFactory.create(inputStream).getSheetAt(0)
         return sheet.asSequence()
             .drop(1) // header
             .mapNotNull { row ->
                 try {
-                    HistoricalPrice(
+                    ConversionResponse(
                         date = row.getCell(0).toLocalDate(),
-                        price = row.getCell(1).toBigDecimal()
+                        rate = row.getCell(1).toBigDecimal(),
+                        sourceUnit = instrument.symbol,
+                        targetUnit = instrument.mainCurrency,
                     )
                 } catch (e: Exception) {
                     null

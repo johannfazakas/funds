@@ -1,39 +1,35 @@
 package ro.jf.funds.historicalpricing.service.service.currency
 
-import ro.jf.funds.historicalpricing.api.model.CurrencyConversionRequest
-import ro.jf.funds.historicalpricing.api.model.CurrencyConversionResponse
-import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
+import kotlinx.datetime.LocalDate
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.service.domain.CurrencyPairHistoricalPrice
 
 class CurrencyService(
     private val currencyConverter: CurrencyConverter,
     private val currencyPairHistoricalPriceRepository: CurrencyPairHistoricalPriceRepository,
 ) {
-    suspend fun convert(request: CurrencyConversionRequest): CurrencyConversionResponse {
-        val (sourceCurrency, targetCurrency, dates) = request
-
+    suspend fun convert(
+        sourceCurrency: Currency,
+        targetCurrency: Currency,
+        dates: List<LocalDate>,
+    ): List<ConversionResponse> {
         val storedHistoricalPricesByDate = currencyPairHistoricalPriceRepository
             .getHistoricalPrices(sourceCurrency, targetCurrency, dates)
-            .map { HistoricalPrice(it.date, it.price) }
-            .associateBy { it.date }
+            .map { ConversionResponse(sourceCurrency, targetCurrency, it.date, it.price) }
+        val storedHistoricalPricesDates = storedHistoricalPricesByDate.map { it.date }.toSet()
 
         val newConversionsByDate = dates
-            .filterNot { it in storedHistoricalPricesByDate.keys }
+            .filterNot { it in storedHistoricalPricesDates }
             .takeIf { it.isNotEmpty() }
             ?.let { it -> currencyConverter.convert(sourceCurrency, targetCurrency, it) }
             ?.onEach {
                 currencyPairHistoricalPriceRepository.saveHistoricalPrice(
-                    CurrencyPairHistoricalPrice(sourceCurrency, targetCurrency, it.date, it.price)
+                    CurrencyPairHistoricalPrice(sourceCurrency, targetCurrency, it.date, it.rate)
                 )
             }
-            ?.associateBy { it.date }
-            ?: emptyMap()
+            ?: emptyList()
 
-        return CurrencyConversionResponse(
-            sourceCurrency = sourceCurrency,
-            targetCurrency = targetCurrency,
-            historicalPrices = dates
-                .mapNotNull { date -> storedHistoricalPricesByDate[date] ?: newConversionsByDate[date] }
-        )
+        return storedHistoricalPricesByDate + newConversionsByDate
     }
 }

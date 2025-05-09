@@ -5,7 +5,7 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.historicalpricing.api.model.HistoricalPrice
+import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyConverter
 import ro.jf.funds.historicalpricing.service.service.currency.converter.currencybeacon.model.CBConversion
 import java.time.format.DateTimeFormatter
@@ -22,9 +22,9 @@ class CurrencyBeaconCurrencyConverter(
         sourceCurrency: Currency,
         targetCurrency: Currency,
         dates: List<LocalDate>
-    ): List<HistoricalPrice> = dates.map { date -> convert(sourceCurrency, targetCurrency, date) }
+    ): List<ConversionResponse> = dates.map { date -> convert(sourceCurrency, targetCurrency, date) }
 
-    private suspend fun convert(sourceCurrency: Currency, targetCurrency: Currency, date: LocalDate): HistoricalPrice {
+    private suspend fun convert(sourceCurrency: Currency, targetCurrency: Currency, date: LocalDate): ConversionResponse {
         val price = httpClient.get("https://api.currencybeacon.com/v1/historical") {
             parameter("base", sourceCurrency.value)
             parameter("symbols", targetCurrency.value)
@@ -33,9 +33,11 @@ class CurrencyBeaconCurrencyConverter(
         }
             .body<CBConversion>()
             .rates[targetCurrency.value] ?: error("No conversion rate found for $targetCurrency")
-        return HistoricalPrice(
+        return ConversionResponse(
             date = date,
-            price = price
+            rate = price,
+            sourceUnit = sourceCurrency,
+            targetUnit = targetCurrency,
         )
     }
 

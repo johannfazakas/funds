@@ -83,31 +83,6 @@ class HistoricalPricingApiTest {
         assertThat(conversionsResponse.getRate(Currency.RON, Currency.EUR, date3)).isNull()
     }
 
-    @Test
-    fun `should return error when not able to convert a currency on a date`() = testApplication {
-        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
-        val httpClient = createJsonHttpClient()
-
-        whenever(currencyConverter.convert(any(), any(), any())).thenReturn(emptyList())
-
-        val response = httpClient.post("/funds-api/historical-pricing/v1/conversions") {
-            header(USER_ID_HEADER, userId.toString())
-            contentType(ContentType.Application.Json)
-            setBody(
-                ConversionsRequest(
-                    conversions = listOf(
-                        ConversionRequest(Currency.RON, Currency.EUR, date4),
-                    )
-                )
-            )
-        }
-
-        assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
-        val conversionsResponse = response.body<ErrorTO>()
-        assertThat(conversionsResponse.title).isEqualTo("Historical price not found")
-        assertThat(conversionsResponse.detail).isEqualTo("Historical price for RON to EUR on 2025-02-04 not found")
-    }
-
     private fun Application.testModule() {
         val historicalPricingAppTestModule = module {
             single<CurrencyBeaconCurrencyConverter> { currencyConverter }
@@ -115,7 +90,7 @@ class HistoricalPricingApiTest {
         configureDependencies(historicalPricingDependencies, historicalPricingAppTestModule)
         configureContentNegotiation()
         configureDatabaseMigration(get<DataSource>())
-        configureHistoricalPricingRouting(get(), get(), get())
+        configureHistoricalPricingRouting(get())
         configureHistoricalPricingErrorHandling()
     }
 }
