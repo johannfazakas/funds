@@ -15,7 +15,6 @@ fun main(args: Array<String>) {
     EngineMain.main(args)
 }
 
-// TODO(Johann) adapt service to the patterns in the other services, add tests
 fun Application.module() {
     configureDependencies(historicalPricingDependencies)
     configureContentNegotiation()
