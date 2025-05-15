@@ -77,7 +77,7 @@ class BTInstrumentConverter(
         val response = httpClient.get("https://www.btassetmanagement.ro/storage/app/media/download.xlsx") {
             header("Cookie", cookie)
         }
-        return response.readBytes().let(::ByteArrayInputStream)
+        return response.readRawBytes().let(::ByteArrayInputStream)
     }
 
     private fun processExcelFile(inputStream: InputStream, instrument: Instrument): List<ConversionResponse> {
@@ -92,7 +92,7 @@ class BTInstrumentConverter(
                         sourceUnit = instrument.symbol,
                         targetUnit = instrument.mainCurrency,
                     )
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             }

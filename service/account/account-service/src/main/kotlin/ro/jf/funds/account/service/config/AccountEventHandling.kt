@@ -12,11 +12,11 @@ fun Application.configureAccountEventHandling() {
     val transactionsBatchCreateRequestConsumer by inject<Consumer<CreateAccountTransactionsTO>>()
 
     logger.info { "Configuring account event handling" }
-    environment.monitor.subscribe(ApplicationStarted) {
+    monitor.subscribe(ApplicationStarted) {
         transactionsBatchCreateRequestConsumer.consume()
     }
 
-    environment.monitor.subscribe(ApplicationStopped) {
+    monitor.subscribe(ApplicationStopped) {
         transactionsBatchCreateRequestConsumer.close()
     }
 }

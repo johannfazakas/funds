@@ -10,11 +10,11 @@ fun Application.configureImportEventHandling() {
         CREATE_FUND_TRANSACTIONS_RESPONSE_CONSUMER
     )
 
-    environment.monitor.subscribe(ApplicationStarted) {
+    monitor.subscribe(ApplicationStarted) {
         fundTransactionsBatchCreateResponseConsumer.consume()
     }
 
-    environment.monitor.subscribe(ApplicationStopped) {
+    monitor.subscribe(ApplicationStopped) {
         fundTransactionsBatchCreateResponseConsumer.close()
     }
 }

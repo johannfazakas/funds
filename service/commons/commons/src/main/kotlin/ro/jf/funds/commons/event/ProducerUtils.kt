@@ -14,7 +14,7 @@ inline fun <reified T> createProducer(properties: ProducerProperties, topic: Top
 open class Producer<T>(
     producerProperties: ProducerProperties,
     private val topic: Topic,
-    clazz: Class<T>
+    clazz: Class<T>,
 ) {
     private val kafkaProducer = createKafkaProducer(producerProperties)
     private val json = Json {

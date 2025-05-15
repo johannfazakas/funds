@@ -1,19 +1,20 @@
 [versions]
 kotlin = "2.1.20"
-# TODO(Johann) upgrade ktor
-ktor = "2.3.12"
+ktor = "3.1.3"
 kotlinx-serialization = "1.6.3"
 kotlinx-datetime = "0.6.0"
-koin = "3.5.6"
+# TODO(Johann) check non beta version
+koin = "4.1.0-Beta11"
 postgres = "42.7.3"
 kafka = "3.8.0"
+# TODO(Johann) bump flyway, this is old
 flyway = "6.5.2"
 exposed = "0.57.0"
 kotlin-csv = "1.10.0"
 kotlin-logging = "3.0.5"
 logback = "1.4.14"
-junit = "5.9.3"
-junit-platform-launcher = "1.8.2"
+junit = "5.12.2"
+junit-platform = "1.12.2"
 assertj = "3.26.0"
 kotlin-mockito = "5.4.0"
 testcontainers = "1.19.8"
@@ -69,8 +70,9 @@ poi = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
-junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version = "junit-platform-launcher" }
-ktor-server-tests-jvm = { module = "io.ktor:ktor-server-tests-jvm", version.ref = "ktor" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version = "junit-platform" }
+junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version = "junit-platform" }
+ktor-server-tests-jvm = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 kotlin-mockito = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "kotlin-mockito" }
