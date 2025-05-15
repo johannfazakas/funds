@@ -9,16 +9,22 @@ import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
-import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.koin.ktor.ext.get
+import ro.jf.funds.commons.config.configureContentNegotiation
+import ro.jf.funds.commons.config.configureDatabaseMigration
+import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.user.api.model.CreateUserTO
 import ro.jf.funds.user.api.model.UserTO
 import ro.jf.funds.user.service.adapter.persistence.UserExposedRepository
+import ro.jf.funds.user.service.config.configureUserRouting
+import ro.jf.funds.user.service.config.userDependencies
 import ro.jf.funds.user.service.domain.command.CreateUserCommand
 import java.util.UUID.randomUUID
+import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
 class UserApiTest {
@@ -119,6 +125,7 @@ class UserApiTest {
     @Test
     fun `test delete user by id`() = testApplication {
         configureEnvironment()
+
         val user = userRepository.save(CreateUserCommand("username"))
 
         val response = createJsonHttpClient().delete("/funds-api/user/v1/users/${user.id}")
@@ -140,15 +147,18 @@ class UserApiTest {
         createClient { install(ContentNegotiation) { json() } }
 
     private fun ApplicationTestBuilder.configureEnvironment() {
+        application {
+            configureDependencies(userDependencies)
+            configureContentNegotiation()
+            configureDatabaseMigration(get<DataSource>())
+            configureUserRouting()
+        }
         environment {
             config = MapApplicationConfig(
                 "database.url" to PostgresContainerExtension.jdbcUrl,
                 "database.user" to PostgresContainerExtension.username,
                 "database.password" to PostgresContainerExtension.password
             )
-        }
-        application {
-            module()
         }
     }
 }

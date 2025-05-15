@@ -6,6 +6,10 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.utils.io.*
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
+import kotlinx.io.readByteArray
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.web.userId
@@ -25,9 +29,7 @@ fun Routing.importApiRouting(
             val userId = call.userId()
             log.info { "Import request for user $userId." }
 
-            val requestParts = call
-                .receiveMultipart()
-                .readAllParts()
+            val requestParts: List<ImportPart> = call.readMultipartData()
 
             val rawFileParts = requestParts.rawFileParts()
 
@@ -56,17 +58,38 @@ fun Routing.importApiRouting(
     }
 }
 
-private fun List<PartData>.importConfigurationPart(): ImportConfigurationTO {
-    return this
-        .mapNotNull { it as? PartData.FormItem }
-        .firstOrNull { it.name == "configuration" }
-        ?.value
-        ?.let { json -> Json.decodeFromString<ImportConfigurationTO>(json) }
-        ?: throw MissingImportConfigurationException("Missing import configuration")
-}
+data class ImportPart(val name: String?, val contentType: ContentType?, val content: String)
 
-private fun List<PartData>.rawFileParts(): List<String> {
-    return this
-        .mapNotNull { it as? PartData.FileItem }
-        .map { filePart -> String(filePart.streamProvider().readBytes()).also { filePart.dispose() } }
-}
+private suspend fun ApplicationCall.readMultipartData(): List<ImportPart> = receiveMultipart()
+    .asFlow()
+    .map { part ->
+        when (part) {
+            is PartData.FileItem -> {
+                with(ByteChannel(autoFlush = true)) {
+                    part.provider().copyAndClose(this)
+                    ImportPart(
+                        name = part.originalFileName ?: error("Missing file name"),
+                        contentType = part.contentType ?: ContentType.Application.OctetStream,
+                        content = readRemaining().readByteArray().let(::String)
+                    )
+                }
+            }
+
+            is PartData.FormItem -> {
+                ImportPart(name = part.name, contentType = part.contentType, content = part.value)
+            }
+
+            else -> error("Unsupported part type")
+        }
+    }
+    .toList()
+
+private fun List<ImportPart>.importConfigurationPart(): ImportConfigurationTO = this
+    .singleOrNull { it.name == "configuration" && it.contentType == ContentType.Application.Json }
+    ?.content
+    ?.let { json -> Json.decodeFromString<ImportConfigurationTO>(json) }
+    ?: throw MissingImportConfigurationException("Missing import configuration")
+
+private fun List<ImportPart>.rawFileParts(): List<String> = this
+    .filter { it.name != null && it.contentType == ContentType.Text.CSV }
+    .map { it.content }

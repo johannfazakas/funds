@@ -7,6 +7,8 @@ dependencies {
 
     api(libs.kotlin.test.junit)
     api(libs.junit.jupiter)
+    api(libs.junit.platform.engine)
+    api(libs.junit.platform.launcher)
     api(libs.assertj)
     api(libs.kotlin.mockito)
 

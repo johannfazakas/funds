@@ -13,11 +13,11 @@ fun Application.configureReportingEventHandling() {
     val createReportViewTaskConsumer by inject<Consumer<CreateReportViewTO>>()
 
     logger.info { "Configuring reporting event handling" }
-    environment.monitor.subscribe(ApplicationStarted) {
+    monitor.subscribe(ApplicationStarted) {
         createReportViewTaskConsumer.consume()
     }
 
-    environment.monitor.subscribe(ApplicationStopped) {
+    monitor.subscribe(ApplicationStopped) {
         createReportViewTaskConsumer.close()
     }
 }

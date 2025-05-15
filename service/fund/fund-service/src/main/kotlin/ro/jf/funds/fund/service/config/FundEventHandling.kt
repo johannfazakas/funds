@@ -17,12 +17,12 @@ fun Application.configureFundEventHandling() {
     )
 
     logger.info { "Configuring fund event handling" }
-    environment.monitor.subscribe(ApplicationStarted) {
+    monitor.subscribe(ApplicationStarted) {
         fundTransactionsBatchCreateRequestConsumer.consume()
         accountTransactionsBatchCreateResponseConsumer.consume()
     }
 
-    environment.monitor.subscribe(ApplicationStopped) {
+    monitor.subscribe(ApplicationStopped) {
         fundTransactionsBatchCreateRequestConsumer.close()
         accountTransactionsBatchCreateResponseConsumer.close()
     }
