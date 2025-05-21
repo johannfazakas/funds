@@ -83,7 +83,7 @@ class ReportRecordRepository(
             it[record_id] = command.recordId
             it[date] = command.date.toJavaLocalDate()
             it[unit] = command.unit.value
-            it[unitType] = command.unit.unitType.value
+            it[unitType] = command.unit.type.value
             it[amount] = command.amount
             it[reportCurrencyAmount] = command.reportCurrencyAmount
             it[labels] = command.labels.asString()

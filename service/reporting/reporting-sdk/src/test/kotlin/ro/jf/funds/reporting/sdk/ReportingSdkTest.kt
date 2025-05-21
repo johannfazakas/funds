@@ -271,18 +271,7 @@ class ReportingSdkTest {
                                     put("dataConfiguration", buildJsonObject {
                                         put("type", JsonPrimitive("object"))
                                         put("properties", buildJsonObject {
-                                            put("currency", buildJsonObject {
-                                                put("type", JsonPrimitive("object"))
-                                                put("properties", buildJsonObject {
-                                                    put("value", buildJsonObject {
-                                                        put("type", JsonPrimitive("string"))
-                                                        put(
-                                                            "value",
-                                                            JsonPrimitive(request.dataConfiguration.currency.value)
-                                                        )
-                                                    })
-                                                })
-                                            })
+                                            put("currency", JsonPrimitive("string"))
                                             put("filter", buildJsonObject {
                                                 put("type", JsonPrimitive("object"))
                                                 put("properties", buildJsonObject {
@@ -446,9 +435,7 @@ class ReportingSdkTest {
             put("name", JsonPrimitive(response.name))
             put("fundId", JsonPrimitive(response.fundId.toString()))
             put("dataConfiguration", buildJsonObject {
-                put("currency", buildJsonObject {
-                    put("value", JsonPrimitive(response.dataConfiguration.currency.value))
-                })
+                put("currency", JsonPrimitive(response.dataConfiguration.currency.value))
                 put("filter", buildJsonObject {
                     put("labels", buildJsonArray {
                         response.dataConfiguration.filter.labels?.forEach { label ->

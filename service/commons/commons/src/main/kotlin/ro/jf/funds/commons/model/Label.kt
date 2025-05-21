@@ -1,6 +1,7 @@
 package ro.jf.funds.commons.model
 
 import kotlinx.serialization.Serializable
+import ro.jf.funds.commons.serialization.LabelSerializer
 
 private val LABEL_PATTERN = Regex("^[a-zA-Z0-9_]+$")
 private const val LABEL_SEPARATOR = ","
@@ -10,7 +11,7 @@ fun String.asLabels(): List<Label> = split(LABEL_SEPARATOR).filter { it.isNotBla
 fun labelsOf(vararg labels: String): List<Label> = labels.map(::Label)
 
 @JvmInline
-@Serializable
+@Serializable(with = LabelSerializer::class)
 value class Label(val value: String) {
     init {
         require(value.isNotBlank()) { "Label must not be blank" }

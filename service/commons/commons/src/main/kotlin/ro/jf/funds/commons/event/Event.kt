@@ -23,8 +23,4 @@ fun ConsumerRecord<String, String>.userId(): UUID =
 
 fun ConsumerRecord<String, String>.correlationId(): UUID? = header(CORRELATION_ID_HEADER)?.let(UUID::fromString)
 
-fun ConsumerRecord<String, String>.header(key: String): String? = headers().lastHeader(key)?.value()?.let {
-    io.ktor.utils.io.core.String(
-        it
-    )
-}
+fun ConsumerRecord<String, String>.header(key: String): String? = headers().lastHeader(key)?.value()?.decodeToString()
