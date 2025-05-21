@@ -1,8 +1,9 @@
 package ro.jf.funds.commons.model
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
+import ro.jf.funds.commons.serialization.CurrencySerializer
+import ro.jf.funds.commons.serialization.FinancialUnitSerializer
+import ro.jf.funds.commons.serialization.SymbolSerializer
 
 enum class UnitType(val value: String) {
     CURRENCY("currency"),
@@ -23,17 +24,15 @@ fun toFinancialUnit(unitType: UnitType, unit: String): FinancialUnit = when (uni
     UnitType.SYMBOL -> Symbol(unit)
 }
 
-@Serializable
+@Serializable(with = FinancialUnitSerializer::class)
 sealed class FinancialUnit {
     abstract val value: String
-    abstract val unitType: UnitType
+    abstract val type: UnitType
 }
 
-@Serializable
-@SerialName("currency")
+@Serializable(with = CurrencySerializer::class)
 data class Currency(override val value: String) : FinancialUnit() {
-    @Transient
-    override val unitType = UnitType.CURRENCY
+    override val type = UnitType.CURRENCY
 
     companion object {
         val RON = Currency("RON")
@@ -42,10 +41,8 @@ data class Currency(override val value: String) : FinancialUnit() {
     }
 }
 
-@Serializable
-@SerialName("symbol")
+@Serializable(with = SymbolSerializer::class)
 data class Symbol(override val value: String) : FinancialUnit() {
-    @Transient
-    override val unitType = UnitType.SYMBOL
+    override val type = UnitType.SYMBOL
 }
 

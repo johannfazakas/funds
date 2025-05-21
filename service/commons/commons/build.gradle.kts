@@ -36,4 +36,6 @@ dependencies {
 
     api(libs.kotlin.logging)
     api(libs.logback)
+
+    testImplementation(project(":commons:commons-test"))
 }

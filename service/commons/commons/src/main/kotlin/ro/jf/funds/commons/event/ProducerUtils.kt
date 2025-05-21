@@ -22,6 +22,7 @@ open class Producer<T>(
         encodeDefaults = true
     }
 
+    // TODO(Johann) can this warning be fixed?
     val serializable = serializer(clazz) as KSerializer<T>
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)

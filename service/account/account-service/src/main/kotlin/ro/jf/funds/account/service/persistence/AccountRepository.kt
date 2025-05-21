@@ -47,7 +47,7 @@ class AccountRepository(
         AccountTable.insert {
             it[AccountTable.userId] = userId
             it[name] = command.name.value
-            it[unitType] = command.unit.unitType.value
+            it[unitType] = command.unit.type.value
             it[unit] = command.unit.value
         }.let {
             Account(

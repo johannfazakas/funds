@@ -199,7 +199,7 @@ class AccountTransactionRepository(
             it[accountId] = record.accountId
             it[amount] = record.amount
             it[unit] = record.unit.value
-            it[unitType] = record.unit.unitType.value
+            it[unitType] = record.unit.type.value
             it[labels] = record.labels.asString()
         }
             .let {
