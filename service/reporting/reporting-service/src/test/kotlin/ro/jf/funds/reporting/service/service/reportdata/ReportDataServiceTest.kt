@@ -27,6 +27,8 @@ import ro.jf.funds.reporting.api.model.GranularDateInterval
 import ro.jf.funds.reporting.api.model.TimeGranularity
 import ro.jf.funds.reporting.api.model.YearMonth
 import ro.jf.funds.reporting.service.domain.*
+import ro.jf.funds.reporting.service.domain.BucketType.FORECAST
+import ro.jf.funds.reporting.service.domain.BucketType.REAL
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
@@ -79,14 +81,58 @@ class ReportDataServiceTest {
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.granularInterval).isEqualTo(granularInterval)
         assertThat(data.data[0].timeBucket)
-            .isEqualTo(DateInterval(LocalDate.parse("2021-09-03"), LocalDate.parse("2021-09-30")))
+            .isEqualTo(DateInterval(LocalDate.parse("2021-09-01"), LocalDate.parse("2021-09-30")))
         assertThat(data.data[0].aggregate.net).isEqualByComparingTo(BigDecimal("-300.0"))
         assertThat(data.data[1].timeBucket)
             .isEqualTo(DateInterval(LocalDate.parse("2021-10-01"), LocalDate.parse("2021-10-31")))
         assertThat(data.data[1].aggregate.net).isEqualByComparingTo(BigDecimal("-30.0"))
         assertThat(data.data[2].timeBucket)
-            .isEqualTo(DateInterval(LocalDate.parse("2021-11-01"), LocalDate.parse("2021-11-25")))
+            .isEqualTo(DateInterval(LocalDate.parse("2021-11-01"), LocalDate.parse("2021-11-30")))
         assertThat(data.data[2].aggregate.net).isEqualByComparingTo(BigDecimal.ZERO)
+    }
+
+    @Test
+    fun `get net data grouped by months with forecast`(): Unit = runBlocking {
+        val reportDataConfiguration = ReportDataConfiguration(
+            currency = RON,
+            filter = RecordFilter(labels = allLabels),
+            groups = null,
+            features = ReportDataFeaturesConfiguration()
+                .withNet(enabled = true, applyFilter = true)
+                .withForecast(enabled = true, forecastBuckets = 3, consideredBuckets = 5)
+        )
+        whenever(reportViewRepository.findById(userId, reportViewId))
+            .thenReturn(reportView(reportDataConfiguration))
+        val interval = DateInterval(LocalDate.parse("2021-01-01"), LocalDate.parse("2021-06-30"))
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+            .thenReturn(
+                listOf(
+                    ronReportRecord(LocalDate(2021, 1, 3), -100, labelsOf("need")),
+                    ronReportRecord(LocalDate(2021, 2, 15), -40, labelsOf("want")),
+                    ronReportRecord(LocalDate(2021, 3, 7), -30, labelsOf("want")),
+                    ronReportRecord(LocalDate(2021, 4, 8), -20, labelsOf("need")),
+                    ronReportRecord(LocalDate(2021, 5, 8), -40, labelsOf("need")),
+                    ronReportRecord(LocalDate(2021, 6, 8), -50, labelsOf("want")),
+                )
+            )
+        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
+        val conversionsResponse = mock<ConversionsResponse>()
+        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
+
+        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+
+        val acceptedOffset = within(BigDecimal("0.01"))
+
+        assertThat(data.reportViewId).isEqualTo(reportViewId)
+        assertThat(data.granularInterval).isEqualTo(granularInterval)
+        assertThat(data.data).hasSize(9)
+        assertThat(data.data[5].bucketType).isEqualTo(REAL)
+        assertThat(data.data[5].aggregate.net).isCloseTo(BigDecimal(-50), acceptedOffset)
+        assertThat(data.data[6].timeBucket).isEqualTo(YearMonth(2021, 7).asDateInterval())
+        assertThat(data.data[6].bucketType).isEqualTo(FORECAST)
+        assertThat(data.data[6].aggregate.net).isCloseTo(BigDecimal((-40 - 30 - 20 - 40 - 50) / 5.0), acceptedOffset) // -36
+        assertThat(data.data[7].aggregate.net).isCloseTo(BigDecimal((- 30 - 20 - 40 - 50 - 36) / 5.0), acceptedOffset) // -35.2
+        assertThat(data.data[8].aggregate.net).isCloseTo(BigDecimal((- 20 - 40 - 50 - 36 - 35.2) / 5.0), acceptedOffset) // -36.24
     }
 
     @Test
@@ -577,18 +623,18 @@ class ReportDataServiceTest {
             )
         val conversionRequest = ConversionsRequest(
             listOf(
-                ConversionRequest(EUR, RON, LocalDate(2021, 9, 2)),
+                ConversionRequest(EUR, RON, LocalDate(2021, 9, 1)),
                 ConversionRequest(EUR, RON, LocalDate(2021, 9, 30)),
                 ConversionRequest(EUR, RON, LocalDate(2021, 10, 1)),
-                ConversionRequest(EUR, RON, LocalDate(2021, 10, 30)),
+                ConversionRequest(EUR, RON, LocalDate(2021, 10, 31)),
             )
         )
         val conversionsResponse = ConversionsResponse(
             listOf(
-                ConversionResponse(EUR, RON, LocalDate(2021, 9, 2), BigDecimal("4.85")),
+                ConversionResponse(EUR, RON, LocalDate(2021, 9, 1), BigDecimal("4.85")),
                 ConversionResponse(EUR, RON, LocalDate(2021, 9, 30), BigDecimal("4.9")),
                 ConversionResponse(EUR, RON, LocalDate(2021, 10, 1), BigDecimal("4.95")),
-                ConversionResponse(EUR, RON, LocalDate(2021, 10, 30), BigDecimal("5.0")),
+                ConversionResponse(EUR, RON, LocalDate(2021, 10, 31), BigDecimal("5.0")),
             )
         )
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
@@ -599,7 +645,7 @@ class ReportDataServiceTest {
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.granularInterval).isEqualTo(granularInterval)
         assertThat(data.data[0].timeBucket)
-            .isEqualTo(DateInterval(LocalDate(2021, 9, 2), LocalDate(2021, 9, 30)))
+            .isEqualTo(DateInterval(LocalDate(2021, 9, 1), LocalDate(2021, 9, 30)))
         assertThat(data.data[0].aggregate.value?.start).isEqualByComparingTo(BigDecimal("197.0"))
         assertThat(data.data[0].aggregate.value?.end).isEqualByComparingTo(
             BigDecimal("200.0") + BigDecimal("4.9") * BigDecimal(
@@ -607,7 +653,7 @@ class ReportDataServiceTest {
             )
         )
         assertThat(data.data[1].timeBucket)
-            .isEqualTo(DateInterval(LocalDate(2021, 10, 1), LocalDate(2021, 10, 30)))
+            .isEqualTo(DateInterval(LocalDate(2021, 10, 1), LocalDate(2021, 10, 31)))
         assertThat(data.data[1].aggregate.value?.start).isEqualByComparingTo(
             BigDecimal("200.0") + BigDecimal("4.95") * BigDecimal(
                 "40.0"

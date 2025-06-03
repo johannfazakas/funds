@@ -6,6 +6,7 @@ import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
+import ro.jf.funds.reporting.service.service.generateForecastData
 import java.math.BigDecimal
 import java.math.MathContext
 
@@ -39,10 +40,32 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         return generateBucketedData
             .mapValues { (interval, budgetByUnitByGroup) ->
                 budgetByUnitByGroup.mapValues { (_, budgetByUnit) ->
-                    budgetByUnit.convertToSingleCurrency(interval.to, input.dataConfiguration.currency, input.conversions)
+                    budgetByUnit.convertToSingleCurrency(
+                        interval.to,
+                        input.dataConfiguration.currency,
+                        input.conversions
+                    )
                 }
             }
             .let(::ByBucket)
+    }
+
+    override fun forecast(input: ReportDataForecastInput<ByGroup<Budget>>): ByBucket<ByGroup<Budget>>? {
+        return input.dateInterval.generateForecastData(
+            input.forecastConfiguration.forecastBuckets,
+            input.forecastConfiguration.forecastInputBuckets,
+            { interval -> input.realData[interval] }
+        ) { inputBuckets: List<ByGroup<Budget>> ->
+            val size = inputBuckets.size.toBigDecimal()
+            input.groups
+                .associateWith { group ->
+                    val groupBudgets = inputBuckets.mapNotNull { it[group] }
+                    Budget(
+                        allocated = groupBudgets.sumOf { it.allocated }.divide(size),
+                        left = groupBudgets.sumOf { it.left }.divide(size)
+                    )
+                }.let { ByGroup(it) }
+        }.let { ByBucket(it) }
     }
 
     private fun getGroupedBudget(

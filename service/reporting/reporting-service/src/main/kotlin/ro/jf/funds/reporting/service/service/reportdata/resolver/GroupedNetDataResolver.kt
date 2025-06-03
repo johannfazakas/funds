@@ -2,6 +2,7 @@ package ro.jf.funds.reporting.service.service.reportdata.resolver
 
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
+import ro.jf.funds.reporting.service.service.generateForecastData
 import java.math.BigDecimal
 
 class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
@@ -27,6 +28,19 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
                 }
             )
             .let(::ByBucket)
+    }
+
+    override fun forecast(input: ReportDataForecastInput<ByGroup<BigDecimal>>): ByBucket<ByGroup<BigDecimal>> {
+        return input.dateInterval.generateForecastData(
+            input.forecastConfiguration.forecastBuckets,
+            input.forecastConfiguration.forecastInputBuckets,
+            { interval -> input.realData[interval] }
+        ) { inputBuckets: List<ByGroup<BigDecimal>> ->
+            input.groups
+                .associateWith { group ->
+                    inputBuckets.sumOf { it[group] ?: BigDecimal.ZERO }.divide(inputBuckets.size.toBigDecimal())
+                }.let { ByGroup(it) }
+        }.let { ByBucket(it) }
     }
 
     private fun getGroupedNet(

@@ -5,6 +5,7 @@ import ro.jf.funds.reporting.service.domain.ByUnit
 import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
 import ro.jf.funds.reporting.service.domain.ReportRecord
 import ro.jf.funds.reporting.service.service.generateBucketedData
+import ro.jf.funds.reporting.service.service.generateForecastData
 import java.math.BigDecimal
 
 // TODO(Johann) shouldn't this be called spent/earned
@@ -18,9 +19,24 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
         return input.dateInterval
             .generateBucketedData(
                 { interval -> getNet(input.catalog.getBucketRecordsGroupedByUnit(interval), input.dataConfiguration) },
-                { interval, _ -> getNet(input.catalog.getBucketRecordsGroupedByUnit(interval), input.dataConfiguration) }
+                { interval, _ ->
+                    getNet(
+                        input.catalog.getBucketRecordsGroupedByUnit(interval),
+                        input.dataConfiguration
+                    )
+                }
             )
             .let { ByBucket(it) }
+    }
+
+    override fun forecast(input: ReportDataForecastInput<BigDecimal>): ByBucket<BigDecimal> {
+        return input.dateInterval.generateForecastData(
+            input.forecastConfiguration.forecastBuckets,
+            input.forecastConfiguration.forecastInputBuckets,
+            { interval -> input.realData[interval] }
+        ) { inputBuckets: List<BigDecimal> ->
+            inputBuckets.sumOf { it }.divide(BigDecimal(inputBuckets.size))
+        }.let { ByBucket(it) }
     }
 
     private fun getNet(
