@@ -43,6 +43,7 @@ data class ReportDataFeaturesConfiguration(
     val valueReport: GenericReportFeature = GenericReportFeature(enabled = false),
     val groupedNet: GenericReportFeature = GenericReportFeature(enabled = false),
     val groupedBudget: GroupedBudgetReportFeature = GroupedBudgetReportFeature(enabled = false, listOf()),
+    val forecast: ForecastReportFeature = ForecastReportFeature(false, 0, 0),
 ) {
     fun withNet(enabled: Boolean, applyFilter: Boolean) = copy(net = NetReportFeature(enabled, applyFilter))
     fun withGroupedNet(enabled: Boolean) = copy(groupedNet = GenericReportFeature(enabled))
@@ -51,6 +52,9 @@ data class ReportDataFeaturesConfiguration(
         enabled: Boolean,
         distributions: List<GroupedBudgetReportFeature.BudgetDistribution> = listOf(),
     ) = copy(groupedBudget = GroupedBudgetReportFeature(enabled, distributions))
+
+    fun withForecast(enabled: Boolean, forecastBuckets: Int, consideredBuckets: Int) =
+        copy(forecast = ForecastReportFeature(enabled, forecastBuckets, consideredBuckets))
 }
 
 @Serializable
@@ -92,3 +96,10 @@ data class GroupedBudgetReportFeature(
             ?: error("no default distribution")
     }
 }
+
+@Serializable
+data class ForecastReportFeature(
+    val enabled: Boolean,
+    val forecastBuckets: Int,
+    val forecastInputBuckets: Int,
+)

@@ -6,6 +6,7 @@ import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
+import ro.jf.funds.reporting.service.service.generateForecastData
 import java.math.BigDecimal
 
 class ValueReportDataResolver : ReportDataResolver<ValueReport> {
@@ -39,6 +40,25 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
             .let(::ByBucket)
     }
 
+    override fun forecast(input: ReportDataForecastInput<ValueReport>): ByBucket<ValueReport> {
+        return input.dateInterval.generateForecastData(
+            input.forecastConfiguration.forecastBuckets,
+            input.forecastConfiguration.forecastInputBuckets,
+            { interval -> input.realData[interval] }
+        ) { inputBuckets: List<ValueReport> ->
+            val bucketsSize = inputBuckets.size
+            val first = inputBuckets.first()
+            val last = inputBuckets.last()
+
+            ValueReport(
+                start = last.end,
+                end = last.end + ((last.end - first.end).divide(bucketsSize.toBigDecimal())),
+                min = last.min + ((last.min - first.min).divide(bucketsSize.toBigDecimal())),
+                max = last.max + ((last.max - first.max).divide(bucketsSize.toBigDecimal())),
+                endAmountByUnit = ByUnit(emptyMap())
+            )
+        }.let { ByBucket(it) }
+    }
 
     private fun getValueReport(
         bucket: DateInterval,

@@ -18,7 +18,7 @@ data class DateInterval(
     val to: LocalDate,
 ) {
     init {
-        require(from <= to) { "From date must be before or equal to the to date" }
+        require(from <= to) { "From date must be before or equal to the to date. from = $from, to = $to." }
     }
 
     constructor(from: YearMonth, to: YearMonth) : this(
@@ -32,7 +32,11 @@ data class YearMonth(
     val year: Int,
     val month: Int,
 ) : Comparable<YearMonth> {
-    override fun compareTo(other: YearMonth): Int {
-        return LocalDate(year, month, 1).compareTo(LocalDate(other.year, other.month, 1))
-    }
+    override fun compareTo(other: YearMonth): Int =
+        LocalDate(year, month, 1).compareTo(LocalDate(other.year, other.month, 1))
+
+    fun asDateInterval(): DateInterval = DateInterval(
+        from = LocalDate(year, month, 1),
+        to = LocalDate(year, month, 1).plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY),
+    )
 }

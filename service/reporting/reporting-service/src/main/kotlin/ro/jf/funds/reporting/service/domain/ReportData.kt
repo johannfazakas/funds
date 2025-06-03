@@ -11,16 +11,22 @@ data class ReportData(
     val data: List<BucketData<ReportDataAggregate>>,
 )
 
+enum class BucketType {
+    REAL,
+    FORECAST
+}
+
 data class BucketData<D>(
     val timeBucket: DateInterval,
+    val bucketType: BucketType,
     val aggregate: D,
 )
 
 data class ReportDataAggregate(
-    val net: BigDecimal?,
-    val value: ValueReport?,
-    val groupedNet: ByGroup<BigDecimal>?,
-    val groupedBudget: ByGroup<Budget>?,
+    val net: BigDecimal? = null,
+    val value: ValueReport? = null,
+    val groupedNet: ByGroup<BigDecimal>? = null,
+    val groupedBudget: ByGroup<Budget>? = null,
 )
 
 data class ValueReport(
