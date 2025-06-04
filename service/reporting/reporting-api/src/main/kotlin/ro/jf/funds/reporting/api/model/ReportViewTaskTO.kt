@@ -1,38 +1,31 @@
 package ro.jf.funds.reporting.api.model
 
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonClassDiscriminator
 import ro.jf.funds.commons.serialization.UUIDSerializer
 import java.util.*
 
-@OptIn(ExperimentalSerializationApi::class)
-@JsonClassDiscriminator("status")
+enum class ReportViewTaskStatus {
+    COMPLETED,
+    IN_PROGRESS,
+    FAILED,
+}
+
 @Serializable
-sealed class ReportViewTaskTO {
-    abstract val taskId: UUID
+data class ReportViewTaskTO(
+    @Serializable(with = UUIDSerializer::class)
+    val taskId: UUID,
+    val status: ReportViewTaskStatus,
+    val report: ReportViewTO? = null,
+    val reason: String? = null,
+) {
+    companion object {
+        fun inProgress(taskId: UUID): ReportViewTaskTO =
+            ReportViewTaskTO(taskId, ReportViewTaskStatus.IN_PROGRESS)
 
-    @Serializable
-    @SerialName("COMPLETED")
-    data class Completed(
-        @Serializable(with = UUIDSerializer::class)
-        override val taskId: UUID,
-        val report: ReportViewTO,
-    ) : ReportViewTaskTO()
+        fun completed(taskId: UUID, report: ReportViewTO): ReportViewTaskTO =
+            ReportViewTaskTO(taskId, ReportViewTaskStatus.COMPLETED, report)
 
-    @Serializable
-    @SerialName("IN_PROGRESS")
-    data class InProgress(
-        @Serializable(with = UUIDSerializer::class)
-        override val taskId: UUID,
-    ) : ReportViewTaskTO()
-
-    @Serializable
-    @SerialName("FAILED")
-    data class Failed(
-        @Serializable(with = UUIDSerializer::class)
-        override val taskId: UUID,
-        val reason: String,
-    ) : ReportViewTaskTO()
+        fun failed(taskId: UUID, reason: String): ReportViewTaskTO =
+            ReportViewTaskTO(taskId, ReportViewTaskStatus.FAILED, reason = reason)
+    }
 }

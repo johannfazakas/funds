@@ -89,7 +89,7 @@ class ReportingSdkTest {
         val response = reportingSdk.createReportView(userId, request)
 
         assertThat(response.taskId).isEqualTo(taskId)
-        assertThat(response).isInstanceOf(ReportViewTaskTO.InProgress::class.java)
+        assertThat(response.status).isEqualTo(ReportViewTaskStatus.IN_PROGRESS)
     }
 
     @Test
@@ -99,7 +99,7 @@ class ReportingSdkTest {
         val response = reportingSdk.getReportViewTask(userId, taskId)
 
         assertThat(response.taskId).isEqualTo(taskId)
-        assertThat(response).isInstanceOf(ReportViewTaskTO.InProgress::class.java)
+        assertThat(response.status).isEqualTo(ReportViewTaskStatus.IN_PROGRESS)
     }
 
     @Test

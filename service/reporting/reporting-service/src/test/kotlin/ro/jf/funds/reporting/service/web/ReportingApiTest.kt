@@ -131,8 +131,7 @@ class ReportingApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.Accepted)
         val reportViewTaskTO = response.body<ReportViewTaskTO>()
         assertThat(reportViewTaskTO.taskId).isNotNull
-        assertThat(reportViewTaskTO).isInstanceOf(ReportViewTaskTO.InProgress::class.java)
-        reportViewTaskTO as ReportViewTaskTO.InProgress
+        assertThat(reportViewTaskTO.status).isEqualTo(ReportViewTaskStatus.IN_PROGRESS)
 
         val createReportViewCommandConsumer = createKafkaConsumer(consumerProperties)
         createReportViewCommandConsumer.subscribe(listOf(createReportViewTopic.value))
@@ -185,11 +184,10 @@ class ReportingApiTest {
         val reportViewTaskTO = response.body<ReportViewTaskTO>()
         assertThat(reportViewTaskTO).isNotNull
         assertThat(reportViewTaskTO.taskId).isEqualTo(reportViewTask.taskId)
-        assertThat(reportViewTaskTO).isInstanceOf(ReportViewTaskTO.Completed::class.java)
-        reportViewTaskTO as ReportViewTaskTO.Completed
-        assertThat(reportViewTaskTO.report.id).isEqualTo(reportView.id)
-        assertThat(reportViewTaskTO.report.fundId).isEqualTo(expenseFundId)
-        assertThat(reportViewTaskTO.report.name).isEqualTo(expenseReportName)
+        assertThat(reportViewTaskTO.status).isEqualTo(ReportViewTaskStatus.COMPLETED)
+        assertThat(reportViewTaskTO.report?.id).isEqualTo(reportView.id)
+        assertThat(reportViewTaskTO.report?.fundId).isEqualTo(expenseFundId)
+        assertThat(reportViewTaskTO.report?.name).isEqualTo(expenseReportName)
     }
 
     @Test
