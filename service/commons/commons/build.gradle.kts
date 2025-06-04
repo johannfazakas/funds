@@ -25,6 +25,7 @@ dependencies {
 
     api(libs.postgresql)
     api(libs.flyway)
+    api(libs.flyway.postgres)
 
     api(libs.exposed.core)
     api(libs.exposed.jdbc)

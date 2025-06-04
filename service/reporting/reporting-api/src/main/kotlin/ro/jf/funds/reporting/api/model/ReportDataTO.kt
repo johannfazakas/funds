@@ -26,7 +26,6 @@ data class ReportDataItemTO(
 @Serializable
 data class ReportDataGroupItemTO(
     val group: String,
-    // TODO(Johann) serialized values could be rounded to 2 decimals
     @Serializable(with = BigDecimalSerializer::class)
     val net: BigDecimal?,
     @Serializable(with = BigDecimalSerializer::class)
