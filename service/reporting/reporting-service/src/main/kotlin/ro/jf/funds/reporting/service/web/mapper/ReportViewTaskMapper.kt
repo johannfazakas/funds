@@ -6,7 +6,7 @@ import ro.jf.funds.reporting.service.domain.ReportViewTask
 import java.util.*
 
 suspend fun ReportViewTask.toTO(reportViewSupplier: suspend (UUID) -> ReportView): ReportViewTaskTO = when (this) {
-    is ReportViewTask.InProgress -> ReportViewTaskTO.InProgress(taskId)
-    is ReportViewTask.Completed -> ReportViewTaskTO.Completed(taskId, reportViewSupplier(reportViewId).toTO())
-    is ReportViewTask.Failed -> ReportViewTaskTO.Failed(taskId, reason)
+    is ReportViewTask.InProgress -> ReportViewTaskTO.inProgress(taskId)
+    is ReportViewTask.Completed -> ReportViewTaskTO.completed(taskId, reportViewSupplier(reportViewId).toTO())
+    is ReportViewTask.Failed -> ReportViewTaskTO.failed(taskId, reason)
 }
