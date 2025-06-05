@@ -14,9 +14,15 @@ data class ReportDataTO(
     val data: List<ReportDataItemTO>,
 )
 
+enum class BucketTypeTO {
+    REAL,
+    FORECAST
+}
+
 @Serializable
 data class ReportDataItemTO(
     val timeBucket: DateInterval,
+    val bucketType: BucketTypeTO,
     @Serializable(with = BigDecimalSerializer::class)
     val net: BigDecimal?,
     val value: ValueReportTO?,

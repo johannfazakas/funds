@@ -63,7 +63,7 @@ class ReportDataService(
         val valueReportData = resolveValueReportData(realInput)
         val groupedBudgetData = resolveGroupedBudgetData(realInput)
 
-        val forecastBuckets = reportDataConfiguration.features.forecast.forecastBuckets
+        val forecastBuckets = reportDataConfiguration.features.forecast.outputBuckets
         return sequenceOf(
             granularInterval.getBuckets().map { it to BucketType.REAL },
             granularInterval.getForecastBuckets(forecastBuckets).map { it to BucketType.FORECAST }

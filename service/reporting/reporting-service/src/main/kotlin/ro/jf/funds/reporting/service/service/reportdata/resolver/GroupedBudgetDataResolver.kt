@@ -10,8 +10,6 @@ import ro.jf.funds.reporting.service.service.generateForecastData
 import java.math.BigDecimal
 import java.math.MathContext
 
-private val MATH_PRECISION = MathContext.DECIMAL32
-
 class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
     override fun resolve(input: ReportDataResolverInput): ByBucket<ByGroup<Budget>>? {
         val groupedBudgetFeature = input.dataConfiguration.features.groupedBudget
@@ -51,18 +49,18 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
     }
 
     override fun forecast(input: ReportDataForecastInput<ByGroup<Budget>>): ByBucket<ByGroup<Budget>>? {
+        val inputSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
         return input.dateInterval.generateForecastData(
-            input.forecastConfiguration.forecastBuckets,
-            input.forecastConfiguration.forecastInputBuckets,
+            input.forecastConfiguration.outputBuckets,
+            input.forecastConfiguration.inputBuckets,
             { interval -> input.realData[interval] }
         ) { inputBuckets: List<ByGroup<Budget>> ->
-            val size = inputBuckets.size.toBigDecimal()
             input.groups
                 .associateWith { group ->
                     val groupBudgets = inputBuckets.mapNotNull { it[group] }
                     Budget(
-                        allocated = groupBudgets.sumOf { it.allocated }.divide(size),
-                        left = groupBudgets.sumOf { it.left }.divide(size)
+                        allocated = groupBudgets.sumOf { it.allocated }.divide(inputSize, MathContext.DECIMAL64),
+                        left = groupBudgets.sumOf { it.left }.divide(inputSize, MathContext.DECIMAL64)
                     )
                 }.let { ByGroup(it) }
         }.let { ByBucket(it) }
@@ -134,7 +132,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
                 .sumOf { (unit, _) ->
                     leftByUnit[unit]!! * getConversionRate(date, unit, reportCurrency, conversions)
                 }
-                .let { convertedGroupLeftValue.divide(it, MATH_PRECISION) }
+                .let { convertedGroupLeftValue.divide(it, MathContext.DECIMAL64) }
             budgetByUnit.mapValues { (unit, budget) ->
                 budget.copy(left = multiplicationFactor * leftByUnit[unit]!!)
             }

@@ -3,15 +3,14 @@ package ro.jf.funds.commons.event
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import org.apache.kafka.clients.producer.ProducerRecord
 
-inline fun <reified T> createProducer(properties: ProducerProperties, topic: Topic): Producer<T> =
+inline fun <reified T : Any> createProducer(properties: ProducerProperties, topic: Topic): Producer<T> =
     Producer(properties, topic, T::class.java)
 
-open class Producer<T>(
+open class Producer<T : Any>(
     producerProperties: ProducerProperties,
     private val topic: Topic,
     clazz: Class<T>,
@@ -22,8 +21,7 @@ open class Producer<T>(
         encodeDefaults = true
     }
 
-    // TODO(Johann) can this warning be fixed?
-    val serializable = serializer(clazz) as KSerializer<T>
+    val serializer = serializer(clazz)
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -36,7 +34,7 @@ open class Producer<T>(
     }
 
     private suspend fun send(key: String, payload: T, headers: Map<String, String> = emptyMap()) {
-        val value = json.encodeToString(serializable, payload)
+        val value = json.encodeToString(serializer, payload)
         val producerRecord = ProducerRecord(topic.value, key, value)
         headers.forEach { (k, v) -> producerRecord.headers().add(k, v.toByteArray()) }
         coroutineScope

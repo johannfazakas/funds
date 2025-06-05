@@ -8,6 +8,7 @@ import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
 import java.math.BigDecimal
+import java.math.MathContext
 
 class ValueReportDataResolver : ReportDataResolver<ValueReport> {
     override fun resolve(
@@ -41,20 +42,20 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
     }
 
     override fun forecast(input: ReportDataForecastInput<ValueReport>): ByBucket<ValueReport> {
+        val inputSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
         return input.dateInterval.generateForecastData(
-            input.forecastConfiguration.forecastBuckets,
-            input.forecastConfiguration.forecastInputBuckets,
+            input.forecastConfiguration.outputBuckets,
+            input.forecastConfiguration.inputBuckets,
             { interval -> input.realData[interval] }
         ) { inputBuckets: List<ValueReport> ->
-            val bucketsSize = inputBuckets.size
             val first = inputBuckets.first()
             val last = inputBuckets.last()
 
             ValueReport(
                 start = last.end,
-                end = last.end + ((last.end - first.end).divide(bucketsSize.toBigDecimal())),
-                min = last.min + ((last.min - first.min).divide(bucketsSize.toBigDecimal())),
-                max = last.max + ((last.max - first.max).divide(bucketsSize.toBigDecimal())),
+                end = last.end + ((last.end - first.end).divide(inputSize, MathContext.DECIMAL64)),
+                min = last.min + ((last.min - first.min).divide(inputSize, MathContext.DECIMAL64)),
+                max = last.max + ((last.max - first.max).divide(inputSize, MathContext.DECIMAL64)),
                 endAmountByUnit = ByUnit(emptyMap())
             )
         }.let { ByBucket(it) }

@@ -4,6 +4,7 @@ import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
 import java.math.BigDecimal
+import java.math.MathContext
 
 class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
     override fun resolve(
@@ -31,14 +32,17 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
     }
 
     override fun forecast(input: ReportDataForecastInput<ByGroup<BigDecimal>>): ByBucket<ByGroup<BigDecimal>> {
+        val inputBucketsSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
         return input.dateInterval.generateForecastData(
-            input.forecastConfiguration.forecastBuckets,
-            input.forecastConfiguration.forecastInputBuckets,
+            input.forecastConfiguration.outputBuckets,
+            input.forecastConfiguration.inputBuckets,
             { interval -> input.realData[interval] }
         ) { inputBuckets: List<ByGroup<BigDecimal>> ->
             input.groups
                 .associateWith { group ->
-                    inputBuckets.sumOf { it[group] ?: BigDecimal.ZERO }.divide(inputBuckets.size.toBigDecimal())
+                    input.forecastConfiguration.inputBuckets.toBigDecimal()
+                    inputBuckets.sumOf { it[group] ?: BigDecimal.ZERO }
+                        .divide(inputBucketsSize, MathContext.DECIMAL64)
                 }.let { ByGroup(it) }
         }.let { ByBucket(it) }
     }
