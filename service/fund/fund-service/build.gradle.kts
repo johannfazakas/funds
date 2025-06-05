@@ -1,5 +1,3 @@
-// TODO(Johann) why do I have this? Task 'wrapper' not found in project ':fund:fund-service'.
-
 plugins {
     id("funds.kotlin-service-conventions")
     alias(libs.plugins.ktor)
@@ -20,7 +18,6 @@ application {
 }
 
 ktor {
-    // TODO(Johann) check build image & publish tasks dependencies
     docker {
         jreVersion.set(JavaVersion.VERSION_17)
         localImageName.set("funds/fund-service")
