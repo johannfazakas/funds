@@ -33,6 +33,7 @@ data class ReportDataFeaturesConfigurationTO(
     val valueReport: GenericReportFeatureTO = GenericReportFeatureTO(false),
     val groupedNet: GenericReportFeatureTO = GenericReportFeatureTO(false),
     val groupedBudget: GroupedBudgetReportFeatureTO = GroupedBudgetReportFeatureTO(false, listOf()),
+    val forecast: ForecastReportFeatureTO = ForecastReportFeatureTO(false, 0, 0),
 )
 
 @Serializable
@@ -64,3 +65,10 @@ data class GroupedBudgetReportFeatureTO(
         val percentage: Int,
     )
 }
+
+@Serializable
+data class ForecastReportFeatureTO(
+    val enabled: Boolean,
+    val inputBuckets: Int,
+    val outputBuckets: Int,
+)

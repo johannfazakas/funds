@@ -7,6 +7,7 @@ import ro.jf.funds.reporting.service.domain.ReportRecord
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
 import java.math.BigDecimal
+import java.math.MathContext
 
 // TODO(Johann) shouldn't this be called spent/earned
 class NetDataResolver : ReportDataResolver<BigDecimal> {
@@ -30,12 +31,13 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
     }
 
     override fun forecast(input: ReportDataForecastInput<BigDecimal>): ByBucket<BigDecimal> {
+        val inputSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
         return input.dateInterval.generateForecastData(
-            input.forecastConfiguration.forecastBuckets,
-            input.forecastConfiguration.forecastInputBuckets,
+            input.forecastConfiguration.outputBuckets,
+            input.forecastConfiguration.inputBuckets,
             { interval -> input.realData[interval] }
         ) { inputBuckets: List<BigDecimal> ->
-            inputBuckets.sumOf { it }.divide(BigDecimal(inputBuckets.size))
+            inputBuckets.sumOf { it }.divide(inputSize, MathContext.DECIMAL64)
         }.let { ByBucket(it) }
     }
 

@@ -168,6 +168,7 @@ class ReportingSdkTest {
             data = listOf(
                 ReportDataItemTO(
                     timeBucket = DateInterval(YearMonth(2024, 11), YearMonth(2024, 11)),
+                    bucketType = BucketTypeTO.REAL,
                     net = BigDecimal("200.0"),
                     value = ValueReportTO(
                         start = BigDecimal("210.0"),
@@ -192,6 +193,7 @@ class ReportingSdkTest {
                 ),
                 ReportDataItemTO(
                     timeBucket = DateInterval(YearMonth(2024, 12), YearMonth(2024, 12)),
+                    bucketType = BucketTypeTO.REAL,
                     net = BigDecimal("300.0"),
                     value = ValueReportTO(
                         start = BigDecimal("310.0"),
@@ -216,6 +218,7 @@ class ReportingSdkTest {
                 ),
                 ReportDataItemTO(
                     timeBucket = DateInterval(YearMonth(2025, 1), YearMonth(2025, 1)),
+                    bucketType = BucketTypeTO.REAL,
                     net = BigDecimal("400.0"),
                     value = ValueReportTO(
                         start = BigDecimal("410.0"),
@@ -510,6 +513,7 @@ class ReportingSdkTest {
                                                 put("from", JsonPrimitive(item.timeBucket.from.toString()))
                                                 put("to", JsonPrimitive(item.timeBucket.to.toString()))
                                             })
+                                            put("bucketType", JsonPrimitive(item.bucketType.name))
                                             put("net", JsonPrimitive(item.net.toString()))
                                             put("value", buildJsonObject {
                                                 put("start", JsonPrimitive(item.value?.start.toString()))

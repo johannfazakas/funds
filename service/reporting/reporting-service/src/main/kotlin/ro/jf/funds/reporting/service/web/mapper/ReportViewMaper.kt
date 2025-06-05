@@ -34,6 +34,11 @@ fun ReportDataConfigurationTO.toDomain() = ReportDataConfiguration(
         valueReport = GenericReportFeature(features.valueReport.enabled),
         groupedNet = GenericReportFeature(features.groupedNet.enabled),
         groupedBudget = features.groupedBudget.toDomain(),
+        forecast = ForecastReportFeature(
+            enabled = features.forecast.enabled,
+            inputBuckets = features.forecast.inputBuckets,
+            outputBuckets = features.forecast.outputBuckets,
+        ),
     ),
 )
 

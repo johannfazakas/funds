@@ -20,11 +20,11 @@ fun GranularDateInterval.getBuckets(): Sequence<DateInterval> =
         }
     )
 
-fun GranularDateInterval.getForecastBuckets(forecastBucketsCount: Int): Sequence<DateInterval> =
+fun GranularDateInterval.getForecastBuckets(outputBuckets: Int): Sequence<DateInterval> =
     generateSequence(
         seed = getNextBucket(getLastBucket()),
         nextFunction = { getNextBucket(it) }
-    ).take(forecastBucketsCount)
+    ).take(outputBuckets)
 
 fun <D> GranularDateInterval.generateBucketedData(
     seedFunction: (DateInterval) -> D,
@@ -41,8 +41,8 @@ fun <D> GranularDateInterval.generateBucketedData(
 }
 
 fun <D> GranularDateInterval.generateForecastData(
-    forecastBuckets: Int,
-    forecastInputBuckets: Int,
+    outputBuckets: Int,
+    inputBuckets: Int,
     inputDataResolver: (DateInterval) -> D?,
     forecastResolver: (List<D>) -> D,
 ): Map<DateInterval, D> {
@@ -61,7 +61,7 @@ fun <D> GranularDateInterval.generateForecastData(
                     getPreviousBucket(previousBucket)
                 }
             )
-                .take(forecastInputBuckets)
+                .take(inputBuckets)
                 .toList()
                 .reversed()
             val forecastedData = inputBuckets
@@ -80,7 +80,7 @@ fun <D> GranularDateInterval.generateForecastData(
             ForecastBucket(forecastBucket, inputBuckets, previousForecast.forecastedData + forecastedData)
         }
     )
-        .take<ForecastBucket>(forecastBuckets)
+        .take<ForecastBucket>(outputBuckets)
         .lastOrNull<ForecastBucket>()
         ?.forecastedData
         ?: emptyMap()

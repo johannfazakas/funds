@@ -100,6 +100,6 @@ data class GroupedBudgetReportFeature(
 @Serializable
 data class ForecastReportFeature(
     val enabled: Boolean,
-    val forecastBuckets: Int,
-    val forecastInputBuckets: Int,
+    val outputBuckets: Int,
+    val inputBuckets: Int,
 )
