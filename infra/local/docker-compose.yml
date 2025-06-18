@@ -100,6 +100,47 @@ services:
       - HISTORICAL_PRICING_BASE_URL=http://ff_historical_pricing:5231
       - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_reporting
+      - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres
       - kafka
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.128.0
+    container_name: ff_otel_collector
+    command: [ "--config", "/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./volumes/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - '4317:4317'  # OTLP gRPC
+      - '4318:4318'  # OTLP HTTP
+      - '55679:55679'  # ZPages for debugging
+    depends_on:
+      - tempo
+
+  tempo:
+    image: grafana/tempo:2.8.0
+    container_name: ff_tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    ports:
+      - '3100:3100'   # Tempo HTTP API / TraceQL
+      - '9095:9095'   # Tempo gRPC API
+      - '4417:4317'   # OTLP gRPC ingest
+      - '4418:4318'   # OTLP HTTP ingest
+    volumes:
+      - ./volumes/tempo/tempo-config.yaml:/etc/tempo.yaml
+      - ./volumes/tempo/data:/tmp/tempo
+
+
+  grafana:
+    image: grafana/grafana:12.0.1
+    container_name: ff_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - tempo
+    volumes:
+      - ./volumes/grafana/data:/var/lib/grafana

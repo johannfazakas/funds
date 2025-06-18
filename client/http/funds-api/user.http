@@ -5,7 +5,7 @@ GET {{user_host}}/funds-api/user/v1/users
 GET {{user_host}}/funds-api/user/v1/users/{{user-id}}
 
 ### Get User by username
-GET {{user_host}}/funds-api/user/v1/users/username/johann
+GET {{user_host}}/funds-api/user/v1/users/username/{{username}}
 
 > {%
     client.global.set("user-id", response.body["id"]);
