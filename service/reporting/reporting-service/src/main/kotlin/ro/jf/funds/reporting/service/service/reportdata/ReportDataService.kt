@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.service.service.reportdata
 
+// TODO(Johann) measuring time could be done using prometheus maybe
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
@@ -19,7 +20,6 @@ import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResol
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
 import java.math.BigDecimal
 import java.util.*
-// TODO(Johann) measuring time could be done using prometheus maybe
 import kotlin.time.measureTimedValue
 
 private val log = logger { }

@@ -24,10 +24,7 @@ gradle-app.setting
 .idea/
 
 # Docker local volumes
-infra/local/volumes/kafka/data/
-infra/local/volumes/grafana/data/
-infra/local/volumes/postgres/data/
-infra/local/volumes/tempo/data/
+infra/local/volumes/*/data/
 
 # data
 data/

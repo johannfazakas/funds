@@ -1,5 +1,6 @@
 ktor:
   application:
+    id: "funds::reporting-service"
     modules:
       - ro.jf.funds.reporting.service.ReportingServiceApplicationKt.module
   deployment:
@@ -18,3 +19,6 @@ database:
   url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/ff_reporting"
   user: postgres
   password: pass
+observability:
+  otel-collector:
+    grpc-endpoint: "$OTEL_COLLECTOR_GRPC_ENDPOINT:http://localhost:4317/v1/traces"

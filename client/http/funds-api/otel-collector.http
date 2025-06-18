@@ -1,0 +1,44 @@
+@host=localhost:4318
+@debug_host=localhost:55679
+
+### Get traces
+GET {{host}}/v1/traces
+
+
+### Get configs
+GET localhost:55679/debug/tracez
+
+
+### Trigger collector
+POST {{host}}/v1/traces
+Content-Type: application/json
+
+{
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": { "stringValue": "curl-test" }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": { "name": "manual" },
+            "spans": [
+              {
+                "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+                "spanId":  "00f067aa0ba902b7",
+                "name":    "test-span",
+                "kind":    "SPAN_KIND_INTERNAL",
+                "startTimeUnixNano": 1622995200000000000,
+                "endTimeUnixNano":   1622995201000000000
+              }
+            ]
+          }
+        ]
+      }
+    ]
+}

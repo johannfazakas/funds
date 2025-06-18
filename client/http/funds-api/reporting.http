@@ -1,0 +1,4 @@
+
+### Get Report Views
+GET {{reporting_host}}/funds-api/reporting/v1/report-views
+FUNDS_USER_ID: {{user_id}}
