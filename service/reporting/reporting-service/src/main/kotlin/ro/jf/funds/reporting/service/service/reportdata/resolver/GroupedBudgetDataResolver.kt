@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
+import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
@@ -18,43 +19,69 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         if (!groupedBudgetFeature.enabled || groups.isNullOrEmpty()) return@withSpan null
 
         val reportCatalog = input.catalog
-        val previousLeftBudgets = withSpan("getPreviousLeftBudgets") {
-            getGroupedBudget(
-                reportCatalog.getPreviousRecords(), ByGroup(), input, groupedBudgetFeature
-            )
-        }
+        val previousLeftBudgets = getPreviousGroupedBudget(reportCatalog, input, groupedBudgetFeature)
 
         val generateBucketedData = input.dateInterval
             .generateBucketedData(
                 { interval ->
-                    withSpan("getSeedGroupedBudget") {
-                        getGroupedBudget(
-                            reportCatalog.getBucketRecords(interval), previousLeftBudgets, input, groupedBudgetFeature
-                        )
-                    }
+                    getSeedGroupedBudget(reportCatalog, interval, previousLeftBudgets, input, groupedBudgetFeature)
                 },
                 { interval, previous ->
-                    withSpan("getNextGroupedBudget", "interval" to interval) {
-                        getGroupedBudget(
-                            reportCatalog.getBucketRecords(interval), previous, input, groupedBudgetFeature
-                        )
-                    }
+                    getNextGroupedBudget(interval, reportCatalog, previous, input, groupedBudgetFeature)
                 }
             )
-        // TODO(Johann-19) make span calls cleaner
-        withSpan("generateBucketedData") {
-            generateBucketedData
-                .mapValues { (interval, budgetByUnitByGroup) ->
-                    budgetByUnitByGroup.mapValues { (_, budgetByUnit) ->
-                        budgetByUnit.convertToSingleCurrency(
-                            interval.to,
-                            input.dataConfiguration.currency,
-                            input.conversions
-                        )
-                    }
+        mergeBucketedData(generateBucketedData, input)
+    }
+
+    private fun mergeBucketedData(
+        generateBucketedData: Map<DateInterval, ByGroup<ByUnit<Budget>>>,
+        input: ReportDataResolverInput,
+    ): ByBucket<ByGroup<Budget>> = withSpan("mergeBucketedData") {
+        generateBucketedData
+            .mapValues { (interval, budgetByUnitByGroup) ->
+                budgetByUnitByGroup.mapValues { (_, budgetByUnit) ->
+                    budgetByUnit.convertToSingleCurrency(
+                        interval.to,
+                        input.dataConfiguration.currency,
+                        input.conversions
+                    )
                 }
-                .let(::ByBucket)
-        }
+            }
+            .let(::ByBucket)
+    }
+
+    private fun getPreviousGroupedBudget(
+        reportCatalog: RecordCatalog,
+        input: ReportDataResolverInput,
+        groupedBudgetFeature: GroupedBudgetReportFeature,
+    ): ByGroup<ByUnit<Budget>> = withSpan("getPreviousGroupedBudget") {
+        getGroupedBudget(
+            reportCatalog.getPreviousRecords(), ByGroup(), input, groupedBudgetFeature
+        )
+    }
+
+    private fun getSeedGroupedBudget(
+        reportCatalog: RecordCatalog,
+        interval: DateInterval,
+        previousLeftBudgets: ByGroup<ByUnit<Budget>>,
+        input: ReportDataResolverInput,
+        groupedBudgetFeature: GroupedBudgetReportFeature,
+    ): ByGroup<ByUnit<Budget>> = withSpan("getSeedGroupedBudget") {
+        getGroupedBudget(
+            reportCatalog.getBucketRecords(interval), previousLeftBudgets, input, groupedBudgetFeature
+        )
+    }
+
+    private fun getNextGroupedBudget(
+        interval: DateInterval,
+        reportCatalog: RecordCatalog,
+        previous: ByGroup<ByUnit<Budget>>,
+        input: ReportDataResolverInput,
+        groupedBudgetFeature: GroupedBudgetReportFeature,
+    ): ByGroup<ByUnit<Budget>> = withSpan("getNextGroupedBudget", "interval" to interval) {
+        getGroupedBudget(
+            reportCatalog.getBucketRecords(interval), previous, input, groupedBudgetFeature
+        )
     }
 
     override fun forecast(input: ReportDataForecastInput<ByGroup<Budget>>): ByBucket<ByGroup<Budget>>? =
