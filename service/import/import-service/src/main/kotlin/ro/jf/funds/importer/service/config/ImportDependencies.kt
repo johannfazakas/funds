@@ -4,6 +4,7 @@ import io.ktor.client.*
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
 import org.koin.core.qualifier.StringQualifier
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.config.getEnvironmentProperty
@@ -22,11 +23,11 @@ import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
 import ro.jf.funds.importer.service.service.ImportService
-import ro.jf.funds.importer.service.service.conversion.*
-import ro.jf.funds.importer.service.service.conversion.strategy.ExchangeSingleFundConverter
-import ro.jf.funds.importer.service.service.conversion.strategy.ImplicitTransferFundConverter
-import ro.jf.funds.importer.service.service.conversion.strategy.SingleRecordFundConverter
-import ro.jf.funds.importer.service.service.conversion.strategy.TransferFundConverter
+import ro.jf.funds.importer.service.service.conversion.AccountService
+import ro.jf.funds.importer.service.service.conversion.FundService
+import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService
+import ro.jf.funds.importer.service.service.conversion.ImportFundConverter
+import ro.jf.funds.importer.service.service.conversion.strategy.*
 import ro.jf.funds.importer.service.service.event.CreateFundTransactionsResponseHandler
 import ro.jf.funds.importer.service.service.parser.CsvParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
@@ -90,11 +91,11 @@ private val Application.importServiceDependencies
         single<ImportParserRegistry> { ImportParserRegistry(get()) }
         single<AccountService> { AccountService(get()) }
         single<FundService> { FundService(get()) }
-        single<SingleRecordFundConverter> { SingleRecordFundConverter() }
-        single<TransferFundConverter> { TransferFundConverter() }
-        single<ImplicitTransferFundConverter> { ImplicitTransferFundConverter() }
-        single<ExchangeSingleFundConverter> { ExchangeSingleFundConverter() }
-        single<ImportFundConverterRegistry> { ImportFundConverterRegistry(get(), get(), get(), get()) }
+        single<SingleRecordFundConverter> { SingleRecordFundConverter() } bind ImportFundConverter::class
+        single<TransferFundConverter> { TransferFundConverter() } bind ImportFundConverter::class
+        single<ImplicitTransferFundConverter> { ImplicitTransferFundConverter() } bind ImportFundConverter::class
+        single<ExchangeSingleFundConverter> { ExchangeSingleFundConverter() } bind ImportFundConverter::class
+        single<ImportFundConverterRegistry> { ImportFundConverterRegistry(getAll()) }
         single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get(), get()) }
         single<ImportService> { ImportService(get(), get(), get(), get()) }
         single<CreateFundTransactionsResponseHandler> {
