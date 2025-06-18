@@ -1,6 +1,5 @@
 package ro.jf.funds.reporting.service.service.reportdata
 
-// TODO(Johann) measuring time could be done using prometheus maybe
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
@@ -18,6 +17,8 @@ import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataForec
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolver
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverInput
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
+import ro.jf.funds.reporting.service.utils.withSpan
+import ro.jf.funds.reporting.service.utils.withSuspendingSpan
 import java.math.BigDecimal
 import java.util.*
 import kotlin.time.measureTimedValue
@@ -34,7 +35,7 @@ class ReportDataService(
         userId: UUID,
         reportViewId: UUID,
         granularInterval: GranularDateInterval,
-    ): ReportData {
+    ): ReportData = withSuspendingSpan {
         // TODO(Johann) dive into logging a bit. how can it be controlled in a ktor service? This should probably be a DEBUG
         log.info { "Get report view data for user $userId, report $reportViewId and interval $granularInterval" }
 
@@ -47,7 +48,7 @@ class ReportDataService(
         val reportDataConfiguration = reportView.dataConfiguration
         val conversions = getConversions(userId, reportDataConfiguration.currency, reportRecords, granularInterval)
         val data = getReportDataAggregates(granularInterval, catalog, conversions, reportDataConfiguration)
-        return ReportData(reportViewId, granularInterval, data)
+        ReportData(reportViewId, granularInterval, data)
     }
 
     private fun getReportDataAggregates(
@@ -55,7 +56,7 @@ class ReportDataService(
         catalog: RecordCatalog,
         conversions: ConversionsResponse,
         reportDataConfiguration: ReportDataConfiguration,
-    ): List<BucketData<ReportDataAggregate>> {
+    ): List<BucketData<ReportDataAggregate>> = withSpan("getReportDataAggregates") {
         val realInput = ReportDataResolverInput(granularInterval, catalog, conversions, reportDataConfiguration)
 
         val netData = resolveNetData(realInput)
@@ -64,7 +65,7 @@ class ReportDataService(
         val groupedBudgetData = resolveGroupedBudgetData(realInput)
 
         val forecastBuckets = reportDataConfiguration.features.forecast.outputBuckets
-        return sequenceOf(
+        sequenceOf(
             granularInterval.getBuckets().map { it to BucketType.REAL },
             granularInterval.getForecastBuckets(forecastBuckets).map { it to BucketType.FORECAST }
         )

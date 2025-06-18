@@ -6,6 +6,7 @@ import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
 import ro.jf.funds.reporting.service.domain.ReportRecord
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
+import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
 import java.math.MathContext
 
@@ -13,11 +14,11 @@ import java.math.MathContext
 class NetDataResolver : ReportDataResolver<BigDecimal> {
     override fun resolve(
         input: ReportDataResolverInput,
-    ): ByBucket<BigDecimal>? {
+    ): ByBucket<BigDecimal>? = withSpan("resolve") {
         if (!input.dataConfiguration.features.net.enabled) {
-            return null
+            return@withSpan null
         }
-        return input.dateInterval
+        input.dateInterval
             .generateBucketedData(
                 { interval -> getNet(input.catalog.getBucketRecordsGroupedByUnit(interval), input.dataConfiguration) },
                 { interval, _ ->
@@ -30,9 +31,11 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
             .let { ByBucket(it) }
     }
 
-    override fun forecast(input: ReportDataForecastInput<BigDecimal>): ByBucket<BigDecimal> {
+    override fun forecast(
+        input: ReportDataForecastInput<BigDecimal>
+    ): ByBucket<BigDecimal> = withSpan("forecast") {
         val inputSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
-        return input.dateInterval.generateForecastData(
+        input.dateInterval.generateForecastData(
             input.forecastConfiguration.outputBuckets,
             input.forecastConfiguration.inputBuckets,
             { interval -> input.realData[interval] }

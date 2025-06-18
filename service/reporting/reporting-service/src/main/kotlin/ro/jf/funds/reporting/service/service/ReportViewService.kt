@@ -13,6 +13,7 @@ import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
+import ro.jf.funds.reporting.service.utils.withSuspendingSpan
 import java.math.BigDecimal
 import java.util.*
 
@@ -24,7 +25,7 @@ class ReportViewService(
     private val fundTransactionSdk: FundTransactionSdk,
     private val historicalPricingSdk: HistoricalPricingSdk,
 ) {
-    suspend fun createReportView(userId: UUID, payload: CreateReportViewCommand): ReportView {
+    suspend fun createReportView(userId: UUID, payload: CreateReportViewCommand): ReportView = withSuspendingSpan {
         log.info { "Create report view for user $userId: $payload" }
 
         reportViewRepository.findByName(userId, payload.name)?.let {
@@ -34,22 +35,29 @@ class ReportViewService(
         val reportView = reportViewRepository.save(payload)
 
         val transactions = fundTransactionSdk.listTransactions(userId, payload.fundId).items
-        persistReportRecords(userId, reportView.id, transactions, payload.fundId, payload.dataConfiguration.currency)
+        persistReportRecords(
+            userId,
+            reportView.id,
+            transactions,
+            payload.fundId,
+            payload.dataConfiguration.currency
+        )
 
-        return reportView
+        reportView
     }
 
-    suspend fun getReportView(userId: UUID, reportViewId: UUID): ReportView {
-        return reportViewRepository.findById(userId, reportViewId)
+    suspend fun getReportView(userId: UUID, reportViewId: UUID): ReportView = withSuspendingSpan {
+        reportViewRepository.findById(userId, reportViewId)
             ?: throw ReportingException.ReportViewNotFound(userId, reportViewId)
     }
 
-    suspend fun deleteReportView(userId: UUID, reportViewId: UUID) {
+
+    suspend fun deleteReportView(userId: UUID, reportViewId: UUID) = withSuspendingSpan {
         reportViewRepository.delete(userId, reportViewId)
     }
 
-    suspend fun listReportViews(userId: UUID): List<ReportView> {
-        return reportViewRepository.findAll(userId)
+    suspend fun listReportViews(userId: UUID): List<ReportView> = withSuspendingSpan {
+        reportViewRepository.findAll(userId)
     }
 
     private suspend fun persistReportRecords(
@@ -58,7 +66,7 @@ class ReportViewService(
         transactions: List<FundTransactionTO>,
         fundId: UUID,
         currency: Currency,
-    ) {
+    ) = withSuspendingSpan {
         val conversions = getConversions(userId, transactions, currency)
 
         transactions

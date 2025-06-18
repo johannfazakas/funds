@@ -1,4 +1,9 @@
+@report_view_id=f543c4ab-c808-4e97-b9ad-4cf0a05a3369
 
 ### Get Report Views
 GET {{reporting_host}}/funds-api/reporting/v1/report-views
+FUNDS_USER_ID: {{user_id}}
+
+### Get Report Views
+GET {{reporting_host}}/funds-api/reporting/v1/report-views/{{report_view_id}}
 FUNDS_USER_ID: {{user_id}}

@@ -7,64 +7,74 @@ import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
+import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
 import java.math.MathContext
 
 class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
-    override fun resolve(input: ReportDataResolverInput): ByBucket<ByGroup<Budget>>? {
+    override fun resolve(input: ReportDataResolverInput): ByBucket<ByGroup<Budget>>? = withSpan("resolve") {
         val groupedBudgetFeature = input.dataConfiguration.features.groupedBudget
         val groups = input.dataConfiguration.groups
-        if (!groupedBudgetFeature.enabled || groups.isNullOrEmpty()) return null
+        if (!groupedBudgetFeature.enabled || groups.isNullOrEmpty()) return@withSpan null
 
         val reportCatalog = input.catalog
-        val previousLeftBudgets =
+        val previousLeftBudgets = withSpan("getPreviousLeftBudgets") {
             getGroupedBudget(
                 reportCatalog.getPreviousRecords(), ByGroup(), input, groupedBudgetFeature
             )
+        }
 
         val generateBucketedData = input.dateInterval
             .generateBucketedData(
                 { interval ->
-                    getGroupedBudget(
-                        reportCatalog.getBucketRecords(interval), previousLeftBudgets, input, groupedBudgetFeature
-                    )
+                    withSpan("getSeedGroupedBudget") {
+                        getGroupedBudget(
+                            reportCatalog.getBucketRecords(interval), previousLeftBudgets, input, groupedBudgetFeature
+                        )
+                    }
                 },
                 { interval, previous ->
-                    getGroupedBudget(
-                        reportCatalog.getBucketRecords(interval), previous, input, groupedBudgetFeature
-                    )
+                    withSpan("getNextGroupedBudget", "interval" to interval) {
+                        getGroupedBudget(
+                            reportCatalog.getBucketRecords(interval), previous, input, groupedBudgetFeature
+                        )
+                    }
                 }
             )
-        return generateBucketedData
-            .mapValues { (interval, budgetByUnitByGroup) ->
-                budgetByUnitByGroup.mapValues { (_, budgetByUnit) ->
-                    budgetByUnit.convertToSingleCurrency(
-                        interval.to,
-                        input.dataConfiguration.currency,
-                        input.conversions
-                    )
+        // TODO(Johann-19) make span calls cleaner
+        withSpan("generateBucketedData") {
+            generateBucketedData
+                .mapValues { (interval, budgetByUnitByGroup) ->
+                    budgetByUnitByGroup.mapValues { (_, budgetByUnit) ->
+                        budgetByUnit.convertToSingleCurrency(
+                            interval.to,
+                            input.dataConfiguration.currency,
+                            input.conversions
+                        )
+                    }
                 }
-            }
-            .let(::ByBucket)
+                .let(::ByBucket)
+        }
     }
 
-    override fun forecast(input: ReportDataForecastInput<ByGroup<Budget>>): ByBucket<ByGroup<Budget>>? {
-        val inputSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
-        return input.dateInterval.generateForecastData(
-            input.forecastConfiguration.outputBuckets,
-            input.forecastConfiguration.inputBuckets,
-            { interval -> input.realData[interval] }
-        ) { inputBuckets: List<ByGroup<Budget>> ->
-            input.groups
-                .associateWith { group ->
-                    val groupBudgets = inputBuckets.mapNotNull { it[group] }
-                    Budget(
-                        allocated = groupBudgets.sumOf { it.allocated }.divide(inputSize, MathContext.DECIMAL64),
-                        left = groupBudgets.sumOf { it.left }.divide(inputSize, MathContext.DECIMAL64)
-                    )
-                }.let { ByGroup(it) }
-        }.let { ByBucket(it) }
-    }
+    override fun forecast(input: ReportDataForecastInput<ByGroup<Budget>>): ByBucket<ByGroup<Budget>>? =
+        withSpan("forecast") {
+            val inputSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
+            input.dateInterval.generateForecastData(
+                input.forecastConfiguration.outputBuckets,
+                input.forecastConfiguration.inputBuckets,
+                { interval -> input.realData[interval] }
+            ) { inputBuckets: List<ByGroup<Budget>> ->
+                input.groups
+                    .associateWith { group ->
+                        val groupBudgets = inputBuckets.mapNotNull { it[group] }
+                        Budget(
+                            allocated = groupBudgets.sumOf { it.allocated }.divide(inputSize, MathContext.DECIMAL64),
+                            left = groupBudgets.sumOf { it.left }.divide(inputSize, MathContext.DECIMAL64)
+                        )
+                    }.let { ByGroup(it) }
+            }.let { ByBucket(it) }
+        }
 
     private fun getGroupedBudget(
         records: List<ReportRecord>,

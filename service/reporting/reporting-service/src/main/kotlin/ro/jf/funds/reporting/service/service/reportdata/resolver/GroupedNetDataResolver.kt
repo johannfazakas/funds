@@ -3,17 +3,18 @@ package ro.jf.funds.reporting.service.service.reportdata.resolver
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
+import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
 import java.math.MathContext
 
 class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
     override fun resolve(
         input: ReportDataResolverInput,
-    ): ByBucket<ByGroup<BigDecimal>>? {
+    ): ByBucket<ByGroup<BigDecimal>>? = withSpan("resolve") {
         if (!input.dataConfiguration.features.groupedNet.enabled || input.dataConfiguration.groups == null) {
-            return null
+            return@withSpan null
         }
-        return input.dateInterval
+        input.dateInterval
             .generateBucketedData(
                 { interval ->
                     getGroupedNet(
@@ -31,9 +32,11 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
             .let(::ByBucket)
     }
 
-    override fun forecast(input: ReportDataForecastInput<ByGroup<BigDecimal>>): ByBucket<ByGroup<BigDecimal>> {
+    override fun forecast(
+        input: ReportDataForecastInput<ByGroup<BigDecimal>>
+    ): ByBucket<ByGroup<BigDecimal>> = withSpan("forecast") {
         val inputBucketsSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
-        return input.dateInterval.generateForecastData(
+        input.dateInterval.generateForecastData(
             input.forecastConfiguration.outputBuckets,
             input.forecastConfiguration.inputBuckets,
             { interval -> input.realData[interval] }

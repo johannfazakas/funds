@@ -4,11 +4,12 @@ import ro.jf.funds.commons.event.Event
 import ro.jf.funds.commons.event.Handler
 import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
+import ro.jf.funds.reporting.service.utils.withSuspendingSpan
 
 class CreateReportViewRequestHandler(
     private val reportViewTaskService: ReportViewTaskService,
 ) : Handler<CreateReportViewCommand> {
-    override suspend fun handle(event: Event<CreateReportViewCommand>) {
+    override suspend fun handle(event: Event<CreateReportViewCommand>) = withSuspendingSpan {
         val taskId = event.correlationId ?: error("Correlation ID not found on report view task")
         reportViewTaskService.handleReportViewTask(event.userId, taskId, event.payload)
     }
