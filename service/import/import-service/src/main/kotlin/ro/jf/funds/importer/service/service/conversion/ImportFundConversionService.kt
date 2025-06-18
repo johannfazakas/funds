@@ -13,6 +13,7 @@ import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
+import ro.jf.funds.importer.service.service.conversion.strategy.ImportFundConverterRegistry
 import java.util.*
 
 private val log = logger { }
@@ -55,7 +56,7 @@ class ImportFundConversionService(
     private fun ImportParsedTransaction.getConverterStrategy(
         accountStore: Store<AccountName, AccountTO>,
     ): ImportFundConverter {
-        return converterRegistry.all()
+        return converterRegistry.converters
             .firstOrNull { it.matches(this, accountStore) }
             ?: throw ImportDataException("Unrecognized transaction type: $this")
     }
