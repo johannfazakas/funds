@@ -11,7 +11,6 @@ import kotlinx.coroutines.withContext
 // TODO(Johann) should extract everything tracing related to commons
 
 fun <T> withSpan(spanName: String, vararg attributes: Pair<String, Any?>, block: () -> T): T {
-    // TODO(Johann-19) but everything is "Lambda" now as a method. maybe it should be passed for non suspending methods
     val (klass) = block.javaClass.name.split('$')
     val span = buildSpan(klass, spanName, attributes.toList())
     return span.makeCurrent().use {

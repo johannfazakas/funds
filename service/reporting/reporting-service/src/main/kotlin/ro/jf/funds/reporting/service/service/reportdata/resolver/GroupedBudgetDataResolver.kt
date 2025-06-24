@@ -1,6 +1,8 @@
 package ro.jf.funds.reporting.service.service.reportdata.resolver
 
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
@@ -27,7 +29,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
                     getSeedGroupedBudget(reportCatalog, interval, previousLeftBudgets, input, groupedBudgetFeature)
                 },
                 { interval, previous ->
-                    getNextGroupedBudget(interval, reportCatalog, previous, input, groupedBudgetFeature)
+                    getNextGroupedBudget(reportCatalog, interval, previous, input, groupedBudgetFeature)
                 }
             )
         mergeBucketedData(generateBucketedData, input)
@@ -55,8 +57,14 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         input: ReportDataResolverInput,
         groupedBudgetFeature: GroupedBudgetReportFeature,
     ): ByGroup<ByUnit<Budget>> = withSpan("getPreviousGroupedBudget") {
+        // TODO(Johann) could split previous records in batches so monthly normalization is done.
+        val records = reportCatalog.getPreviousRecords()
         getGroupedBudget(
-            reportCatalog.getPreviousRecords(), ByGroup(), input, groupedBudgetFeature
+            records,
+            input.dateInterval.interval.from.minus(DatePeriod(days = 1)),
+            ByGroup(),
+            input,
+            groupedBudgetFeature
         )
     }
 
@@ -68,19 +76,19 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         groupedBudgetFeature: GroupedBudgetReportFeature,
     ): ByGroup<ByUnit<Budget>> = withSpan("getSeedGroupedBudget") {
         getGroupedBudget(
-            reportCatalog.getBucketRecords(interval), previousLeftBudgets, input, groupedBudgetFeature
+            reportCatalog.getBucketRecords(interval), interval.to, previousLeftBudgets, input, groupedBudgetFeature
         )
     }
 
     private fun getNextGroupedBudget(
-        interval: DateInterval,
         reportCatalog: RecordCatalog,
+        interval: DateInterval,
         previous: ByGroup<ByUnit<Budget>>,
         input: ReportDataResolverInput,
         groupedBudgetFeature: GroupedBudgetReportFeature,
     ): ByGroup<ByUnit<Budget>> = withSpan("getNextGroupedBudget", "interval" to interval) {
         getGroupedBudget(
-            reportCatalog.getBucketRecords(interval), previous, input, groupedBudgetFeature
+            reportCatalog.getBucketRecords(interval), interval.to, previous, input, groupedBudgetFeature
         )
     }
 
@@ -105,11 +113,17 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
 
     private fun getGroupedBudget(
         records: List<ReportRecord>,
+        intervalEnd: LocalDate,
         previousBudget: ByGroup<ByUnit<Budget>>,
         input: ReportDataResolverInput,
         feature: GroupedBudgetReportFeature,
-    ): ByGroup<ByUnit<Budget>> = records
-        .fold(previousBudget.resetAllocatedAmount()) { budget, record -> budget.addRecord(record, input, feature) }
+    ): ByGroup<ByUnit<Budget>> = withSpan("getGroupedBudget") {
+        records
+            .fold(previousBudget.resetAllocatedAmount()) { budget, record -> budget.addRecord(record, input, feature) }
+            .normalizeGroupCurrencyRatio(
+                intervalEnd, input.dataConfiguration.currency, input.conversions
+            )
+    }
 
     private fun ByGroup<ByUnit<Budget>>.addRecord(
         record: ReportRecord,
@@ -127,8 +141,8 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
     private fun ByGroup<ByUnit<Budget>>.allocateIncome(
         record: ReportRecord,
         distribution: GroupedBudgetReportFeature.BudgetDistribution,
-    ): ByGroup<ByUnit<Budget>> {
-        return distribution.groups
+    ): ByGroup<ByUnit<Budget>> = withSpan("allocateIncome") {
+        distribution.groups
             .map { (group, percentage) ->
                 group to ByUnit(record.unit to record.amount.percentage(percentage).let { Budget(it, it) })
             }
@@ -141,18 +155,18 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         record: ReportRecord,
         reportCurrency: Currency,
         conversions: ConversionsResponse,
-    ): ByGroup<ByUnit<Budget>> {
-        return ByGroup(matchingGroup to ByUnit(record.unit to Budget(BigDecimal.ZERO, record.amount)))
+    ): ByGroup<ByUnit<Budget>> = withSpan("addGroupExpense") {
+        ByGroup(matchingGroup to ByUnit(record.unit to Budget(BigDecimal.ZERO, record.amount)))
             .let { it.plus(this) { a, b -> a.plus(b) { x, y -> x + y } } }
-            // TODO(Johann) this could be done once at the end of the bucket as an optimization. currency conversion should also be available then
-            .normalizeGroupCurrencyRatio(record.date, reportCurrency, conversions)
+        // TODO(Johann) this could be done once at the end of the bucket as an optimization. currency conversion should also be available then
+//            .normalizeGroupCurrencyRatio(record.date, reportCurrency, conversions)
     }
 
     private fun ByGroup<ByUnit<Budget>>.normalizeGroupCurrencyRatio(
         date: LocalDate,
         reportCurrency: Currency,
         conversions: ConversionsResponse,
-    ): ByGroup<ByUnit<Budget>> {
+    ): ByGroup<ByUnit<Budget>> = withSpan("normalizeGroupCurrencyRatio") {
         val leftByUnit = this
             .flatMap { it.value }
             .map { (unit, budget) -> unit to budget.left }
@@ -174,22 +188,37 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
                 budget.copy(left = multiplicationFactor * leftByUnit[unit]!!)
             }
         }
-        return mapValues
+        mapValues
     }
 
     private fun ByUnit<Budget>.convertToSingleCurrency(
         date: LocalDate,
         reportCurrency: Currency,
         conversions: ConversionsResponse,
-    ): Budget = this
-        .map { (unit, budget) ->
-            val rate = if (unit == reportCurrency)
-                BigDecimal.ONE
-            else
-                getConversionRate(date, unit, reportCurrency, conversions)
-            Budget(budget.allocated * rate, budget.left * rate)
+    ): Budget = withSpan("convertToSingleCurrency") {
+        mapToSingleCurrencyBudget(reportCurrency, date, conversions).mergeBudgets()
+    }
+
+    private fun ByUnit<Budget>.mapToSingleCurrencyBudget(
+        reportCurrency: Currency,
+        date: LocalDate,
+        conversions: ConversionsResponse,
+    ): List<Budget> = withSpan("mapToSingleCurrencyBudget") {
+        this
+            .map { (unit, budget) ->
+                val rate = if (unit == reportCurrency)
+                    BigDecimal.ONE
+                else
+                    getConversionRate(date, unit, reportCurrency, conversions)
+                Budget(budget.allocated * rate, budget.left * rate)
+            }
+    }
+
+    private fun List<Budget>.mergeBudgets(): Budget = withSpan("mergeBudgets") {
+        fold(Budget(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, budget ->
+            acc + budget
         }
-        .fold(Budget(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, budget -> acc + budget }
+    }
 
     private fun getMatchingGroup(record: ReportRecord, groups: List<ReportGroup>): ReportGroup? {
         return groups.find { it.filter.test(record) }
@@ -199,8 +228,9 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         return this * BigDecimal(percentage) / BigDecimal(100)
     }
 
-    private fun ByGroup<ByUnit<Budget>>.resetAllocatedAmount(): ByGroup<ByUnit<Budget>> {
-        return this.mapValues { (_, byUnit) ->
+    private fun ByGroup<ByUnit<Budget>>.resetAllocatedAmount(
+    ): ByGroup<ByUnit<Budget>> = withSpan("resetAllocatedAmount") {
+        this.mapValues { (_, byUnit) ->
             byUnit.mapValues { (_, budget) -> Budget(BigDecimal.ZERO, budget.left) }
         }
     }

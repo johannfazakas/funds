@@ -130,9 +130,18 @@ class ReportDataServiceTest {
         assertThat(data.data[5].aggregate.net).isCloseTo(BigDecimal(-50), acceptedOffset)
         assertThat(data.data[6].timeBucket).isEqualTo(YearMonth(2021, 7).asDateInterval())
         assertThat(data.data[6].bucketType).isEqualTo(FORECAST)
-        assertThat(data.data[6].aggregate.net).isCloseTo(BigDecimal((-40 - 30 - 20 - 40 - 50) / 5.0), acceptedOffset) // -36
-        assertThat(data.data[7].aggregate.net).isCloseTo(BigDecimal((- 30 - 20 - 40 - 50 - 36) / 5.0), acceptedOffset) // -35.2
-        assertThat(data.data[8].aggregate.net).isCloseTo(BigDecimal((- 20 - 40 - 50 - 36 - 35.2) / 5.0), acceptedOffset) // -36.24
+        assertThat(data.data[6].aggregate.net).isCloseTo(
+            BigDecimal((-40 - 30 - 20 - 40 - 50) / 5.0),
+            acceptedOffset
+        ) // -36
+        assertThat(data.data[7].aggregate.net).isCloseTo(
+            BigDecimal((-30 - 20 - 40 - 50 - 36) / 5.0),
+            acceptedOffset
+        ) // -35.2
+        assertThat(data.data[8].aggregate.net).isCloseTo(
+            BigDecimal((-20 - 40 - 50 - 36 - 35.2) / 5.0),
+            acceptedOffset
+        ) // -36.24
     }
 
     @Test
@@ -327,6 +336,8 @@ class ReportDataServiceTest {
         }
     }
 
+    // TODO(Johann-19)
+//    @Disabled
     @Test
     fun `get grouped budget should adapt to changing currency exchange rates`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
