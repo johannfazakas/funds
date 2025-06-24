@@ -38,6 +38,7 @@ data class ValueReport(
 )
 
 data class Budget(
+    // TODO(Johann) does this also need the spent amount?
     val allocated: BigDecimal,
     val left: BigDecimal,
 ) {
