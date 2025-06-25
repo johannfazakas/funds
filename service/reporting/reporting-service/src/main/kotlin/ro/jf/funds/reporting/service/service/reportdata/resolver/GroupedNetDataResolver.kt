@@ -33,7 +33,7 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
     }
 
     override fun forecast(
-        input: ReportDataForecastInput<ByGroup<BigDecimal>>
+        input: ReportDataForecastInput<ByGroup<BigDecimal>>,
     ): ByBucket<ByGroup<BigDecimal>> = withSpan("forecast") {
         val inputBucketsSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
         input.dateInterval.generateForecastData(
@@ -66,7 +66,6 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
         return records
             .flatMap { it.value }
             .filter(recordFilter)
-            // TODO(Johann) is this correct?
             .sumOf { it.reportCurrencyAmount }
     }
 }
