@@ -47,7 +47,6 @@ class ReportViewRepository(
         name: String,
     ): ReportView? = blockingTransaction {
         ReportViewTable
-            // TODO(Johann) Fix deprecated select calls
             .selectAll()
             .where { (ReportViewTable.userId eq userId) and (ReportViewTable.name eq name) }
             .map { it.toModel() }
