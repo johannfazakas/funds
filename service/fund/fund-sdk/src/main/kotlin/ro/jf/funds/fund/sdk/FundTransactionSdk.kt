@@ -7,6 +7,7 @@ import io.ktor.http.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.web.USER_ID_HEADER
+import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
 import ro.jf.funds.fund.api.FundTransactionApi
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
@@ -17,7 +18,7 @@ private val log = logger { }
 
 class FundTransactionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
-    private val httpClient: HttpClient,
+    private val httpClient: HttpClient = createHttpClient(),
 ) : FundTransactionApi {
     init {
         log.info { "FundTransactionSdk initialized with baseUrl=$baseUrl" }
