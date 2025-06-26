@@ -7,7 +7,8 @@
  */
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.9.0"
+    id("org.jetbrains.kotlin.jvm") version "2.1.20"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.20"
     `maven-publish`
     `java-library`
 }
@@ -21,7 +22,13 @@ repositories {
 }
 
 dependencies {
-    api("ro.jf.funds:user-sdk:1.0.0")
+    implementation("ro.jf.funds:user-sdk:1.0.0")
+    implementation("ro.jf.funds:account-sdk:1.0.0")
+    implementation("ro.jf.funds:fund-sdk:1.0.0")
+    implementation("ro.jf.funds:import-sdk:1.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
+    implementation("com.charleskorn.kaml:kaml-jvm:0.82.0")
 }
 
 java {
