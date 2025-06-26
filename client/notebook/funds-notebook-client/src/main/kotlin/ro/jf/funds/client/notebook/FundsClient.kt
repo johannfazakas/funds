@@ -2,10 +2,7 @@ package ro.jf.funds.client.notebook
 
 import com.charleskorn.kaml.Yaml
 import kotlinx.coroutines.delay
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
+import kotlinx.datetime.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.decodeFromString
 import ro.jf.funds.account.api.model.AccountTO
@@ -18,6 +15,8 @@ import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
 import ro.jf.funds.importer.sdk.ImportSdk
+import ro.jf.funds.reporting.api.model.*
+import ro.jf.funds.reporting.sdk.ReportingSdk
 import ro.jf.funds.user.api.model.UserTO
 import ro.jf.funds.user.sdk.UserSdk
 import java.io.File
@@ -30,6 +29,7 @@ class FundsClient(
     private val fundSdk: FundSdk = FundSdk(),
     private val fundTransactionSdk: FundTransactionSdk = FundTransactionSdk(),
     private val importSdk: ImportSdk = ImportSdk(),
+    private val reportingSdk: ReportingSdk = ReportingSdk(),
 ) {
     suspend fun ensureUserExists(username: String): UserTO {
         return userSdk.findUserByUsername(username)
@@ -105,5 +105,51 @@ class FundsClient(
             importTask = importSdk.getImportTask(user.id, importTask.taskId)
         }
         return importTask
+    }
+
+    suspend fun createReportView(
+        user: UserTO,
+        reportViewName: String,
+        fundName: String,
+        reportDataConfigurationFile: File,
+    ): ReportViewTO {
+        val existingReportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportViewName }
+        if (existingReportView != null) {
+            return existingReportView
+        }
+        val fund = fundSdk.getFundByName(user.id, FundName(fundName))
+            ?: error("Fund with name '$fundName' not found for user ${user.username}")
+        val dataConfiguration =
+            Yaml.default.decodeFromString<ReportDataConfigurationTO>(reportDataConfigurationFile.readText())
+        val request = CreateReportViewTO(reportViewName, fund.id, dataConfiguration)
+        var task: ReportViewTaskTO = reportingSdk.createReportView(user.id, request)
+        val timeout = Clock.System.now().plus(120.seconds)
+        while (task.status == ReportViewTaskStatus.IN_PROGRESS && Clock.System.now() < timeout) {
+            delay(2000)
+            task = reportingSdk.getReportViewTask(user.id, task.taskId)
+        }
+        return if (task.status == ReportViewTaskStatus.COMPLETED) {
+            task.report ?: error("No report found on completed report task")
+        } else if (task.status == ReportViewTaskStatus.FAILED) {
+            throw IllegalStateException("Report view creation failed on task $task")
+        } else {
+            throw IllegalStateException("Report view creation timed out on task $task")
+        }
+    }
+
+    suspend fun getReportViewData(
+        user: UserTO,
+        reportName: String,
+        intervalStart: LocalDate,
+        intervalEnd: LocalDate,
+        granularity: TimeGranularity,
+    ): ReportDataTO {
+        val reportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportName }
+            ?: error("Report view with name '$reportName' not found for user ${user.username}")
+        val granularInterval = GranularDateInterval(
+            interval = DateInterval(intervalStart, intervalEnd),
+            granularity = granularity
+        )
+        return reportingSdk.getReportViewData(user.id, reportView.id, granularInterval)
     }
 }
