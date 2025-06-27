@@ -1,12 +1,11 @@
 package ro.jf.funds.reporting.service.service.reportdata.resolver
 
-import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.minus
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.reporting.api.model.DateInterval
+import ro.jf.funds.reporting.api.model.YearMonth
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
@@ -57,15 +56,25 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         input: ReportDataResolverInput,
         groupedBudgetFeature: GroupedBudgetReportFeature,
     ): ByGroup<ByUnit<Budget>> = withSpan("getPreviousGroupedBudget") {
-        // TODO(Johann) could split previous records in batches so monthly normalization is done.
+
         val records = reportCatalog.getPreviousRecords()
-        getGroupedBudget(
-            records,
-            input.dateInterval.interval.from.minus(DatePeriod(days = 1)),
-            ByGroup(),
-            input,
-            groupedBudgetFeature
-        )
+        if (records.isEmpty()) {
+            return@withSpan ByGroup(emptyMap())
+        }
+
+        records
+            // split by year month for monthly normalization
+            .groupBy { YearMonth(it.date.year, it.date.month.value) }
+            .entries.sortedBy { it.key }
+            .fold(ByGroup()) { acc, (yearMonth, monthRecords) ->
+                getGroupedBudget(
+                    monthRecords,
+                    yearMonth.asDateInterval().to,
+                    acc,
+                    input,
+                    groupedBudgetFeature
+                )
+            }
     }
 
     private fun getSeedGroupedBudget(
@@ -132,7 +141,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
     ): ByGroup<ByUnit<Budget>> {
         val matchingGroup = getMatchingGroup(record, input.dataConfiguration.groups ?: emptyList())
         return if (matchingGroup != null) {
-            addGroupExpense(matchingGroup.name, record, input.dataConfiguration.currency, input.conversions)
+            addGroupExpense(matchingGroup.name, record)
         } else {
             allocateIncome(record, feature.getDistributionByDate(record.date))
         }
@@ -153,13 +162,9 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
     private fun ByGroup<ByUnit<Budget>>.addGroupExpense(
         matchingGroup: String,
         record: ReportRecord,
-        reportCurrency: Currency,
-        conversions: ConversionsResponse,
     ): ByGroup<ByUnit<Budget>> = withSpan("addGroupExpense") {
         ByGroup(matchingGroup to ByUnit(record.unit to Budget(BigDecimal.ZERO, record.amount)))
             .let { it.plus(this) { a, b -> a.plus(b) { x, y -> x + y } } }
-        // TODO(Johann) this could be done once at the end of the bucket as an optimization. currency conversion should also be available then
-//            .normalizeGroupCurrencyRatio(record.date, reportCurrency, conversions)
     }
 
     private fun ByGroup<ByUnit<Budget>>.normalizeGroupCurrencyRatio(

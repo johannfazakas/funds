@@ -39,4 +39,10 @@ data class YearMonth(
         from = LocalDate(year, month, 1),
         to = LocalDate(year, month, 1).plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY),
     )
+
+    fun next(): YearMonth {
+        val nextMonth = if (month == 12) 1 else month + 1
+        val nextYear = if (nextMonth == 1) year + 1 else year
+        return YearMonth(nextYear, nextMonth)
+    }
 }
