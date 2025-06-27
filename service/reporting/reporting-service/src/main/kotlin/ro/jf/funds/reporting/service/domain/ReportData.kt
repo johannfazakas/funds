@@ -38,11 +38,11 @@ data class ValueReport(
 )
 
 data class Budget(
-    // TODO(Johann) does this also need the spent amount?
     val allocated: BigDecimal,
+    val spent: BigDecimal,
     val left: BigDecimal,
 ) {
     operator fun plus(other: Budget): Budget {
-        return Budget(allocated + other.allocated, left + other.left)
+        return Budget(allocated + other.allocated, spent + other.spent, left + other.left)
     }
 }
