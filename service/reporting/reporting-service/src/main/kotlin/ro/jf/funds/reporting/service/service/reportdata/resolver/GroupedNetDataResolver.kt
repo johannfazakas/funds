@@ -1,8 +1,11 @@
 package ro.jf.funds.reporting.service.service.reportdata.resolver
 
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
+import ro.jf.funds.reporting.service.utils.getConversionRate
 import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
 import java.math.MathContext
@@ -19,13 +22,17 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
                 { interval ->
                     getGroupedNet(
                         input.catalog.getBucketRecordsGroupedByUnit(interval),
-                        input.dataConfiguration.groups
+                        input.dataConfiguration.groups,
+                        input.conversions,
+                        input.dataConfiguration.currency
                     )
                 },
                 { interval, _ ->
                     getGroupedNet(
                         input.catalog.getBucketRecordsGroupedByUnit(interval),
-                        input.dataConfiguration.groups
+                        input.dataConfiguration.groups,
+                        input.conversions,
+                        input.dataConfiguration.currency
                     )
                 }
             )
@@ -53,19 +60,25 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
     private fun getGroupedNet(
         records: ByUnit<List<ReportRecord>>,
         groups: List<ReportGroup>,
+        conversions: ConversionsResponse,
+        reportCurrency: Currency,
     ): ByGroup<BigDecimal> {
         return groups.associate { group ->
-            group.name to getFilteredNet(records, group.filter::test)
+            group.name to getFilteredNet(records, conversions, reportCurrency, group.filter::test)
         }.let(::ByGroup)
     }
 
     private fun getFilteredNet(
         records: ByUnit<List<ReportRecord>>,
+        conversions: ConversionsResponse,
+        reportCurrency: Currency,
         recordFilter: (ReportRecord) -> Boolean,
     ): BigDecimal {
         return records
             .flatMap { it.value }
             .filter(recordFilter)
-            .sumOf { it.reportCurrencyAmount }
+            .sumOf {
+                it.amount * getConversionRate(conversions, it.date, it.unit, reportCurrency)
+            }
     }
 }

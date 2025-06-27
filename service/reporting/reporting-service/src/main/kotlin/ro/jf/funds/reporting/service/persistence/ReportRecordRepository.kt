@@ -26,7 +26,6 @@ class ReportRecordRepository(
         val unit = varchar("unit", 50)
         val unitType = varchar("unit_type", 50)
         val amount = decimal("amount", 20, 8)
-        val reportCurrencyAmount = decimal("report_currency_amount", 20, 8)
         val labels = varchar("labels", 100)
     }
 
@@ -72,7 +71,6 @@ class ReportRecordRepository(
             date = this[ReportRecordTable.date].toKotlinLocalDate(),
             unit = toFinancialUnit(this[ReportRecordTable.unitType], this[ReportRecordTable.unit]),
             amount = this[ReportRecordTable.amount],
-            reportCurrencyAmount = this[ReportRecordTable.reportCurrencyAmount],
             labels = this[ReportRecordTable.labels].asLabels()
         )
 
@@ -85,7 +83,6 @@ class ReportRecordRepository(
             it[unit] = command.unit.value
             it[unitType] = command.unit.type.value
             it[amount] = command.amount
-            it[reportCurrencyAmount] = command.reportCurrencyAmount
             it[labels] = command.labels.asString()
         }
         return reportRecord.let {
@@ -97,7 +94,6 @@ class ReportRecordRepository(
                 date = it[ReportRecordTable.date].toKotlinLocalDate(),
                 unit = toFinancialUnit(it[ReportRecordTable.unitType], it[ReportRecordTable.unit]),
                 amount = it[ReportRecordTable.amount],
-                reportCurrencyAmount = it[ReportRecordTable.reportCurrencyAmount],
                 labels = it[ReportRecordTable.labels].asLabels()
             )
         }

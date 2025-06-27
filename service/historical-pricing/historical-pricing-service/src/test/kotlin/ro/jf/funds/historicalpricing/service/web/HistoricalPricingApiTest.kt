@@ -12,12 +12,9 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.dsl.module
 import org.koin.ktor.ext.get
 import org.mockito.Mockito.mock
-import org.mockito.kotlin.any
-import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
-import ro.jf.funds.commons.error.ErrorTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
