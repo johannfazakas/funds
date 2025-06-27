@@ -179,14 +179,14 @@ class ReportingSdkTest {
                     groups = listOf(
                         ReportDataGroupItemTO(
                             group = "need",
-                            net = BigDecimal("100.0"),
                             allocated = BigDecimal("150.0"),
+                            spent = BigDecimal("100.0"),
                             left = BigDecimal("50.0")
                         ),
                         ReportDataGroupItemTO(
                             group = "want",
-                            net = BigDecimal("100.0"),
                             allocated = BigDecimal("200.0"),
+                            spent = BigDecimal("100.0"),
                             left = BigDecimal("100.0")
                         )
                     )
@@ -204,14 +204,14 @@ class ReportingSdkTest {
                     groups = listOf(
                         ReportDataGroupItemTO(
                             group = "need",
-                            net = BigDecimal("150.0"),
                             allocated = BigDecimal("200.0"),
+                            spent = BigDecimal("150.0"),
                             left = BigDecimal("50.0")
                         ),
                         ReportDataGroupItemTO(
                             group = "want",
-                            net = BigDecimal("150.0"),
                             allocated = BigDecimal("300.0"),
+                            spent = BigDecimal("150.0"),
                             left = BigDecimal("150.0")
                         )
                     )
@@ -229,14 +229,14 @@ class ReportingSdkTest {
                     groups = listOf(
                         ReportDataGroupItemTO(
                             group = "need",
-                            net = BigDecimal("200.0"),
                             allocated = BigDecimal("300.0"),
+                            spent = BigDecimal("200.0"),
                             left = BigDecimal("100.0")
                         ),
                         ReportDataGroupItemTO(
                             group = "want",
-                            net = BigDecimal("200.0"),
                             allocated = BigDecimal("400.0"),
+                            spent = BigDecimal("200.0"),
                             left = BigDecimal("200.0")
                         )
                     )
@@ -526,7 +526,7 @@ class ReportingSdkTest {
                                                     add(
                                                         buildJsonObject {
                                                             put("group", JsonPrimitive(group.group))
-                                                            put("net", JsonPrimitive(group.net.toString()))
+                                                            put("spent", JsonPrimitive(group.spent.toString()))
                                                             put("allocated", JsonPrimitive(group.allocated.toString()))
                                                             put("left", JsonPrimitive(group.left.toString()))
                                                         }

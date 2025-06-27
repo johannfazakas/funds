@@ -572,6 +572,69 @@ class ReportDataServiceTest {
     }
 
     @Test
+    fun `get grouped budget with forecast should include future estimated values`(): Unit = runBlocking {
+        val reportDataConfiguration = ReportDataConfiguration(
+            currency = RON,
+            filter = RecordFilter(labels = allLabels),
+            groups = listOf(
+                ReportGroup("Need", RecordFilter.byLabels("need")),
+                ReportGroup("Want", RecordFilter.byLabels("want"))
+            ),
+            features = ReportDataFeaturesConfiguration()
+                .withGroupedBudget(
+                    enabled = true,
+                    distributions = listOf(
+                        needWantDistribution(true, null, 60, 40),
+                    ),
+                )
+                .withForecast(enabled = true, forecastBuckets = 2, consideredBuckets = 3)
+        )
+        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
+        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(mock())
+
+        val interval = DateInterval(YearMonth(2020, 1), YearMonth(2020, 4))
+        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+            .thenReturn(
+                listOf(
+                    // first month
+                    ronReportRecord(LocalDate(2020, 1, 5), 2000, labelsOf()),
+                    ronReportRecord(LocalDate(2020, 1, 10), -500, labelsOf("need")),
+                    ronReportRecord(LocalDate(2020, 1, 12), -400, labelsOf("want")),
+                    // second month
+                    ronReportRecord(LocalDate(2020, 2, 5), 2500, labelsOf()),
+                    ronReportRecord(LocalDate(2020, 2, 20), -600, labelsOf("need")),
+                    ronReportRecord(LocalDate(2020, 2, 21), -300, labelsOf("want")),
+                    // third month
+                    ronReportRecord(LocalDate(2020, 3, 5), 1500, labelsOf()),
+                    ronReportRecord(LocalDate(2020, 3, 20), -700, labelsOf("need")),
+                    ronReportRecord(LocalDate(2020, 3, 21), -300, labelsOf("want")),
+                    // fourth month
+                    // second month
+                    ronReportRecord(LocalDate(2020, 4, 5), 2000, labelsOf()),
+                    ronReportRecord(LocalDate(2020, 4, 20), -600, labelsOf("need")),
+                    ronReportRecord(LocalDate(2020, 4, 21), -400, labelsOf("want")),
+                )
+            )
+
+        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+
+        assertThat(data.data).hasSize(6)
+
+        val acceptedOffset = within(BigDecimal("0.01"))
+
+        val forecastMay = data.data[4]
+        assertThat(forecastMay.bucketType).isEqualTo(FORECAST)
+        val forecastBudgetMay = forecastMay.aggregate.groupedBudget ?: error("First forecast budget is null")
+        assertThat(forecastBudgetMay["Need"]).isNotNull
+        forecastBudgetMay["Need"]?.let {
+            assertThat(it.allocated).isCloseTo(BigDecimal((2500 + 2000 + 1500) * 0.6 / 3.0), acceptedOffset)
+            assertThat(it.spent).isCloseTo(BigDecimal((-600 - 700 - 600) / 3.0), acceptedOffset)
+            assertThat(it.left).isCloseTo(BigDecimal(2400 + ((2500 + 2000 + 1500) * 0.6 - 600 - 700 - 600) / 3.0), acceptedOffset)
+        }
+    }
+
+    @Test
     fun `get monthly value data with single currency`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,

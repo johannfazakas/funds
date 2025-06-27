@@ -114,7 +114,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
                         val groupBudgets = inputBuckets.mapNotNull { it[group] }
                         val allocated = groupBudgets.sumOf { it.allocated }.divide(inputSize, MathContext.DECIMAL64)
                         val spent = groupBudgets.sumOf { it.spent }.divide(inputSize, MathContext.DECIMAL64)
-                        val left = groupBudgets.last().left + allocated - spent
+                        val left = groupBudgets.last().left + allocated + spent
                         Budget(allocated, spent, left)
                     }.let { ByGroup(it) }
             }.let { ByBucket(it) }
