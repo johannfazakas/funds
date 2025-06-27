@@ -22,8 +22,8 @@ fun ReportData.toTO(): ReportDataTO {
                         ?.map { group ->
                             ReportDataGroupItemTO(
                                 group = group,
-                                net = this.groupedNet?.get(group),
                                 allocated = this.groupedBudget?.get(group)?.allocated,
+                                spent = this.groupedBudget?.get(group)?.spent,
                                 left = this.groupedBudget?.get(group)?.left
                             )
                         }

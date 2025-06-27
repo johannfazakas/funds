@@ -33,9 +33,9 @@ data class ReportDataItemTO(
 data class ReportDataGroupItemTO(
     val group: String,
     @Serializable(with = BigDecimalSerializer::class)
-    val net: BigDecimal?,
-    @Serializable(with = BigDecimalSerializer::class)
     var allocated: BigDecimal?,
+    @Serializable(with = BigDecimalSerializer::class)
+    val spent: BigDecimal?,
     @Serializable(with = BigDecimalSerializer::class)
     val left: BigDecimal?,
 )
