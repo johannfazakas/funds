@@ -8,6 +8,7 @@ import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.model.GranularDateInterval
+import ro.jf.funds.reporting.api.model.YearMonth
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
@@ -99,6 +100,7 @@ class ReportDataService(
             .toList()
 
         val conversionsRequest = sequenceOf(
+            getMonthlyConversionRequests(sourceUnits, targetUnit, granularInterval, reportRecords),
             getBucketBoundingConversionRequests(sourceUnits, targetUnit, granularInterval),
             getRecordConversionRequests(sourceUnits, targetUnit, reportRecords)
         )
@@ -107,6 +109,26 @@ class ReportDataService(
     }.let { (result, duration) ->
         log.debug { "Conversions resolved in $duration" }
         result
+    }
+
+    private fun getMonthlyConversionRequests(
+        sourceUnits: List<FinancialUnit>,
+        targetUnit: Currency,
+        granularInterval: GranularDateInterval,
+        reportRecords: List<ReportRecord>,
+    ): List<ConversionRequest> {
+        val startDate = reportRecords.minOf { it.date }
+        val endDate = granularInterval.interval.to
+        return generateSequence(YearMonth(startDate.year, startDate.month.value)) { it.next() }
+            .asSequence()
+            .takeWhile { it.asDateInterval().from > endDate }
+            .map { it.asDateInterval().to }
+            .flatMap { monthEnd ->
+                sourceUnits.map { sourceUnit ->
+                    ConversionRequest(sourceUnit, targetUnit, monthEnd)
+                }
+            }
+            .toList()
     }
 
     private fun getRecordConversionRequests(
