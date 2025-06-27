@@ -66,13 +66,15 @@ class ReportDataServiceTest {
             .thenReturn(
                 listOf(
                     ronReportRecord(LocalDate(2021, 9, 3), -100, labelsOf("need")),
-                    eurReportRecord(LocalDate(2021, 9, 15), -40, -200, labelsOf("want")),
+                    eurReportRecord(LocalDate(2021, 9, 15), -40, labelsOf("want")),
                     ronReportRecord(LocalDate(2021, 10, 7), -30, labelsOf("want")),
                     ronReportRecord(LocalDate(2021, 10, 8), -16, labelsOf("other")),
                 )
             )
         val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
         val conversionsResponse = mock<ConversionsResponse>()
+        whenever(conversionsResponse.getRate(eq(RON), eq(RON), any()))
+            .thenReturn(BigDecimal.ONE)
         whenever(conversionsResponse.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
 
@@ -163,8 +165,8 @@ class ReportDataServiceTest {
             .thenReturn(
                 listOf(
                     ronReportRecord(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
-                    eurReportRecord(LocalDate.parse("2021-09-04"), -10, -50, labelsOf("need")),
-                    eurReportRecord(LocalDate.parse("2021-09-15"), -40, -200, labelsOf("want")),
+                    eurReportRecord(LocalDate.parse("2021-09-04"), -10, labelsOf("need")),
+                    eurReportRecord(LocalDate.parse("2021-09-15"), -40, labelsOf("want")),
                     ronReportRecord(LocalDate.parse("2021-10-18"), -30, labelsOf("want")),
                     ronReportRecord(LocalDate.parse("2021-09-28"), -16, labelsOf("other")),
                 )
@@ -217,11 +219,11 @@ class ReportDataServiceTest {
                 listOf(
                     // previous month with specific distribution
                     ronReportRecord(LocalDate(2020, 1, 5), 1000, labelsOf("income")),
-                    eurReportRecord(LocalDate(2020, 1, 10), 500, 2500, labelsOf()),
+                    eurReportRecord(LocalDate(2020, 1, 10), 500, labelsOf()),
                     // first month
                     ronReportRecord(LocalDate(2020, 2, 5), amount = 1500, labels = labelsOf()),
                     ronReportRecord(LocalDate(2020, 2, 10), amount = -300, labels = labelsOf()),
-                    eurReportRecord(LocalDate(2020, 2, 15), 300, 1500, labelsOf()),
+                    eurReportRecord(LocalDate(2020, 2, 15), 300, labelsOf()),
                     // second month
                     ronReportRecord(LocalDate(2020, 3, 5), amount = 2000, labels = labelsOf()),
                 )
@@ -297,10 +299,10 @@ class ReportDataServiceTest {
                     // first month
                     ronReportRecord(LocalDate(2020, 2, 5), 2000, labelsOf()),
                     ronReportRecord(LocalDate(2020, 2, 10), -100, labelsOf("need")),
-                    eurReportRecord(LocalDate(2020, 2, 15), 500, 2500, labelsOf()),
+                    eurReportRecord(LocalDate(2020, 2, 15), 500, labelsOf()),
                     ronReportRecord(LocalDate(2020, 2, 20), -200, labelsOf("need")),
                     ronReportRecord(LocalDate(2020, 2, 21), -500, labelsOf("need")),
-                    eurReportRecord(LocalDate(2020, 2, 25), -100, -500, labelsOf("want")),
+                    eurReportRecord(LocalDate(2020, 2, 25), -100, labelsOf("want")),
                 )
             )
 
@@ -378,14 +380,14 @@ class ReportDataServiceTest {
                 listOf(
                     // first month
                     ronReportRecord(LocalDate(2020, 2, 5), 2000, labelsOf()),
-                    eurReportRecord(LocalDate(2020, 2, 15), 500, 2500, labelsOf()),
+                    eurReportRecord(LocalDate(2020, 2, 15), 500, labelsOf()),
                     ronReportRecord(LocalDate(2020, 2, 10), -800, labelsOf("need")),
-                    eurReportRecord(LocalDate(2020, 2, 25), -100, -500, labelsOf("want")),
+                    eurReportRecord(LocalDate(2020, 2, 25), -100, labelsOf("want")),
                     // second month
                     ronReportRecord(LocalDate(2020, 3, 5), 2500, labelsOf()),
-                    eurReportRecord(LocalDate(2020, 3, 15), 400, 2000, labelsOf()),
+                    eurReportRecord(LocalDate(2020, 3, 15), 400, labelsOf()),
                     ronReportRecord(LocalDate(2020, 3, 20), -300, labelsOf("want")),
-                    eurReportRecord(LocalDate(2020, 3, 25), -200, -1000, labelsOf("need")),
+                    eurReportRecord(LocalDate(2020, 3, 25), -200, labelsOf("need")),
                 )
             )
 
@@ -488,14 +490,14 @@ class ReportDataServiceTest {
                 listOf(
                     // first month
                     ronReportRecord(LocalDate(2020, 2, 5), 2000, labelsOf()),
-                    eurReportRecord(LocalDate(2020, 2, 15), 500, 2500, labelsOf()),
+                    eurReportRecord(LocalDate(2020, 2, 15), 500, labelsOf()),
                     ronReportRecord(LocalDate(2020, 2, 10), -800, labelsOf("need")),
-                    eurReportRecord(LocalDate(2020, 2, 25), -100, -500, labelsOf("want")),
+                    eurReportRecord(LocalDate(2020, 2, 25), -100, labelsOf("want")),
                     // second month
                     ronReportRecord(LocalDate(2020, 3, 5), 2500, labelsOf()),
-                    eurReportRecord(LocalDate(2020, 3, 15), 400, 2000, labelsOf()),
+                    eurReportRecord(LocalDate(2020, 3, 15), 400, labelsOf()),
                     ronReportRecord(LocalDate(2020, 3, 20), -300, labelsOf("want")),
-                    eurReportRecord(LocalDate(2020, 3, 25), -200, -1000, labelsOf("need")),
+                    eurReportRecord(LocalDate(2020, 3, 25), -200, labelsOf("need")),
                 )
             )
 
@@ -682,8 +684,6 @@ class ReportDataServiceTest {
             .isEqualByComparingTo(BigDecimal("514.0"))
     }
 
-    // TODO(Johann) add test for value data
-
     @Test
     fun `get monthly value data with multiple currencies`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
@@ -691,7 +691,6 @@ class ReportDataServiceTest {
             filter = RecordFilter(labels = allLabels),
             groups = null,
             features = ReportDataFeaturesConfiguration()
-                .withNet(enabled = true, applyFilter = true)
                 .withValueReport(enabled = true),
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
@@ -702,9 +701,9 @@ class ReportDataServiceTest {
             .thenReturn(
                 listOf(
                     ronReportRecord(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
-                    eurReportRecord(LocalDate.parse("2021-08-05"), 20, 98, labelsOf("need")),
+                    eurReportRecord(LocalDate.parse("2021-08-05"), 20, labelsOf("need")),
                     ronReportRecord(LocalDate.parse("2021-09-02"), 100, labelsOf("need")),
-                    eurReportRecord(LocalDate.parse("2021-09-03"), 20, 99, labelsOf("need")),
+                    eurReportRecord(LocalDate.parse("2021-09-03"), 20, labelsOf("need")),
                 )
             )
         val conversionRequest = ConversionsRequest(
@@ -764,16 +763,16 @@ class ReportDataServiceTest {
 
     private fun ronReportRecord(
         date: LocalDate, amount: Int, labels: List<Label>,
-    ) = reportRecord(date, RON, BigDecimal(amount), BigDecimal(amount), labels)
+    ) = reportRecord(date, RON, BigDecimal(amount), labels)
 
     private fun eurReportRecord(
-        date: LocalDate, amount: Int, reportCurrencyAmount: Int, labels: List<Label>,
-    ) = reportRecord(date, EUR, BigDecimal(amount), BigDecimal(reportCurrencyAmount), labels)
+        date: LocalDate, amount: Int, labels: List<Label>,
+    ) = reportRecord(date, EUR, BigDecimal(amount), labels)
 
     private fun reportRecord(
-        date: LocalDate, unit: FinancialUnit, amount: BigDecimal, reportCurrencyAmount: BigDecimal, labels: List<Label>,
+        date: LocalDate, unit: FinancialUnit, amount: BigDecimal, labels: List<Label>,
     ) =
-        ReportRecord(randomUUID(), userId, randomUUID(), reportViewId, date, unit, amount, reportCurrencyAmount, labels)
+        ReportRecord(randomUUID(), userId, randomUUID(), reportViewId, date, unit, amount, labels)
 
     private fun needWantDistribution(
         default: Boolean, from: YearMonth?, needPercentage: Int, wantPercentage: Int,

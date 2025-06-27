@@ -7,6 +7,7 @@ import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
+import ro.jf.funds.reporting.service.utils.getConversionRate
 import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
 import java.math.MathContext
@@ -90,10 +91,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
     ): BigDecimal {
         return this
             .map { (unit, amount) ->
-                val rate = if (unit == currency) BigDecimal.ONE else conversions.getRate(unit, currency, date)
-                // TODO(Johann) this error should be handled in API
-                    ?: error("No conversion rate found for $unit to $currency at $date")
-                amount * rate
+                amount * getConversionRate(conversions, date, unit, currency)
             }
             .sumOf { it }
     }

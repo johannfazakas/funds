@@ -2,15 +2,15 @@ package ro.jf.funds.reporting.service.service.reportdata.resolver
 
 import ro.jf.funds.reporting.service.domain.ByBucket
 import ro.jf.funds.reporting.service.domain.ByUnit
-import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
 import ro.jf.funds.reporting.service.domain.ReportRecord
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
+import ro.jf.funds.reporting.service.utils.getConversionRate
 import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
 import java.math.MathContext
 
-// TODO(Johann) shouldn't this be called spent/earned
+// TODO(Johann) shouldn't this be plotted?
 class NetDataResolver : ReportDataResolver<BigDecimal> {
     override fun resolve(
         input: ReportDataResolverInput,
@@ -20,19 +20,16 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
         }
         input.dateInterval
             .generateBucketedData(
-                { interval -> getNet(input.catalog.getBucketRecordsGroupedByUnit(interval), input.dataConfiguration) },
+                { interval -> getNet(input.catalog.getBucketRecordsGroupedByUnit(interval), input) },
                 { interval, _ ->
-                    getNet(
-                        input.catalog.getBucketRecordsGroupedByUnit(interval),
-                        input.dataConfiguration
-                    )
+                    getNet(input.catalog.getBucketRecordsGroupedByUnit(interval), input)
                 }
             )
             .let { ByBucket(it) }
     }
 
     override fun forecast(
-        input: ReportDataForecastInput<BigDecimal>
+        input: ReportDataForecastInput<BigDecimal>,
     ): ByBucket<BigDecimal> = withSpan("forecast") {
         val inputSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
         input.dateInterval.generateForecastData(
@@ -46,23 +43,27 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
 
     private fun getNet(
         records: ByUnit<List<ReportRecord>>,
-        reportDataConfiguration: ReportDataConfiguration,
+        input: ReportDataResolverInput,
     ): BigDecimal {
-        val recordFilter: (ReportRecord) -> Boolean = if (reportDataConfiguration.features.net.applyFilter)
-            { record -> record.labels.any { label -> label in (reportDataConfiguration.filter.labels ?: emptyList()) } }
+        val recordFilter: (ReportRecord) -> Boolean = if (input.dataConfiguration.features.net.applyFilter)
+            { record -> record.labels.any { label -> label in (input.dataConfiguration.filter.labels ?: emptyList()) } }
         else
             { _ -> true }
-        return getFilteredNet(records, recordFilter)
+        return getFilteredNet(records, recordFilter, input)
     }
 
     private fun getFilteredNet(
         records: ByUnit<List<ReportRecord>>,
         recordFilter: (ReportRecord) -> Boolean,
+        input: ReportDataResolverInput,
     ): BigDecimal {
         return records
             .flatMap { it.value }
-            .filter(recordFilter)
-            // TODO(Johann) is this correct?
-            .sumOf { it.reportCurrencyAmount }
+            .filter(recordFilter::invoke)
+            .sumOf { record: ReportRecord ->
+                val rate =
+                    getConversionRate(input.conversions, record.date, record.unit, input.dataConfiguration.currency)
+                record.amount * rate
+            }
     }
 }

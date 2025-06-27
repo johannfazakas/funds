@@ -9,6 +9,7 @@ import ro.jf.funds.reporting.api.model.YearMonth
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.generateBucketedData
 import ro.jf.funds.reporting.service.service.generateForecastData
+import ro.jf.funds.reporting.service.utils.getConversionRate
 import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
 import java.math.MathContext
@@ -188,12 +189,12 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         val mapValues = this.mapValues { (_, budgetByUnit) ->
             val convertedGroupLeftValue = budgetByUnit
                 .sumOf { (unit, budget) ->
-                    budget.left * getConversionRate(date, unit, reportCurrency, conversions)
+                    budget.left * getConversionRate(conversions, date, unit, reportCurrency)
                 }
             // X * W1 * R1 + X * W2 * R2 = T => X (W1 * R1 + W2 * R2) = T => X = T / (W1 * R1 + W2 * R2)
             val multiplicationFactor = budgetByUnit
                 .sumOf { (unit, _) ->
-                    leftByUnit[unit]!! * getConversionRate(date, unit, reportCurrency, conversions)
+                    leftByUnit[unit]!! * getConversionRate(conversions, date, unit, reportCurrency)
                 }
                 .let { convertedGroupLeftValue.divide(it, MathContext.DECIMAL64) }
             budgetByUnit.mapValues { (unit, budget) ->
@@ -218,10 +219,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
     ): List<Budget> = withSpan("mapToSingleCurrencyBudget") {
         this
             .map { (unit, budget) ->
-                val rate = if (unit == reportCurrency)
-                    BigDecimal.ONE
-                else
-                    getConversionRate(date, unit, reportCurrency, conversions)
+                val rate = getConversionRate(conversions, date, unit, reportCurrency)
                 Budget(budget.allocated * rate, budget.spent * rate, budget.left * rate)
             }
     }
@@ -246,13 +244,4 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
             byUnit.mapValues { (_, budget) -> Budget(BigDecimal.ZERO, BigDecimal.ZERO, budget.left) }
         }
     }
-
-    private fun getConversionRate(
-        date: LocalDate, sourceUnit: FinancialUnit, targetCurrency: Currency, conversions: ConversionsResponse,
-    ): BigDecimal =
-        if (sourceUnit == targetCurrency)
-            BigDecimal.ONE
-        else
-            conversions.getRate(sourceUnit, targetCurrency, date)
-                ?: error("No conversion rate found for $sourceUnit to $targetCurrency at $date")
 }
