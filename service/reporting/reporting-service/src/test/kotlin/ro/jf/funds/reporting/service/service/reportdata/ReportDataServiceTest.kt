@@ -239,11 +239,13 @@ class ReportDataServiceTest {
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
             assertThat(it.allocated).isEqualByComparingTo(BigDecimal(1500 * 0.6 - 300 * 0.6 + 300 * 0.6 * 5))
+            assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
             assertThat(it.left).isEqualByComparingTo(BigDecimal(1500 * 0.6 - 300 * 0.6 + 1000 * 0.6 + 300 * 0.6 * 5 + 500 * 0.6 * 5))
         }
         assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
             assertThat(it.allocated).isEqualByComparingTo(BigDecimal(1500 * 0.4 - 300 * 0.4 + 300 * 0.4 * 5))
+            assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
             assertThat(it.left).isEqualByComparingTo(BigDecimal(1500 * 0.4 - 300 * 0.4 + 1000 * 0.4 + 300 * 0.4 * 5 + 500 * 0.4 * 5))
         }
 
@@ -253,11 +255,13 @@ class ReportDataServiceTest {
         assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
             assertThat(it.allocated).isEqualByComparingTo(BigDecimal(2000 * 0.6))
+            assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
             assertThat(it.left).isEqualByComparingTo(BigDecimal(2000 * 0.6 + 1500 * 0.6 - 300 * 0.6 + 1000 * 0.6 + 300 * 0.6 * 5 + 500 * 0.6 * 5))
         }
         assertThat(groupedBudget2["Want"]).isNotNull
         groupedBudget2["Want"]?.let {
             assertThat(it.allocated).isEqualByComparingTo(BigDecimal(2000 * 0.4))
+            assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
             assertThat(it.left).isEqualByComparingTo(BigDecimal(2000 * 0.4 + 1500 * 0.4 - 300 * 0.4 + 1000 * 0.4 + 300 * 0.4 * 5 + 500 * 0.4 * 5))
         }
     }
@@ -327,17 +331,17 @@ class ReportDataServiceTest {
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 5), acceptedOffset)
+            assertThat(it.spent).isCloseTo(BigDecimal(-800), acceptedOffset)
             assertThat(it.left).isCloseTo(BigDecimal(1309.525 + 238.095 * 5), acceptedOffset)
         }
         assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 5), acceptedOffset)
+            assertThat(it.spent).isCloseTo(BigDecimal(-500), acceptedOffset)
             assertThat(it.left).isCloseTo(BigDecimal(890.475 + 161.905 * 5), acceptedOffset)
         }
     }
 
-    // TODO(Johann-19)
-//    @Disabled
     @Test
     fun `get grouped budget should adapt to changing currency exchange rates`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
@@ -413,11 +417,13 @@ class ReportDataServiceTest {
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 4.8), acceptedOffset)
+            assertThat(it.spent).isCloseTo(BigDecimal(-800), acceptedOffset)
             assertThat(it.left).isCloseTo(BigDecimal(707.688 + 235.896 * 4.8), acceptedOffset)
         }
         assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 4.8), acceptedOffset)
+            assertThat(it.spent).isCloseTo(BigDecimal(4.8 * -100), acceptedOffset)
             assertThat(it.left).isCloseTo(BigDecimal(492.312 + 164.104 * 4.8), acceptedOffset)
         }
 
@@ -442,11 +448,13 @@ class ReportDataServiceTest {
         assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(1500 + 240 * 4.9), acceptedOffset)
+            assertThat(it.spent).isCloseTo(BigDecimal(-200 * 4.9), acceptedOffset)
             assertThat(it.left).isCloseTo(BigDecimal(1908.92217 + 336.86862 * 4.9), acceptedOffset)
         }
         assertThat(groupedBudget2["Want"]).isNotNull
         groupedBudget2["Want"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(1000 + 160 * 4.9), acceptedOffset)
+            assertThat(it.spent).isCloseTo(BigDecimal(-300), acceptedOffset)
             assertThat(it.left).isCloseTo(BigDecimal(1491.0778 + 263.13138 * 4.9), acceptedOffset)
         }
     }
@@ -520,11 +528,13 @@ class ReportDataServiceTest {
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 5), acceptedOffset)
+            assertThat(it.spent).isCloseTo(BigDecimal(-800), acceptedOffset)
             assertThat(it.left).isCloseTo(BigDecimal(712.5 + 237.5 * 5), acceptedOffset)
         }
         assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 5), acceptedOffset)
+            assertThat(it.spent).isCloseTo(BigDecimal(-100 * 5), acceptedOffset)
             assertThat(it.left).isCloseTo(BigDecimal(487.5 + 162.5 * 5), acceptedOffset)
         }
 
@@ -550,11 +560,13 @@ class ReportDataServiceTest {
         assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(1750 + 280 * 5), acceptedOffset)
+            assertThat(it.spent).isCloseTo(BigDecimal(-200 * 5), acceptedOffset)
             assertThat(it.left).isCloseTo(BigDecimal(2151.5625 + 379.6875 * 5), acceptedOffset)
         }
         assertThat(groupedBudget2["Want"]).isNotNull
         groupedBudget2["Want"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(750 + 120 * 5), acceptedOffset)
+            assertThat(it.spent).isCloseTo(BigDecimal(-300), acceptedOffset)
             assertThat(it.left).isCloseTo(BigDecimal(1248.4375 + 220.3125 * 5), acceptedOffset)
         }
     }
@@ -708,6 +720,4 @@ class ReportDataServiceTest {
             GroupedBudgetReportFeature.GroupBudgetPercentage("Want", wantPercentage),
         )
     )
-
-    private fun budget(allocated: Int, left: Int): Budget = Budget(BigDecimal(allocated), BigDecimal(left))
 }

@@ -112,10 +112,10 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
                 input.groups
                     .associateWith { group ->
                         val groupBudgets = inputBuckets.mapNotNull { it[group] }
-                        Budget(
-                            allocated = groupBudgets.sumOf { it.allocated }.divide(inputSize, MathContext.DECIMAL64),
-                            left = groupBudgets.sumOf { it.left }.divide(inputSize, MathContext.DECIMAL64)
-                        )
+                        val allocated = groupBudgets.sumOf { it.allocated }.divide(inputSize, MathContext.DECIMAL64)
+                        val spent = groupBudgets.sumOf { it.spent }.divide(inputSize, MathContext.DECIMAL64)
+                        val left = groupBudgets.last().left + allocated - spent
+                        Budget(allocated, spent, left)
                     }.let { ByGroup(it) }
             }.let { ByBucket(it) }
         }
@@ -128,7 +128,13 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         feature: GroupedBudgetReportFeature,
     ): ByGroup<ByUnit<Budget>> = withSpan("getGroupedBudget") {
         records
-            .fold(previousBudget.resetAllocatedAmount()) { budget, record -> budget.addRecord(record, input, feature) }
+            .fold(previousBudget.resetAllocatedAndSpentAmount()) { budget, record ->
+                budget.addRecord(
+                    record,
+                    input,
+                    feature
+                )
+            }
             .normalizeGroupCurrencyRatio(
                 intervalEnd, input.dataConfiguration.currency, input.conversions
             )
@@ -153,7 +159,8 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
     ): ByGroup<ByUnit<Budget>> = withSpan("allocateIncome") {
         distribution.groups
             .map { (group, percentage) ->
-                group to ByUnit(record.unit to record.amount.percentage(percentage).let { Budget(it, it) })
+                group to ByUnit(
+                    record.unit to record.amount.percentage(percentage).let { Budget(it, BigDecimal.ZERO, it) })
             }
             .let { ByGroup(it.toMap()) }
             .let { it.plus(this) { a, b -> a.plus(b) { x, y -> x + y } } }
@@ -163,7 +170,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         matchingGroup: String,
         record: ReportRecord,
     ): ByGroup<ByUnit<Budget>> = withSpan("addGroupExpense") {
-        ByGroup(matchingGroup to ByUnit(record.unit to Budget(BigDecimal.ZERO, record.amount)))
+        ByGroup(matchingGroup to ByUnit(record.unit to Budget(BigDecimal.ZERO, record.amount, record.amount)))
             .let { it.plus(this) { a, b -> a.plus(b) { x, y -> x + y } } }
     }
 
@@ -215,12 +222,12 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
                     BigDecimal.ONE
                 else
                     getConversionRate(date, unit, reportCurrency, conversions)
-                Budget(budget.allocated * rate, budget.left * rate)
+                Budget(budget.allocated * rate, budget.spent * rate, budget.left * rate)
             }
     }
 
     private fun List<Budget>.mergeBudgets(): Budget = withSpan("mergeBudgets") {
-        fold(Budget(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, budget ->
+        fold(Budget(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)) { acc, budget ->
             acc + budget
         }
     }
@@ -233,10 +240,10 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         return this * BigDecimal(percentage) / BigDecimal(100)
     }
 
-    private fun ByGroup<ByUnit<Budget>>.resetAllocatedAmount(
+    private fun ByGroup<ByUnit<Budget>>.resetAllocatedAndSpentAmount(
     ): ByGroup<ByUnit<Budget>> = withSpan("resetAllocatedAmount") {
         this.mapValues { (_, byUnit) ->
-            byUnit.mapValues { (_, budget) -> Budget(BigDecimal.ZERO, budget.left) }
+            byUnit.mapValues { (_, budget) -> Budget(BigDecimal.ZERO, BigDecimal.ZERO, budget.left) }
         }
     }
 
