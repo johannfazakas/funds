@@ -24,13 +24,21 @@ data class ReportDataItemTO(
     val timeBucket: DateInterval,
     val bucketType: BucketTypeTO,
     @Serializable(with = BigDecimalSerializer::class)
-    val net: BigDecimal?,
-    val value: ValueReportTO?,
-    val groups: List<ReportDataGroupItemTO>?,
+    val net: BigDecimal? = null,
+    val value: ValueReportTO? = null,
+    val groupedNet: List<ReportDataGroupedNetItemTO>? = null,
+    val groupedBudget: List<ReportDataGroupedBudgetItemTO>? = null,
 )
 
 @Serializable
-data class ReportDataGroupItemTO(
+data class ReportDataGroupedNetItemTO(
+    val group: String,
+    @Serializable(with = BigDecimalSerializer::class)
+    val net: BigDecimal?,
+)
+
+@Serializable
+data class ReportDataGroupedBudgetItemTO(
     val group: String,
     @Serializable(with = BigDecimalSerializer::class)
     var allocated: BigDecimal?,

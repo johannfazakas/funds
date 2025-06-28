@@ -176,14 +176,15 @@ class ReportingSdkTest {
                         min = BigDecimal("150.0"),
                         max = BigDecimal("220.0")
                     ),
-                    groups = listOf(
-                        ReportDataGroupItemTO(
+                    groupedNet = null,
+                    groupedBudget = listOf(
+                        ReportDataGroupedBudgetItemTO(
                             group = "need",
                             allocated = BigDecimal("150.0"),
                             spent = BigDecimal("100.0"),
                             left = BigDecimal("50.0")
                         ),
-                        ReportDataGroupItemTO(
+                        ReportDataGroupedBudgetItemTO(
                             group = "want",
                             allocated = BigDecimal("200.0"),
                             spent = BigDecimal("100.0"),
@@ -201,14 +202,15 @@ class ReportingSdkTest {
                         min = BigDecimal("250.0"),
                         max = BigDecimal("320.0")
                     ),
-                    groups = listOf(
-                        ReportDataGroupItemTO(
+                    groupedNet = null,
+                    groupedBudget = listOf(
+                        ReportDataGroupedBudgetItemTO(
                             group = "need",
                             allocated = BigDecimal("200.0"),
                             spent = BigDecimal("150.0"),
                             left = BigDecimal("50.0")
                         ),
-                        ReportDataGroupItemTO(
+                        ReportDataGroupedBudgetItemTO(
                             group = "want",
                             allocated = BigDecimal("300.0"),
                             spent = BigDecimal("150.0"),
@@ -226,14 +228,15 @@ class ReportingSdkTest {
                         min = BigDecimal("350.0"),
                         max = BigDecimal("420.0")
                     ),
-                    groups = listOf(
-                        ReportDataGroupItemTO(
+                    groupedNet = null,
+                    groupedBudget = listOf(
+                        ReportDataGroupedBudgetItemTO(
                             group = "need",
                             allocated = BigDecimal("300.0"),
                             spent = BigDecimal("200.0"),
                             left = BigDecimal("100.0")
                         ),
-                        ReportDataGroupItemTO(
+                        ReportDataGroupedBudgetItemTO(
                             group = "want",
                             allocated = BigDecimal("400.0"),
                             spent = BigDecimal("200.0"),
@@ -521,8 +524,8 @@ class ReportingSdkTest {
                                                 put("min", JsonPrimitive(item.value?.min.toString()))
                                                 put("max", JsonPrimitive(item.value?.max.toString()))
                                             })
-                                            put("groups", buildJsonArray {
-                                                item.groups?.forEach { group ->
+                                            put("groupedBudget", buildJsonArray {
+                                                item.groupedBudget?.forEach { group ->
                                                     add(
                                                         buildJsonObject {
                                                             put("group", JsonPrimitive(group.group))

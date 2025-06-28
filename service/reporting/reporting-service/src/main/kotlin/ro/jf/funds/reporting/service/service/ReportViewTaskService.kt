@@ -7,7 +7,6 @@ import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.domain.ReportViewTask
 import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import java.util.*
-import kotlin.time.measureTime
 
 private val log = logger { }
 
@@ -29,13 +28,9 @@ class ReportViewTaskService(
     suspend fun handleReportViewTask(userId: UUID, taskId: UUID, command: CreateReportViewCommand) {
         log.info { "Handle report view task $taskId for user $userId." }
         try {
-            measureTime {
-                reportViewTaskRepository.findById(userId, taskId) ?: error("Report view task not found")
-                val createReportView = reportViewService.createReportView(userId, command)
-                reportViewTaskRepository.complete(userId, taskId, createReportView.id)
-            }.let { duration ->
-                log.info { "Report view task $taskId completed in $duration" }
-            }
+            reportViewTaskRepository.findById(userId, taskId) ?: error("Report view task not found")
+            val createReportView = reportViewService.createReportView(userId, command)
+            reportViewTaskRepository.complete(userId, taskId, createReportView.id)
         } catch (e: Exception) {
             reportViewService.deleteReportView(userId, taskId)
             reportViewTaskRepository.fail(userId, taskId, e.message ?: "Unknown error")

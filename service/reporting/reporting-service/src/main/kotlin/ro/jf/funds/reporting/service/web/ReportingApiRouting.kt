@@ -17,7 +17,6 @@ import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
 import ro.jf.funds.reporting.service.web.mapper.toDomain
 import ro.jf.funds.reporting.service.web.mapper.toTO
 import java.util.*
-import kotlin.time.measureTime
 
 private val log = logger { }
 
@@ -71,11 +70,8 @@ fun Routing.reportingApiRouting(
                 call.parameters["reportViewId"]?.let(UUID::fromString) ?: error("Missing reportViewId path parameter")
             val granularInterval = call.granularTimeInterval()
             log.info { "Get report view data request for user $userId and report view $reportViewId in interval $granularInterval." }
-            measureTime {
-                log.info { "Get report view data request for user $userId and report view $reportViewId in interval $granularInterval." }
-                val reportData = reportDataService.getReportViewData(userId, reportViewId, granularInterval).toTO()
-                call.respond(status = HttpStatusCode.OK, message = reportData)
-            }.let { log.debug { "Get report view data resolved in $it" } }
+            val reportData = reportDataService.getReportViewData(userId, reportViewId, granularInterval).toTO()
+            call.respond(status = HttpStatusCode.OK, message = reportData)
         }
     }
 }

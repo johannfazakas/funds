@@ -22,7 +22,6 @@ import ro.jf.funds.reporting.service.utils.withSpan
 import ro.jf.funds.reporting.service.utils.withSuspendingSpan
 import java.math.BigDecimal
 import java.util.*
-import kotlin.time.measureTimedValue
 
 private val log = logger { }
 
@@ -91,7 +90,7 @@ class ReportDataService(
         targetUnit: Currency,
         reportRecords: List<ReportRecord>,
         granularInterval: GranularDateInterval,
-    ): ConversionsResponse = measureTimedValue {
+    ): ConversionsResponse {
         val sourceUnits = reportRecords
             .asSequence()
             .map { it.unit }
@@ -105,10 +104,7 @@ class ReportDataService(
             getRecordConversionRequests(sourceUnits, targetUnit, reportRecords)
         )
             .flatten().distinct().toList().let(::ConversionsRequest)
-        historicalPricingSdk.convert(userId, conversionsRequest)
-    }.let { (result, duration) ->
-        log.debug { "Conversions resolved in $duration" }
-        result
+        return historicalPricingSdk.convert(userId, conversionsRequest)
     }
 
     private fun getMonthlyConversionRequests(
@@ -161,39 +157,19 @@ class ReportDataService(
     }
 
     private fun resolveNetData(input: ReportDataResolverInput): ByBucket<BigDecimal>? {
-        val (netData, netDataDuration) =
-            measureTimedValue { resolveRealAndForecastData(resolverRegistry.net, input) }
-        if (netData != null) {
-            log.debug { "Net data resolved in $netDataDuration" }
-        }
-        return netData
+        return resolveRealAndForecastData(resolverRegistry.net, input)
     }
 
     private fun resolveGroupedNetData(input: ReportDataResolverInput): ByBucket<ByGroup<BigDecimal>>? {
-        val (groupedNetData, groupedNetDataDuration) =
-            measureTimedValue { resolveRealAndForecastData(resolverRegistry.groupedNet, input) }
-        if (groupedNetData != null) {
-            log.debug { "Grouped net data resolved in $groupedNetDataDuration" }
-        }
-        return groupedNetData
+        return resolveRealAndForecastData(resolverRegistry.groupedNet, input)
     }
 
     private fun resolveValueReportData(input: ReportDataResolverInput): ByBucket<ValueReport>? {
-        val (valueReportData, valueReportDataDuration) =
-            measureTimedValue { resolveRealAndForecastData(resolverRegistry.valueReport, input) }
-        if (valueReportData != null) {
-            log.debug { "Value report data resolved in $valueReportDataDuration" }
-        }
-        return valueReportData
+        return resolveRealAndForecastData(resolverRegistry.valueReport, input)
     }
 
     private fun resolveGroupedBudgetData(input: ReportDataResolverInput): ByBucket<ByGroup<Budget>>? {
-        val (groupedBudgetData, groupedBudgetDataDuration) =
-            measureTimedValue { resolveRealAndForecastData(resolverRegistry.groupedBudget, input) }
-        if (groupedBudgetData != null) {
-            log.debug { "Grouped budget data resolved in $groupedBudgetDataDuration" }
-        }
-        return groupedBudgetData
+        return resolveRealAndForecastData(resolverRegistry.groupedBudget, input)
     }
 
     private fun <T> resolveRealAndForecastData(
