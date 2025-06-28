@@ -39,7 +39,7 @@ class FundSdk(
     }
 
     override suspend fun getFundByName(userId: UUID, name: FundName): FundTO? {
-        val response = httpClient.get("$baseUrl$BASE_PATH/funds/name/${name}") {
+        val response = httpClient.get("$baseUrl$BASE_PATH/funds/name/${name}".encodeURLPath()) {
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }

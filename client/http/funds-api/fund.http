@@ -1,16 +1,21 @@
-@fund-id=cbac32e9-21ca-4890-9e53-3468c2c75dbb
+@fund_id=65cd5c32-0b6f-4c08-b256-ae27aefa5807
+@fund_name=Work Income
 
 ### Get Funds
 GET {{fund_host}}/funds-api/fund/v1/funds
-BK_USER_ID: {{user-id}}
+FUNDS_USER_ID: {{user_id}}
 
 ### Get Fund by id
-GET {{fund_host}}/funds-api/fund/v1/funds/{{fund-id}}
-BK_USER_ID: {{user-id}}
+GET {{fund_host}}/funds-api/fund/v1/funds/{{fund_id}}
+FUNDS_USER_ID: {{user_id}}
+
+### Get Fund by name
+GET {{fund_host}}/funds-api/fund/v1/funds/name/{{fund_name}}
+FUNDS_USER_ID: {{user_id}}
 
 ### Create Fund
 POST {{fund_host}}/funds-api/fund/v1/funds
-BK_USER_ID: {{user-id}}
+FUNDS_USER_ID: {{user_id}}
 Content-Type: application/json
 
 {
@@ -19,4 +24,4 @@ Content-Type: application/json
 
 ### Delete Fund
 DELETE {{fund_host}}/funds-api/fund/v1/funds/{{fund-id}}
-BK_USER_ID: {{user-id}}
+FUNDS_USER_ID: {{user_id}}

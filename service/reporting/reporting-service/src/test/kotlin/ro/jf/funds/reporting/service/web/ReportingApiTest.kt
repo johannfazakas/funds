@@ -267,7 +267,6 @@ class ReportingApiTest {
                     bucketType = BucketTypeTO.REAL,
                     net = BigDecimal("0.0"),
                     value = ValueReportTO(BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0")),
-                    groups = null
                 )
             )
         assertThat(reportData.data[1])
@@ -277,7 +276,6 @@ class ReportingApiTest {
                     bucketType = BucketTypeTO.REAL,
                     net = BigDecimal("-75.0"),
                     value = ValueReportTO(BigDecimal("0.0"), BigDecimal("-75.0"), BigDecimal("0.0"), BigDecimal("0.0")),
-                    groups = null
                 )
             )
     }

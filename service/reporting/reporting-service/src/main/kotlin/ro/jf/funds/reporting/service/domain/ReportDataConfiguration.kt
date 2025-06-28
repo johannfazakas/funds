@@ -11,6 +11,7 @@ data class ReportDataConfiguration(
     val currency: Currency,
     val filter: RecordFilter = RecordFilter(),
     val groups: List<ReportGroup>? = null,
+    // TODO(Johann) should features be part of the configuration or the report request?
     val features: ReportDataFeaturesConfiguration,
 ) {
     fun withFilter(labels: List<Label>) = copy(filter = RecordFilter(labels))

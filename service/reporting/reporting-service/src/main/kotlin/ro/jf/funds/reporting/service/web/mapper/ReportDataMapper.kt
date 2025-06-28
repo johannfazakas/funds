@@ -16,17 +16,23 @@ fun ReportData.toTO(): ReportDataTO {
                 value = dataItem.aggregate.value?.let {
                     ValueReportTO(start = it.start, end = it.end, min = it.min, max = it.max)
                 },
-                groups = dataItem.aggregate.run {
-                    (groupedNet ?: groupedBudget)
-                        ?.map { (group, _) -> group }
-                        ?.map { group ->
-                            ReportDataGroupItemTO(
-                                group = group,
-                                allocated = this.groupedBudget?.get(group)?.allocated,
-                                spent = this.groupedBudget?.get(group)?.spent,
-                                left = this.groupedBudget?.get(group)?.left
-                            )
-                        }
+                groupedNet = dataItem.aggregate.run {
+                    groupedNet?.map { (group, net) ->
+                        ReportDataGroupedNetItemTO(
+                            group = group,
+                            net = net
+                        )
+                    }
+                },
+                groupedBudget = dataItem.aggregate.run {
+                    groupedBudget?.map { (group, budget) ->
+                        ReportDataGroupedBudgetItemTO(
+                            group = group,
+                            allocated = budget.allocated,
+                            spent = budget.spent,
+                            left = budget.left
+                        )
+                    }
                 }
             )
         }

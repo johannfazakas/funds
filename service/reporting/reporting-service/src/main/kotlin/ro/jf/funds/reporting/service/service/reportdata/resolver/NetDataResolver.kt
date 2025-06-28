@@ -10,7 +10,6 @@ import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
 import java.math.MathContext
 
-// TODO(Johann) shouldn't this be plotted?
 class NetDataResolver : ReportDataResolver<BigDecimal> {
     override fun resolve(
         input: ReportDataResolverInput,
