@@ -1,9 +1,11 @@
 package ro.jf.funds.client.notebook
 
 import com.charleskorn.kaml.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.future.future
 import kotlinx.datetime.*
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.decodeFromString
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.api.model.CreateAccountTO
@@ -31,47 +33,41 @@ class FundsClient(
     private val importSdk: ImportSdk = ImportSdk(),
     private val reportingSdk: ReportingSdk = ReportingSdk(),
 ) {
-    private val yaml = Yaml(
+    private val scope = CoroutineScope(Dispatchers.Default)
+    val yaml = Yaml(
         configuration = YamlConfiguration(
             anchorsAndAliases = AnchorsAndAliases.Permitted(maxAliasCount = 50u)
         )
     )
 
-    // TODO(Johann) would make sense to have these as non suspend functions, but then we would need to handle
-    suspend fun ensureUserExists(username: String): UserTO {
-        return userSdk.findUserByUsername(username)
-            ?: userSdk.createUser(username)
+    fun ensureUserExists(username: String): UserTO = run {
+        userSdk.findUserByUsername(username) ?: userSdk.createUser(username)
     }
 
-    suspend fun provisionAccounts(user: UserTO, yamlFile: File): List<AccountTO> {
+    fun provisionAccounts(user: UserTO, accounts: List<CreateAccountTO>): List<AccountTO> = run {
         val existingAccounts = accountSdk.listAccounts(user.id).items
         val existingAccountNames = existingAccounts.map { it.name }.toSet()
-        val newAccounts = yamlFile.readText()
-            .let { yaml.decodeFromString(ListSerializer(CreateAccountTO.serializer()), it) }
+        val newAccounts = accounts
             .filter { it.name !in existingAccountNames }
             .map { accountSdk.createAccount(user.id, it) }
-        return existingAccounts + newAccounts
+        existingAccounts + newAccounts
     }
 
-    suspend fun provisionFunds(user: UserTO, yamlFile: File): List<FundTO> {
+    fun provisionFunds(user: UserTO, funds: List<CreateFundTO>): List<FundTO> = run {
         val existingFunds = fundSdk.listFunds(user.id).items
         val existingFundNames = existingFunds.map { it.name }.toSet()
-        val newFunds = yamlFile.readText()
-            .let { yaml.decodeFromString(ListSerializer(CreateFundTO.serializer()), it) }
+        val newFunds = funds
             .filter { it.name !in existingFundNames }
             .map { fundSdk.createFund(user.id, it) }
-        return existingFunds + newFunds
+        existingFunds + newFunds
     }
 
-    suspend fun provisionInitialBalances(
+    fun provisionInitialBalances(
         user: UserTO,
         accounts: List<AccountTO>,
         funds: List<FundTO>,
-        yamlFile: File,
-    ): List<FundTransactionTO> {
-        val initialBalances: InitialBalances =
-            yaml.decodeFromString<InitialBalances>(yamlFile.readText())
-
+        initialBalances: InitialBalances,
+    ): List<FundTransactionTO> = run {
         val dateTime = LocalDateTime(initialBalances.date, LocalTime.parse("00:00"))
         val transactionRequests = initialBalances.balances.map { initialBalance ->
             val fund = funds.firstOrNull { it.name.value == initialBalance.fundName }
@@ -93,17 +89,14 @@ class FundsClient(
         val transactions = transactionRequests.map { request ->
             fundTransactionSdk.createTransaction(user.id, request)
         }
-        return transactions
+        transactions
     }
 
-    suspend fun importTransactions(
+    fun importTransactions(
         user: UserTO,
-        importConfigurationYamlFile: File,
+        importConfiguration: ImportConfigurationTO,
         csvFiles: List<File>,
-    ): ImportTaskTO {
-        val importConfiguration =
-            yaml.decodeFromString<ImportConfigurationTO>(importConfigurationYamlFile.readText())
-
+    ): ImportTaskTO = run {
         var importTask = importSdk.import(user.id, importConfiguration, csvFiles)
         val now: Instant = Clock.System.now()
         val timeout = 120.seconds
@@ -111,25 +104,21 @@ class FundsClient(
             delay(500)
             importTask = importSdk.getImportTask(user.id, importTask.taskId)
         }
-        return importTask
+        importTask
     }
 
-    suspend fun createReportView(
+    fun createReportView(
         user: UserTO,
         reportViewName: String,
         fundName: String,
-        reportDataConfigurationYamlFile: File,
-        yamlPath: String? = null,
-    ): ReportViewTO {
+        dataConfiguration: ReportDataConfigurationTO,
+    ): ReportViewTO = run {
         val existingReportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportViewName }
         if (existingReportView != null) {
-            return existingReportView
+            return@run existingReportView
         }
         val fund = fundSdk.getFundByName(user.id, FundName(fundName))
             ?: error("Fund with name '$fundName' not found for user ${user.username}")
-        val yamlNode = extractYamlNode(reportDataConfigurationYamlFile, yamlPath)
-        val dataConfiguration =
-            yaml.decodeFromYamlNode<ReportDataConfigurationTO>(yamlNode)
         val request = CreateReportViewTO(reportViewName, fund.id, dataConfiguration)
         var task: ReportViewTaskTO = reportingSdk.createReportView(user.id, request)
         val timeout = Clock.System.now().plus(120.seconds)
@@ -137,7 +126,7 @@ class FundsClient(
             delay(2000)
             task = reportingSdk.getReportViewTask(user.id, task.taskId)
         }
-        return when (task.status) {
+        when (task.status) {
             ReportViewTaskStatus.COMPLETED -> {
                 task.report ?: error("No report found on completed report task")
             }
@@ -152,48 +141,50 @@ class FundsClient(
         }
     }
 
-    suspend fun getYearlyReportViewData(
+    fun getYearlyReportViewData(
         user: UserTO, reportName: String, fromYear: Int, toYear: Int, forecastUntilYear: Int? = null,
-    ): ReportDataTO {
+    ): ReportDataTO = run {
         val reportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportName }
             ?: error("Report view with name '$reportName' not found for user ${user.username}")
-        return reportingSdk.getYearlyReportViewData(user.id, reportView.id, fromYear, toYear, forecastUntilYear)
+        reportingSdk.getYearlyReportViewData(user.id, reportView.id, fromYear, toYear, forecastUntilYear)
     }
 
-    suspend fun getMonthlyReportViewData(
+    fun getMonthlyReportViewData(
         user: UserTO,
         reportName: String,
         fromYearMonth: YearMonthTO,
         toYearMonth: YearMonthTO,
         forecastUntilYearMonth: YearMonthTO? = null,
-    ): ReportDataTO {
+    ): ReportDataTO = run {
         val reportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportName }
             ?: error("Report view with name '$reportName' not found for user ${user.username}")
-        return reportingSdk.getMonthlyReportViewData(
+        reportingSdk.getMonthlyReportViewData(
             user.id, reportView.id, fromYearMonth, toYearMonth, forecastUntilYearMonth
         )
     }
 
-    suspend fun getDailyReportViewData(
+    fun getDailyReportViewData(
         user: UserTO,
         reportName: String,
         fromDate: LocalDate,
         toDate: LocalDate,
         forecastUntilDate: LocalDate? = null,
-    ): ReportDataTO {
+    ): ReportDataTO = run {
         val reportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportName }
             ?: error("Report view with name '$reportName' not found for user ${user.username}")
-        return reportingSdk.getDailyReportViewData(user.id, reportView.id, fromDate, toDate, forecastUntilDate)
+        reportingSdk.getDailyReportViewData(user.id, reportView.id, fromDate, toDate, forecastUntilDate)
     }
 
-    // TODO(Johann) library yaml support could be rethinked. maybe a method that would map a File and path to a TO. might be more flexible
-    private fun extractYamlNode(yamlFile: File, path: String? = null): YamlNode {
-        val root = yaml.parseToYamlNode(yamlFile.readText()) as YamlMap
-        return if (path == null) {
+    inline fun <reified T> fromYaml(yamlFile: File, path: String? = null): T {
+        val root = yaml.parseToYamlNode(yamlFile.readText())
+        val yamlNode = if (path == null) {
             root
         } else {
-            root.get<YamlMap>(path)
+            (root as YamlMap).get<YamlMap>(path)
                 ?: error("Path '$path' not found in YAML file '${yamlFile.name}'")
         }
+        return yaml.decodeFromYamlNode(yamlNode)
     }
+
+    private fun <T> run(block: suspend () -> T): T = scope.future { block() }.join()
 }
