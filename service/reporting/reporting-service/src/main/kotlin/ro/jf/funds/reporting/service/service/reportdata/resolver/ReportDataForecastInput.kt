@@ -1,11 +1,11 @@
 package ro.jf.funds.reporting.service.service.reportdata.resolver
 
-import ro.jf.funds.reporting.api.model.GranularDateInterval
 import ro.jf.funds.reporting.service.domain.ByBucket
 import ro.jf.funds.reporting.service.domain.ForecastReportFeature
+import ro.jf.funds.reporting.service.domain.ReportDataInterval
 
 data class ReportDataForecastInput<T>(
-    val dateInterval: GranularDateInterval,
+    val interval: ReportDataInterval,
     val realData: ByBucket<T>,
     val forecastConfiguration: ForecastReportFeature,
     val groups: List<String>,
@@ -16,7 +16,7 @@ data class ReportDataForecastInput<T>(
             realData: ByBucket<T>,
         ): ReportDataForecastInput<T> =
             ReportDataForecastInput(
-                realInput.dateInterval,
+                realInput.interval,
                 realData,
                 realInput.dataConfiguration.features.forecast,
                 realInput.dataConfiguration.groups?.map { it.name } ?: emptyList()

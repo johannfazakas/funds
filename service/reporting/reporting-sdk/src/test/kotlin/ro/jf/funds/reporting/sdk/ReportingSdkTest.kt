@@ -1,6 +1,8 @@
 package ro.jf.funds.reporting.sdk
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDate
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -18,6 +20,7 @@ import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.reporting.api.model.*
+import ro.jf.funds.reporting.api.serializer.YearMonthSerializer
 import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID
@@ -67,7 +70,7 @@ class ReportingSdkTest {
                             ),
                             GroupedBudgetReportFeatureTO.BudgetDistributionTO(
                                 default = false,
-                                from = YearMonth(2020, 1),
+                                from = YearMonthTO(2020, 1),
                                 groups = listOf(
                                     GroupedBudgetReportFeatureTO.GroupBudgetPercentageTO(
                                         group = "need",
@@ -158,16 +161,16 @@ class ReportingSdkTest {
 
     @Test
     fun `get report view data`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val granularInterval = GranularDateInterval(
-            interval = DateInterval(YearMonth(2024, 11), YearMonth(2025, 1)),
-            granularity = TimeGranularity.MONTHLY
-        )
         val expectedResponse = ReportDataTO(
             viewId = viewId,
-            granularInterval = granularInterval,
+            interval = ReportDataIntervalTO(
+                granularity = TimeGranularityTO.MONTHLY,
+                fromDate = LocalDate(2024, 11, 1),
+                toDate = LocalDate(2025, 1, 31),
+            ),
             data = listOf(
                 ReportDataItemTO(
-                    timeBucket = DateInterval(YearMonth(2024, 11), YearMonth(2024, 11)),
+                    timeBucket = DateIntervalTO(YearMonthTO(2024, 11), YearMonthTO(2024, 11)),
                     bucketType = BucketTypeTO.REAL,
                     net = BigDecimal("200.0"),
                     value = ValueReportTO(
@@ -193,7 +196,7 @@ class ReportingSdkTest {
                     )
                 ),
                 ReportDataItemTO(
-                    timeBucket = DateInterval(YearMonth(2024, 12), YearMonth(2024, 12)),
+                    timeBucket = DateIntervalTO(YearMonthTO(2024, 12), YearMonthTO(2024, 12)),
                     bucketType = BucketTypeTO.REAL,
                     net = BigDecimal("300.0"),
                     value = ValueReportTO(
@@ -219,7 +222,7 @@ class ReportingSdkTest {
                     )
                 ),
                 ReportDataItemTO(
-                    timeBucket = DateInterval(YearMonth(2025, 1), YearMonth(2025, 1)),
+                    timeBucket = DateIntervalTO(YearMonthTO(2025, 1), YearMonthTO(2025, 1)),
                     bucketType = BucketTypeTO.REAL,
                     net = BigDecimal("400.0"),
                     value = ValueReportTO(
@@ -248,7 +251,8 @@ class ReportingSdkTest {
         )
         mockServerClient.mockGetReportData(expectedResponse)
 
-        val response = reportingSdk.getReportViewData(userId, viewId, granularInterval)
+        val response =
+            reportingSdk.getMonthlyReportViewData(userId, viewId, YearMonthTO(2024, 11), YearMonthTO(2025, 1))
 
         assertThat(response).isEqualTo(expectedResponse)
     }
@@ -484,9 +488,15 @@ class ReportingSdkTest {
                 .withPath("/funds-api/reporting/v1/report-views/$viewId/data")
                 .withQueryStringParameters(
                     mapOf(
-                        "from" to listOf(expectedResponse.granularInterval.interval.from.toString()),
-                        "to" to listOf(expectedResponse.granularInterval.interval.to.toString()),
-                        "granularity" to listOf(expectedResponse.granularInterval.granularity.name)
+                        "granularity" to listOf(expectedResponse.interval.granularity.name),
+                        "fromYearMonth" to expectedResponse.interval.fromDate
+                            .let { YearMonthTO(it.year, it.monthNumber) }
+                            .let { it-> Json.encodeToString(YearMonthSerializer(), it) }
+                            .let { it: String -> listOf(it) },
+                        "toYearMonth" to expectedResponse.interval.toDate
+                            .let { YearMonthTO(it.year, it.monthNumber) }
+                            .let { it-> Json.encodeToString(YearMonthSerializer(), it) }
+                            .let { it: String -> listOf(it) },
                     )
                 )
                 .withHeader(USER_ID_HEADER, userId.toString())
@@ -498,15 +508,17 @@ class ReportingSdkTest {
                     .withBody(
                         buildJsonObject {
                             put("viewId", JsonPrimitive(expectedResponse.viewId.toString()))
-                            put("granularInterval", buildJsonObject {
-                                put("interval", buildJsonObject {
-                                    put(
-                                        "from",
-                                        JsonPrimitive(expectedResponse.granularInterval.interval.from.toString())
-                                    )
-                                    put("to", JsonPrimitive(expectedResponse.granularInterval.interval.to.toString()))
-                                })
-                                put("granularity", JsonPrimitive(expectedResponse.granularInterval.granularity.name))
+                            put("interval", buildJsonObject {
+                                put("granularity", JsonPrimitive(expectedResponse.interval.granularity.name))
+                                put(
+                                    "fromDate",
+                                    JsonPrimitive(expectedResponse.interval.fromDate.toString())
+                                )
+                                put("toDate", JsonPrimitive(expectedResponse.interval.toDate.toString()))
+                                put(
+                                    "forecastUntilDate",
+                                    JsonPrimitive(expectedResponse.interval.forecastUntilDate?.toString())
+                                )
                             })
                             put("data", buildJsonArray {
                                 expectedResponse.data.forEach { item ->

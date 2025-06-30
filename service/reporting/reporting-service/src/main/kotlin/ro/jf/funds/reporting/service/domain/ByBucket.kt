@@ -1,13 +1,11 @@
 package ro.jf.funds.reporting.service.domain
 
-import ro.jf.funds.reporting.api.model.DateInterval
-
 data class ByBucket<T>(
-    private val itemByBucket: Map<DateInterval, T>,
-) : Iterable<Map.Entry<DateInterval, T>> {
-    operator fun get(dateInterval: DateInterval): T? = itemByBucket[dateInterval]
+    private val itemByBucket: Map<TimeBucket, T>,
+) : Iterable<Map.Entry<TimeBucket, T>> {
+    operator fun get(timeBucket: TimeBucket): T? = itemByBucket[timeBucket]
 
-    override fun iterator(): Iterator<Map.Entry<DateInterval, T>> {
+    override fun iterator(): Iterator<Map.Entry<TimeBucket, T>> {
         return itemByBucket.iterator()
     }
 

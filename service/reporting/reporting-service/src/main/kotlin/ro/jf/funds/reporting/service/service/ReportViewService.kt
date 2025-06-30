@@ -34,6 +34,17 @@ class ReportViewService(
         validateCreateReportViewRequest(payload, userId)
         val reportView = reportViewRepository.save(payload)
 
+        synchronizeReportRecords(userId, payload, reportView)
+
+        reportView
+    }
+
+    // TODO(Johann) questionable if this should be required or not
+    private suspend fun synchronizeReportRecords(
+        userId: UUID,
+        payload: CreateReportViewCommand,
+        reportView: ReportView,
+    ) {
         val transactions = fundTransactionSdk.listTransactions(userId, payload.fundId).items
         persistReportRecords(
             userId,
@@ -42,8 +53,6 @@ class ReportViewService(
             payload.fundId,
             payload.dataConfiguration.currency
         )
-
-        reportView
     }
 
     suspend fun getReportView(userId: UUID, reportViewId: UUID): ReportView = withSuspendingSpan {

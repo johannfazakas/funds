@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ListTO<T>(
     val items: List<T>,
+    val count: Int = items.size,
 ) {
     companion object {
         fun <T> of(vararg items: T) = ListTO(items.toList())

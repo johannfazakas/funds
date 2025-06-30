@@ -1,6 +1,6 @@
 package ro.jf.funds.reporting.service.domain
 
-import ro.jf.funds.reporting.api.model.YearMonth
+import ro.jf.funds.reporting.api.model.YearMonthTO
 import java.util.*
 
 

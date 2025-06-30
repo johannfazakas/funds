@@ -3,10 +3,7 @@ package ro.jf.funds.reporting.service.service.reportdata.resolver
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
-import ro.jf.funds.reporting.api.model.DateInterval
 import ro.jf.funds.reporting.service.domain.*
-import ro.jf.funds.reporting.service.service.generateBucketedData
-import ro.jf.funds.reporting.service.service.generateForecastData
 import ro.jf.funds.reporting.service.utils.getConversionRate
 import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
@@ -19,7 +16,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
         if (!input.dataConfiguration.features.valueReport.enabled) {
             return@withSpan null
         }
-        input.dateInterval
+        input.interval
             .generateBucketedData(
                 { interval ->
                     getValueReport(
@@ -46,14 +43,13 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
     override fun forecast(
         input: ReportDataForecastInput<ValueReport>,
     ): ByBucket<ValueReport> = withSpan("forecast") {
-        val inputSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
-        input.dateInterval.generateForecastData(
-            input.forecastConfiguration.outputBuckets,
+        input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
-            { interval -> input.realData[interval] }
+            { timeBucket -> input.realData[timeBucket] }
         ) { inputBuckets: List<ValueReport> ->
             val first = inputBuckets.first()
             val last = inputBuckets.last()
+            val inputSize = inputBuckets.size.toBigDecimal()
 
             ValueReport(
                 start = last.end,
@@ -66,7 +62,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
     }
 
     private fun getValueReport(
-        bucket: DateInterval,
+        bucket: TimeBucket,
         startAmountByUnit: ByUnit<BigDecimal>,
         bucketRecords: ByUnit<List<ReportRecord>>,
         conversions: ConversionsResponse,

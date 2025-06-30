@@ -35,9 +35,7 @@ fun ReportDataConfigurationTO.toDomain() = ReportDataConfiguration(
         groupedNet = GenericReportFeature(features.groupedNet.enabled),
         groupedBudget = features.groupedBudget.toDomain(),
         forecast = ForecastReportFeature(
-            enabled = features.forecast.enabled,
             inputBuckets = features.forecast.inputBuckets,
-            outputBuckets = features.forecast.outputBuckets,
         ),
     ),
 )
@@ -45,13 +43,15 @@ fun ReportDataConfigurationTO.toDomain() = ReportDataConfiguration(
 private fun GroupedBudgetReportFeatureTO.toDomain() =
     GroupedBudgetReportFeature(
         enabled = enabled,
-        distributions = distributions.map { distribution ->
+        distributions = distributions.map { distribution: GroupedBudgetReportFeatureTO.BudgetDistributionTO ->
             GroupedBudgetReportFeature.BudgetDistribution(
                 default = distribution.default,
-                from = distribution.from,
+                from = distribution.from?.toDomain(),
                 groups = distribution.groups.map { group ->
                     GroupedBudgetReportFeature.GroupBudgetPercentage(group.group, group.percentage)
                 }
             )
         }
     )
+
+private fun YearMonthTO.toDomain() = this.let { YearMonth(it.year, it.month) }

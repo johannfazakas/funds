@@ -10,7 +10,7 @@ import java.util.*
 data class ReportDataTO(
     @Serializable(with = UUIDSerializer::class)
     val viewId: UUID,
-    val granularInterval: GranularDateInterval,
+    val interval: ReportDataIntervalTO,
     val data: List<ReportDataItemTO>,
 )
 
@@ -21,7 +21,7 @@ enum class BucketTypeTO {
 
 @Serializable
 data class ReportDataItemTO(
-    val timeBucket: DateInterval,
+    val timeBucket: DateIntervalTO,
     val bucketType: BucketTypeTO,
     @Serializable(with = BigDecimalSerializer::class)
     val net: BigDecimal? = null,

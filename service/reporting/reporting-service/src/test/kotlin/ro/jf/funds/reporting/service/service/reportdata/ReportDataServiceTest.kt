@@ -22,10 +22,6 @@ import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
-import ro.jf.funds.reporting.api.model.DateInterval
-import ro.jf.funds.reporting.api.model.GranularDateInterval
-import ro.jf.funds.reporting.api.model.TimeGranularity
-import ro.jf.funds.reporting.api.model.YearMonth
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.domain.BucketType.FORECAST
 import ro.jf.funds.reporting.service.domain.BucketType.REAL
@@ -61,8 +57,8 @@ class ReportDataServiceTest {
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration))
-        val interval = DateInterval(LocalDate.parse("2021-09-03"), LocalDate.parse("2021-11-25"))
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+        val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 11))
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
             .thenReturn(
                 listOf(
                     ronReportRecord(LocalDate(2021, 9, 3), -100, labelsOf("need")),
@@ -71,25 +67,24 @@ class ReportDataServiceTest {
                     ronReportRecord(LocalDate(2021, 10, 8), -16, labelsOf("other")),
                 )
             )
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
         val conversionsResponse = mock<ConversionsResponse>()
         whenever(conversionsResponse.getRate(eq(RON), eq(RON), any()))
             .thenReturn(BigDecimal.ONE)
         whenever(conversionsResponse.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
 
-        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.granularInterval).isEqualTo(granularInterval)
+        assertThat(data.interval).isEqualTo(interval)
         assertThat(data.data[0].timeBucket)
-            .isEqualTo(DateInterval(LocalDate.parse("2021-09-01"), LocalDate.parse("2021-09-30")))
+            .isEqualTo(TimeBucket(LocalDate.parse("2021-09-01"), LocalDate.parse("2021-09-30")))
         assertThat(data.data[0].aggregate.net).isEqualByComparingTo(BigDecimal("-300.0"))
         assertThat(data.data[1].timeBucket)
-            .isEqualTo(DateInterval(LocalDate.parse("2021-10-01"), LocalDate.parse("2021-10-31")))
+            .isEqualTo(TimeBucket(LocalDate.parse("2021-10-01"), LocalDate.parse("2021-10-31")))
         assertThat(data.data[1].aggregate.net).isEqualByComparingTo(BigDecimal("-30.0"))
         assertThat(data.data[2].timeBucket)
-            .isEqualTo(DateInterval(LocalDate.parse("2021-11-01"), LocalDate.parse("2021-11-30")))
+            .isEqualTo(TimeBucket(LocalDate.parse("2021-11-01"), LocalDate.parse("2021-11-30")))
         assertThat(data.data[2].aggregate.net).isEqualByComparingTo(BigDecimal.ZERO)
     }
 
@@ -101,12 +96,16 @@ class ReportDataServiceTest {
             groups = null,
             features = ReportDataFeaturesConfiguration()
                 .withNet(enabled = true, applyFilter = true)
-                .withForecast(enabled = true, forecastBuckets = 3, consideredBuckets = 5)
+                .withForecast(consideredBuckets = 5)
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration))
-        val interval = DateInterval(LocalDate.parse("2021-01-01"), LocalDate.parse("2021-06-30"))
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+        val interval = ReportDataInterval.Monthly(
+            YearMonth(2021, 1),
+            YearMonth(2021, 6),
+            YearMonth(2021, 9)
+        )
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
             .thenReturn(
                 listOf(
                     ronReportRecord(LocalDate(2021, 1, 3), -100, labelsOf("need")),
@@ -117,20 +116,19 @@ class ReportDataServiceTest {
                     ronReportRecord(LocalDate(2021, 6, 8), -50, labelsOf("want")),
                 )
             )
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
         val conversionsResponse = mock<ConversionsResponse>()
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
 
-        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
         val acceptedOffset = within(BigDecimal("0.01"))
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.granularInterval).isEqualTo(granularInterval)
+        assertThat(data.interval).isEqualTo(interval)
         assertThat(data.data).hasSize(9)
         assertThat(data.data[5].bucketType).isEqualTo(REAL)
         assertThat(data.data[5].aggregate.net).isCloseTo(BigDecimal(-50), acceptedOffset)
-        assertThat(data.data[6].timeBucket).isEqualTo(YearMonth(2021, 7).asDateInterval())
+        assertThat(data.data[6].timeBucket).isEqualTo(YearMonth(2021, 7).asTimeBucket())
         assertThat(data.data[6].bucketType).isEqualTo(FORECAST)
         assertThat(data.data[6].aggregate.net).isCloseTo(
             BigDecimal((-40 - 30 - 20 - 40 - 50) / 5.0),
@@ -160,8 +158,8 @@ class ReportDataServiceTest {
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration))
-        val interval = DateInterval(YearMonth(2021, 9), YearMonth(2021, 10))
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+        val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 10))
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
             .thenReturn(
                 listOf(
                     ronReportRecord(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
@@ -171,22 +169,21 @@ class ReportDataServiceTest {
                     ronReportRecord(LocalDate.parse("2021-09-28"), -16, labelsOf("other")),
                 )
             )
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
         val conversionsResponse = mock<ConversionsResponse>()
         whenever(conversionsResponse.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
 
-        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.granularInterval).isEqualTo(granularInterval)
+        assertThat(data.interval).isEqualTo(interval)
         assertThat(data.data).hasSize(2)
         assertThat(data.data[0].timeBucket)
-            .isEqualTo(DateInterval(YearMonth(2021, 9), YearMonth(2021, 9)))
+            .isEqualTo(YearMonth(2021, 9).asTimeBucket())
         assertThat(data.data[0].aggregate.groupedNet?.get("Need")).isEqualByComparingTo(BigDecimal("-150.0"))
         assertThat(data.data[0].aggregate.groupedNet?.get("Want")).isEqualByComparingTo(BigDecimal("-200.0"))
         assertThat(data.data[1].timeBucket)
-            .isEqualTo(DateInterval(YearMonth(2021, 10), YearMonth(2021, 10)))
+            .isEqualTo(YearMonth(2021, 10).asTimeBucket())
         assertThat(data.data[1].aggregate.groupedNet?.get("Need")).isEqualByComparingTo(BigDecimal.ZERO)
         assertThat(data.data[1].aggregate.groupedNet?.get("Want")).isEqualByComparingTo("-30.0")
     }
@@ -212,9 +209,8 @@ class ReportDataServiceTest {
         val conversions = mock<ConversionsResponse>()
         whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.00"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
-        val interval = DateInterval(YearMonth(2020, 2), YearMonth(2020, 3))
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+        val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
             .thenReturn(
                 listOf(
                     // previous month with specific distribution
@@ -229,14 +225,14 @@ class ReportDataServiceTest {
                 )
             )
 
-        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.granularInterval).isEqualTo(granularInterval)
+        assertThat(data.interval).isEqualTo(interval)
         assertThat(data.data).hasSize(2)
 
         assertThat(data.data[0].timeBucket)
-            .isEqualTo(DateInterval(YearMonth(2020, 2), YearMonth(2020, 2)))
+            .isEqualTo(YearMonth(2020, 2).asTimeBucket())
         val groupedBudget1 = data.data[0].aggregate.groupedBudget ?: error("First grouped budget is null")
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
@@ -252,7 +248,7 @@ class ReportDataServiceTest {
         }
 
         assertThat(data.data[1].timeBucket)
-            .isEqualTo(DateInterval(YearMonth(2020, 3), YearMonth(2020, 3)))
+            .isEqualTo(YearMonth(2020, 3).asTimeBucket())
         val groupedBudget2 = data.data[1].aggregate.groupedBudget ?: error("Second grouped budget is null")
         assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
@@ -289,9 +285,8 @@ class ReportDataServiceTest {
         val conversions = mock<ConversionsResponse>()
         whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.00"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
-        val interval = DateInterval(YearMonth(2020, 2), YearMonth(2020, 2))
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+        val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 2))
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
             .thenReturn(
                 listOf(
                     // previous month with specific distribution
@@ -306,7 +301,7 @@ class ReportDataServiceTest {
                 )
             )
 
-        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
         assertThat(data.data).hasSize(1)
 
@@ -373,9 +368,8 @@ class ReportDataServiceTest {
                 }
             }
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
-        val interval = DateInterval(YearMonth(2020, 2), YearMonth(2020, 3))
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+        val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
             .thenReturn(
                 listOf(
                     // first month
@@ -391,7 +385,7 @@ class ReportDataServiceTest {
                 )
             )
 
-        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
         assertThat(data.data).hasSize(2)
 
@@ -483,9 +477,8 @@ class ReportDataServiceTest {
         val conversions = mock<ConversionsResponse>()
         whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.00"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
-        val interval = DateInterval(YearMonth(2020, 2), YearMonth(2020, 3))
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+        val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
             .thenReturn(
                 listOf(
                     // first month
@@ -501,7 +494,7 @@ class ReportDataServiceTest {
                 )
             )
 
-        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
         assertThat(data.data).hasSize(2)
 
@@ -589,14 +582,17 @@ class ReportDataServiceTest {
                         needWantDistribution(true, null, 60, 40),
                     ),
                 )
-                .withForecast(enabled = true, forecastBuckets = 2, consideredBuckets = 3)
+                .withForecast(consideredBuckets = 3)
         )
         whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(mock())
 
-        val interval = DateInterval(YearMonth(2020, 1), YearMonth(2020, 4))
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.to))
+        val interval = ReportDataInterval.Monthly(
+            YearMonth(2020, 1),
+            YearMonth(2020, 4),
+            YearMonth(2020, 6)
+        )
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
             .thenReturn(
                 listOf(
                     // first month
@@ -619,7 +615,7 @@ class ReportDataServiceTest {
                 )
             )
 
-        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
         assertThat(data.data).hasSize(6)
 
@@ -632,7 +628,10 @@ class ReportDataServiceTest {
         forecastBudgetMay["Need"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal((2500 + 2000 + 1500) * 0.6 / 3.0), acceptedOffset)
             assertThat(it.spent).isCloseTo(BigDecimal((-600 - 700 - 600) / 3.0), acceptedOffset)
-            assertThat(it.left).isCloseTo(BigDecimal(2400 + ((2500 + 2000 + 1500) * 0.6 - 600 - 700 - 600) / 3.0), acceptedOffset)
+            assertThat(it.left).isCloseTo(
+                BigDecimal(2400 + ((2500 + 2000 + 1500) * 0.6 - 600 - 700 - 600) / 3.0),
+                acceptedOffset
+            )
         }
     }
 
@@ -650,9 +649,8 @@ class ReportDataServiceTest {
             .thenReturn(reportView(reportDataConfiguration))
         whenever(historicalPricingSdk.convert(eq(userId), eq(ConversionsRequest(emptyList()))))
             .thenReturn(ConversionsResponse(emptyList()))
-        val to = LocalDate.parse("2021-11-25")
-        val interval = DateInterval(from = LocalDate.parse("2021-09-02"), to = to)
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, to))
+        val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 11))
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
             .thenReturn(
                 listOf(
                     ronReportRecord(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
@@ -664,12 +662,11 @@ class ReportDataServiceTest {
                     ronReportRecord(LocalDate.parse("2021-10-08"), -16, labelsOf("other")),
                 )
             )
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
 
-        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.granularInterval).isEqualTo(granularInterval)
+        assertThat(data.interval).isEqualTo(interval)
         assertThat(data.data[0].aggregate.value?.start)
             .isEqualByComparingTo(BigDecimal("100.0"))
         assertThat(data.data[0].aggregate.value?.end)
@@ -695,9 +692,8 @@ class ReportDataServiceTest {
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration))
-        val to = LocalDate.parse("2021-10-30")
-        val interval = DateInterval(from = LocalDate.parse("2021-09-02"), to = to)
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, to))
+        val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 10))
+        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
             .thenReturn(
                 listOf(
                     ronReportRecord(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
@@ -723,14 +719,13 @@ class ReportDataServiceTest {
             )
         )
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
-        val granularInterval = GranularDateInterval(interval, TimeGranularity.MONTHLY)
 
-        val data = reportDataService.getReportViewData(userId, reportViewId, granularInterval)
+        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.granularInterval).isEqualTo(granularInterval)
+        assertThat(data.interval).isEqualTo(interval)
         assertThat(data.data[0].timeBucket)
-            .isEqualTo(DateInterval(LocalDate(2021, 9, 1), LocalDate(2021, 9, 30)))
+            .isEqualTo(TimeBucket(LocalDate(2021, 9, 1), LocalDate(2021, 9, 30)))
         assertThat(data.data[0].aggregate.value?.start).isEqualByComparingTo(BigDecimal("197.0"))
         assertThat(data.data[0].aggregate.value?.end).isEqualByComparingTo(
             BigDecimal("200.0") + BigDecimal("4.9") * BigDecimal(
@@ -738,7 +733,7 @@ class ReportDataServiceTest {
             )
         )
         assertThat(data.data[1].timeBucket)
-            .isEqualTo(DateInterval(LocalDate(2021, 10, 1), LocalDate(2021, 10, 31)))
+            .isEqualTo(TimeBucket(LocalDate(2021, 10, 1), LocalDate(2021, 10, 31)))
         assertThat(data.data[1].aggregate.value?.start).isEqualByComparingTo(
             BigDecimal("200.0") + BigDecimal("4.95") * BigDecimal(
                 "40.0"

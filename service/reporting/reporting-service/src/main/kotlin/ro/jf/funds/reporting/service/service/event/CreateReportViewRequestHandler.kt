@@ -6,6 +6,7 @@ import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.service.ReportViewTaskService
 import ro.jf.funds.reporting.service.utils.withSuspendingSpan
 
+// TODO(Johann) is this async task required at all? when removed, a lot of @Serializable annotations are not required anymore
 class CreateReportViewRequestHandler(
     private val reportViewTaskService: ReportViewTaskService,
 ) : Handler<CreateReportViewCommand> {
