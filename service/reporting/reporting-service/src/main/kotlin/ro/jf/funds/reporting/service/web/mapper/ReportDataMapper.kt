@@ -1,16 +1,24 @@
 package ro.jf.funds.reporting.service.web.mapper
 
 import ro.jf.funds.reporting.api.model.*
-import ro.jf.funds.reporting.service.domain.BucketType
-import ro.jf.funds.reporting.service.domain.ReportData
+import ro.jf.funds.reporting.service.domain.*
 
 fun ReportData.toTO(): ReportDataTO {
     return ReportDataTO(
         viewId = this.reportViewId,
-        granularInterval = granularInterval,
-        data = data.map { dataItem ->
+        interval = ReportDataIntervalTO(
+            granularity = when (this.interval) {
+                is ReportDataInterval.Yearly -> TimeGranularityTO.YEARLY
+                is ReportDataInterval.Monthly -> TimeGranularityTO.MONTHLY
+                is ReportDataInterval.Daily -> TimeGranularityTO.DAILY
+            },
+            fromDate = this.interval.fromDate,
+            toDate = this.interval.toDate,
+            forecastUntilDate = this.interval.forecastUntilDate,
+        ),
+        data = data.map { dataItem: BucketData<ReportDataAggregate> ->
             ReportDataItemTO(
-                timeBucket = dataItem.timeBucket,
+                timeBucket = DateIntervalTO(dataItem.timeBucket.from, dataItem.timeBucket.to),
                 bucketType = dataItem.bucketType.toTO(),
                 net = dataItem.aggregate.net,
                 value = dataItem.aggregate.value?.let {

@@ -3,8 +3,6 @@ package ro.jf.funds.reporting.service.service.reportdata.resolver
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.reporting.service.domain.*
-import ro.jf.funds.reporting.service.service.generateBucketedData
-import ro.jf.funds.reporting.service.service.generateForecastData
 import ro.jf.funds.reporting.service.utils.getConversionRate
 import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
@@ -17,7 +15,7 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
         if (!input.dataConfiguration.features.groupedNet.enabled || input.dataConfiguration.groups == null) {
             return@withSpan null
         }
-        input.dateInterval
+        input.interval
             .generateBucketedData(
                 { interval ->
                     getGroupedNet(
@@ -43,11 +41,11 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
         input: ReportDataForecastInput<ByGroup<BigDecimal>>,
     ): ByBucket<ByGroup<BigDecimal>> = withSpan("forecast") {
         val inputBucketsSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
-        input.dateInterval.generateForecastData(
-            input.forecastConfiguration.outputBuckets,
+        input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
             { interval -> input.realData[interval] }
         ) { inputBuckets: List<ByGroup<BigDecimal>> ->
+            val inputBucketsSize = inputBuckets.size.toBigDecimal()
             input.groups
                 .associateWith { group ->
                     input.forecastConfiguration.inputBuckets.toBigDecimal()

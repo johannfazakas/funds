@@ -4,11 +4,7 @@ import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
-import ro.jf.funds.reporting.api.model.DateInterval
-import ro.jf.funds.reporting.api.model.YearMonth
 import ro.jf.funds.reporting.service.domain.*
-import ro.jf.funds.reporting.service.service.generateBucketedData
-import ro.jf.funds.reporting.service.service.generateForecastData
 import ro.jf.funds.reporting.service.utils.getConversionRate
 import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
@@ -23,10 +19,10 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         val reportCatalog = input.catalog
         val previousLeftBudgets = getPreviousGroupedBudget(reportCatalog, input, groupedBudgetFeature)
 
-        val generateBucketedData = input.dateInterval
+        val generateBucketedData = input.interval
             .generateBucketedData(
-                { interval ->
-                    getSeedGroupedBudget(reportCatalog, interval, previousLeftBudgets, input, groupedBudgetFeature)
+                { timeBucket ->
+                    getSeedGroupedBudget(reportCatalog, timeBucket, previousLeftBudgets, input, groupedBudgetFeature)
                 },
                 { interval, previous ->
                     getNextGroupedBudget(reportCatalog, interval, previous, input, groupedBudgetFeature)
@@ -36,7 +32,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
     }
 
     private fun mergeBucketedData(
-        generateBucketedData: Map<DateInterval, ByGroup<ByUnit<Budget>>>,
+        generateBucketedData: Map<TimeBucket, ByGroup<ByUnit<Budget>>>,
         input: ReportDataResolverInput,
     ): ByBucket<ByGroup<Budget>> = withSpan("mergeBucketedData") {
         generateBucketedData
@@ -70,7 +66,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
             .fold(ByGroup()) { acc, (yearMonth, monthRecords) ->
                 getGroupedBudget(
                     monthRecords,
-                    yearMonth.asDateInterval().to,
+                    yearMonth.asTimeBucket().to,
                     acc,
                     input,
                     groupedBudgetFeature
@@ -80,19 +76,19 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
 
     private fun getSeedGroupedBudget(
         reportCatalog: RecordCatalog,
-        interval: DateInterval,
+        timeBucket: TimeBucket,
         previousLeftBudgets: ByGroup<ByUnit<Budget>>,
         input: ReportDataResolverInput,
         groupedBudgetFeature: GroupedBudgetReportFeature,
     ): ByGroup<ByUnit<Budget>> = withSpan("getSeedGroupedBudget") {
         getGroupedBudget(
-            reportCatalog.getBucketRecords(interval), interval.to, previousLeftBudgets, input, groupedBudgetFeature
+            reportCatalog.getBucketRecords(timeBucket), timeBucket.to, previousLeftBudgets, input, groupedBudgetFeature
         )
     }
 
     private fun getNextGroupedBudget(
         reportCatalog: RecordCatalog,
-        interval: DateInterval,
+        interval: TimeBucket,
         previous: ByGroup<ByUnit<Budget>>,
         input: ReportDataResolverInput,
         groupedBudgetFeature: GroupedBudgetReportFeature,
@@ -104,12 +100,11 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
 
     override fun forecast(input: ReportDataForecastInput<ByGroup<Budget>>): ByBucket<ByGroup<Budget>>? =
         withSpan("forecast") {
-            val inputSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
-            input.dateInterval.generateForecastData(
-                input.forecastConfiguration.outputBuckets,
+            input.interval.generateForecastData(
                 input.forecastConfiguration.inputBuckets,
                 { interval -> input.realData[interval] }
             ) { inputBuckets: List<ByGroup<Budget>> ->
+                val inputSize = inputBuckets.size.toBigDecimal()
                 input.groups
                     .associateWith { group ->
                         val groupBudgets = inputBuckets.mapNotNull { it[group] }

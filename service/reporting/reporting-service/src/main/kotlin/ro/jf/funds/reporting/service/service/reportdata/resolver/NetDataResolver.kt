@@ -3,8 +3,6 @@ package ro.jf.funds.reporting.service.service.reportdata.resolver
 import ro.jf.funds.reporting.service.domain.ByBucket
 import ro.jf.funds.reporting.service.domain.ByUnit
 import ro.jf.funds.reporting.service.domain.ReportRecord
-import ro.jf.funds.reporting.service.service.generateBucketedData
-import ro.jf.funds.reporting.service.service.generateForecastData
 import ro.jf.funds.reporting.service.utils.getConversionRate
 import ro.jf.funds.reporting.service.utils.withSpan
 import java.math.BigDecimal
@@ -17,7 +15,7 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
         if (!input.dataConfiguration.features.net.enabled) {
             return@withSpan null
         }
-        input.dateInterval
+        input.interval
             .generateBucketedData(
                 { interval -> getNet(input.catalog.getBucketRecordsGroupedByUnit(interval), input) },
                 { interval, _ ->
@@ -30,12 +28,11 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
     override fun forecast(
         input: ReportDataForecastInput<BigDecimal>,
     ): ByBucket<BigDecimal> = withSpan("forecast") {
-        val inputSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
-        input.dateInterval.generateForecastData(
-            input.forecastConfiguration.outputBuckets,
+        input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
             { interval -> input.realData[interval] }
         ) { inputBuckets: List<BigDecimal> ->
+            val inputSize = inputBuckets.size.toBigDecimal()
             inputBuckets.sumOf { it }.divide(inputSize, MathContext.DECIMAL64)
         }.let { ByBucket(it) }
     }

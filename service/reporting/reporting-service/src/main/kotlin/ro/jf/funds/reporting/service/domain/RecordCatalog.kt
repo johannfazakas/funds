@@ -1,12 +1,8 @@
 package ro.jf.funds.reporting.service.domain
 
-import ro.jf.funds.reporting.api.model.DateInterval
-import ro.jf.funds.reporting.api.model.GranularDateInterval
-import ro.jf.funds.reporting.service.service.getBucket
-
 class RecordCatalog(
     reportRecords: List<ReportRecord>,
-    private val granularInterval: GranularDateInterval,
+    private val reportDataInterval: ReportDataInterval,
 ) {
     private val previousRecords: List<ReportRecord>
     private val previousRecordsGroupedByUnit: ByUnit<List<ReportRecord>>
@@ -17,14 +13,14 @@ class RecordCatalog(
     private val intervalRecordsGroupedByBucketByUnit: ByBucket<ByUnit<List<ReportRecord>>>
 
     init {
-        splitRecordsBeforeAndDuring(reportRecords, granularInterval).also { (previous, interval) ->
+        splitRecordsBeforeAndDuring(reportRecords, reportDataInterval).also { (previous, interval) ->
             previousRecords = previous
             previousRecordsGroupedByUnit = ByUnit(previous.groupBy { it.unit })
             intervalRecords = interval
         }
 
         intervalRecordsGroupedByBucket = intervalRecords.asSequence<ReportRecord>()
-            .groupBy<ReportRecord, DateInterval> { granularInterval.getBucket(it.date) }
+            .groupBy<ReportRecord, TimeBucket> { reportDataInterval.getBucket(it.date) }
             .let { ByBucket<List<ReportRecord>>(it) }
 
         intervalRecordsGroupedByBucketByUnit = intervalRecordsGroupedByBucket.iterator().asSequence()
@@ -36,14 +32,14 @@ class RecordCatalog(
 
     fun getPreviousRecordsGroupedByUnit(): ByUnit<List<ReportRecord>> = previousRecordsGroupedByUnit
 
-    fun getBucketRecords(bucket: DateInterval): List<ReportRecord> =
+    fun getBucketRecords(bucket: TimeBucket): List<ReportRecord> =
         intervalRecordsGroupedByBucket[bucket] ?: emptyList()
 
-    fun getBucketRecordsGroupedByUnit(bucket: DateInterval): ByUnit<List<ReportRecord>> =
+    fun getBucketRecordsGroupedByUnit(bucket: TimeBucket): ByUnit<List<ReportRecord>> =
         intervalRecordsGroupedByBucketByUnit[bucket] ?: ByUnit(emptyMap())
 
     private fun splitRecordsBeforeAndDuring(
         records: List<ReportRecord>,
-        interval: GranularDateInterval,
-    ): Pair<List<ReportRecord>, List<ReportRecord>> = records.partition { it.date < interval.interval.from }
+        interval: ReportDataInterval,
+    ): Pair<List<ReportRecord>, List<ReportRecord>> = records.partition { it.date < interval.fromDate }
 }

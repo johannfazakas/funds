@@ -25,3 +25,7 @@ Content-Type: application/json
 ### Delete Fund
 DELETE {{fund_host}}/funds-api/fund/v1/funds/{{fund-id}}
 FUNDS_USER_ID: {{user_id}}
+
+### Get transactions by fund id
+GET {{fund_host}}/funds-api/fund/v1/funds/{{fund_id}}/transactions
+FUNDS_USER_ID: {{user_id}}

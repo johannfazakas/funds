@@ -1,13 +1,11 @@
 package ro.jf.funds.reporting.service.domain
 
-import ro.jf.funds.reporting.api.model.DateInterval
-import ro.jf.funds.reporting.api.model.GranularDateInterval
 import java.math.BigDecimal
 import java.util.*
 
 data class ReportData(
     val reportViewId: UUID,
-    val granularInterval: GranularDateInterval,
+    val interval: ReportDataInterval,
     val data: List<BucketData<ReportDataAggregate>>,
 )
 
@@ -17,7 +15,7 @@ enum class BucketType {
 }
 
 data class BucketData<D>(
-    val timeBucket: DateInterval,
+    val timeBucket: TimeBucket,
     val bucketType: BucketType,
     val aggregate: D,
 )

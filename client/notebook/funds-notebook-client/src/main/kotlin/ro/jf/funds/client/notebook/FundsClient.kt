@@ -1,6 +1,6 @@
 package ro.jf.funds.client.notebook
 
-import com.charleskorn.kaml.Yaml
+import com.charleskorn.kaml.*
 import kotlinx.coroutines.delay
 import kotlinx.datetime.*
 import kotlinx.serialization.builtins.ListSerializer
@@ -31,6 +31,13 @@ class FundsClient(
     private val importSdk: ImportSdk = ImportSdk(),
     private val reportingSdk: ReportingSdk = ReportingSdk(),
 ) {
+    private val yaml = Yaml(
+        configuration = YamlConfiguration(
+            anchorsAndAliases = AnchorsAndAliases.Permitted(maxAliasCount = 50u)
+        )
+    )
+
+    // TODO(Johann) would make sense to have these as non suspend functions, but then we would need to handle
     suspend fun ensureUserExists(username: String): UserTO {
         return userSdk.findUserByUsername(username)
             ?: userSdk.createUser(username)
@@ -40,7 +47,7 @@ class FundsClient(
         val existingAccounts = accountSdk.listAccounts(user.id).items
         val existingAccountNames = existingAccounts.map { it.name }.toSet()
         val newAccounts = yamlFile.readText()
-            .let { Yaml.default.decodeFromString(ListSerializer(CreateAccountTO.serializer()), it) }
+            .let { yaml.decodeFromString(ListSerializer(CreateAccountTO.serializer()), it) }
             .filter { it.name !in existingAccountNames }
             .map { accountSdk.createAccount(user.id, it) }
         return existingAccounts + newAccounts
@@ -50,7 +57,7 @@ class FundsClient(
         val existingFunds = fundSdk.listFunds(user.id).items
         val existingFundNames = existingFunds.map { it.name }.toSet()
         val newFunds = yamlFile.readText()
-            .let { Yaml.default.decodeFromString(ListSerializer(CreateFundTO.serializer()), it) }
+            .let { yaml.decodeFromString(ListSerializer(CreateFundTO.serializer()), it) }
             .filter { it.name !in existingFundNames }
             .map { fundSdk.createFund(user.id, it) }
         return existingFunds + newFunds
@@ -63,7 +70,7 @@ class FundsClient(
         yamlFile: File,
     ): List<FundTransactionTO> {
         val initialBalances: InitialBalances =
-            Yaml.default.decodeFromString<InitialBalances>(yamlFile.readText())
+            yaml.decodeFromString<InitialBalances>(yamlFile.readText())
 
         val dateTime = LocalDateTime(initialBalances.date, LocalTime.parse("00:00"))
         val transactionRequests = initialBalances.balances.map { initialBalance ->
@@ -95,7 +102,7 @@ class FundsClient(
         csvFiles: List<File>,
     ): ImportTaskTO {
         val importConfiguration =
-            Yaml.default.decodeFromString<ImportConfigurationTO>(importConfigurationYamlFile.readText())
+            yaml.decodeFromString<ImportConfigurationTO>(importConfigurationYamlFile.readText())
 
         var importTask = importSdk.import(user.id, importConfiguration, csvFiles)
         val now: Instant = Clock.System.now()
@@ -111,7 +118,8 @@ class FundsClient(
         user: UserTO,
         reportViewName: String,
         fundName: String,
-        reportDataConfigurationFile: File,
+        reportDataConfigurationYamlFile: File,
+        yamlPath: String? = null,
     ): ReportViewTO {
         val existingReportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportViewName }
         if (existingReportView != null) {
@@ -119,8 +127,9 @@ class FundsClient(
         }
         val fund = fundSdk.getFundByName(user.id, FundName(fundName))
             ?: error("Fund with name '$fundName' not found for user ${user.username}")
+        val yamlNode = extractYamlNode(reportDataConfigurationYamlFile, yamlPath)
         val dataConfiguration =
-            Yaml.default.decodeFromString<ReportDataConfigurationTO>(reportDataConfigurationFile.readText())
+            yaml.decodeFromYamlNode<ReportDataConfigurationTO>(yamlNode)
         val request = CreateReportViewTO(reportViewName, fund.id, dataConfiguration)
         var task: ReportViewTaskTO = reportingSdk.createReportView(user.id, request)
         val timeout = Clock.System.now().plus(120.seconds)
@@ -128,28 +137,63 @@ class FundsClient(
             delay(2000)
             task = reportingSdk.getReportViewTask(user.id, task.taskId)
         }
-        return if (task.status == ReportViewTaskStatus.COMPLETED) {
-            task.report ?: error("No report found on completed report task")
-        } else if (task.status == ReportViewTaskStatus.FAILED) {
-            throw IllegalStateException("Report view creation failed on task $task")
-        } else {
-            throw IllegalStateException("Report view creation timed out on task $task")
+        return when (task.status) {
+            ReportViewTaskStatus.COMPLETED -> {
+                task.report ?: error("No report found on completed report task")
+            }
+
+            ReportViewTaskStatus.FAILED -> {
+                throw IllegalStateException("Report view creation failed on task $task")
+            }
+
+            else -> {
+                throw IllegalStateException("Report view creation timed out on task $task")
+            }
         }
     }
 
-    suspend fun getReportViewData(
-        user: UserTO,
-        reportName: String,
-        intervalStart: LocalDate,
-        intervalEnd: LocalDate,
-        granularity: TimeGranularity,
+    suspend fun getYearlyReportViewData(
+        user: UserTO, reportName: String, fromYear: Int, toYear: Int, forecastUntilYear: Int? = null,
     ): ReportDataTO {
         val reportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportName }
             ?: error("Report view with name '$reportName' not found for user ${user.username}")
-        val granularInterval = GranularDateInterval(
-            interval = DateInterval(intervalStart, intervalEnd),
-            granularity = granularity
+        return reportingSdk.getYearlyReportViewData(user.id, reportView.id, fromYear, toYear, forecastUntilYear)
+    }
+
+    suspend fun getMonthlyReportViewData(
+        user: UserTO,
+        reportName: String,
+        fromYearMonth: YearMonthTO,
+        toYearMonth: YearMonthTO,
+        forecastUntilYearMonth: YearMonthTO? = null,
+    ): ReportDataTO {
+        val reportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportName }
+            ?: error("Report view with name '$reportName' not found for user ${user.username}")
+        return reportingSdk.getMonthlyReportViewData(
+            user.id, reportView.id, fromYearMonth, toYearMonth, forecastUntilYearMonth
         )
-        return reportingSdk.getReportViewData(user.id, reportView.id, granularInterval)
+    }
+
+    suspend fun getDailyReportViewData(
+        user: UserTO,
+        reportName: String,
+        fromDate: LocalDate,
+        toDate: LocalDate,
+        forecastUntilDate: LocalDate? = null,
+    ): ReportDataTO {
+        val reportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportName }
+            ?: error("Report view with name '$reportName' not found for user ${user.username}")
+        return reportingSdk.getDailyReportViewData(user.id, reportView.id, fromDate, toDate, forecastUntilDate)
+    }
+
+    // TODO(Johann) library yaml support could be rethinked. maybe a method that would map a File and path to a TO. might be more flexible
+    private fun extractYamlNode(yamlFile: File, path: String? = null): YamlNode {
+        val root = yaml.parseToYamlNode(yamlFile.readText()) as YamlMap
+        return if (path == null) {
+            root
+        } else {
+            root.get<YamlMap>(path)
+                ?: error("Path '$path' not found in YAML file '${yamlFile.name}'")
+        }
     }
 }

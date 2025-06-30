@@ -12,7 +12,7 @@ import ro.jf.funds.commons.model.asLabels
 import ro.jf.funds.commons.model.asString
 import ro.jf.funds.commons.model.toFinancialUnit
 import ro.jf.funds.commons.persistence.blockingTransaction
-import ro.jf.funds.reporting.api.model.DateInterval
+import ro.jf.funds.reporting.api.model.DateIntervalTO
 import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
 import ro.jf.funds.reporting.service.domain.ReportRecord
 import java.util.*
@@ -57,7 +57,7 @@ class ReportRecordRepository(
             .map { it.toModel() }
     }
 
-    suspend fun findByViewInInterval(userId: UUID, reportViewId: UUID, interval: DateInterval) = blockingTransaction {
+    suspend fun findByViewInInterval(userId: UUID, reportViewId: UUID, interval: DateIntervalTO) = blockingTransaction {
         ReportRecordTable
             .selectAll()
             .where {

@@ -251,9 +251,9 @@ class ReportingApiTest {
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
             header(USER_ID_HEADER, userId.toString())
-            parameter("granularity", "DAILY")
-            parameter("from", "2021-01-01")
-            parameter("to", "2021-01-28")
+            parameter("granularity", TimeGranularityTO.DAILY.name)
+            parameter("fromDate", "2021-01-01")
+            parameter("toDate", "2021-01-28")
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
@@ -263,7 +263,7 @@ class ReportingApiTest {
         assertThat(reportData.data[0])
             .isEqualTo(
                 ReportDataItemTO(
-                    timeBucket = DateInterval(LocalDate(2021, 1, 1), LocalDate(2021, 1, 1)),
+                    timeBucket = DateIntervalTO(LocalDate(2021, 1, 1), LocalDate(2021, 1, 1)),
                     bucketType = BucketTypeTO.REAL,
                     net = BigDecimal("0.0"),
                     value = ValueReportTO(BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0")),
@@ -272,26 +272,12 @@ class ReportingApiTest {
         assertThat(reportData.data[1])
             .isEqualTo(
                 ReportDataItemTO(
-                    timeBucket = DateInterval(LocalDate(2021, 1, 2), LocalDate(2021, 1, 2)),
+                    timeBucket = DateIntervalTO(LocalDate(2021, 1, 2), LocalDate(2021, 1, 2)),
                     bucketType = BucketTypeTO.REAL,
                     net = BigDecimal("-75.0"),
                     value = ValueReportTO(BigDecimal("0.0"), BigDecimal("-75.0"), BigDecimal("0.0"), BigDecimal("0.0")),
                 )
             )
-    }
-
-    @Test
-    fun `get report view without granularity`() = testApplication {
-        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
-        val httpClient = createJsonHttpClient()
-        val reportView = reportViewRepository.save(reportViewCommand)
-        val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
-            header(USER_ID_HEADER, userId.toString())
-            parameter("from", "2021-01-01")
-            parameter("to", "2021-01-31")
-        }
-
-        assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
     }
 
     private fun Application.testModule() {

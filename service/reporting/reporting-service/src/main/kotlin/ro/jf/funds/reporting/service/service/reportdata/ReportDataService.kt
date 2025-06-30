@@ -7,13 +7,10 @@ import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
-import ro.jf.funds.reporting.api.model.GranularDateInterval
-import ro.jf.funds.reporting.api.model.YearMonth
+import ro.jf.funds.reporting.api.model.YearMonthTO
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
-import ro.jf.funds.reporting.service.service.getBuckets
-import ro.jf.funds.reporting.service.service.getForecastBuckets
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataForecastInput
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolver
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverInput
@@ -34,40 +31,36 @@ class ReportDataService(
     suspend fun getReportViewData(
         userId: UUID,
         reportViewId: UUID,
-        granularInterval: GranularDateInterval,
+        interval: ReportDataInterval,
     ): ReportData = withSuspendingSpan {
-        // TODO(Johann) dive into logging a bit. how can it be controlled in a ktor service? This should probably be a DEBUG
-        log.info { "Get report view data for user $userId, report $reportViewId and interval $granularInterval" }
-
         val reportView = reportViewRepository.findById(userId, reportViewId)
             ?: throw ReportingException.ReportViewNotFound(userId, reportViewId)
         val reportRecords = reportRecordRepository
-            .findByViewUntil(userId, reportViewId, granularInterval.interval.to)
-        log.info { "Found ${reportRecords.size} records for report $reportViewId in interval ${granularInterval.interval}" }
-        val catalog = RecordCatalog(reportRecords, granularInterval)
+            .findByViewUntil(userId, reportViewId, interval.toDate)
+        log.info { "Found ${reportRecords.size} records for report $reportViewId in interval $interval" }
+        val catalog = RecordCatalog(reportRecords, interval)
         val reportDataConfiguration = reportView.dataConfiguration
-        val conversions = getConversions(userId, reportDataConfiguration.currency, reportRecords, granularInterval)
-        val data = getReportDataAggregates(granularInterval, catalog, conversions, reportDataConfiguration)
-        ReportData(reportViewId, granularInterval, data)
+        val conversions = getConversions(userId, reportDataConfiguration.currency, reportRecords, interval)
+        val data = getReportDataAggregates(interval, catalog, conversions, reportDataConfiguration)
+        ReportData(reportViewId, interval, data)
     }
 
     private fun getReportDataAggregates(
-        granularInterval: GranularDateInterval,
+        interval: ReportDataInterval,
         catalog: RecordCatalog,
         conversions: ConversionsResponse,
         reportDataConfiguration: ReportDataConfiguration,
     ): List<BucketData<ReportDataAggregate>> = withSpan("getReportDataAggregates") {
-        val realInput = ReportDataResolverInput(granularInterval, catalog, conversions, reportDataConfiguration)
+        val realInput = ReportDataResolverInput(interval, catalog, conversions, reportDataConfiguration)
 
         val netData = resolveNetData(realInput)
         val groupedNetData = resolveGroupedNetData(realInput)
         val valueReportData = resolveValueReportData(realInput)
         val groupedBudgetData = resolveGroupedBudgetData(realInput)
 
-        val forecastBuckets = reportDataConfiguration.features.forecast.outputBuckets
         sequenceOf(
-            granularInterval.getBuckets().map { it to BucketType.REAL },
-            granularInterval.getForecastBuckets(forecastBuckets).map { it to BucketType.FORECAST }
+            interval.getBuckets().map { it to BucketType.REAL },
+            interval.getForecastBuckets().map { it to BucketType.FORECAST }
         )
             .flatten()
             .map { (bucket, bucketType) ->
@@ -89,7 +82,7 @@ class ReportDataService(
         userId: UUID,
         targetUnit: Currency,
         reportRecords: List<ReportRecord>,
-        granularInterval: GranularDateInterval,
+        interval: ReportDataInterval,
     ): ConversionsResponse {
         val sourceUnits = reportRecords
             .asSequence()
@@ -99,8 +92,8 @@ class ReportDataService(
             .toList()
 
         val conversionsRequest = sequenceOf(
-            getMonthlyConversionRequests(sourceUnits, targetUnit, granularInterval, reportRecords),
-            getBucketBoundingConversionRequests(sourceUnits, targetUnit, granularInterval),
+            getMonthlyConversionRequests(reportRecords, sourceUnits, targetUnit, interval),
+            getBucketBoundingConversionRequests(sourceUnits, targetUnit, interval),
             getRecordConversionRequests(sourceUnits, targetUnit, reportRecords)
         )
             .flatten().distinct().toList().let(::ConversionsRequest)
@@ -108,14 +101,14 @@ class ReportDataService(
     }
 
     private fun getMonthlyConversionRequests(
+        reportRecords: List<ReportRecord>,
         sourceUnits: List<FinancialUnit>,
         targetUnit: Currency,
-        granularInterval: GranularDateInterval,
-        reportRecords: List<ReportRecord>,
+        interval: ReportDataInterval,
     ): List<ConversionRequest> {
         val startDate = reportRecords.minOf { it.date }
-        val endDate = granularInterval.interval.to
-        return generateSequence(YearMonth(startDate.year, startDate.month.value)) { it.next() }
+        val endDate = interval.toDate
+        return generateSequence(YearMonthTO(startDate.year, startDate.month.value)) { it.next() }
             .asSequence()
             .takeWhile { it.asDateInterval().from > endDate }
             .map { it.asDateInterval().to }
@@ -143,9 +136,9 @@ class ReportDataService(
     private fun getBucketBoundingConversionRequests(
         sourceUnits: List<FinancialUnit>,
         targetUnit: Currency,
-        granularInterval: GranularDateInterval,
+        interval: ReportDataInterval,
     ): List<ConversionRequest> {
-        val dates = granularInterval.getBuckets().flatMap { listOf(it.from, it.to) }.toList()
+        val dates = interval.getBuckets().flatMap { listOf(it.from, it.to) }.toList()
 
         return sourceUnits
             .asSequence()
