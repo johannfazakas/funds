@@ -12,7 +12,7 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
     override fun resolve(
         input: ReportDataResolverInput,
     ): ByBucket<BigDecimal>? = withSpan("resolve") {
-        if (!input.dataConfiguration.features.net.enabled) {
+        if (!input.dataConfiguration.reports.net.enabled) {
             return@withSpan null
         }
         input.interval
@@ -41,7 +41,7 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
         records: ByUnit<List<ReportRecord>>,
         input: ReportDataResolverInput,
     ): BigDecimal {
-        val recordFilter: (ReportRecord) -> Boolean = if (input.dataConfiguration.features.net.applyFilter)
+        val recordFilter: (ReportRecord) -> Boolean = if (input.dataConfiguration.reports.net.applyFilter)
             { record -> record.labels.any { label -> label in (input.dataConfiguration.filter.labels ?: emptyList()) } }
         else
             { _ -> true }

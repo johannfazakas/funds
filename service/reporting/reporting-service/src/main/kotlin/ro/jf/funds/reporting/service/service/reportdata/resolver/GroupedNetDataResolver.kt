@@ -12,7 +12,7 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
     override fun resolve(
         input: ReportDataResolverInput,
     ): ByBucket<ByGroup<BigDecimal>>? = withSpan("resolve") {
-        if (!input.dataConfiguration.features.groupedNet.enabled || input.dataConfiguration.groups == null) {
+        if (!input.dataConfiguration.reports.groupedNet.enabled || input.dataConfiguration.groups == null) {
             return@withSpan null
         }
         input.interval

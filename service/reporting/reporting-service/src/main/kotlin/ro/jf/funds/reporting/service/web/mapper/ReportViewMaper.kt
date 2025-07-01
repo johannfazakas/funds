@@ -11,9 +11,9 @@ fun ReportView.toTO(): ReportViewTO = ReportViewTO(
     dataConfiguration = ReportDataConfigurationTO(
         currency = dataConfiguration.currency,
         filter = RecordFilterTO(dataConfiguration.filter.labels ?: emptyList()),
-        features = ReportDataFeaturesConfigurationTO(
-            net = NetReportFeatureTO(enabled = true, applyFilter = true),
-            valueReport = GenericReportFeatureTO(enabled = true),
+        reports = ReportsConfigurationTO(
+            net = NetReportConfigurationTO(enabled = true, applyFilter = true),
+            valueReport = GenericReportConfigurationTO(enabled = true),
         ),
     ),
 )
@@ -29,26 +29,26 @@ fun ReportDataConfigurationTO.toDomain() = ReportDataConfiguration(
     currency = currency,
     filter = RecordFilter(filter.labels),
     groups = groups?.map { ReportGroup(it.name, RecordFilter(it.filter.labels)) },
-    features = ReportDataFeaturesConfiguration(
-        net = NetReportFeature(features.net.enabled, features.net.applyFilter),
-        valueReport = GenericReportFeature(features.valueReport.enabled),
-        groupedNet = GenericReportFeature(features.groupedNet.enabled),
-        groupedBudget = features.groupedBudget.toDomain(),
-        forecast = ForecastReportFeature(
-            inputBuckets = features.forecast.inputBuckets,
-        ),
+    reports = ReportsConfiguration(
+        net = NetReportConfiguration(reports.net.enabled, reports.net.applyFilter),
+        valueReport = GenericReportConfiguration(reports.valueReport.enabled),
+        groupedNet = GenericReportConfiguration(reports.groupedNet.enabled),
+        groupedBudget = reports.groupedBudget.toDomain(),
     ),
+    forecast = ForecastConfiguration(
+        inputBuckets = forecast.inputBuckets,
+    )
 )
 
-private fun GroupedBudgetReportFeatureTO.toDomain() =
-    GroupedBudgetReportFeature(
+private fun GroupedBudgetReportConfigurationTO.toDomain() =
+    GroupedBudgetReportConfiguration(
         enabled = enabled,
-        distributions = distributions.map { distribution: GroupedBudgetReportFeatureTO.BudgetDistributionTO ->
-            GroupedBudgetReportFeature.BudgetDistribution(
+        distributions = distributions.map { distribution: GroupedBudgetReportConfigurationTO.BudgetDistributionTO ->
+            GroupedBudgetReportConfiguration.BudgetDistribution(
                 default = distribution.default,
                 from = distribution.from?.toDomain(),
                 groups = distribution.groups.map { group ->
-                    GroupedBudgetReportFeature.GroupBudgetPercentage(group.group, group.percentage)
+                    GroupedBudgetReportConfiguration.GroupBudgetPercentage(group.group, group.percentage)
                 }
             )
         }

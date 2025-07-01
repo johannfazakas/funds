@@ -47,36 +47,36 @@ class ReportingSdkTest {
                     ReportGroupTO(name = "need", filter = RecordFilterTO.byLabels("need")),
                     ReportGroupTO(name = "want", filter = RecordFilterTO.byLabels("want"))
                 ),
-                features = ReportDataFeaturesConfigurationTO(
-                    net = NetReportFeatureTO(enabled = true, applyFilter = true),
-                    valueReport = GenericReportFeatureTO(enabled = true),
-                    groupedNet = GenericReportFeatureTO(enabled = true),
-                    groupedBudget = GroupedBudgetReportFeatureTO(
+                reports = ReportsConfigurationTO(
+                    net = NetReportConfigurationTO(enabled = true, applyFilter = true),
+                    valueReport = GenericReportConfigurationTO(enabled = true),
+                    groupedNet = GenericReportConfigurationTO(enabled = true),
+                    groupedBudget = GroupedBudgetReportConfigurationTO(
                         enabled = true,
                         distributions = listOf(
-                            GroupedBudgetReportFeatureTO.BudgetDistributionTO(
+                            GroupedBudgetReportConfigurationTO.BudgetDistributionTO(
                                 default = true,
                                 from = null,
                                 groups = listOf(
-                                    GroupedBudgetReportFeatureTO.GroupBudgetPercentageTO(
+                                    GroupedBudgetReportConfigurationTO.GroupBudgetPercentageTO(
                                         group = "need",
                                         percentage = 60
                                     ),
-                                    GroupedBudgetReportFeatureTO.GroupBudgetPercentageTO(
+                                    GroupedBudgetReportConfigurationTO.GroupBudgetPercentageTO(
                                         group = "want",
                                         percentage = 40
                                     )
                                 )
                             ),
-                            GroupedBudgetReportFeatureTO.BudgetDistributionTO(
+                            GroupedBudgetReportConfigurationTO.BudgetDistributionTO(
                                 default = false,
                                 from = YearMonthTO(2020, 1),
                                 groups = listOf(
-                                    GroupedBudgetReportFeatureTO.GroupBudgetPercentageTO(
+                                    GroupedBudgetReportConfigurationTO.GroupBudgetPercentageTO(
                                         group = "need",
                                         percentage = 70
                                     ),
-                                    GroupedBudgetReportFeatureTO.GroupBudgetPercentageTO(
+                                    GroupedBudgetReportConfigurationTO.GroupBudgetPercentageTO(
                                         group = "want",
                                         percentage = 30
                                     )
@@ -118,9 +118,9 @@ class ReportingSdkTest {
                     ReportGroupTO(name = "need", filter = RecordFilterTO.byLabels("need")),
                     ReportGroupTO(name = "want", filter = RecordFilterTO.byLabels("want"))
                 ),
-                features = ReportDataFeaturesConfigurationTO(
-                    NetReportFeatureTO(enabled = true, applyFilter = true),
-                    GenericReportFeatureTO(enabled = true)
+                reports = ReportsConfigurationTO(
+                    NetReportConfigurationTO(enabled = true, applyFilter = true),
+                    GenericReportConfigurationTO(enabled = true)
                 )
             )
         )
@@ -145,9 +145,9 @@ class ReportingSdkTest {
                         ReportGroupTO(name = "need", RecordFilterTO.byLabels("need")),
                         ReportGroupTO(name = "want", RecordFilterTO.byLabels("want"))
                     ),
-                    features = ReportDataFeaturesConfigurationTO(
-                        NetReportFeatureTO(enabled = true, applyFilter = true),
-                        GenericReportFeatureTO(enabled = true)
+                    reports = ReportsConfigurationTO(
+                        NetReportConfigurationTO(enabled = true, applyFilter = true),
+                        GenericReportConfigurationTO(enabled = true)
                     )
                 )
             )
@@ -325,14 +325,14 @@ class ReportingSdkTest {
                                                                 put("type", JsonPrimitive("boolean"))
                                                                 put(
                                                                     "value",
-                                                                    JsonPrimitive(request.dataConfiguration.features.net.enabled)
+                                                                    JsonPrimitive(request.dataConfiguration.reports.net.enabled)
                                                                 )
                                                             })
                                                             put("applyFilter", buildJsonObject {
                                                                 put("type", JsonPrimitive("boolean"))
                                                                 put(
                                                                     "value",
-                                                                    JsonPrimitive(request.dataConfiguration.features.net.applyFilter)
+                                                                    JsonPrimitive(request.dataConfiguration.reports.net.applyFilter)
                                                                 )
                                                             })
                                                         })
@@ -344,7 +344,7 @@ class ReportingSdkTest {
                                                                 put("type", JsonPrimitive("boolean"))
                                                                 put(
                                                                     "value",
-                                                                    JsonPrimitive(request.dataConfiguration.features.valueReport.enabled)
+                                                                    JsonPrimitive(request.dataConfiguration.reports.valueReport.enabled)
                                                                 )
                                                             })
                                                         })
@@ -469,13 +469,13 @@ class ReportingSdkTest {
                         )
                     }
                 })
-                put("features", buildJsonObject {
+                put("reports", buildJsonObject {
                     put("net", buildJsonObject {
-                        put("enabled", JsonPrimitive(response.dataConfiguration.features.net.enabled))
-                        put("applyFilter", JsonPrimitive(response.dataConfiguration.features.net.applyFilter))
+                        put("enabled", JsonPrimitive(response.dataConfiguration.reports.net.enabled))
+                        put("applyFilter", JsonPrimitive(response.dataConfiguration.reports.net.applyFilter))
                     })
                     put("valueReport", buildJsonObject {
-                        put("enabled", JsonPrimitive(response.dataConfiguration.features.valueReport.enabled))
+                        put("enabled", JsonPrimitive(response.dataConfiguration.reports.valueReport.enabled))
                     })
                 })
             })

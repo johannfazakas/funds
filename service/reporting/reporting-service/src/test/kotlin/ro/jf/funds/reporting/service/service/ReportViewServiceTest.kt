@@ -37,9 +37,9 @@ class ReportViewServiceTest {
                 filter = RecordFilter(labels = labelsOf("want"))
             ),
         ),
-        features = ReportDataFeaturesConfiguration(
-            net = NetReportFeature(enabled = true, applyFilter = true),
-            valueReport = GenericReportFeature(enabled = true),
+        reports = ReportsConfiguration(
+            net = NetReportConfiguration(enabled = true, applyFilter = true),
+            valueReport = GenericReportConfiguration(enabled = true),
         ),
     )
     private val reportViewCommand = CreateReportViewCommand(
@@ -89,8 +89,8 @@ class ReportViewServiceTest {
             fundId = expensesFundId,
             dataConfiguration = reportDataConfiguration.copy(
                 groups = emptyList(),
-                features = ReportDataFeaturesConfiguration(
-                    groupedNet = GenericReportFeature(enabled = true)
+                reports = ReportsConfiguration(
+                    groupedNet = GenericReportConfiguration(enabled = true)
                 )
             )
         )
@@ -110,8 +110,8 @@ class ReportViewServiceTest {
             fundId = expensesFundId,
             dataConfiguration = reportDataConfiguration.copy(
                 groups = emptyList(),
-                features = ReportDataFeaturesConfiguration(
-                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = emptyList())
+                reports = ReportsConfiguration(
+                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = emptyList())
                 )
             )
         )
@@ -139,8 +139,8 @@ class ReportViewServiceTest {
                         filter = RecordFilter(labels = labelsOf("want"))
                     ),
                 ),
-                features = ReportDataFeaturesConfiguration(
-                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = emptyList())
+                reports = ReportsConfiguration(
+                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = emptyList())
                 )
             )
         )
@@ -168,14 +168,14 @@ class ReportViewServiceTest {
                         filter = RecordFilter(labels = labelsOf("want"))
                     ),
                 ),
-                features = ReportDataFeaturesConfiguration(
-                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                reports = ReportsConfiguration(
+                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = false,
                             from = YearMonth(2020, 2),
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
                             )
                         )
                     ))
@@ -206,22 +206,22 @@ class ReportViewServiceTest {
                         filter = RecordFilter(labels = labelsOf("want"))
                     ),
                 ),
-                features = ReportDataFeaturesConfiguration(
-                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                reports = ReportsConfiguration(
+                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = true,
                             from = YearMonth(2020, 2),
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
                             )
                         ),
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = true,
                             from = YearMonth(2020, 2),
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
                             )
                         )
                     ))
@@ -252,22 +252,22 @@ class ReportViewServiceTest {
                         filter = RecordFilter(labels = labelsOf("want"))
                     ),
                 ),
-                features = ReportDataFeaturesConfiguration(
-                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                reports = ReportsConfiguration(
+                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = true,
                             from = YearMonth(2020, 2),
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
                             )
                         ),
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = false,
                             from = null,
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
                             )
                         )
                     ))
@@ -298,30 +298,30 @@ class ReportViewServiceTest {
                         filter = RecordFilter(labels = labelsOf("want"))
                     ),
                 ),
-                features = ReportDataFeaturesConfiguration(
-                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                reports = ReportsConfiguration(
+                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = true,
                             from = null,
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
                             )
                         ),
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = false,
                             from = YearMonth(2020, 2),
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
                             )
                         ),
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = false,
                             from = YearMonth(2020, 2),
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 60),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 40)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 60),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 40)
                             )
                         )
                     ))
@@ -352,21 +352,21 @@ class ReportViewServiceTest {
                         filter = RecordFilter(labels = labelsOf("want"))
                     ),
                 ),
-                features = ReportDataFeaturesConfiguration(
-                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                reports = ReportsConfiguration(
+                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = true,
                             from = null,
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
                             )
                         ),
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = false,
                             from = YearMonth(2020, 2),
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50)
                             )
                         )
                     ))
@@ -397,23 +397,23 @@ class ReportViewServiceTest {
                         filter = RecordFilter(labels = labelsOf("want"))
                     ),
                 ),
-                features = ReportDataFeaturesConfiguration(
-                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                reports = ReportsConfiguration(
+                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = true,
                             from = null,
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
                             )
                         ),
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = false,
                             from = YearMonth(2020, 2),
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("other", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("other", 50)
                             )
                         )
                     ))
@@ -444,22 +444,22 @@ class ReportViewServiceTest {
                         filter = RecordFilter(labels = labelsOf("want"))
                     ),
                 ),
-                features = ReportDataFeaturesConfiguration(
-                    groupedBudget = GroupedBudgetReportFeature(enabled = true, distributions = listOf(
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                reports = ReportsConfiguration(
+                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = true,
                             from = null,
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 50)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
                             )
                         ),
-                        GroupedBudgetReportFeature.BudgetDistribution(
+                        GroupedBudgetReportConfiguration.BudgetDistribution(
                             default = false,
                             from = YearMonth(2020, 2),
                             groups = listOf(
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportFeature.GroupBudgetPercentage("want", 40)
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 40)
                             )
                         )
                     ))

@@ -12,7 +12,7 @@ import java.math.MathContext
 
 class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
     override fun resolve(input: ReportDataResolverInput): ByBucket<ByGroup<Budget>>? = withSpan("resolve") {
-        val groupedBudgetFeature = input.dataConfiguration.features.groupedBudget
+        val groupedBudgetFeature = input.dataConfiguration.reports.groupedBudget
         val groups = input.dataConfiguration.groups
         if (!groupedBudgetFeature.enabled || groups.isNullOrEmpty()) return@withSpan null
 
@@ -51,7 +51,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
     private fun getPreviousGroupedBudget(
         reportCatalog: RecordCatalog,
         input: ReportDataResolverInput,
-        groupedBudgetFeature: GroupedBudgetReportFeature,
+        groupedBudgetFeature: GroupedBudgetReportConfiguration,
     ): ByGroup<ByUnit<Budget>> = withSpan("getPreviousGroupedBudget") {
 
         val records = reportCatalog.getPreviousRecords()
@@ -79,7 +79,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         timeBucket: TimeBucket,
         previousLeftBudgets: ByGroup<ByUnit<Budget>>,
         input: ReportDataResolverInput,
-        groupedBudgetFeature: GroupedBudgetReportFeature,
+        groupedBudgetFeature: GroupedBudgetReportConfiguration,
     ): ByGroup<ByUnit<Budget>> = withSpan("getSeedGroupedBudget") {
         getGroupedBudget(
             reportCatalog.getBucketRecords(timeBucket), timeBucket.to, previousLeftBudgets, input, groupedBudgetFeature
@@ -91,7 +91,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         interval: TimeBucket,
         previous: ByGroup<ByUnit<Budget>>,
         input: ReportDataResolverInput,
-        groupedBudgetFeature: GroupedBudgetReportFeature,
+        groupedBudgetFeature: GroupedBudgetReportConfiguration,
     ): ByGroup<ByUnit<Budget>> = withSpan("getNextGroupedBudget", "interval" to interval) {
         getGroupedBudget(
             reportCatalog.getBucketRecords(interval), interval.to, previous, input, groupedBudgetFeature
@@ -121,7 +121,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         intervalEnd: LocalDate,
         previousBudget: ByGroup<ByUnit<Budget>>,
         input: ReportDataResolverInput,
-        feature: GroupedBudgetReportFeature,
+        feature: GroupedBudgetReportConfiguration,
     ): ByGroup<ByUnit<Budget>> = withSpan("getGroupedBudget") {
         records
             .fold(previousBudget.resetAllocatedAndSpentAmount()) { budget, record ->
@@ -139,7 +139,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
     private fun ByGroup<ByUnit<Budget>>.addRecord(
         record: ReportRecord,
         input: ReportDataResolverInput,
-        feature: GroupedBudgetReportFeature,
+        feature: GroupedBudgetReportConfiguration,
     ): ByGroup<ByUnit<Budget>> {
         val matchingGroup = getMatchingGroup(record, input.dataConfiguration.groups ?: emptyList())
         return if (matchingGroup != null) {
@@ -151,7 +151,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
 
     private fun ByGroup<ByUnit<Budget>>.allocateIncome(
         record: ReportRecord,
-        distribution: GroupedBudgetReportFeature.BudgetDistribution,
+        distribution: GroupedBudgetReportConfiguration.BudgetDistribution,
     ): ByGroup<ByUnit<Budget>> = withSpan("allocateIncome") {
         distribution.groups
             .map { (group, percentage) ->

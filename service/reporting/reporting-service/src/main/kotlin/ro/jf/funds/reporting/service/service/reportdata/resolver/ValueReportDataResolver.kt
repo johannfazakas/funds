@@ -13,7 +13,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
     override fun resolve(
         input: ReportDataResolverInput,
     ): ByBucket<ValueReport>? = withSpan("resolve") {
-        if (!input.dataConfiguration.features.valueReport.enabled) {
+        if (!input.dataConfiguration.reports.valueReport.enabled) {
             return@withSpan null
         }
         input.interval

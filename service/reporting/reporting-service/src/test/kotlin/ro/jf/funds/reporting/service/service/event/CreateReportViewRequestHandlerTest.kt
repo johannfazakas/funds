@@ -46,9 +46,9 @@ class CreateReportViewRequestHandlerTest {
                 currency = Currency.RON,
                 filter = RecordFilter(labels),
                 groups = null,
-                features = ReportDataFeaturesConfiguration(
-                    net = NetReportFeature(true, true),
-                    valueReport = GenericReportFeature(true)
+                reports = ReportsConfiguration(
+                    net = NetReportConfiguration(true, true),
+                    valueReport = GenericReportConfiguration(true)
                 )
             )
         )

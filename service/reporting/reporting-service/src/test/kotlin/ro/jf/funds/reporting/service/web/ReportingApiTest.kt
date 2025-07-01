@@ -74,7 +74,7 @@ class ReportingApiTest {
         currency = RON,
         filter = RecordFilter(labels),
         groups = null,
-        features = ReportDataFeaturesConfiguration()
+        reports = ReportsConfiguration()
             .withNet(enabled = true, applyFilter = true)
             .withValueReport(enabled = true)
     )
@@ -119,9 +119,9 @@ class ReportingApiTest {
                                 filter = RecordFilterTO.byLabels("want")
                             )
                         ),
-                        features = ReportDataFeaturesConfigurationTO(
-                            net = NetReportFeatureTO(enabled = true, applyFilter = true),
-                            valueReport = GenericReportFeatureTO(true)
+                        reports = ReportsConfigurationTO(
+                            net = NetReportConfigurationTO(enabled = true, applyFilter = true),
+                            valueReport = GenericReportConfigurationTO(true)
                         )
                     )
                 )
@@ -162,8 +162,8 @@ class ReportingApiTest {
             assertThat(createReportView.dataConfiguration.currency).isEqualTo(RON)
             assertThat(createReportView.dataConfiguration.filter.labels).containsExactlyElementsOf(labels)
             assertThat(createReportView.dataConfiguration.groups).hasSize(2)
-            assertThat(createReportView.dataConfiguration.features.net.enabled).isTrue()
-            assertThat(createReportView.dataConfiguration.features.net.applyFilter).isTrue()
+            assertThat(createReportView.dataConfiguration.reports.net.enabled).isTrue()
+            assertThat(createReportView.dataConfiguration.reports.net.applyFilter).isTrue()
         }
     }
 
