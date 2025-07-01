@@ -1,10 +1,12 @@
 package ro.jf.funds.account.service.persistence
 
+import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toKotlinLocalDateTime
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.datetime
 import ro.jf.funds.account.api.model.*
 import ro.jf.funds.account.service.domain.AccountRecord
@@ -72,10 +74,9 @@ class AccountTransactionRepository(
             .leftJoin(TransactionPropertyTable)
             .leftJoin(RecordPropertyTable)
             .selectAll()
-            .where { AccountTransactionTable.userId eq userId }
+            .where(toPredicate(userId, filter))
             .toTransactions()
     }
-
 
     suspend fun save(userId: UUID, command: CreateAccountTransactionTO): AccountTransaction = blockingTransaction {
         saveTransaction(userId, command)
@@ -257,6 +258,21 @@ class AccountTransactionRepository(
                     it[RecordPropertyTable.value]
                 )
             }
+
+    private fun toPredicate(userId: UUID, filter: TransactionsFilterTO): SqlExpressionBuilder.() -> Op<Boolean> {
+        return {
+            listOfNotNull(
+                AccountTransactionTable.userId eq userId,
+                filter.fromDate?.let {
+                    AccountTransactionTable.dateTime.date() greaterEq it.toJavaLocalDate()
+                },
+                filter.toDate?.let {
+                    AccountTransactionTable.dateTime.date() lessEq it.toJavaLocalDate()
+                }
+            )
+                .reduce { acc, op -> acc and op }
+        }
+    }
 
     private fun Query.toTransactions(): List<AccountTransaction> = this
         .groupBy { it[AccountTransactionTable.id].value }

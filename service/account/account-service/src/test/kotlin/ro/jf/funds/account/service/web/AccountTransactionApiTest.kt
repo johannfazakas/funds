@@ -6,7 +6,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.*
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.AfterEach
@@ -174,6 +174,71 @@ class AccountTransactionApiTest {
         val transaction2 =
             transactions.items.first { t -> t.properties.any { it == PropertyTO("externalId" to "transaction2") } }
         assertThat(transaction2.records).hasSize(1)
+    }
+
+    @Test
+    fun `test list transactions filtered by date range`() = testApplication {
+        configureEnvironment(Application::module, dbConfig, kafkaConfig)
+
+        val userId = randomUUID()
+        val localTime = LocalTime(12, 30)
+        val fromDate = LocalDate(2024, 7, 22)
+        val toDate = LocalDate(2024, 7, 24)
+        val account1 = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
+        val account2 = accountRepository.save(userId, CreateAccountTO(AccountName("BT"), Currency.RON))
+        transactionRepository.save(
+            userId,
+            CreateAccountTransactionTO(
+                dateTime = fromDate.minus(1, DateTimeUnit.DAY).atTime(localTime),
+                records = listOf(
+                    CreateAccountRecordTO(
+                        accountId = account1.id,
+                        amount = BigDecimal(200.0),
+                        unit = Currency.RON,
+                    ),
+                ),
+            )
+        )
+        transactionRepository.save(
+            userId = userId,
+            CreateAccountTransactionTO(
+                dateTime = toDate.atTime(localTime),
+                records = listOf(
+                    CreateAccountRecordTO(
+                        accountId = account1.id,
+                        amount = BigDecimal(50.0),
+                        unit = Currency.RON,
+                    ),
+                ),
+            )
+        )
+        transactionRepository.save(
+            userId = userId,
+            CreateAccountTransactionTO(
+                dateTime = toDate.plus(1, DateTimeUnit.DAY).atTime(localTime),
+                records = listOf(
+                    CreateAccountRecordTO(
+                        accountId = account1.id,
+                        amount = BigDecimal(150.123),
+                        unit = Currency.RON,
+                    ),
+                ),
+            )
+        )
+
+        val response = createJsonHttpClient().get("/funds-api/account/v1/transactions") {
+            parameter("fromDate", fromDate.toString())
+            parameter("toDate", toDate.toString())
+            header(USER_ID_HEADER, userId)
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+
+        val transactions = response.body<ListTO<AccountTransactionTO>>()
+        assertThat(transactions.items).hasSize(1)
+        val transaction1 = transactions.items.first()
+        assertThat(transaction1.dateTime.date).isEqualTo(toDate)
+        assertThat(transaction1.records[0].amount.compareTo(BigDecimal(50.0))).isZero()
     }
 
     @Test
