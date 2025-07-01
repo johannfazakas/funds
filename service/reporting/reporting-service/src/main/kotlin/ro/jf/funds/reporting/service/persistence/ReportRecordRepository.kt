@@ -1,8 +1,6 @@
 package ro.jf.funds.reporting.service.persistence
 
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.plus
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
 import org.jetbrains.exposed.dao.id.UUIDTable
@@ -17,6 +15,7 @@ import ro.jf.funds.reporting.service.domain.CreateReportRecordCommand
 import ro.jf.funds.reporting.service.domain.ReportRecord
 import java.util.*
 
+// TODO(Johann) can be removed
 class ReportRecordRepository(
     private val database: Database,
 ) {
@@ -29,11 +28,6 @@ class ReportRecordRepository(
         val unitType = varchar("unit_type", 50)
         val amount = decimal("amount", 20, 8)
         val labels = varchar("labels", 100)
-    }
-
-    fun f() {
-        val date = LocalDate(2023, 10, 1)
-        date.plus(1, DateTimeUnit.DAY)
     }
 
     suspend fun save(command: CreateReportRecordCommand): ReportRecord =

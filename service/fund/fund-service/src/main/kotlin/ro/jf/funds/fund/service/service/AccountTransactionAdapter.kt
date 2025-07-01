@@ -18,7 +18,7 @@ class AccountTransactionAdapter(
     private val accountTransactionsRequestProducer: Producer<CreateAccountTransactionsTO>,
 ) {
     suspend fun listTransactions(userId: UUID, fundId: UUID? = null, filter: FundTransactionFilterTO): List<FundTransaction> {
-        val filter = AccountTransactionFilter(
+        val filter = AccountTransactionFilterTO(
             fromDate = filter.fromDate,
             toDate = filter.toDate,
             transactionProperties = propertiesOf(),

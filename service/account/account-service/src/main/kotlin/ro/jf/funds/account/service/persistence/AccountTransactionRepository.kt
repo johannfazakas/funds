@@ -65,7 +65,7 @@ class AccountTransactionRepository(
 
     suspend fun list(
         userId: UUID,
-        filter: TransactionsFilterTO,
+        filter: AccountTransactionFilterTO,
     ): List<AccountTransaction> = blockingTransaction {
         AccountTransactionTable
             .innerJoinWithMatchingTransactionProperties(userId, filter.transactionProperties)
@@ -259,7 +259,7 @@ class AccountTransactionRepository(
                 )
             }
 
-    private fun toPredicate(userId: UUID, filter: TransactionsFilterTO): SqlExpressionBuilder.() -> Op<Boolean> {
+    private fun toPredicate(userId: UUID, filter: AccountTransactionFilterTO): SqlExpressionBuilder.() -> Op<Boolean> {
         return {
             listOfNotNull(
                 AccountTransactionTable.userId eq userId,

@@ -79,7 +79,7 @@ class AccountTransactionsEventHandlingTest {
             assertThat(response!!.payload).isInstanceOf(GenericResponse.Success::class.java)
         }
 
-        val transactions = accountTransactionRepository.list(userId, TransactionsFilterTO.empty())
+        val transactions = accountTransactionRepository.list(userId, AccountTransactionFilterTO.empty())
         assertThat(transactions).hasSize(1)
         val transaction = transactions.first()
         assertThat(transaction.userId).isEqualTo(userId)

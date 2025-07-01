@@ -217,7 +217,7 @@ class FundTransactionApiTest {
         val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
         val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
 
-        whenever(accountTransactionSdk.listTransactions(userId, AccountTransactionFilter.empty())).thenReturn(
+        whenever(accountTransactionSdk.listTransactions(userId, AccountTransactionFilterTO.empty())).thenReturn(
             ListTO(
                 listOf(
                     AccountTransactionTO(
@@ -283,7 +283,7 @@ class FundTransactionApiTest {
         val toDate = LocalDate(2021, 9, 30)
         val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
         val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
-        val filter = AccountTransactionFilter(fromDate = fromDate, toDate = toDate)
+        val filter = AccountTransactionFilterTO(fromDate = fromDate, toDate = toDate)
 
         whenever(accountTransactionSdk.listTransactions(userId, filter)).thenReturn(
             ListTO(
@@ -326,7 +326,7 @@ class FundTransactionApiTest {
 
         val transactions = response.body<ListTO<FundTransactionTO>>()
         assertThat(transactions.items).hasSize(1)
-        verify(accountTransactionSdk).listTransactions(userId, AccountTransactionFilter(fromDate = fromDate, toDate = toDate))
+        verify(accountTransactionSdk).listTransactions(userId, AccountTransactionFilterTO(fromDate = fromDate, toDate = toDate))
     }
 
     @Test
@@ -340,7 +340,7 @@ class FundTransactionApiTest {
         val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
         val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
 
-        val filter = AccountTransactionFilter(
+        val filter = AccountTransactionFilterTO(
             recordProperties = listOf(PropertyTO(FUND_ID_PROPERTY, fundId.toString()))
         )
         whenever(accountTransactionSdk.listTransactions(userId, filter)).thenReturn(
