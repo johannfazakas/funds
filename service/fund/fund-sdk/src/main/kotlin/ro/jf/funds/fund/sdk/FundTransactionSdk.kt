@@ -11,6 +11,7 @@ import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
 import ro.jf.funds.fund.api.FundTransactionApi
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
+import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
 import java.util.*
 
@@ -20,10 +21,6 @@ class FundTransactionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : FundTransactionApi {
-    init {
-        log.info { "FundTransactionSdk initialized with baseUrl=$baseUrl" }
-    }
-
     override suspend fun createTransaction(userId: UUID, transaction: CreateFundTransactionTO): FundTransactionTO {
         val response = httpClient.post("$baseUrl$BASE_PATH/transactions") {
             headers {
@@ -41,8 +38,14 @@ class FundTransactionSdk(
         return fundTransaction
     }
 
-    override suspend fun listTransactions(userId: UUID, fundId: UUID): ListTO<FundTransactionTO> {
+    override suspend fun listTransactions(
+        userId: UUID,
+        fundId: UUID,
+        filter: FundTransactionFilterTO,
+    ): ListTO<FundTransactionTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds/$fundId/transactions") {
+            filter.fromDate?.let { parameter("fromDate", it.toString()) }
+            filter.toDate?.let { parameter("toDate", it.toString()) }
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }
@@ -56,8 +59,13 @@ class FundTransactionSdk(
         return transactions
     }
 
-    override suspend fun listTransactions(userId: UUID): ListTO<FundTransactionTO> {
+    override suspend fun listTransactions(
+        userId: UUID,
+        filter: FundTransactionFilterTO,
+    ): ListTO<FundTransactionTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
+            filter.fromDate?.let { parameter("fromDate", it.toString()) }
+            filter.toDate?.let { parameter("toDate", it.toString()) }
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }

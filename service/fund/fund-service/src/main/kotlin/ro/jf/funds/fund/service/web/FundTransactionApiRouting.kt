@@ -4,10 +4,12 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.toListTO
 import ro.jf.funds.commons.web.userId
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
+import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.service.domain.FundTransaction
 import ro.jf.funds.fund.service.mapper.toTO
 import ro.jf.funds.fund.service.service.FundTransactionService
@@ -21,7 +23,8 @@ fun Routing.fundTransactionApiRouting(fundTransactionService: FundTransactionSer
             get {
                 val userId = call.userId()
                 log.debug { "List all transactions by user id $userId." }
-                val fundTransactions = fundTransactionService.listTransactions(userId)
+                val filter = call.parameters.fundTransactionsFilter()
+                val fundTransactions = fundTransactionService.listTransactions(userId, filter)
                 call.respond(fundTransactions.toListTO(FundTransaction::toTO))
             }
             post {
@@ -45,9 +48,16 @@ fun Routing.fundTransactionApiRouting(fundTransactionService: FundTransactionSer
                 val userId = call.userId()
                 val fundId = call.parameters["fundId"]?.let(UUID::fromString) ?: error("Fund id is missing.")
                 log.debug { "List all transactions by user id $userId and fund id $fundId." }
-                val fundTransactions = fundTransactionService.listTransactions(userId, fundId)
+                val filter = call.parameters.fundTransactionsFilter()
+                val fundTransactions = fundTransactionService.listTransactions(userId, fundId, filter)
                 call.respond(fundTransactions.toListTO(FundTransaction::toTO))
             }
         }
     }
 }
+
+fun Parameters.fundTransactionsFilter(): FundTransactionFilterTO =
+    FundTransactionFilterTO(
+        fromDate = this["fromDate"]?.let { LocalDate.parse(it) },
+        toDate = this["toDate"]?.let { LocalDate.parse(it) }
+    )
