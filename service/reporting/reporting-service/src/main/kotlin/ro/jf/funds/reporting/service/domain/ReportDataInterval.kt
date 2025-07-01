@@ -50,7 +50,7 @@ sealed class ReportDataInterval() {
             val forecastInputBuckets: List<TimeBucket>,
             val forecastedData: Map<TimeBucket, D>,
         )
-        // TODO(Johann) could this be refactored? isn't this actually a fold?
+        // TODO(Johann-29?) could this be refactored? isn't this actually a fold?
         val forecastUntilDate = forecastUntilDate ?: return emptyMap()
         return generateSequence<ForecastBucket>(
             seedFunction = {
