@@ -10,14 +10,9 @@ data class ReportDataConfiguration(
     val currency: Currency,
     val filter: RecordFilter = RecordFilter(),
     val groups: List<ReportGroup>? = null,
-    // TODO(Johann-29?) should features be part of the configuration or the report request?
-    val features: ReportDataFeaturesConfiguration,
-) {
-    fun withFilter(labels: List<Label>) = copy(filter = RecordFilter(labels))
-    fun withGroups(vararg groups: ReportGroup) = copy(groups = groups.toList())
-    fun withNet(enabled: Boolean, applyFilter: Boolean) = copy(features = features.withNet(enabled, applyFilter))
-    fun withValueReport(enabled: Boolean) = copy(features = features.withValueReport(enabled))
-}
+    val reports: ReportsConfiguration,
+    val forecast: ForecastConfiguration = ForecastConfiguration(1),
+)
 
 @Serializable
 data class ReportGroup(
@@ -38,38 +33,34 @@ data class RecordFilter(
 }
 
 @Serializable
-data class ReportDataFeaturesConfiguration(
-    val net: NetReportFeature = NetReportFeature(enabled = false, applyFilter = false),
-    val valueReport: GenericReportFeature = GenericReportFeature(enabled = false),
-    val groupedNet: GenericReportFeature = GenericReportFeature(enabled = false),
-    val groupedBudget: GroupedBudgetReportFeature = GroupedBudgetReportFeature(enabled = false, listOf()),
-    val forecast: ForecastReportFeature = ForecastReportFeature(1),
+data class ReportsConfiguration(
+    val net: NetReportConfiguration = NetReportConfiguration(enabled = false, applyFilter = false),
+    val valueReport: GenericReportConfiguration = GenericReportConfiguration(enabled = false),
+    val groupedNet: GenericReportConfiguration = GenericReportConfiguration(enabled = false),
+    val groupedBudget: GroupedBudgetReportConfiguration = GroupedBudgetReportConfiguration(enabled = false, listOf()),
 ) {
-    fun withNet(enabled: Boolean, applyFilter: Boolean) = copy(net = NetReportFeature(enabled, applyFilter))
-    fun withGroupedNet(enabled: Boolean) = copy(groupedNet = GenericReportFeature(enabled))
-    fun withValueReport(enabled: Boolean) = copy(valueReport = GenericReportFeature(enabled))
+    fun withNet(enabled: Boolean, applyFilter: Boolean) = copy(net = NetReportConfiguration(enabled, applyFilter))
+    fun withGroupedNet(enabled: Boolean) = copy(groupedNet = GenericReportConfiguration(enabled))
+    fun withValueReport(enabled: Boolean) = copy(valueReport = GenericReportConfiguration(enabled))
     fun withGroupedBudget(
         enabled: Boolean,
-        distributions: List<GroupedBudgetReportFeature.BudgetDistribution> = listOf(),
-    ) = copy(groupedBudget = GroupedBudgetReportFeature(enabled, distributions))
-
-    fun withForecast(consideredBuckets: Int) =
-        copy(forecast = ForecastReportFeature(consideredBuckets))
+        distributions: List<GroupedBudgetReportConfiguration.BudgetDistribution> = listOf(),
+    ) = copy(groupedBudget = GroupedBudgetReportConfiguration(enabled, distributions))
 }
 
 @Serializable
-data class GenericReportFeature(
+data class GenericReportConfiguration(
     val enabled: Boolean,
 )
 
 @Serializable
-data class NetReportFeature(
+data class NetReportConfiguration(
     val enabled: Boolean,
     val applyFilter: Boolean,
 )
 
 @Serializable
-data class GroupedBudgetReportFeature(
+data class GroupedBudgetReportConfiguration(
     val enabled: Boolean,
     val distributions: List<BudgetDistribution>,
 ) {
@@ -98,6 +89,6 @@ data class GroupedBudgetReportFeature(
 }
 
 @Serializable
-data class ForecastReportFeature(
+data class ForecastConfiguration(
     val inputBuckets: Int,
 )

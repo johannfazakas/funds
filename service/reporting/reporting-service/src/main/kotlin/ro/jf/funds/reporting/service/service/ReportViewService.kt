@@ -47,13 +47,13 @@ class ReportViewService(
     }
 
     private fun validateGroupedNetFeature(dataConfiguration: ReportDataConfiguration, userId: UUID) {
-        if (dataConfiguration.features.groupedNet.enabled && dataConfiguration.groups.isNullOrEmpty()) {
+        if (dataConfiguration.reports.groupedNet.enabled && dataConfiguration.groups.isNullOrEmpty()) {
             throw ReportingException.MissingGroupsRequiredForFeature(userId, "groupedNet")
         }
     }
 
     private fun validateGroupedBudgetFeature(dataConfiguration: ReportDataConfiguration, userId: UUID) {
-        val groupedBudget = dataConfiguration.features.groupedBudget
+        val groupedBudget = dataConfiguration.reports.groupedBudget
         if (!groupedBudget.enabled) {
             return
         }

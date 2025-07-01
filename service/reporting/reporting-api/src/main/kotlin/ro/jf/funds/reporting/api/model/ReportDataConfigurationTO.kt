@@ -9,7 +9,8 @@ data class ReportDataConfigurationTO(
     val currency: Currency,
     val filter: RecordFilterTO,
     val groups: List<ReportGroupTO>? = null,
-    val features: ReportDataFeaturesConfigurationTO,
+    val reports: ReportsConfigurationTO,
+    val forecast: ForecastConfigurationTO = ForecastConfigurationTO(1),
 )
 
 @Serializable
@@ -28,27 +29,26 @@ data class RecordFilterTO(
 }
 
 @Serializable
-data class ReportDataFeaturesConfigurationTO(
-    val net: NetReportFeatureTO = NetReportFeatureTO(enabled = false, applyFilter = false),
-    val valueReport: GenericReportFeatureTO = GenericReportFeatureTO(false),
-    val groupedNet: GenericReportFeatureTO = GenericReportFeatureTO(false),
-    val groupedBudget: GroupedBudgetReportFeatureTO = GroupedBudgetReportFeatureTO(false, listOf()),
-    val forecast: ForecastReportFeatureTO = ForecastReportFeatureTO(1),
+data class ReportsConfigurationTO(
+    val net: NetReportConfigurationTO = NetReportConfigurationTO(enabled = false, applyFilter = false),
+    val valueReport: GenericReportConfigurationTO = GenericReportConfigurationTO(false),
+    val groupedNet: GenericReportConfigurationTO = GenericReportConfigurationTO(false),
+    val groupedBudget: GroupedBudgetReportConfigurationTO = GroupedBudgetReportConfigurationTO(false, listOf()),
 )
 
 @Serializable
-data class GenericReportFeatureTO(
+data class GenericReportConfigurationTO(
     val enabled: Boolean,
 )
 
 @Serializable
-data class NetReportFeatureTO(
+data class NetReportConfigurationTO(
     val enabled: Boolean,
     val applyFilter: Boolean,
 )
 
 @Serializable
-data class GroupedBudgetReportFeatureTO(
+data class GroupedBudgetReportConfigurationTO(
     val enabled: Boolean,
     val distributions: List<BudgetDistributionTO>,
 ) {
@@ -67,7 +67,7 @@ data class GroupedBudgetReportFeatureTO(
 }
 
 @Serializable
-data class ForecastReportFeatureTO(
+data class ForecastConfigurationTO(
     val inputBuckets: Int,
 ) {
     init {

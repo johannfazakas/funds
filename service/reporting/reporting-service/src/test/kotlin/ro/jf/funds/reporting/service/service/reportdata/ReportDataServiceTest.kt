@@ -56,7 +56,7 @@ class ReportDataServiceTest {
             currency = RON,
             filter = RecordFilter(labels = allLabels),
             groups = null,
-            features = ReportDataFeaturesConfiguration()
+            reports = ReportsConfiguration()
                 .withNet(enabled = true, applyFilter = true)
                 .withValueReport(enabled = true),
         )
@@ -105,9 +105,9 @@ class ReportDataServiceTest {
             currency = RON,
             filter = RecordFilter(labels = allLabels),
             groups = null,
-            features = ReportDataFeaturesConfiguration()
-                .withNet(enabled = true, applyFilter = true)
-                .withForecast(consideredBuckets = 5)
+            reports = ReportsConfiguration()
+                .withNet(enabled = true, applyFilter = true),
+            forecast = ForecastConfiguration(5)
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration))
@@ -170,7 +170,7 @@ class ReportDataServiceTest {
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
             ),
-            features = ReportDataFeaturesConfiguration()
+            reports = ReportsConfiguration()
                 .withGroupedNet(enabled = true)
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
@@ -220,7 +220,7 @@ class ReportDataServiceTest {
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
             ),
-            features = ReportDataFeaturesConfiguration()
+            reports = ReportsConfiguration()
                 .withGroupedBudget(
                     enabled = true,
                     distributions = listOf(
@@ -302,7 +302,7 @@ class ReportDataServiceTest {
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
             ),
-            features = ReportDataFeaturesConfiguration()
+            reports = ReportsConfiguration()
                 .withGroupedBudget(
                     enabled = true,
                     distributions = listOf(
@@ -383,7 +383,7 @@ class ReportDataServiceTest {
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
             ),
-            features = ReportDataFeaturesConfiguration()
+            reports = ReportsConfiguration()
                 .withGroupedBudget(
                     enabled = true,
                     distributions = listOf(
@@ -405,7 +405,11 @@ class ReportDataServiceTest {
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
         whenever(
-            fundTransactionSdk.listTransactions(userId, expensesFundId, FundTransactionFilterTO(toDate = interval.toDate))
+            fundTransactionSdk.listTransactions(
+                userId,
+                expensesFundId,
+                FundTransactionFilterTO(toDate = interval.toDate)
+            )
         )
             .thenReturn(
                 ListTO.of(
@@ -501,7 +505,7 @@ class ReportDataServiceTest {
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
             ),
-            features = ReportDataFeaturesConfiguration()
+            reports = ReportsConfiguration()
                 .withGroupedBudget(
                     enabled = true,
                     distributions = listOf(
@@ -618,14 +622,14 @@ class ReportDataServiceTest {
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
             ),
-            features = ReportDataFeaturesConfiguration()
+            reports = ReportsConfiguration()
                 .withGroupedBudget(
                     enabled = true,
                     distributions = listOf(
                         needWantDistribution(true, null, 60, 40),
                     ),
-                )
-                .withForecast(consideredBuckets = 3)
+                ),
+            forecast = ForecastConfiguration(3)
         )
         whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(mock())
@@ -636,7 +640,11 @@ class ReportDataServiceTest {
             YearMonth(2020, 6)
         )
         whenever(
-            fundTransactionSdk.listTransactions(userId, expensesFundId, FundTransactionFilterTO(toDate = interval.toDate))
+            fundTransactionSdk.listTransactions(
+                userId,
+                expensesFundId,
+                FundTransactionFilterTO(toDate = interval.toDate)
+            )
         )
             .thenReturn(
                 ListTO.of(
@@ -686,7 +694,7 @@ class ReportDataServiceTest {
             currency = RON,
             filter = RecordFilter(labels = allLabels),
             groups = null,
-            features = ReportDataFeaturesConfiguration()
+            reports = ReportsConfiguration()
                 .withNet(enabled = true, applyFilter = true)
                 .withValueReport(enabled = true),
         )
@@ -738,7 +746,7 @@ class ReportDataServiceTest {
             currency = RON,
             filter = RecordFilter(labels = allLabels),
             groups = null,
-            features = ReportDataFeaturesConfiguration()
+            reports = ReportsConfiguration()
                 .withValueReport(enabled = true),
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
@@ -841,10 +849,10 @@ class ReportDataServiceTest {
 
     private fun needWantDistribution(
         default: Boolean, from: YearMonth?, needPercentage: Int, wantPercentage: Int,
-    ) = GroupedBudgetReportFeature.BudgetDistribution(
+    ) = GroupedBudgetReportConfiguration.BudgetDistribution(
         default, from, listOf(
-            GroupedBudgetReportFeature.GroupBudgetPercentage("Need", needPercentage),
-            GroupedBudgetReportFeature.GroupBudgetPercentage("Want", wantPercentage),
+            GroupedBudgetReportConfiguration.GroupBudgetPercentage("Need", needPercentage),
+            GroupedBudgetReportConfiguration.GroupBudgetPercentage("Want", wantPercentage),
         )
     )
 }
