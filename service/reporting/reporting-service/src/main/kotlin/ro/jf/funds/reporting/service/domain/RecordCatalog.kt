@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.service.domain
 
+// TODO(Johann) could I use something more flow-like? to retrieve records in buckets and process them as they come?
 class RecordCatalog(
     reportRecords: List<ReportRecord>,
     private val reportDataInterval: ReportDataInterval,

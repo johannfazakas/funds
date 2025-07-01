@@ -8,6 +8,7 @@ import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.atTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -32,6 +33,7 @@ import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.*
 import ro.jf.funds.commons.web.USER_ID_HEADER
+import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
@@ -43,7 +45,6 @@ import ro.jf.funds.reporting.service.config.configureReportingEventHandling
 import ro.jf.funds.reporting.service.config.configureReportingRouting
 import ro.jf.funds.reporting.service.config.reportingDependencies
 import ro.jf.funds.reporting.service.domain.*
-import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import ro.jf.funds.reporting.service.utils.record
@@ -60,7 +61,6 @@ class ReportingApiTest {
     private val consumerProperties = ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer")
     private val reportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)
     private val reportViewTaskRepository = ReportViewTaskRepository(PostgresContainerExtension.connection)
-    private val reportRecordRepository = ReportRecordRepository(PostgresContainerExtension.connection)
     private val fundTransactionSdk = mock<FundTransactionSdk>()
     private val historicalPricingSdk = mock<HistoricalPricingSdk>()
 
@@ -236,24 +236,36 @@ class ReportingApiTest {
         val conversions = mock<ConversionsResponse>()
         whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
-        reportRecordRepository.save(
-            CreateReportRecordCommand(
-                userId, reportView.id, randomUUID(), LocalDate(2021, 1, 2), RON,
-                BigDecimal("-25.0"), BigDecimal("-25.0"), labelsOf("need")
-            ),
-        )
-        reportRecordRepository.save(
-            CreateReportRecordCommand(
-                userId, reportView.id, randomUUID(), LocalDate.parse("2021-01-02"), EUR,
-                BigDecimal("-10.0"), BigDecimal("-50.0"), labelsOf("want")
+
+        val fromDate = LocalDate(2021, 1, 1)
+        val toDate = LocalDate(2021, 1, 28)
+        val filter = FundTransactionFilterTO(toDate = toDate)
+        whenever(fundTransactionSdk.listTransactions(userId, reportView.fundId, filter)).thenReturn(
+            ListTO.of(
+                transaction(
+                    userId, LocalDate(2021, 1, 2).atTime(12, 0),
+                    listOf(
+                        record(
+                            reportView.fundId, cashAccountId, BigDecimal("-25.0"), RON, labelsOf("need")
+                        )
+                    )
+                ),
+                transaction(
+                    userId, LocalDate(2021, 1, 2).atTime(12, 0),
+                    listOf(
+                        record(
+                            reportView.fundId, cashAccountId, BigDecimal("-10.0"), EUR, labelsOf("want")
+                        )
+                    )
+                )
             )
         )
 
         val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
             header(USER_ID_HEADER, userId.toString())
             parameter("granularity", TimeGranularityTO.DAILY.name)
-            parameter("fromDate", "2021-01-01")
-            parameter("toDate", "2021-01-28")
+            parameter("fromDate", fromDate.toString())
+            parameter("toDate", toDate.toString())
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)

@@ -42,7 +42,7 @@ class AccountTransactionSdk(
         return accountTransaction
     }
 
-    override suspend fun listTransactions(userId: UUID, filter: TransactionsFilterTO): ListTO<AccountTransactionTO> {
+    override suspend fun listTransactions(userId: UUID, filter: AccountTransactionFilterTO): ListTO<AccountTransactionTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
             sequenceOf(
                 filter.transactionProperties.map { (key, value) -> "$TRANSACTION_PROPERTIES_PREFIX$key" to value },
@@ -50,6 +50,8 @@ class AccountTransactionSdk(
             )
                 .flatten()
                 .forEach { (key, value) -> parameter(key, value) }
+            filter.fromDate?.let { parameter("fromDate", it.toString()) }
+            filter.toDate?.let { parameter("toDate", it.toString()) }
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }

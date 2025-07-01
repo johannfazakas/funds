@@ -5,13 +5,13 @@ import kotlinx.datetime.LocalDate
 const val RECORD_PROPERTIES_PREFIX = "properties.record."
 const val TRANSACTION_PROPERTIES_PREFIX = "properties.transaction."
 
-data class TransactionsFilterTO(
+data class AccountTransactionFilterTO(
     val fromDate: LocalDate? = null,
     val toDate: LocalDate? = null,
     val transactionProperties: List<PropertyTO> = propertiesOf(),
     val recordProperties: List<PropertyTO> = propertiesOf(),
 ) {
     companion object {
-        fun empty() = TransactionsFilterTO(null, null, emptyList(), emptyList())
+        fun empty() = AccountTransactionFilterTO(null, null, emptyList(), emptyList())
     }
 }

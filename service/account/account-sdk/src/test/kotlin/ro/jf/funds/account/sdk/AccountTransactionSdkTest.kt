@@ -181,7 +181,7 @@ class AccountTransactionSdkTest {
         val recordId = randomUUID()
         val accountId = randomUUID()
         val dateTime = "2024-07-22T09:17"
-        val filter = TransactionsFilterTO(
+        val filter = AccountTransactionFilterTO(
             transactionProperties = propertiesOf("transactionProp" to "value1", "transactionProp" to "value2"),
             recordProperties = propertiesOf("recordProp" to "value3")
         )

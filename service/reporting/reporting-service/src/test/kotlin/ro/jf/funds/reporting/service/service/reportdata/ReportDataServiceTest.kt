@@ -3,6 +3,7 @@ package ro.jf.funds.reporting.service.service.reportdata
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
+import kotlinx.datetime.atTime
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
@@ -16,7 +17,12 @@ import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Label
+import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
+import ro.jf.funds.fund.api.model.FundRecordTO
+import ro.jf.funds.fund.api.model.FundTransactionFilterTO
+import ro.jf.funds.fund.api.model.FundTransactionTO
+import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
@@ -25,7 +31,6 @@ import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.domain.BucketType.FORECAST
 import ro.jf.funds.reporting.service.domain.BucketType.REAL
-import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
 import java.math.BigDecimal
@@ -33,11 +38,11 @@ import java.util.UUID.randomUUID
 
 class ReportDataServiceTest {
     private val reportViewRepository = mock<ReportViewRepository>()
-    private val reportRecordRepository = mock<ReportRecordRepository>()
     private val historicalPricingSdk = mock<HistoricalPricingSdk>()
+    private val fundTransactionSdk = mock<FundTransactionSdk>()
     private val resolverRegistry = ReportDataResolverRegistry()
     private val reportDataService =
-        ReportDataService(reportViewRepository, reportRecordRepository, historicalPricingSdk, resolverRegistry)
+        ReportDataService(reportViewRepository, historicalPricingSdk, fundTransactionSdk, resolverRegistry)
 
     private val userId = randomUUID()
     private val reportViewId = randomUUID()
@@ -58,13 +63,19 @@ class ReportDataServiceTest {
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration))
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 11))
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
+        whenever(
+            fundTransactionSdk.listTransactions(
+                userId,
+                expensesFundId,
+                FundTransactionFilterTO(toDate = interval.toDate)
+            )
+        )
             .thenReturn(
-                listOf(
-                    ronReportRecord(LocalDate(2021, 9, 3), -100, labelsOf("need")),
-                    eurReportRecord(LocalDate(2021, 9, 15), -40, labelsOf("want")),
-                    ronReportRecord(LocalDate(2021, 10, 7), -30, labelsOf("want")),
-                    ronReportRecord(LocalDate(2021, 10, 8), -16, labelsOf("other")),
+                ListTO.of(
+                    ronTransaction(LocalDate(2021, 9, 3), -100, labelsOf("need")),
+                    eurTransaction(LocalDate(2021, 9, 15), -40, labelsOf("want")),
+                    ronTransaction(LocalDate(2021, 10, 7), -30, labelsOf("want")),
+                    ronTransaction(LocalDate(2021, 10, 8), -16, labelsOf("other")),
                 )
             )
         val conversionsResponse = mock<ConversionsResponse>()
@@ -105,15 +116,21 @@ class ReportDataServiceTest {
             YearMonth(2021, 6),
             YearMonth(2021, 9)
         )
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
+        whenever(
+            fundTransactionSdk.listTransactions(
+                userId,
+                expensesFundId,
+                FundTransactionFilterTO(toDate = interval.toDate)
+            )
+        )
             .thenReturn(
-                listOf(
-                    ronReportRecord(LocalDate(2021, 1, 3), -100, labelsOf("need")),
-                    ronReportRecord(LocalDate(2021, 2, 15), -40, labelsOf("want")),
-                    ronReportRecord(LocalDate(2021, 3, 7), -30, labelsOf("want")),
-                    ronReportRecord(LocalDate(2021, 4, 8), -20, labelsOf("need")),
-                    ronReportRecord(LocalDate(2021, 5, 8), -40, labelsOf("need")),
-                    ronReportRecord(LocalDate(2021, 6, 8), -50, labelsOf("want")),
+                ListTO.of(
+                    ronTransaction(LocalDate(2021, 1, 3), -100, labelsOf("need")),
+                    ronTransaction(LocalDate(2021, 2, 15), -40, labelsOf("want")),
+                    ronTransaction(LocalDate(2021, 3, 7), -30, labelsOf("want")),
+                    ronTransaction(LocalDate(2021, 4, 8), -20, labelsOf("need")),
+                    ronTransaction(LocalDate(2021, 5, 8), -40, labelsOf("need")),
+                    ronTransaction(LocalDate(2021, 6, 8), -50, labelsOf("want")),
                 )
             )
         val conversionsResponse = mock<ConversionsResponse>()
@@ -159,14 +176,20 @@ class ReportDataServiceTest {
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration))
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 10))
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
+        whenever(
+            fundTransactionSdk.listTransactions(
+                userId,
+                expensesFundId,
+                FundTransactionFilterTO(toDate = interval.toDate)
+            )
+        )
             .thenReturn(
-                listOf(
-                    ronReportRecord(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
-                    eurReportRecord(LocalDate.parse("2021-09-04"), -10, labelsOf("need")),
-                    eurReportRecord(LocalDate.parse("2021-09-15"), -40, labelsOf("want")),
-                    ronReportRecord(LocalDate.parse("2021-10-18"), -30, labelsOf("want")),
-                    ronReportRecord(LocalDate.parse("2021-09-28"), -16, labelsOf("other")),
+                ListTO.of(
+                    ronTransaction(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
+                    eurTransaction(LocalDate.parse("2021-09-04"), -10, labelsOf("need")),
+                    eurTransaction(LocalDate.parse("2021-09-15"), -40, labelsOf("want")),
+                    ronTransaction(LocalDate.parse("2021-10-18"), -30, labelsOf("want")),
+                    ronTransaction(LocalDate.parse("2021-09-28"), -16, labelsOf("other")),
                 )
             )
         val conversionsResponse = mock<ConversionsResponse>()
@@ -210,18 +233,24 @@ class ReportDataServiceTest {
         whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.00"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
+        whenever(
+            fundTransactionSdk.listTransactions(
+                userId,
+                expensesFundId,
+                FundTransactionFilterTO(toDate = interval.toDate)
+            )
+        )
             .thenReturn(
-                listOf(
+                ListTO.of(
                     // previous month with specific distribution
-                    ronReportRecord(LocalDate(2020, 1, 5), 1000, labelsOf("income")),
-                    eurReportRecord(LocalDate(2020, 1, 10), 500, labelsOf()),
+                    ronTransaction(LocalDate(2020, 1, 5), 1000, labelsOf("income")),
+                    eurTransaction(LocalDate(2020, 1, 10), 500, labelsOf()),
                     // first month
-                    ronReportRecord(LocalDate(2020, 2, 5), amount = 1500, labels = labelsOf()),
-                    ronReportRecord(LocalDate(2020, 2, 10), amount = -300, labels = labelsOf()),
-                    eurReportRecord(LocalDate(2020, 2, 15), 300, labelsOf()),
+                    ronTransaction(LocalDate(2020, 2, 5), amount = 1500, labels = labelsOf()),
+                    ronTransaction(LocalDate(2020, 2, 10), amount = -300, labels = labelsOf()),
+                    eurTransaction(LocalDate(2020, 2, 15), 300, labelsOf()),
                     // second month
-                    ronReportRecord(LocalDate(2020, 3, 5), amount = 2000, labels = labelsOf()),
+                    ronTransaction(LocalDate(2020, 3, 5), amount = 2000, labels = labelsOf()),
                 )
             )
 
@@ -286,18 +315,24 @@ class ReportDataServiceTest {
         whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.00"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 2))
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
+        whenever(
+            fundTransactionSdk.listTransactions(
+                userId,
+                expensesFundId,
+                FundTransactionFilterTO(toDate = interval.toDate)
+            )
+        )
             .thenReturn(
-                listOf(
+                ListTO.of(
                     // previous month with specific distribution
-                    ronReportRecord(LocalDate(2020, 1, 5), 1000, labelsOf("income")),
+                    ronTransaction(LocalDate(2020, 1, 5), 1000, labelsOf("income")),
                     // first month
-                    ronReportRecord(LocalDate(2020, 2, 5), 2000, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 2, 10), -100, labelsOf("need")),
-                    eurReportRecord(LocalDate(2020, 2, 15), 500, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 2, 20), -200, labelsOf("need")),
-                    ronReportRecord(LocalDate(2020, 2, 21), -500, labelsOf("need")),
-                    eurReportRecord(LocalDate(2020, 2, 25), -100, labelsOf("want")),
+                    ronTransaction(LocalDate(2020, 2, 5), 2000, labelsOf()),
+                    ronTransaction(LocalDate(2020, 2, 10), -100, labelsOf("need")),
+                    eurTransaction(LocalDate(2020, 2, 15), 500, labelsOf()),
+                    ronTransaction(LocalDate(2020, 2, 20), -200, labelsOf("need")),
+                    ronTransaction(LocalDate(2020, 2, 21), -500, labelsOf("need")),
+                    eurTransaction(LocalDate(2020, 2, 25), -100, labelsOf("want")),
                 )
             )
 
@@ -369,19 +404,21 @@ class ReportDataServiceTest {
             }
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
+        whenever(
+            fundTransactionSdk.listTransactions(userId, expensesFundId, FundTransactionFilterTO(toDate = interval.toDate))
+        )
             .thenReturn(
-                listOf(
+                ListTO.of(
                     // first month
-                    ronReportRecord(LocalDate(2020, 2, 5), 2000, labelsOf()),
-                    eurReportRecord(LocalDate(2020, 2, 15), 500, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 2, 10), -800, labelsOf("need")),
-                    eurReportRecord(LocalDate(2020, 2, 25), -100, labelsOf("want")),
+                    ronTransaction(LocalDate(2020, 2, 5), 2000, labelsOf()),
+                    eurTransaction(LocalDate(2020, 2, 15), 500, labelsOf()),
+                    ronTransaction(LocalDate(2020, 2, 10), -800, labelsOf("need")),
+                    eurTransaction(LocalDate(2020, 2, 25), -100, labelsOf("want")),
                     // second month
-                    ronReportRecord(LocalDate(2020, 3, 5), 2500, labelsOf()),
-                    eurReportRecord(LocalDate(2020, 3, 15), 400, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 3, 20), -300, labelsOf("want")),
-                    eurReportRecord(LocalDate(2020, 3, 25), -200, labelsOf("need")),
+                    ronTransaction(LocalDate(2020, 3, 5), 2500, labelsOf()),
+                    eurTransaction(LocalDate(2020, 3, 15), 400, labelsOf()),
+                    ronTransaction(LocalDate(2020, 3, 20), -300, labelsOf("want")),
+                    eurTransaction(LocalDate(2020, 3, 25), -200, labelsOf("need")),
                 )
             )
 
@@ -478,19 +515,25 @@ class ReportDataServiceTest {
         whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.00"))
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
+        whenever(
+            fundTransactionSdk.listTransactions(
+                userId,
+                expensesFundId,
+                FundTransactionFilterTO(toDate = interval.toDate)
+            )
+        )
             .thenReturn(
-                listOf(
+                ListTO.of(
                     // first month
-                    ronReportRecord(LocalDate(2020, 2, 5), 2000, labelsOf()),
-                    eurReportRecord(LocalDate(2020, 2, 15), 500, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 2, 10), -800, labelsOf("need")),
-                    eurReportRecord(LocalDate(2020, 2, 25), -100, labelsOf("want")),
+                    ronTransaction(LocalDate(2020, 2, 5), 2000, labelsOf()),
+                    eurTransaction(LocalDate(2020, 2, 15), 500, labelsOf()),
+                    ronTransaction(LocalDate(2020, 2, 10), -800, labelsOf("need")),
+                    eurTransaction(LocalDate(2020, 2, 25), -100, labelsOf("want")),
                     // second month
-                    ronReportRecord(LocalDate(2020, 3, 5), 2500, labelsOf()),
-                    eurReportRecord(LocalDate(2020, 3, 15), 400, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 3, 20), -300, labelsOf("want")),
-                    eurReportRecord(LocalDate(2020, 3, 25), -200, labelsOf("need")),
+                    ronTransaction(LocalDate(2020, 3, 5), 2500, labelsOf()),
+                    eurTransaction(LocalDate(2020, 3, 15), 400, labelsOf()),
+                    ronTransaction(LocalDate(2020, 3, 20), -300, labelsOf("want")),
+                    eurTransaction(LocalDate(2020, 3, 25), -200, labelsOf("need")),
                 )
             )
 
@@ -592,26 +635,28 @@ class ReportDataServiceTest {
             YearMonth(2020, 4),
             YearMonth(2020, 6)
         )
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
+        whenever(
+            fundTransactionSdk.listTransactions(userId, expensesFundId, FundTransactionFilterTO(toDate = interval.toDate))
+        )
             .thenReturn(
-                listOf(
+                ListTO.of(
                     // first month
-                    ronReportRecord(LocalDate(2020, 1, 5), 2000, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 1, 10), -500, labelsOf("need")),
-                    ronReportRecord(LocalDate(2020, 1, 12), -400, labelsOf("want")),
+                    ronTransaction(LocalDate(2020, 1, 5), 2000, labelsOf()),
+                    ronTransaction(LocalDate(2020, 1, 10), -500, labelsOf("need")),
+                    ronTransaction(LocalDate(2020, 1, 12), -400, labelsOf("want")),
                     // second month
-                    ronReportRecord(LocalDate(2020, 2, 5), 2500, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 2, 20), -600, labelsOf("need")),
-                    ronReportRecord(LocalDate(2020, 2, 21), -300, labelsOf("want")),
+                    ronTransaction(LocalDate(2020, 2, 5), 2500, labelsOf()),
+                    ronTransaction(LocalDate(2020, 2, 20), -600, labelsOf("need")),
+                    ronTransaction(LocalDate(2020, 2, 21), -300, labelsOf("want")),
                     // third month
-                    ronReportRecord(LocalDate(2020, 3, 5), 1500, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 3, 20), -700, labelsOf("need")),
-                    ronReportRecord(LocalDate(2020, 3, 21), -300, labelsOf("want")),
+                    ronTransaction(LocalDate(2020, 3, 5), 1500, labelsOf()),
+                    ronTransaction(LocalDate(2020, 3, 20), -700, labelsOf("need")),
+                    ronTransaction(LocalDate(2020, 3, 21), -300, labelsOf("want")),
                     // fourth month
                     // second month
-                    ronReportRecord(LocalDate(2020, 4, 5), 2000, labelsOf()),
-                    ronReportRecord(LocalDate(2020, 4, 20), -600, labelsOf("need")),
-                    ronReportRecord(LocalDate(2020, 4, 21), -400, labelsOf("want")),
+                    ronTransaction(LocalDate(2020, 4, 5), 2000, labelsOf()),
+                    ronTransaction(LocalDate(2020, 4, 20), -600, labelsOf("need")),
+                    ronTransaction(LocalDate(2020, 4, 21), -400, labelsOf("want")),
                 )
             )
 
@@ -650,16 +695,22 @@ class ReportDataServiceTest {
         whenever(historicalPricingSdk.convert(eq(userId), eq(ConversionsRequest(emptyList()))))
             .thenReturn(ConversionsResponse(emptyList()))
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 11))
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
+        whenever(
+            fundTransactionSdk.listTransactions(
+                userId,
+                expensesFundId,
+                FundTransactionFilterTO(toDate = interval.toDate)
+            )
+        )
             .thenReturn(
-                listOf(
-                    ronReportRecord(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
-                    ronReportRecord(LocalDate.parse("2021-09-02"), 200, labelsOf("need")),
-                    ronReportRecord(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
-                    ronReportRecord(LocalDate.parse("2021-09-15"), -40, labelsOf("want")),
-                    ronReportRecord(LocalDate.parse("2021-10-07"), 400, labelsOf("want")),
-                    ronReportRecord(LocalDate.parse("2021-10-07"), -30, labelsOf("want")),
-                    ronReportRecord(LocalDate.parse("2021-10-08"), -16, labelsOf("other")),
+                ListTO.of(
+                    ronTransaction(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
+                    ronTransaction(LocalDate.parse("2021-09-02"), 200, labelsOf("need")),
+                    ronTransaction(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
+                    ronTransaction(LocalDate.parse("2021-09-15"), -40, labelsOf("want")),
+                    ronTransaction(LocalDate.parse("2021-10-07"), 400, labelsOf("want")),
+                    ronTransaction(LocalDate.parse("2021-10-07"), -30, labelsOf("want")),
+                    ronTransaction(LocalDate.parse("2021-10-08"), -16, labelsOf("other")),
                 )
             )
 
@@ -693,13 +744,19 @@ class ReportDataServiceTest {
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration))
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 10))
-        whenever(reportRecordRepository.findByViewUntil(userId, reportViewId, interval.toDate))
+        whenever(
+            fundTransactionSdk.listTransactions(
+                userId,
+                expensesFundId,
+                FundTransactionFilterTO(toDate = interval.toDate)
+            )
+        )
             .thenReturn(
-                listOf(
-                    ronReportRecord(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
-                    eurReportRecord(LocalDate.parse("2021-08-05"), 20, labelsOf("need")),
-                    ronReportRecord(LocalDate.parse("2021-09-02"), 100, labelsOf("need")),
-                    eurReportRecord(LocalDate.parse("2021-09-03"), 20, labelsOf("need")),
+                ListTO.of(
+                    ronTransaction(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
+                    eurTransaction(LocalDate.parse("2021-08-05"), 20, labelsOf("need")),
+                    ronTransaction(LocalDate.parse("2021-09-02"), 100, labelsOf("need")),
+                    eurTransaction(LocalDate.parse("2021-09-03"), 20, labelsOf("need")),
                 )
             )
         val conversionRequest = ConversionsRequest(
@@ -756,18 +813,31 @@ class ReportDataServiceTest {
         dataConfiguration: ReportDataConfiguration,
     ) = ReportView(reportViewId, userId, reportViewName, expensesFundId, dataConfiguration)
 
-    private fun ronReportRecord(
+    private fun ronTransaction(
         date: LocalDate, amount: Int, labels: List<Label>,
-    ) = reportRecord(date, RON, BigDecimal(amount), labels)
+    ) = transaction(date, RON, BigDecimal(amount), labels)
 
-    private fun eurReportRecord(
+    private fun eurTransaction(
         date: LocalDate, amount: Int, labels: List<Label>,
-    ) = reportRecord(date, EUR, BigDecimal(amount), labels)
+    ) = transaction(date, EUR, BigDecimal(amount), labels)
 
-    private fun reportRecord(
+    private fun transaction(
         date: LocalDate, unit: FinancialUnit, amount: BigDecimal, labels: List<Label>,
-    ) =
-        ReportRecord(randomUUID(), userId, randomUUID(), reportViewId, date, unit, amount, labels)
+    ) = FundTransactionTO(
+        id = randomUUID(),
+        userId = userId,
+        dateTime = date.atTime(12, 0),
+        records = listOf(
+            FundRecordTO(
+                id = randomUUID(),
+                fundId = expensesFundId,
+                unit = unit,
+                amount = amount,
+                labels = labels,
+                accountId = randomUUID()
+            )
+        )
+    )
 
     private fun needWantDistribution(
         default: Boolean, from: YearMonth?, needPercentage: Int, wantPercentage: Int,

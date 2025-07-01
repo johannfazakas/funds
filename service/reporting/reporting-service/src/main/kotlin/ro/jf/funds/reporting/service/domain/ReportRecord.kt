@@ -10,6 +10,7 @@ import java.util.*
 data class ReportRecord(
     val id: UUID,
     val userId: UUID,
+    // TODO(Johann) remove irrelevant values
     val reportViewId: UUID,
     val recordId: UUID,
     val date: LocalDate,

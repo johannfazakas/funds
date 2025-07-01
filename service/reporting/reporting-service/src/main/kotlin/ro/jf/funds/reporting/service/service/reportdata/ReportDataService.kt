@@ -3,13 +3,15 @@ package ro.jf.funds.reporting.service.service.reportdata
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
+import ro.jf.funds.fund.api.model.FundTransactionFilterTO
+import ro.jf.funds.fund.api.model.FundTransactionTO
+import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.model.YearMonthTO
 import ro.jf.funds.reporting.service.domain.*
-import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataForecastInput
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolver
@@ -24,8 +26,8 @@ private val log = logger { }
 
 class ReportDataService(
     private val reportViewRepository: ReportViewRepository,
-    private val reportRecordRepository: ReportRecordRepository,
     private val historicalPricingSdk: HistoricalPricingSdk,
+    private val fundTransactionSdk: FundTransactionSdk,
     private val resolverRegistry: ReportDataResolverRegistry,
 ) {
     suspend fun getReportViewData(
@@ -35,14 +37,44 @@ class ReportDataService(
     ): ReportData = withSuspendingSpan {
         val reportView = reportViewRepository.findById(userId, reportViewId)
             ?: throw ReportingException.ReportViewNotFound(userId, reportViewId)
-        val reportRecords = reportRecordRepository
-            .findByViewUntil(userId, reportViewId, interval.toDate)
+        val reportRecords = getReportRecords(reportView, interval)
         log.info { "Found ${reportRecords.size} records for report $reportViewId in interval $interval" }
         val catalog = RecordCatalog(reportRecords, interval)
         val reportDataConfiguration = reportView.dataConfiguration
         val conversions = getConversions(userId, reportDataConfiguration.currency, reportRecords, interval)
         val data = getReportDataAggregates(interval, catalog, conversions, reportDataConfiguration)
         ReportData(reportViewId, interval, data)
+    }
+
+    private suspend fun getReportRecords(
+        reportView: ReportView,
+        interval: ReportDataInterval,
+    ): List<ReportRecord> = withSuspendingSpan {
+        // TODO(Johann) keep in mind that only grouped budget and net data require previous records.
+        val transactionFilter = FundTransactionFilterTO(toDate = interval.toDate)
+        fundTransactionSdk
+            .listTransactions(reportView.userId, reportView.fundId, transactionFilter).items
+            .asSequence()
+            .flatMap { it.toReportRecords(reportView.userId, reportView.id) }
+            .toList()
+    }
+
+    private fun FundTransactionTO.toReportRecords(
+        userId: UUID,
+        reportViewId: UUID,
+    ): List<ReportRecord> {
+        return this.records.map { record ->
+            ReportRecord(
+                id = UUID.randomUUID(),
+                userId = userId,
+                reportViewId = reportViewId,
+                date = this.dateTime.date,
+                unit = record.unit,
+                amount = record.amount,
+                recordId = record.id,
+                labels = record.labels,
+            )
+        }
     }
 
     private fun getReportDataAggregates(

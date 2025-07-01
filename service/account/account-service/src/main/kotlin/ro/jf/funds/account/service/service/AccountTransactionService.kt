@@ -2,7 +2,7 @@ package ro.jf.funds.account.service.service
 
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
-import ro.jf.funds.account.api.model.TransactionsFilterTO
+import ro.jf.funds.account.api.model.AccountTransactionFilterTO
 import ro.jf.funds.account.service.domain.Account
 import ro.jf.funds.account.service.domain.AccountServiceException
 import ro.jf.funds.account.service.domain.AccountTransaction
@@ -26,7 +26,7 @@ class AccountTransactionService(
 
     suspend fun listTransactions(
         userId: UUID,
-        filter: TransactionsFilterTO
+        filter: AccountTransactionFilterTO
     ): List<AccountTransaction> {
         return transactionRepository.list(userId, filter)
     }

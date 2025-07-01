@@ -9,7 +9,7 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
 import ro.jf.funds.account.api.model.PropertyTO
-import ro.jf.funds.account.api.model.TransactionsFilterTO
+import ro.jf.funds.account.api.model.AccountTransactionFilterTO
 import ro.jf.funds.account.service.domain.AccountTransaction
 import ro.jf.funds.account.service.service.AccountTransactionService
 import ro.jf.funds.account.service.web.mapper.toTO
@@ -56,7 +56,7 @@ fun Routing.accountTransactionApiRouting(transactionService: AccountTransactionS
     }
 }
 
-private fun Parameters.transactionFilter(): TransactionsFilterTO {
+private fun Parameters.transactionFilter(): AccountTransactionFilterTO {
     val fromDate = this["fromDate"]?.let { LocalDate.parse(it) }
     val toDate = this["toDate"]?.let { LocalDate.parse(it) }
     val recordProperties = this.entries()
@@ -67,5 +67,5 @@ private fun Parameters.transactionFilter(): TransactionsFilterTO {
         .map { (key, value) -> key to value }
         .filter { (key, _) -> key.startsWith(TRANSACTION_PROPERTIES_PREFIX) }
         .flatMap { (key, values) -> values.map { PropertyTO(key.removePrefix(TRANSACTION_PROPERTIES_PREFIX) to it) } }
-    return TransactionsFilterTO(fromDate, toDate, transactionProperties, recordProperties)
+    return AccountTransactionFilterTO(fromDate, toDate, transactionProperties, recordProperties)
 }
