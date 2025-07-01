@@ -134,7 +134,7 @@ class FundTransactionServiceTest {
     fun `given list transactions`(): Unit = runBlocking {
         val rawTransactionTime = "2021-09-01T12:00:00"
         val transactionTime = LocalDateTime.parse(rawTransactionTime)
-        whenever(accountTransactionSdk.listTransactions(userId, TransactionsFilterTO.empty())).thenReturn(
+        whenever(accountTransactionSdk.listTransactions(userId, AccountTransactionFilter.empty())).thenReturn(
             ListTO(
                 listOf(
                     AccountTransactionTO(
@@ -185,7 +185,7 @@ class FundTransactionServiceTest {
 
     @Test
     fun `given list transactions by fund properties`(): Unit = runBlocking {
-        val filter = TransactionsFilterTO(
+        val filter = AccountTransactionFilter(
             transactionProperties = propertiesOf(),
             recordProperties = propertiesOf(FUND_ID_PROPERTY to workFundId.toString())
         )

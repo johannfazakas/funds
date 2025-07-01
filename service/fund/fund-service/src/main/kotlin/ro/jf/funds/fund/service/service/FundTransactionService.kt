@@ -2,6 +2,7 @@ package ro.jf.funds.fund.service.service
 
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
+import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.service.domain.FundServiceException
 import ro.jf.funds.fund.service.domain.FundTransaction
 import java.util.*
@@ -10,12 +11,19 @@ class FundTransactionService(
     private val fundService: FundService,
     private val accountTransactionAdapter: AccountTransactionAdapter,
 ) {
-    suspend fun listTransactions(userId: UUID): List<FundTransaction> {
-        return accountTransactionAdapter.listTransactions(userId)
+    suspend fun listTransactions(
+        userId: UUID,
+        filter: FundTransactionFilterTO = FundTransactionFilterTO.empty(),
+    ): List<FundTransaction> {
+        return accountTransactionAdapter.listTransactions(userId, filter = filter)
     }
 
-    suspend fun listTransactions(userId: UUID, fundId: UUID): List<FundTransaction> {
-        return accountTransactionAdapter.listTransactions(userId, fundId)
+    suspend fun listTransactions(
+        userId: UUID,
+        fundId: UUID,
+        filter: FundTransactionFilterTO = FundTransactionFilterTO.empty(),
+    ): List<FundTransaction> {
+        return accountTransactionAdapter.listTransactions(userId, fundId, filter)
     }
 
     suspend fun createTransaction(userId: UUID, request: CreateFundTransactionTO): FundTransaction {

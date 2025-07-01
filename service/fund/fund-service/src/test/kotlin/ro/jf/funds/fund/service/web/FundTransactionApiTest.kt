@@ -5,7 +5,9 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.testing.*
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.atTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -215,7 +217,7 @@ class FundTransactionApiTest {
         val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
         val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
 
-        whenever(accountTransactionSdk.listTransactions(userId, TransactionsFilterTO.empty())).thenReturn(
+        whenever(accountTransactionSdk.listTransactions(userId, AccountTransactionFilter.empty())).thenReturn(
             ListTO(
                 listOf(
                     AccountTransactionTO(
@@ -273,6 +275,61 @@ class FundTransactionApiTest {
     }
 
     @Test
+    fun `test list transactions filtered by date`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+
+        val userId = randomUUID()
+        val fromDate = LocalDate(2021, 9, 1)
+        val toDate = LocalDate(2021, 9, 30)
+        val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
+        val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
+        val filter = AccountTransactionFilter(fromDate = fromDate, toDate = toDate)
+
+        whenever(accountTransactionSdk.listTransactions(userId, filter)).thenReturn(
+            ListTO(
+                listOf(
+                    AccountTransactionTO(
+                        id = transaction1Id,
+                        dateTime = fromDate.atTime(12, 45),
+                        records = listOf(
+                            AccountRecordTO(
+                                id = record1Id,
+                                accountId = companyAccountId,
+                                amount = BigDecimal(100.25),
+                                unit = Currency.RON,
+                                labels = listOf(Label("one"), Label("two")),
+                                properties = propertiesOf("fundId" to workFund.id.toString()),
+                            ),
+                            AccountRecordTO(
+                                id = record2Id,
+                                accountId = personalAccountId,
+                                amount = BigDecimal(50.75),
+                                unit = Currency.RON,
+                                labels = emptyList(),
+                                properties = propertiesOf("fundId" to expensesFund.id.toString()),
+                            )
+                        ),
+                        properties = propertiesOf()
+                    )
+                )
+            )
+        )
+
+        val response = createJsonHttpClient()
+            .get("/funds-api/fund/v1/transactions") {
+                parameter("fromDate", fromDate.toString())
+                parameter("toDate", toDate.toString())
+                header(USER_ID_HEADER, userId.toString())
+            }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+
+        val transactions = response.body<ListTO<FundTransactionTO>>()
+        assertThat(transactions.items).hasSize(1)
+        verify(accountTransactionSdk).listTransactions(userId, AccountTransactionFilter(fromDate = fromDate, toDate = toDate))
+    }
+
+    @Test
     fun `test list fund transactions`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
@@ -283,7 +340,7 @@ class FundTransactionApiTest {
         val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
         val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
 
-        val filter = TransactionsFilterTO(
+        val filter = AccountTransactionFilter(
             recordProperties = listOf(PropertyTO(FUND_ID_PROPERTY, fundId.toString()))
         )
         whenever(accountTransactionSdk.listTransactions(userId, filter)).thenReturn(

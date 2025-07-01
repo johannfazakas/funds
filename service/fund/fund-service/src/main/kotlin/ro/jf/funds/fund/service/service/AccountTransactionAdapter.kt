@@ -6,6 +6,7 @@ import ro.jf.funds.commons.event.Event
 import ro.jf.funds.commons.event.Producer
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
+import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.service.domain.FundRecord
 import ro.jf.funds.fund.service.domain.FundTransaction
 import java.util.*
@@ -16,8 +17,10 @@ class AccountTransactionAdapter(
     private val accountTransactionSdk: AccountTransactionSdk,
     private val accountTransactionsRequestProducer: Producer<CreateAccountTransactionsTO>,
 ) {
-    suspend fun listTransactions(userId: UUID, fundId: UUID? = null): List<FundTransaction> {
-        val filter = TransactionsFilterTO(
+    suspend fun listTransactions(userId: UUID, fundId: UUID? = null, filter: FundTransactionFilterTO): List<FundTransaction> {
+        val filter = AccountTransactionFilter(
+            fromDate = filter.fromDate,
+            toDate = filter.toDate,
             transactionProperties = propertiesOf(),
             recordProperties = propertiesOf(
                 *listOfNotNull(
