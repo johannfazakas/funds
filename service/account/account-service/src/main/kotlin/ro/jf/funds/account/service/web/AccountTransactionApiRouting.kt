@@ -1,10 +1,10 @@
 package ro.jf.funds.account.service.web
 
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
@@ -57,6 +57,8 @@ fun Routing.accountTransactionApiRouting(transactionService: AccountTransactionS
 }
 
 private fun Parameters.transactionFilter(): TransactionsFilterTO {
+    val fromDate = this["fromDate"]?.let { LocalDate.parse(it) }
+    val toDate = this["toDate"]?.let { LocalDate.parse(it) }
     val recordProperties = this.entries()
         .map { (key, value) -> key to value }
         .filter { (key, _) -> key.startsWith(RECORD_PROPERTIES_PREFIX) }
@@ -65,5 +67,5 @@ private fun Parameters.transactionFilter(): TransactionsFilterTO {
         .map { (key, value) -> key to value }
         .filter { (key, _) -> key.startsWith(TRANSACTION_PROPERTIES_PREFIX) }
         .flatMap { (key, values) -> values.map { PropertyTO(key.removePrefix(TRANSACTION_PROPERTIES_PREFIX) to it) } }
-    return TransactionsFilterTO(transactionProperties, recordProperties)
+    return TransactionsFilterTO(fromDate, toDate, transactionProperties, recordProperties)
 }
