@@ -69,7 +69,7 @@ private val Application.integrationDependencies
 
 private val Application.serviceDependencies
     get() = module {
-        single<ReportViewService> { ReportViewService(get(), get(), get(), get()) }
+        single<ReportViewService> { ReportViewService(get()) }
         single<ReportViewTaskService> { ReportViewTaskService(get(), get(), get()) }
         single<ReportDataResolverRegistry> { ReportDataResolverRegistry() }
         single<ReportDataService> { ReportDataService(get(), get(), get(), get()) }

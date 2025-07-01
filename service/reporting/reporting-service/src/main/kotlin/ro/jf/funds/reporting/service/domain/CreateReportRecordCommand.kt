@@ -13,6 +13,5 @@ data class CreateReportRecordCommand(
     val date: LocalDate,
     val unit: FinancialUnit,
     val amount: BigDecimal,
-    val reportCurrencyAmount: BigDecimal,
     val labels: List<Label>,
 )
