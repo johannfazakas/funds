@@ -18,25 +18,16 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
         }
         input.interval
             .generateBucketedData(
-                { interval ->
-                    getValueReport(
-                        interval,
-                        getAmountByUnit(input.catalog.getPreviousRecordsGroupedByUnit()),
-                        input.catalog.getBucketRecordsGroupedByUnit(interval),
-                        input.conversions,
-                        input.dataConfiguration
-                    )
-                },
-                { interval, previous ->
-                    getValueReport(
-                        interval,
-                        previous.endAmountByUnit,
-                        input.catalog.getBucketRecordsGroupedByUnit(interval),
-                        input.conversions,
-                        input.dataConfiguration
-                    )
-                }
-            )
+                ValueReport(endAmountByUnit = getAmountByUnit(input.catalog.getPreviousRecordsGroupedByUnit()))
+            ) { interval, previous ->
+                getValueReport(
+                    interval,
+                    previous.endAmountByUnit,
+                    input.catalog.getBucketRecordsGroupedByUnit(interval),
+                    input.conversions,
+                    input.dataConfiguration
+                )
+            }
             .let(::ByBucket)
     }
 
@@ -45,7 +36,7 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
     ): ByBucket<ValueReport> = withSpan("forecast") {
         input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
-            { timeBucket -> input.realData[timeBucket] }
+            input.realData
         ) { inputBuckets: List<ValueReport> ->
             val first = inputBuckets.first()
             val last = inputBuckets.last()

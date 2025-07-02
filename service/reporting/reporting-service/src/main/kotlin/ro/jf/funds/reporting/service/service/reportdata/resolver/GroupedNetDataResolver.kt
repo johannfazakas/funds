@@ -24,14 +24,6 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
                         input.conversions,
                         input.dataConfiguration.currency
                     )
-                },
-                { interval, _ ->
-                    getGroupedNet(
-                        input.catalog.getBucketRecordsGroupedByUnit(interval),
-                        input.dataConfiguration.groups,
-                        input.conversions,
-                        input.dataConfiguration.currency
-                    )
                 }
             )
             .let(::ByBucket)
@@ -43,7 +35,7 @@ class GroupedNetDataResolver : ReportDataResolver<ByGroup<BigDecimal>> {
         val inputBucketsSize = input.forecastConfiguration.inputBuckets.toBigDecimal()
         input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
-            { interval -> input.realData[interval] }
+            input.realData
         ) { inputBuckets: List<ByGroup<BigDecimal>> ->
             val inputBucketsSize = inputBuckets.size.toBigDecimal()
             input.groups
