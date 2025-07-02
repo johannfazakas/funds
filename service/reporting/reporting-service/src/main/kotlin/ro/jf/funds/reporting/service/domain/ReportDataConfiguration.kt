@@ -8,7 +8,6 @@ import ro.jf.funds.commons.model.Label
 @Serializable
 data class ReportDataConfiguration(
     val currency: Currency,
-    val filter: RecordFilter = RecordFilter(),
     val groups: List<ReportGroup>? = null,
     val reports: ReportsConfiguration,
     val forecast: ForecastConfiguration = ForecastConfiguration(1),
@@ -22,26 +21,27 @@ data class ReportGroup(
 
 @Serializable
 data class RecordFilter(
-    val labels: List<Label>? = null,
+    val labels: List<Label>,
 ) {
     companion object {
         fun byLabels(vararg labels: String): RecordFilter = RecordFilter(labels.map(::Label))
     }
 
-    fun test(reportRecord: ReportRecord): Boolean =
-        labels?.any { reportRecord.labels.contains(it) } ?: true
+    fun test(reportRecord: ReportRecord): Boolean = labels.any { reportRecord.labels.contains(it) }
 }
 
 @Serializable
 data class ReportsConfiguration(
-    val net: NetReportConfiguration = NetReportConfiguration(enabled = false, applyFilter = false),
-    val valueReport: GenericReportConfiguration = GenericReportConfiguration(enabled = false),
+    val net: NetReportConfiguration = NetReportConfiguration(enabled = false),
+    val valueReport: ValueReportConfiguration = ValueReportConfiguration(enabled = false),
     val groupedNet: GenericReportConfiguration = GenericReportConfiguration(enabled = false),
     val groupedBudget: GroupedBudgetReportConfiguration = GroupedBudgetReportConfiguration(enabled = false, listOf()),
 ) {
-    fun withNet(enabled: Boolean, applyFilter: Boolean) = copy(net = NetReportConfiguration(enabled, applyFilter))
+    fun withNet(enabled: Boolean, filter: RecordFilter? = null) = copy(net = NetReportConfiguration(enabled, filter))
     fun withGroupedNet(enabled: Boolean) = copy(groupedNet = GenericReportConfiguration(enabled))
-    fun withValueReport(enabled: Boolean) = copy(valueReport = GenericReportConfiguration(enabled))
+    fun withValueReport(enabled: Boolean, filter: RecordFilter? = null) =
+        copy(valueReport = ValueReportConfiguration(enabled, filter))
+
     fun withGroupedBudget(
         enabled: Boolean,
         distributions: List<GroupedBudgetReportConfiguration.BudgetDistribution> = listOf(),
@@ -54,9 +54,15 @@ data class GenericReportConfiguration(
 )
 
 @Serializable
+data class ValueReportConfiguration(
+    val enabled: Boolean,
+    val filter: RecordFilter? = null,
+)
+
+@Serializable
 data class NetReportConfiguration(
     val enabled: Boolean,
-    val applyFilter: Boolean,
+    val filter: RecordFilter? = null,
 )
 
 @Serializable

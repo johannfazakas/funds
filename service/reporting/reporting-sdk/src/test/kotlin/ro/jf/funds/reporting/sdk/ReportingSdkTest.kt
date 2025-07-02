@@ -42,14 +42,16 @@ class ReportingSdkTest {
             fundId = fundId,
             dataConfiguration = ReportDataConfigurationTO(
                 currency = RON,
-                filter = RecordFilterTO(labels = labelsOf("need", "want")),
                 groups = listOf(
                     ReportGroupTO(name = "need", filter = RecordFilterTO.byLabels("need")),
                     ReportGroupTO(name = "want", filter = RecordFilterTO.byLabels("want"))
                 ),
                 reports = ReportsConfigurationTO(
-                    net = NetReportConfigurationTO(enabled = true, applyFilter = true),
-                    valueReport = GenericReportConfigurationTO(enabled = true),
+                    net = NetReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want"))),
+                    valueReport = ValueReportConfigurationTO(
+                        enabled = true,
+                        RecordFilterTO(labels = labelsOf("need", "want"))
+                    ),
                     groupedNet = GenericReportConfigurationTO(enabled = true),
                     groupedBudget = GroupedBudgetReportConfigurationTO(
                         enabled = true,
@@ -113,14 +115,13 @@ class ReportingSdkTest {
             fundId = fundId,
             dataConfiguration = ReportDataConfigurationTO(
                 currency = RON,
-                filter = RecordFilterTO(labels = labelsOf("need", "want")),
                 groups = listOf(
                     ReportGroupTO(name = "need", filter = RecordFilterTO.byLabels("need")),
                     ReportGroupTO(name = "want", filter = RecordFilterTO.byLabels("want"))
                 ),
                 reports = ReportsConfigurationTO(
-                    NetReportConfigurationTO(enabled = true, applyFilter = true),
-                    GenericReportConfigurationTO(enabled = true)
+                    NetReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want"))),
+                    ValueReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want")))
                 )
             )
         )
@@ -140,14 +141,13 @@ class ReportingSdkTest {
                 fundId = fundId,
                 dataConfiguration = ReportDataConfigurationTO(
                     currency = RON,
-                    filter = RecordFilterTO(labels = labelsOf("need", "want")),
                     groups = listOf(
                         ReportGroupTO(name = "need", RecordFilterTO.byLabels("need")),
                         ReportGroupTO(name = "want", RecordFilterTO.byLabels("want"))
                     ),
                     reports = ReportsConfigurationTO(
-                        NetReportConfigurationTO(enabled = true, applyFilter = true),
-                        GenericReportConfigurationTO(enabled = true)
+                        NetReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want"))),
+                        ValueReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want")))
                     )
                 )
             )
@@ -328,13 +328,19 @@ class ReportingSdkTest {
                                                                     JsonPrimitive(request.dataConfiguration.reports.net.enabled)
                                                                 )
                                                             })
-                                                            put("applyFilter", buildJsonObject {
-                                                                put("type", JsonPrimitive("boolean"))
-                                                                put(
-                                                                    "value",
-                                                                    JsonPrimitive(request.dataConfiguration.reports.net.applyFilter)
-                                                                )
-                                                            })
+                                                            request.dataConfiguration.reports.net.filter?.let { filter ->
+                                                                put("filter", buildJsonObject {
+                                                                    put("type", JsonPrimitive("object"))
+                                                                    put("properties", buildJsonObject {
+                                                                        put("labels", buildJsonObject {
+                                                                            put("type", JsonPrimitive("array"))
+                                                                            put("items", buildJsonObject {
+                                                                                put("type", JsonPrimitive("string"))
+                                                                            })
+                                                                        })
+                                                                    })
+                                                                })
+                                                            }
                                                         })
                                                     })
                                                     put("valueReport", buildJsonObject {
@@ -347,6 +353,19 @@ class ReportingSdkTest {
                                                                     JsonPrimitive(request.dataConfiguration.reports.valueReport.enabled)
                                                                 )
                                                             })
+                                                            request.dataConfiguration.reports.valueReport.filter?.let { filter ->
+                                                                put("filter", buildJsonObject {
+                                                                    put("type", JsonPrimitive("object"))
+                                                                    put("properties", buildJsonObject {
+                                                                        put("labels", buildJsonObject {
+                                                                            put("type", JsonPrimitive("array"))
+                                                                            put("items", buildJsonObject {
+                                                                                put("type", JsonPrimitive("string"))
+                                                                            })
+                                                                        })
+                                                                    })
+                                                                })
+                                                            }
                                                         })
                                                     })
                                                 })
@@ -446,13 +465,6 @@ class ReportingSdkTest {
             put("fundId", JsonPrimitive(response.fundId.toString()))
             put("dataConfiguration", buildJsonObject {
                 put("currency", JsonPrimitive(response.dataConfiguration.currency.value))
-                put("filter", buildJsonObject {
-                    put("labels", buildJsonArray {
-                        response.dataConfiguration.filter.labels?.forEach { label ->
-                            add(JsonPrimitive(label.value))
-                        }
-                    })
-                })
                 put("groups", buildJsonArray {
                     response.dataConfiguration.groups?.forEach { group ->
                         add(
@@ -472,10 +484,23 @@ class ReportingSdkTest {
                 put("reports", buildJsonObject {
                     put("net", buildJsonObject {
                         put("enabled", JsonPrimitive(response.dataConfiguration.reports.net.enabled))
-                        put("applyFilter", JsonPrimitive(response.dataConfiguration.reports.net.applyFilter))
+                        put("filter", buildJsonObject {
+                            put("labels", buildJsonArray {
+                                response.dataConfiguration.reports.net.filter?.labels?.forEach { label ->
+                                    add(JsonPrimitive(label.value))
+                                }
+                            })
+                        })
                     })
                     put("valueReport", buildJsonObject {
                         put("enabled", JsonPrimitive(response.dataConfiguration.reports.valueReport.enabled))
+                        put("filter", buildJsonObject {
+                            put("labels", buildJsonArray {
+                                response.dataConfiguration.reports.valueReport.filter?.labels?.forEach { label ->
+                                    add(JsonPrimitive(label.value))
+                                }
+                            })
+                        })
                     })
                 })
             })
@@ -491,11 +516,11 @@ class ReportingSdkTest {
                         "granularity" to listOf(expectedResponse.interval.granularity.name),
                         "fromYearMonth" to expectedResponse.interval.fromDate
                             .let { YearMonthTO(it.year, it.monthNumber) }
-                            .let { it-> Json.encodeToString(YearMonthSerializer(), it) }
+                            .let { it -> Json.encodeToString(YearMonthSerializer(), it) }
                             .let { it: String -> listOf(it) },
                         "toYearMonth" to expectedResponse.interval.toDate
                             .let { YearMonthTO(it.year, it.monthNumber) }
-                            .let { it-> Json.encodeToString(YearMonthSerializer(), it) }
+                            .let { it -> Json.encodeToString(YearMonthSerializer(), it) }
                             .let { it: String -> listOf(it) },
                     )
                 )

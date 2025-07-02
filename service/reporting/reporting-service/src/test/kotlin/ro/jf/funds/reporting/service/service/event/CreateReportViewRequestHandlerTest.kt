@@ -44,11 +44,10 @@ class CreateReportViewRequestHandlerTest {
             fundId = fundId,
             dataConfiguration = ReportDataConfiguration(
                 currency = Currency.RON,
-                filter = RecordFilter(labels),
                 groups = null,
                 reports = ReportsConfiguration(
-                    net = NetReportConfiguration(true, true),
-                    valueReport = GenericReportConfiguration(true)
+                    net = NetReportConfiguration(true, RecordFilter(labels)),
+                    valueReport = ValueReportConfiguration(true, RecordFilter(labels), )
                 )
             )
         )

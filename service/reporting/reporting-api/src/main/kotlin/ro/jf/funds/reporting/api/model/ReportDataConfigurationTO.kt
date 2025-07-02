@@ -7,7 +7,6 @@ import ro.jf.funds.commons.model.Label
 @Serializable
 data class ReportDataConfigurationTO(
     val currency: Currency,
-    val filter: RecordFilterTO,
     val groups: List<ReportGroupTO>? = null,
     val reports: ReportsConfigurationTO,
     val forecast: ForecastConfigurationTO = ForecastConfigurationTO(1),
@@ -21,7 +20,7 @@ data class ReportGroupTO(
 
 @Serializable
 data class RecordFilterTO(
-    val labels: List<Label>?,
+    val labels: List<Label>,
 ) {
     companion object {
         fun byLabels(vararg labels: String): RecordFilterTO = RecordFilterTO(labels.map(::Label))
@@ -30,8 +29,8 @@ data class RecordFilterTO(
 
 @Serializable
 data class ReportsConfigurationTO(
-    val net: NetReportConfigurationTO = NetReportConfigurationTO(enabled = false, applyFilter = false),
-    val valueReport: GenericReportConfigurationTO = GenericReportConfigurationTO(false),
+    val net: NetReportConfigurationTO = NetReportConfigurationTO(enabled = false),
+    val valueReport: ValueReportConfigurationTO = ValueReportConfigurationTO(false),
     val groupedNet: GenericReportConfigurationTO = GenericReportConfigurationTO(false),
     val groupedBudget: GroupedBudgetReportConfigurationTO = GroupedBudgetReportConfigurationTO(false, listOf()),
 )
@@ -44,7 +43,13 @@ data class GenericReportConfigurationTO(
 @Serializable
 data class NetReportConfigurationTO(
     val enabled: Boolean,
-    val applyFilter: Boolean,
+    val filter: RecordFilterTO? = null,
+)
+
+@Serializable
+data class ValueReportConfigurationTO(
+    val enabled: Boolean,
+    val filter: RecordFilterTO? = null,
 )
 
 @Serializable

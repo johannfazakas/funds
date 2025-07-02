@@ -20,7 +20,7 @@ open class Consumer<T>(
     properties: ConsumerProperties,
     private val topic: Topic,
     private val handler: Handler<T>,
-    private val mapper: (ConsumerRecord<String, String>) -> Event<T>
+    private val mapper: (ConsumerRecord<String, String>) -> Event<T>,
 ) : Closeable {
     private val consumer = createKafkaConsumer(properties)
     private lateinit var consumerJob: Job
@@ -50,5 +50,6 @@ fun createKafkaConsumer(properties: ConsumerProperties): KafkaConsumer<String, S
         it[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         it[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         it[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
+        it[ConsumerConfig.FETCH_MAX_BYTES_CONFIG] = 20971520 // 20 MB
     })
 }

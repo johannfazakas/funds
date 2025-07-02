@@ -26,7 +26,6 @@ class ReportViewServiceTest {
     private val allLabels = labelsOf("need", "want")
     private val reportDataConfiguration = ReportDataConfiguration(
         currency = RON,
-        filter = RecordFilter(labels = allLabels),
         groups = listOf(
             ReportGroup(
                 name = "need",
@@ -38,8 +37,8 @@ class ReportViewServiceTest {
             ),
         ),
         reports = ReportsConfiguration(
-            net = NetReportConfiguration(enabled = true, applyFilter = true),
-            valueReport = GenericReportConfiguration(enabled = true),
+            net = NetReportConfiguration(enabled = true, filter = RecordFilter(labels = allLabels)),
+            valueReport = ValueReportConfiguration(enabled = true),
         ),
     )
     private val reportViewCommand = CreateReportViewCommand(
@@ -169,16 +168,18 @@ class ReportViewServiceTest {
                     ),
                 ),
                 reports = ReportsConfiguration(
-                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = false,
-                            from = YearMonth(2020, 2),
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                    groupedBudget = GroupedBudgetReportConfiguration(
+                        enabled = true, distributions = listOf(
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = false,
+                                from = YearMonth(2020, 2),
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                                )
                             )
                         )
-                    ))
+                    )
                 )
             )
         )
@@ -207,24 +208,26 @@ class ReportViewServiceTest {
                     ),
                 ),
                 reports = ReportsConfiguration(
-                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = true,
-                            from = YearMonth(2020, 2),
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
-                            )
-                        ),
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = true,
-                            from = YearMonth(2020, 2),
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                    groupedBudget = GroupedBudgetReportConfiguration(
+                        enabled = true, distributions = listOf(
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = true,
+                                from = YearMonth(2020, 2),
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                                )
+                            ),
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = true,
+                                from = YearMonth(2020, 2),
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                                )
                             )
                         )
-                    ))
+                    )
                 )
             )
         )
@@ -253,24 +256,26 @@ class ReportViewServiceTest {
                     ),
                 ),
                 reports = ReportsConfiguration(
-                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = true,
-                            from = YearMonth(2020, 2),
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
-                            )
-                        ),
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = false,
-                            from = null,
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                    groupedBudget = GroupedBudgetReportConfiguration(
+                        enabled = true, distributions = listOf(
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = true,
+                                from = YearMonth(2020, 2),
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                                )
+                            ),
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = false,
+                                from = null,
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                                )
                             )
                         )
-                    ))
+                    )
                 )
             )
         )
@@ -299,32 +304,34 @@ class ReportViewServiceTest {
                     ),
                 ),
                 reports = ReportsConfiguration(
-                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = true,
-                            from = null,
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
-                            )
-                        ),
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = false,
-                            from = YearMonth(2020, 2),
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
-                            )
-                        ),
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = false,
-                            from = YearMonth(2020, 2),
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 60),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 40)
+                    groupedBudget = GroupedBudgetReportConfiguration(
+                        enabled = true, distributions = listOf(
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = true,
+                                from = null,
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                                )
+                            ),
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = false,
+                                from = YearMonth(2020, 2),
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                                )
+                            ),
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = false,
+                                from = YearMonth(2020, 2),
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 60),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 40)
+                                )
                             )
                         )
-                    ))
+                    )
                 )
             )
         )
@@ -353,23 +360,25 @@ class ReportViewServiceTest {
                     ),
                 ),
                 reports = ReportsConfiguration(
-                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = true,
-                            from = null,
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
-                            )
-                        ),
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = false,
-                            from = YearMonth(2020, 2),
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50)
+                    groupedBudget = GroupedBudgetReportConfiguration(
+                        enabled = true, distributions = listOf(
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = true,
+                                from = null,
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                                )
+                            ),
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = false,
+                                from = YearMonth(2020, 2),
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50)
+                                )
                             )
                         )
-                    ))
+                    )
                 )
             )
         )
@@ -398,25 +407,27 @@ class ReportViewServiceTest {
                     ),
                 ),
                 reports = ReportsConfiguration(
-                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = true,
-                            from = null,
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
-                            )
-                        ),
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = false,
-                            from = YearMonth(2020, 2),
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("other", 50)
+                    groupedBudget = GroupedBudgetReportConfiguration(
+                        enabled = true, distributions = listOf(
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = true,
+                                from = null,
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                                )
+                            ),
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = false,
+                                from = YearMonth(2020, 2),
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("other", 50)
+                                )
                             )
                         )
-                    ))
+                    )
                 )
             )
         )
@@ -445,24 +456,26 @@ class ReportViewServiceTest {
                     ),
                 ),
                 reports = ReportsConfiguration(
-                    groupedBudget = GroupedBudgetReportConfiguration(enabled = true, distributions = listOf(
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = true,
-                            from = null,
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
-                            )
-                        ),
-                        GroupedBudgetReportConfiguration.BudgetDistribution(
-                            default = false,
-                            from = YearMonth(2020, 2),
-                            groups = listOf(
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
-                                GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 40)
+                    groupedBudget = GroupedBudgetReportConfiguration(
+                        enabled = true, distributions = listOf(
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = true,
+                                from = null,
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 50)
+                                )
+                            ),
+                            GroupedBudgetReportConfiguration.BudgetDistribution(
+                                default = false,
+                                from = YearMonth(2020, 2),
+                                groups = listOf(
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("need", 50),
+                                    GroupedBudgetReportConfiguration.GroupBudgetPercentage("want", 40)
+                                )
                             )
                         )
-                    ))
+                    )
                 )
             )
         )

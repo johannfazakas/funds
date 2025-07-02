@@ -78,7 +78,7 @@ fun Routing.reportingApiRouting(
                 call.parameters["reportViewId"]?.let(UUID::fromString)
                     ?: error("Missing reportViewId path parameter")
             val interval = call.reportDataInterval()
-            log.info { "Get daily report view data request for user $userId and report view $reportViewId in interval $interval." }
+            log.info { "Get report data request for user $userId and report view $reportViewId in interval $interval." }
             val reportData = reportDataService.getReportViewData(userId, reportViewId, interval).toTO()
             call.respond(status = HttpStatusCode.OK, message = reportData)
 

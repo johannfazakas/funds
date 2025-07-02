@@ -72,11 +72,10 @@ class ReportingApiTest {
     private val labels = labelsOf("need", "want")
     private val reportDataConfiguration = ReportDataConfiguration(
         currency = RON,
-        filter = RecordFilter(labels),
         groups = null,
         reports = ReportsConfiguration()
-            .withNet(enabled = true, applyFilter = true)
-            .withValueReport(enabled = true)
+            .withNet(enabled = true, filter = RecordFilter(labels))
+            .withValueReport(enabled = true, RecordFilter(labels))
     )
     private val reportViewCommand = CreateReportViewCommand(
         userId = userId,
@@ -108,7 +107,6 @@ class ReportingApiTest {
                     fundId = expenseFundId,
                     dataConfiguration = ReportDataConfigurationTO(
                         currency = RON,
-                        filter = RecordFilterTO(labels),
                         groups = listOf(
                             ReportGroupTO(
                                 name = "Need group",
@@ -120,8 +118,8 @@ class ReportingApiTest {
                             )
                         ),
                         reports = ReportsConfigurationTO(
-                            net = NetReportConfigurationTO(enabled = true, applyFilter = true),
-                            valueReport = GenericReportConfigurationTO(true)
+                            net = NetReportConfigurationTO(enabled = true, RecordFilterTO(labels)),
+                            valueReport = ValueReportConfigurationTO(true, RecordFilterTO(labels))
                         )
                     )
                 )
@@ -160,10 +158,9 @@ class ReportingApiTest {
             assertThat(createReportView.name).isEqualTo(expenseReportName)
             assertThat(createReportView.fundId).isEqualTo(expenseFundId)
             assertThat(createReportView.dataConfiguration.currency).isEqualTo(RON)
-            assertThat(createReportView.dataConfiguration.filter.labels).containsExactlyElementsOf(labels)
             assertThat(createReportView.dataConfiguration.groups).hasSize(2)
             assertThat(createReportView.dataConfiguration.reports.net.enabled).isTrue()
-            assertThat(createReportView.dataConfiguration.reports.net.applyFilter).isTrue()
+            assertThat(createReportView.dataConfiguration.reports.net.filter?.labels).containsExactlyElementsOf(labels)
         }
     }
 
