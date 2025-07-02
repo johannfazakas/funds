@@ -16,16 +16,20 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
         if (!input.dataConfiguration.reports.valueReport.enabled) {
             return@withSpan null
         }
+        val filter = getFilter(input.dataConfiguration.reports.valueReport)
         input.interval
             .generateBucketedData(
-                ValueReport(endAmountByUnit = getAmountByUnit(input.catalog.getPreviousRecordsGroupedByUnit()))
+                ValueReport(
+                    endAmountByUnit = getAmountByUnit(input.catalog.getPreviousRecordsGroupedByUnit(), filter)
+                )
             ) { interval, previous ->
                 getValueReport(
                     interval,
                     previous.endAmountByUnit,
                     input.catalog.getBucketRecordsGroupedByUnit(interval),
                     input.conversions,
-                    input.dataConfiguration
+                    input.dataConfiguration,
+                    filter
                 )
             }
             .let(::ByBucket)
@@ -52,14 +56,22 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
         }.let { ByBucket(it) }
     }
 
+    private fun getFilter(
+        configuration: ValueReportConfiguration,
+    ): (ReportRecord) -> Boolean =
+        configuration.filter
+            ?.let { f -> { record: ReportRecord -> f.test(record) } }
+            ?: { _: ReportRecord -> true }
+
     private fun getValueReport(
         bucket: TimeBucket,
         startAmountByUnit: ByUnit<BigDecimal>,
         bucketRecords: ByUnit<List<ReportRecord>>,
         conversions: ConversionsResponse,
         reportDataConfiguration: ReportDataConfiguration,
+        filter: (ReportRecord) -> Boolean,
     ): ValueReport {
-        val amountByUnit = getAmountByUnit(bucketRecords)
+        val amountByUnit = getAmountByUnit(bucketRecords, filter)
         val endAmountByUnit = amountByUnit.add(startAmountByUnit)
 
         val startValue = startAmountByUnit.valueAt(bucket.from, reportDataConfiguration.currency, conversions)
@@ -68,8 +80,11 @@ class ValueReportDataResolver : ReportDataResolver<ValueReport> {
         return ValueReport(startValue, endValue, BigDecimal.ZERO, BigDecimal.ZERO, endAmountByUnit)
     }
 
-    private fun getAmountByUnit(records: ByUnit<List<ReportRecord>>): ByUnit<BigDecimal> =
-        records.mapValues { (_, items) -> items.sumOf { it.amount } }
+    private fun getAmountByUnit(
+        records: ByUnit<List<ReportRecord>>,
+        filter: (ReportRecord) -> Boolean,
+    ): ByUnit<BigDecimal> =
+        records.mapValues { (_, items) -> items.filter(filter).sumOf { it.amount } }
 
     private fun ByUnit<BigDecimal>.valueAt(
         date: LocalDate,

@@ -19,6 +19,7 @@ fun createKafkaProducer(properties: ProducerProperties): KafkaProducer<String, S
         it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
         it[ProducerConfig.RETRIES_CONFIG] = 3
         it[ProducerConfig.ACKS_CONFIG] = "all"
+        it[ProducerConfig.MAX_REQUEST_SIZE_CONFIG] = 20971520 // 20 MB
     })
 }
 

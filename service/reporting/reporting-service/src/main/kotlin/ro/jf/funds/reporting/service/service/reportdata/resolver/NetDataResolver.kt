@@ -38,11 +38,10 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
         records: ByUnit<List<ReportRecord>>,
         input: ReportDataResolverInput,
     ): BigDecimal {
-        val recordFilter: (ReportRecord) -> Boolean = if (input.dataConfiguration.reports.net.applyFilter)
-            { record -> record.labels.any { label -> label in (input.dataConfiguration.filter.labels ?: emptyList()) } }
-        else
-            { _ -> true }
-        return getFilteredNet(records, recordFilter, input)
+        val filter = input.dataConfiguration.reports.net.filter
+            ?.let { filter -> { record: ReportRecord -> filter.test(record) } }
+            ?: { _: ReportRecord -> true }
+        return getFilteredNet(records, filter, input)
     }
 
     private fun getFilteredNet(

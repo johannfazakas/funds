@@ -54,11 +54,10 @@ class ReportDataServiceTest {
     fun `get net data grouped by months`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
-            filter = RecordFilter(labels = allLabels),
             groups = null,
             reports = ReportsConfiguration()
-                .withNet(enabled = true, applyFilter = true)
-                .withValueReport(enabled = true),
+                .withNet(enabled = true, filter = RecordFilter(labels = allLabels))
+                .withValueReport(enabled = true, filter = RecordFilter(labels = allLabels)),
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration))
@@ -103,10 +102,9 @@ class ReportDataServiceTest {
     fun `get net data grouped by months with forecast`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
-            filter = RecordFilter(labels = allLabels),
             groups = null,
             reports = ReportsConfiguration()
-                .withNet(enabled = true, applyFilter = true),
+                .withNet(enabled = true, filter = RecordFilter(labels = allLabels)),
             forecast = ForecastConfiguration(5)
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
@@ -165,7 +163,6 @@ class ReportDataServiceTest {
     fun `get grouped net data grouped by months`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
-            filter = RecordFilter(labels = allLabels),
             groups = listOf(
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
@@ -215,7 +212,6 @@ class ReportDataServiceTest {
     fun `get grouped budget should distribute external income`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
-            filter = RecordFilter(labels = allLabels),
             groups = listOf(
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
@@ -297,7 +293,6 @@ class ReportDataServiceTest {
     fun `get grouped budget should calculate expenses and distribute currencies`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
-            filter = RecordFilter(labels = allLabels),
             groups = listOf(
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
@@ -378,7 +373,6 @@ class ReportDataServiceTest {
     fun `get grouped budget should adapt to changing currency exchange rates`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
-            filter = RecordFilter(labels = allLabels),
             groups = listOf(
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
@@ -500,7 +494,6 @@ class ReportDataServiceTest {
     fun `get grouped budget should adapt to budget distribution change`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
-            filter = RecordFilter(labels = allLabels),
             groups = listOf(
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
@@ -617,7 +610,6 @@ class ReportDataServiceTest {
     fun `get grouped budget with forecast should include future estimated values`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
-            filter = RecordFilter(labels = allLabels),
             groups = listOf(
                 ReportGroup("Need", RecordFilter.byLabels("need")),
                 ReportGroup("Want", RecordFilter.byLabels("want"))
@@ -692,10 +684,9 @@ class ReportDataServiceTest {
     fun `get monthly value data with single currency`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
-            filter = RecordFilter(labels = allLabels),
             groups = null,
             reports = ReportsConfiguration()
-                .withNet(enabled = true, applyFilter = true)
+                .withNet(enabled = true, filter = RecordFilter(labels = allLabels))
                 .withValueReport(enabled = true),
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
@@ -744,7 +735,6 @@ class ReportDataServiceTest {
     fun `get monthly value data with multiple currencies`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
             currency = RON,
-            filter = RecordFilter(labels = allLabels),
             groups = null,
             reports = ReportsConfiguration()
                 .withValueReport(enabled = true),

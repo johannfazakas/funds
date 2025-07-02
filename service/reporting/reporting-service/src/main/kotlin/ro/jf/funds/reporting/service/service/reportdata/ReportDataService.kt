@@ -55,26 +55,27 @@ class ReportDataService(
         fundTransactionSdk
             .listTransactions(reportView.userId, reportView.fundId, transactionFilter).items
             .asSequence()
-            .flatMap { it.toReportRecords(reportView.userId, reportView.id) }
+            .flatMap { it.toReportRecords(reportView) }
             .toList()
     }
 
     private fun FundTransactionTO.toReportRecords(
-        userId: UUID,
-        reportViewId: UUID,
+        reportView: ReportView,
     ): List<ReportRecord> {
-        return this.records.map { record ->
-            ReportRecord(
-                id = UUID.randomUUID(),
-                userId = userId,
-                reportViewId = reportViewId,
-                date = this.dateTime.date,
-                unit = record.unit,
-                amount = record.amount,
-                recordId = record.id,
-                labels = record.labels,
-            )
-        }
+        return this.records
+            .filter { record -> record.fundId == reportView.fundId }
+            .map { record ->
+                ReportRecord(
+                    id = UUID.randomUUID(),
+                    userId = userId,
+                    reportViewId = reportView.id,
+                    date = this.dateTime.date,
+                    unit = record.unit,
+                    amount = record.amount,
+                    recordId = record.id,
+                    labels = record.labels,
+                )
+            }
     }
 
     private fun getReportDataAggregates(
@@ -138,7 +139,7 @@ class ReportDataService(
         targetUnit: Currency,
         interval: ReportDataInterval,
     ): List<ConversionRequest> {
-        val startDate = reportRecords.minOf { it.date }
+        val startDate = reportRecords.minOfOrNull { it.date } ?: return emptyList()
         val endDate = interval.toDate
         return generateSequence(YearMonthTO(startDate.year, startDate.month.value)) { it.next() }
             .asSequence()

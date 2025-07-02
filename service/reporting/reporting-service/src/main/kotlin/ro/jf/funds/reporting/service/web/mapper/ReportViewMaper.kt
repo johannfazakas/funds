@@ -10,13 +10,42 @@ fun ReportView.toTO(): ReportViewTO = ReportViewTO(
     fundId = fundId,
     dataConfiguration = ReportDataConfigurationTO(
         currency = dataConfiguration.currency,
-        filter = RecordFilterTO(dataConfiguration.filter.labels ?: emptyList()),
         reports = ReportsConfigurationTO(
-            net = NetReportConfigurationTO(enabled = true, applyFilter = true),
-            valueReport = GenericReportConfigurationTO(enabled = true),
+            net = dataConfiguration.reports.net.let {
+                NetReportConfigurationTO(
+                    enabled = it.enabled,
+                    filter = it.filter?.toTO()
+                )
+            },
+            valueReport = ValueReportConfigurationTO(
+                enabled = dataConfiguration.reports.valueReport.enabled,
+                filter = dataConfiguration.reports.valueReport.filter?.toTO()
+            ),
+            groupedNet = GenericReportConfigurationTO(
+                enabled = dataConfiguration.reports.groupedNet.enabled
+            ),
+            groupedBudget = dataConfiguration.reports.groupedBudget.let {
+                GroupedBudgetReportConfigurationTO(
+                    enabled = it.enabled,
+                    distributions = it.distributions.map { distribution ->
+                        GroupedBudgetReportConfigurationTO.BudgetDistributionTO(
+                            default = distribution.default,
+                            from = distribution.from?.let { YearMonthTO(year = it.year, month = it.month) },
+                            groups = distribution.groups.map { group ->
+                                GroupedBudgetReportConfigurationTO.GroupBudgetPercentageTO(
+                                    group = group.group,
+                                    percentage = group.percentage
+                                )
+                            }
+                        )
+                    }
+                )
+            }
         ),
     ),
 )
+
+fun RecordFilter.toTO(): RecordFilterTO = RecordFilterTO(labels = labels)
 
 fun CreateReportViewTO.toDomain(userId: UUID) = CreateReportViewCommand(
     userId = userId,
@@ -27,11 +56,12 @@ fun CreateReportViewTO.toDomain(userId: UUID) = CreateReportViewCommand(
 
 fun ReportDataConfigurationTO.toDomain() = ReportDataConfiguration(
     currency = currency,
-    filter = RecordFilter(filter.labels),
     groups = groups?.map { ReportGroup(it.name, RecordFilter(it.filter.labels)) },
     reports = ReportsConfiguration(
-        net = NetReportConfiguration(reports.net.enabled, reports.net.applyFilter),
-        valueReport = GenericReportConfiguration(reports.valueReport.enabled),
+        net = NetReportConfiguration(reports.net.enabled, reports.net.filter?.let { RecordFilter(it.labels) }),
+        valueReport = ValueReportConfiguration(
+            reports.valueReport.enabled,
+            reports.valueReport.filter?.let { RecordFilter(it.labels) }),
         groupedNet = GenericReportConfiguration(reports.groupedNet.enabled),
         groupedBudget = reports.groupedBudget.toDomain(),
     ),
