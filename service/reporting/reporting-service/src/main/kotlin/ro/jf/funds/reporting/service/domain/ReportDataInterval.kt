@@ -23,65 +23,46 @@ sealed class ReportDataInterval() {
     fun getNextBucket(previous: TimeBucket): TimeBucket =
         getBucket(previous.to.plus(1, DateTimeUnit.DAY))
 
-    fun getPreviousBucket(previous: TimeBucket): TimeBucket =
-        getBucket(previous.from.minus(1, DateTimeUnit.DAY))
+    fun <D> generateBucketedData(
+        function: (TimeBucket) -> D,
+    ): Map<TimeBucket, D> =
+        generateSequence(getFirstBucket()) { getNextBucket(it) }
+            .takeWhile { it.from <= toDate }
+            .map { bucket -> bucket to function(bucket) }
+            .toMap()
 
     fun <D> generateBucketedData(
-        seedFunction: (TimeBucket) -> D,
-        nextFunction: (TimeBucket, D) -> D,
-    ): Map<TimeBucket, D> {
-        return generateSequence(
-            seedFunction = { getFirstBucket().let { it to seedFunction(it) } },
-            nextFunction = { (previousBucket, previousData) ->
-                getNextBucket(previousBucket)
-                    .takeIf { it.from <= toDate }
-                    ?.let { it to nextFunction(it, previousData) }
-            }
-        ).toMap()
-    }
+        previousData: D,
+        function: (TimeBucket, D) -> D,
+    ): Map<TimeBucket, D> =
+        generateSequence(getFirstBucket().let {
+            it to function(it, previousData)
+        }) { (previousBucket, previousData) ->
+            getNextBucket(previousBucket)
+                .takeIf { it.from <= toDate }
+                ?.let { it to function(it, previousData) }
+        }
+            .toMap()
 
     fun <D> generateForecastData(
         inputBuckets: Int,
-        inputDataResolver: (TimeBucket) -> D?,
+        realData: ByBucket<D>,
         forecastResolver: (List<D>) -> D,
     ): Map<TimeBucket, D> {
-        data class ForecastBucket(
-            val forecastBucket: TimeBucket,
-            val forecastInputBuckets: List<TimeBucket>,
-            val forecastedData: Map<TimeBucket, D>,
-        )
-        // TODO(Johann) could this be refactored? isn't this actually a fold?
-        val forecastUntilDate = forecastUntilDate ?: return emptyMap()
-        return generateSequence<ForecastBucket>(
-            seedFunction = {
-                val forecastBucket = getNextBucket(getLastBucket())
-                val inputBuckets = generateSequence(
-                    seed = getLastBucket(),
-                    nextFunction = { previousBucket -> getPreviousBucket(previousBucket) }
-                )
-                    .take(inputBuckets)
-                    .toList()
-                    .reversed()
-                val forecastedData = inputBuckets
-                    .mapNotNull { inputDataResolver(it) }
-                    .let { mapOf(forecastBucket to forecastResolver(it)) }
-                ForecastBucket(forecastBucket, inputBuckets, forecastedData)
-            },
-            nextFunction = { previousForecast: ForecastBucket ->
-                val forecastBucket = getNextBucket(previousForecast.forecastBucket)
-                val inputBuckets = previousForecast.forecastInputBuckets
-                    .takeLast(inputBuckets - 1)
-                    .plus(previousForecast.forecastBucket)
-                val forecastedData = inputBuckets
-                    .mapNotNull { previousForecast.forecastedData[it] ?: inputDataResolver(it) }
-                    .let { mapOf(forecastBucket to forecastResolver(it)) }
-                ForecastBucket(forecastBucket, inputBuckets, previousForecast.forecastedData + forecastedData)
+        val relevantTailBuckets = realData.itemByBucket.entries
+            .sortedBy { it.key.from }
+            .takeLast(inputBuckets)
+            .map { it.value }
+            .toList()
+
+        val forecastUntil = forecastUntilDate ?: return emptyMap()
+        return generateSequence(getNextBucket(getLastBucket())) { getNextBucket(it) }
+            .takeWhile { it.from < forecastUntil }
+            .fold(relevantTailBuckets to mapOf<TimeBucket, D>()) { (relevantBuckets, forecast), bucket ->
+                val forecastData: D = forecastResolver(relevantBuckets)
+                (relevantBuckets + forecastData).takeLast(inputBuckets) to forecast + (bucket to forecastData)
             }
-        )
-            .takeWhile { it.forecastBucket.from <= forecastUntilDate }
-            .lastOrNull<ForecastBucket>()
-            ?.forecastedData
-            ?: emptyMap()
+            .second
     }
 
     fun getForecastBuckets(): Sequence<TimeBucket> {

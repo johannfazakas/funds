@@ -19,15 +19,10 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         val reportCatalog = input.catalog
         val previousLeftBudgets = getPreviousGroupedBudget(reportCatalog, input, groupedBudgetFeature)
 
-        val generateBucketedData = input.interval
-            .generateBucketedData(
-                { timeBucket ->
-                    getSeedGroupedBudget(reportCatalog, timeBucket, previousLeftBudgets, input, groupedBudgetFeature)
-                },
-                { interval, previous ->
-                    getNextGroupedBudget(reportCatalog, interval, previous, input, groupedBudgetFeature)
-                }
-            )
+        val generateBucketedData =
+            input.interval.generateBucketedData(previousLeftBudgets) { timeBucket, previous ->
+                getNextGroupedBudget(reportCatalog, timeBucket, previous, input, groupedBudgetFeature)
+            }
         mergeBucketedData(generateBucketedData, input)
     }
 
@@ -102,7 +97,7 @@ class GroupedBudgetDataResolver : ReportDataResolver<ByGroup<Budget>> {
         withSpan("forecast") {
             input.interval.generateForecastData(
                 input.forecastConfiguration.inputBuckets,
-                { interval -> input.realData[interval] }
+                input.realData
             ) { inputBuckets: List<ByGroup<Budget>> ->
                 val inputSize = inputBuckets.size.toBigDecimal()
                 input.groups

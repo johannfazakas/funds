@@ -1,7 +1,7 @@
 package ro.jf.funds.reporting.service.domain
 
 data class ByBucket<T>(
-    private val itemByBucket: Map<TimeBucket, T>,
+    val itemByBucket: Map<TimeBucket, T>,
 ) : Iterable<Map.Entry<TimeBucket, T>> {
     operator fun get(timeBucket: TimeBucket): T? = itemByBucket[timeBucket]
 

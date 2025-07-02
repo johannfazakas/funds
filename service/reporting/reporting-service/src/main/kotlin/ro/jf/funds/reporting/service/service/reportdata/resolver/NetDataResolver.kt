@@ -16,12 +16,9 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
             return@withSpan null
         }
         input.interval
-            .generateBucketedData(
-                { interval -> getNet(input.catalog.getBucketRecordsGroupedByUnit(interval), input) },
-                { interval, _ ->
-                    getNet(input.catalog.getBucketRecordsGroupedByUnit(interval), input)
-                }
-            )
+            .generateBucketedData { interval ->
+                getNet(input.catalog.getBucketRecordsGroupedByUnit(interval), input)
+            }
             .let { ByBucket(it) }
     }
 
@@ -30,7 +27,7 @@ class NetDataResolver : ReportDataResolver<BigDecimal> {
     ): ByBucket<BigDecimal> = withSpan("forecast") {
         input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
-            { interval -> input.realData[interval] }
+            input.realData
         ) { inputBuckets: List<BigDecimal> ->
             val inputSize = inputBuckets.size.toBigDecimal()
             inputBuckets.sumOf { it }.divide(inputSize, MathContext.DECIMAL64)
