@@ -39,8 +39,10 @@ services:
       - '5247:5247'
     environment:
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_user
+      - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres
+      - otel-collector
 
   historical-pricing-service:
     image: funds/historical-pricing-service:latest
@@ -49,8 +51,10 @@ services:
       - '5231:5231'
     environment:
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_historical_pricing
+      - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres
+      - otel-collector
 
   account-service:
     image: funds/account-service:latest
@@ -60,9 +64,11 @@ services:
     environment:
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_account
       - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
+      - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres
       - kafka
+      - otel-collector
 
   fund-service:
     image: funds/fund-service:latest
@@ -73,9 +79,11 @@ services:
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_fund
       - ACCOUNT_BASE_URL=http://ff_account:5211
       - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
+      - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres
       - kafka
+      - otel-collector
 
   import-service:
     image: funds/import-service:latest
@@ -88,9 +96,11 @@ services:
       - HISTORICAL_PRICING_BASE_URL=http://ff_historical_pricing:5231
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_import
       - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
+      - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres
       - kafka
+      - otel-collector
 
   reporting-service:
     image: funds/reporting-service:latest
@@ -106,6 +116,7 @@ services:
     depends_on:
       - postgres
       - kafka
+      - otel-collector
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.128.0

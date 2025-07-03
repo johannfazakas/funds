@@ -38,5 +38,11 @@ dependencies {
     api(libs.kotlin.logging)
     api(libs.logback)
 
+    api(libs.opentelemetry.api)
+    api(libs.opentelemetry.sdk)
+    api(libs.opentelemetry.exporter.otlp)
+    api(libs.opentelemetry.extension.kotlin)
+    api(libs.opentelemetry.ktor)
+
     testImplementation(project(":commons:commons-test"))
 }

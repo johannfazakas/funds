@@ -20,5 +20,6 @@ database:
   user: postgres
   password: pass
 observability:
+  enabled: true
   otel-collector:
     grpc-endpoint: "$OTEL_COLLECTOR_GRPC_ENDPOINT:http://localhost:4317/v1/traces"

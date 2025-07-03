@@ -1,4 +1,4 @@
-package ro.jf.funds.reporting.service.utils
+package ro.jf.funds.commons.observability
 
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
@@ -7,8 +7,6 @@ import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.extension.kotlin.asContextElement
 import kotlinx.coroutines.withContext
-
-// TODO(Johann) should extract everything tracing related to commons
 
 fun <T> withSpan(spanName: String, vararg attributes: Pair<String, Any?>, block: () -> T): T {
     val (klass) = block.javaClass.name.split('$')

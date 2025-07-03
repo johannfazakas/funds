@@ -9,6 +9,7 @@ import ro.jf.funds.account.api.AccountApi
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.observability.withSuspendingSpan
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
@@ -23,7 +24,7 @@ class AccountSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : AccountApi {
-    override suspend fun listAccounts(userId: UUID): ListTO<AccountTO> {
+    override suspend fun listAccounts(userId: UUID): ListTO<AccountTO> = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/accounts") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -35,16 +36,16 @@ class AccountSdk(
         }
         val accounts = response.body<ListTO<AccountTO>>()
         log.debug { "Retrieved accounts: $accounts" }
-        return accounts
+        accounts
     }
 
-    override suspend fun findAccountById(userId: UUID, accountId: UUID): AccountTO? {
+    override suspend fun findAccountById(userId: UUID, accountId: UUID): AccountTO? = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/accounts/$accountId") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }
         }
-        return when (response.status) {
+        when (response.status) {
             HttpStatusCode.OK -> {
                 log.debug { "Retrieved account: $response" }
                 response.body()
@@ -62,7 +63,7 @@ class AccountSdk(
         }
     }
 
-    override suspend fun createAccount(userId: UUID, request: CreateAccountTO): AccountTO {
+    override suspend fun createAccount(userId: UUID, request: CreateAccountTO): AccountTO = withSuspendingSpan {
         val response = httpClient.post("$baseUrl$BASE_PATH/accounts") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -70,7 +71,7 @@ class AccountSdk(
             contentType(ContentType.Application.Json)
             setBody(request)
         }
-        return when (response.status) {
+        when (response.status) {
             HttpStatusCode.Created -> response.body()
             else -> {
                 log.warn { "Unexpected response on create currency account: $response" }
@@ -79,7 +80,7 @@ class AccountSdk(
         }
     }
 
-    override suspend fun deleteAccountById(userId: UUID, accountId: UUID) {
+    override suspend fun deleteAccountById(userId: UUID, accountId: UUID) = withSuspendingSpan {
         val response = httpClient.delete("$baseUrl$BASE_PATH/accounts/$accountId") {
             headers {
                 append(USER_ID_HEADER, userId.toString())

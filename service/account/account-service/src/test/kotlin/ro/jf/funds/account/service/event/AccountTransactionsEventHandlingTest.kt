@@ -2,6 +2,7 @@ package ro.jf.funds.account.service.event
 
 import io.ktor.server.application.*
 import io.ktor.server.testing.*
+import io.opentelemetry.api.GlobalOpenTelemetry
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat

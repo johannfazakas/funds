@@ -1,5 +1,6 @@
 ktor:
   application:
+    id: "funds::import-service"
     modules:
       - ro.jf.funds.importer.service.ImportServiceApplicationKt.module
   deployment:
@@ -20,3 +21,7 @@ integration:
     base-url: "$FUND_BASE_URL:http://localhost:5253"
   historical-pricing-service:
     base-url: "$HISTORICAL_PRICING_BASE_URL:http://localhost:5231"
+observability:
+  enabled: true
+  otel-collector:
+    grpc-endpoint: "$OTEL_COLLECTOR_GRPC_ENDPOINT:http://localhost:4317/v1/traces"

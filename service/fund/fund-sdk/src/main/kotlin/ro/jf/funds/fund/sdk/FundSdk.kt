@@ -6,6 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.observability.withSuspendingSpan
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
@@ -21,7 +22,7 @@ class FundSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : FundApi {
-    override suspend fun getFundById(userId: UUID, fundId: UUID): FundTO? {
+    override suspend fun getFundById(userId: UUID, fundId: UUID): FundTO? = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds/$fundId") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -29,16 +30,16 @@ class FundSdk(
         }
         if (response.status == HttpStatusCode.NotFound) {
             log.info { "Fund not found by id: $fundId" }
-            return null
+            return@withSuspendingSpan null
         }
         if (response.status != HttpStatusCode.OK) {
             log.warn { "Unexpected response on get fund by id: $response" }
             throw response.toApiException()
         }
-        return response.body()
+        response.body()
     }
 
-    override suspend fun getFundByName(userId: UUID, name: FundName): FundTO? {
+    override suspend fun getFundByName(userId: UUID, name: FundName): FundTO? = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds/name/${name}".encodeURLPath()) {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -46,16 +47,16 @@ class FundSdk(
         }
         if (response.status == HttpStatusCode.NotFound) {
             log.info { "Fund not found by name: $name" }
-            return null
+            return@withSuspendingSpan null
         }
         if (response.status != HttpStatusCode.OK) {
             log.warn { "Unexpected response on get fund by name: $response" }
             throw response.toApiException()
         }
-        return response.body()
+        response.body()
     }
 
-    override suspend fun listFunds(userId: UUID): ListTO<FundTO> {
+    override suspend fun listFunds(userId: UUID): ListTO<FundTO> = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -67,10 +68,10 @@ class FundSdk(
         }
         val funds = response.body<ListTO<FundTO>>()
         log.debug { "Retrieved funds: $funds" }
-        return funds
+        funds
     }
 
-    override suspend fun createFund(userId: UUID, request: CreateFundTO): FundTO {
+    override suspend fun createFund(userId: UUID, request: CreateFundTO): FundTO = withSuspendingSpan {
         val response = httpClient.post("$baseUrl$BASE_PATH/funds") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -82,6 +83,6 @@ class FundSdk(
             log.warn { "Unexpected response on create fund: $response" }
             throw response.toApiException()
         }
-        return response.body()
+        response.body()
     }
 }

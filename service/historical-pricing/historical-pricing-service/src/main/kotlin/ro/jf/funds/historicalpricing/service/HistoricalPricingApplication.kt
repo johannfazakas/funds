@@ -6,6 +6,7 @@ import org.koin.ktor.ext.get
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
+import ro.jf.funds.commons.config.configureTracing
 import ro.jf.funds.historicalpricing.service.config.configureHistoricalPricingErrorHandling
 import ro.jf.funds.historicalpricing.service.config.configureHistoricalPricingRouting
 import ro.jf.funds.historicalpricing.service.config.historicalPricingDependencies
@@ -21,4 +22,5 @@ fun Application.module() {
     configureDatabaseMigration(get<DataSource>())
     configureHistoricalPricingRouting(get())
     configureHistoricalPricingErrorHandling()
+    configureTracing()
 }

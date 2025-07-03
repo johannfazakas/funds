@@ -9,6 +9,7 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.AccountTransactionApi
 import ro.jf.funds.account.api.model.*
 import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.observability.withSuspendingSpan
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.toApiException
 import java.util.*
@@ -25,7 +26,7 @@ class AccountTransactionSdk(
     override suspend fun createTransaction(
         userId: UUID,
         request: CreateAccountTransactionTO,
-    ): AccountTransactionTO {
+    ): AccountTransactionTO = withSuspendingSpan {
         val response: HttpResponse = httpClient.post("$baseUrl$BASE_PATH/transactions") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -39,10 +40,13 @@ class AccountTransactionSdk(
         }
         val accountTransaction = response.body<AccountTransactionTO>()
         log.debug { "Created account transaction: $accountTransaction" }
-        return accountTransaction
+        accountTransaction
     }
 
-    override suspend fun listTransactions(userId: UUID, filter: AccountTransactionFilterTO): ListTO<AccountTransactionTO> {
+    override suspend fun listTransactions(
+        userId: UUID,
+        filter: AccountTransactionFilterTO,
+    ): ListTO<AccountTransactionTO> = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
             sequenceOf(
                 filter.transactionProperties.map { (key, value) -> "$TRANSACTION_PROPERTIES_PREFIX$key" to value },
@@ -62,10 +66,10 @@ class AccountTransactionSdk(
         }
         val transactions = response.body<ListTO<AccountTransactionTO>>()
         log.debug { "Retrieved transactions: $transactions" }
-        return transactions
+        transactions
     }
 
-    override suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
+    override suspend fun deleteTransaction(userId: UUID, transactionId: UUID) = withSuspendingSpan {
         val response = httpClient.delete("$baseUrl$BASE_PATH/transactions/$transactionId") {
             headers {
                 append(USER_ID_HEADER, userId.toString())

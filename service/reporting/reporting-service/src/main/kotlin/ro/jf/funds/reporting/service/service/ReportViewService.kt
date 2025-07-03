@@ -1,12 +1,12 @@
 package ro.jf.funds.reporting.service.service
 
 import mu.KotlinLogging.logger
+import ro.jf.funds.commons.observability.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
 import ro.jf.funds.reporting.service.domain.ReportView
 import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
-import ro.jf.funds.reporting.service.utils.withSuspendingSpan
 import java.util.*
 
 private val log = logger { }
