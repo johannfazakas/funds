@@ -18,7 +18,6 @@ import ro.jf.funds.reporting.service.domain.ReportDataInterval
 import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.domain.YearMonth
 import ro.jf.funds.reporting.service.service.ReportViewService
-import ro.jf.funds.reporting.service.service.ReportViewTaskService
 import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
 import ro.jf.funds.reporting.service.web.mapper.toDomain
 import ro.jf.funds.reporting.service.web.mapper.toTO
@@ -28,30 +27,15 @@ private val log = logger { }
 
 fun Routing.reportingApiRouting(
     reportViewService: ReportViewService,
-    reportViewTaskService: ReportViewTaskService,
     reportDataService: ReportDataService,
 ) {
     route("/funds-api/reporting/v1/report-views") {
-        // TODO(Johann) is a task required here? couldn't it just grab data from API?
-        post("/tasks") {
+        post {
             val userId = call.userId()
             val request = call.receive<CreateReportViewTO>()
             log.info { "Create report view request for user $userId: $request" }
-            val response = reportViewTaskService
-                .triggerReportViewTask(request.toDomain(userId))
-                .toTO { reportViewId -> reportViewService.getReportView(userId, reportViewId) }
-            call.respond(status = HttpStatusCode.Accepted, message = response)
-        }
-
-        get("/tasks/{reportViewTaskId}") {
-            val userId = call.userId()
-            val taskId =
-                call.parameters["reportViewTaskId"]?.let(UUID::fromString) ?: error("Missing taskId path parameter")
-            log.info { "Get report view task request for user $userId and task $taskId." }
-            val response = reportViewTaskService.getReportViewTask(userId, taskId)
-                ?.toTO { reportViewId -> reportViewService.getReportView(userId, reportViewId) }
-                ?: return@get call.respond(HttpStatusCode.NotFound)
-            call.respond(status = HttpStatusCode.OK, message = response)
+            val response = reportViewService.createReportView(userId, request.toDomain(userId)).toTO()
+            call.respond(status = HttpStatusCode.Created, message = response)
         }
 
         get {

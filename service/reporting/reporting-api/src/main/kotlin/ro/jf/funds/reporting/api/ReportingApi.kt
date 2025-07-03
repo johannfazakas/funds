@@ -2,12 +2,14 @@ package ro.jf.funds.reporting.api
 
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.reporting.api.model.*
+import ro.jf.funds.reporting.api.model.CreateReportViewTO
+import ro.jf.funds.reporting.api.model.ReportDataTO
+import ro.jf.funds.reporting.api.model.ReportViewTO
+import ro.jf.funds.reporting.api.model.YearMonthTO
 import java.util.*
 
 interface ReportingApi {
-    suspend fun createReportView(userId: UUID, request: CreateReportViewTO): ReportViewTaskTO
-    suspend fun getReportViewTask(userId: UUID, taskId: UUID): ReportViewTaskTO
+    suspend fun createReportView(userId: UUID, request: CreateReportViewTO): ReportViewTO
     suspend fun listReportViews(userId: UUID): ListTO<ReportViewTO>
     suspend fun getReportView(userId: UUID, reportViewId: UUID): ReportViewTO
 

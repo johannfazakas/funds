@@ -19,6 +19,5 @@ fun Application.module() {
     configureReportingErrorHandling()
     configureContentNegotiation()
     configureDatabaseMigration(get<DataSource>())
-    configureReportingEventHandling()
     configureReportingRouting()
 }

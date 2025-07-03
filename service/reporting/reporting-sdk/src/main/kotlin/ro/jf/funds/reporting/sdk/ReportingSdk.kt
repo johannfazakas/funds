@@ -24,27 +24,15 @@ class ReportingSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : ReportingApi {
-    override suspend fun createReportView(userId: UUID, request: CreateReportViewTO): ReportViewTaskTO {
+    override suspend fun createReportView(userId: UUID, request: CreateReportViewTO): ReportViewTO {
         log.info { "Creating for user $userId report view $request." }
-        val response = httpClient.post("$baseUrl/funds-api/reporting/v1/report-views/tasks") {
+        val response = httpClient.post("$baseUrl/funds-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
             contentType(ContentType.Application.Json)
             setBody(request)
         }
-        if (response.status != HttpStatusCode.Accepted) {
+        if (response.status != HttpStatusCode.Created) {
             log.warn { "Unexpected response on create fund: $response" }
-            throw response.toApiException()
-        }
-        return response.body()
-    }
-
-    override suspend fun getReportViewTask(userId: UUID, taskId: UUID): ReportViewTaskTO {
-        log.info { "Getting report view task for user $userId and task $taskId." }
-        val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views/tasks/$taskId") {
-            header(USER_ID_HEADER, userId.toString())
-        }
-        if (response.status != HttpStatusCode.OK) {
-            log.warn { "Unexpected response on get report view task: $response" }
             throw response.toApiException()
         }
         return response.body()

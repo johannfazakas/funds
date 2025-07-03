@@ -5,7 +5,6 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.testing.*
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
@@ -18,13 +17,10 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
-import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.event.ConsumerProperties
-import ro.jf.funds.commons.event.asEvent
-import ro.jf.funds.commons.event.createKafkaConsumer
 import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.model.ListTO
@@ -41,16 +37,16 @@ import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.config.configureReportingErrorHandling
-import ro.jf.funds.reporting.service.config.configureReportingEventHandling
 import ro.jf.funds.reporting.service.config.configureReportingRouting
 import ro.jf.funds.reporting.service.config.reportingDependencies
-import ro.jf.funds.reporting.service.domain.*
+import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
+import ro.jf.funds.reporting.service.domain.RecordFilter
+import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
+import ro.jf.funds.reporting.service.domain.ReportsConfiguration
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
-import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import ro.jf.funds.reporting.service.utils.record
 import ro.jf.funds.reporting.service.utils.transaction
 import java.math.BigDecimal
-import java.time.Duration.ofSeconds
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
@@ -60,7 +56,6 @@ class ReportingApiTest {
     private val createReportViewTopic = testTopicSupplier.topic(REPORTING_DOMAIN, REPORT_VIEW_REQUEST)
     private val consumerProperties = ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer")
     private val reportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)
-    private val reportViewTaskRepository = ReportViewTaskRepository(PostgresContainerExtension.connection)
     private val fundTransactionSdk = mock<FundTransactionSdk>()
     private val historicalPricingSdk = mock<HistoricalPricingSdk>()
 
@@ -85,7 +80,7 @@ class ReportingApiTest {
     )
 
     @Test
-    fun `create report view should create it async`() = testApplication {
+    fun `create report view should create it`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val httpClient = createJsonHttpClient()
@@ -98,7 +93,7 @@ class ReportingApiTest {
             )
         whenever(fundTransactionSdk.listTransactions(userId, expenseFundId)).thenReturn(ListTO.of(transaction))
 
-        val response = httpClient.post("/funds-api/reporting/v1/report-views/tasks") {
+        val response = httpClient.post("/funds-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
             contentType(ContentType.Application.Json)
             setBody(
@@ -126,65 +121,16 @@ class ReportingApiTest {
             )
         }
 
-        assertThat(response.status).isEqualTo(HttpStatusCode.Accepted)
-        val reportViewTaskTO = response.body<ReportViewTaskTO>()
-        assertThat(reportViewTaskTO.taskId).isNotNull
-        assertThat(reportViewTaskTO.status).isEqualTo(ReportViewTaskStatus.IN_PROGRESS)
+        assertThat(response.status).isEqualTo(HttpStatusCode.Created)
+        val reportViewTO = response.body<ReportViewTO>()
 
-        val createReportViewCommandConsumer = createKafkaConsumer(consumerProperties)
-        createReportViewCommandConsumer.subscribe(listOf(createReportViewTopic.value))
-
-        await().atMost(ofSeconds(5)).untilAsserted {
-            val createReportViewCommand = createReportViewCommandConsumer.poll(ofSeconds(1))
-                .map { it.asEvent<CreateReportViewCommand>() }
-                .firstOrNull { it.payload.fundId == expenseFundId }
-            assertThat(createReportViewCommand).isNotNull
-        }
-
-        await().atMost(ofSeconds(10)).untilAsserted {
-            val createReportViewTask = runBlocking {
-                reportViewTaskRepository.findById(userId, reportViewTaskTO.taskId)
-            }
-            assertThat(createReportViewTask).isNotNull
-            assertThat(createReportViewTask).isInstanceOf(ReportViewTask.Completed::class.java)
-            createReportViewTask as ReportViewTask.Completed
-            assertThat(createReportViewTask.reportViewId).isNotNull()
-
-            val createReportView = runBlocking {
-                reportViewRepository.findById(userId, createReportViewTask.reportViewId)
-            }
-            assertThat(createReportView).isNotNull
-            createReportView as ReportView
-            assertThat(createReportView.name).isEqualTo(expenseReportName)
-            assertThat(createReportView.fundId).isEqualTo(expenseFundId)
-            assertThat(createReportView.dataConfiguration.currency).isEqualTo(RON)
-            assertThat(createReportView.dataConfiguration.groups).hasSize(2)
-            assertThat(createReportView.dataConfiguration.reports.net.enabled).isTrue()
-            assertThat(createReportView.dataConfiguration.reports.net.filter?.labels).containsExactlyElementsOf(labels)
-        }
-    }
-
-    @Test
-    fun `get report view task`() = testApplication {
-        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
-        val httpClient = createJsonHttpClient()
-        val reportViewTask = reportViewTaskRepository.create(userId)
-        val reportView =
-            reportViewRepository.save(reportViewCommand)
-        reportViewTaskRepository.complete(userId, reportViewTask.taskId, reportView.id)
-
-        val response = httpClient.get("/funds-api/reporting/v1/report-views/tasks/${reportViewTask.taskId}") {
-            header(USER_ID_HEADER, userId.toString())
-        }
-
-        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-        val reportViewTaskTO = response.body<ReportViewTaskTO>()
-        assertThat(reportViewTaskTO).isNotNull
-        assertThat(reportViewTaskTO.taskId).isEqualTo(reportViewTask.taskId)
-        assertThat(reportViewTaskTO.status).isEqualTo(ReportViewTaskStatus.COMPLETED)
-        assertThat(reportViewTaskTO.report?.id).isEqualTo(reportView.id)
-        assertThat(reportViewTaskTO.report?.fundId).isEqualTo(expenseFundId)
-        assertThat(reportViewTaskTO.report?.name).isEqualTo(expenseReportName)
+        assertThat(reportViewTO).isNotNull
+        assertThat(reportViewTO.name).isEqualTo(expenseReportName)
+        assertThat(reportViewTO.fundId).isEqualTo(expenseFundId)
+        assertThat(reportViewTO.dataConfiguration.currency).isEqualTo(RON)
+        assertThat(reportViewTO.dataConfiguration.groups).hasSize(2)
+        assertThat(reportViewTO.dataConfiguration.reports.net.enabled).isTrue()
+        assertThat(reportViewTO.dataConfiguration.reports.net.filter?.labels).containsExactlyElementsOf(labels)
     }
 
     @Test
@@ -298,7 +244,6 @@ class ReportingApiTest {
         configureReportingErrorHandling()
         configureContentNegotiation()
         configureDatabaseMigration(get<DataSource>())
-        configureReportingEventHandling()
         configureReportingRouting()
     }
 }

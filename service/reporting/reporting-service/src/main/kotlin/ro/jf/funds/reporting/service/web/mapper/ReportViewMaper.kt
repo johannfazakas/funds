@@ -10,6 +10,7 @@ fun ReportView.toTO(): ReportViewTO = ReportViewTO(
     fundId = fundId,
     dataConfiguration = ReportDataConfigurationTO(
         currency = dataConfiguration.currency,
+        groups = dataConfiguration.groups?.map { ReportGroupTO(it.name, it.filter.toTO()) },
         reports = ReportsConfigurationTO(
             net = dataConfiguration.reports.net.let {
                 NetReportConfigurationTO(

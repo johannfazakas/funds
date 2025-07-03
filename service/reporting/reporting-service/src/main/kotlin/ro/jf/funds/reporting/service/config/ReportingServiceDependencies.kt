@@ -6,7 +6,10 @@ import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import ro.jf.funds.commons.config.getEnvironmentProperty
 import ro.jf.funds.commons.config.getStringProperty
-import ro.jf.funds.commons.event.*
+import ro.jf.funds.commons.event.Producer
+import ro.jf.funds.commons.event.ProducerProperties
+import ro.jf.funds.commons.event.TopicSupplier
+import ro.jf.funds.commons.event.createProducer
 import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.fund.sdk.FundTransactionSdk
@@ -16,12 +19,9 @@ import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
 import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
-import ro.jf.funds.reporting.service.persistence.ReportViewTaskRepository
 import ro.jf.funds.reporting.service.service.ReportViewService
-import ro.jf.funds.reporting.service.service.ReportViewTaskService
 import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
-import ro.jf.funds.reporting.service.service.event.CreateReportViewRequestHandler
 import javax.sql.DataSource
 
 private const val FUND_SERVICE_BASE_URL_PROPERTY = "integration.fund-service.base-url"
@@ -34,7 +34,6 @@ val Application.reportingDependencies
             eventProducerDependencies,
             integrationDependencies,
             serviceDependencies,
-            eventConsumerDependencies
         )
     }
 
@@ -42,7 +41,6 @@ private val Application.persistenceDependencies
     get() = module {
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
-        single<ReportViewTaskRepository> { ReportViewTaskRepository(get()) }
         single<ReportViewRepository> { ReportViewRepository(get()) }
         single<ReportRecordRepository> { ReportRecordRepository(get()) }
     }
@@ -70,20 +68,6 @@ private val Application.integrationDependencies
 private val Application.serviceDependencies
     get() = module {
         single<ReportViewService> { ReportViewService(get()) }
-        single<ReportViewTaskService> { ReportViewTaskService(get(), get(), get()) }
         single<ReportDataResolverRegistry> { ReportDataResolverRegistry() }
         single<ReportDataService> { ReportDataService(get(), get(), get(), get()) }
-        single<CreateReportViewRequestHandler> { CreateReportViewRequestHandler(get()) }
-    }
-
-private val Application.eventConsumerDependencies
-    get() = module {
-        single<ConsumerProperties> { ConsumerProperties.fromEnv(environment) }
-        single<Consumer<CreateReportViewCommand>> {
-            createConsumer(
-                get(),
-                get<TopicSupplier>().topic(REPORTING_DOMAIN, REPORT_VIEW_REQUEST),
-                get<CreateReportViewRequestHandler>()
-            )
-        }
     }

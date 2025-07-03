@@ -6,7 +6,6 @@ import ro.jf.funds.commons.model.Label
 import java.math.BigDecimal
 import java.util.*
 
-// TODO(Johann - 30) investigate how comes that there are report records with 'income' label in 'expenses' fund
 data class ReportRecord(
     val id: UUID,
     val userId: UUID,
