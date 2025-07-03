@@ -1,20 +1,17 @@
-package ro.jf.funds.reporting.service.service.reportdata
+package ro.jf.funds.reporting.service.service
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.atTime
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.within
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
+import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
-import ro.jf.funds.commons.model.Currency.Companion.EUR
-import ro.jf.funds.commons.model.Currency.Companion.RON
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
@@ -28,32 +25,42 @@ import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
-import ro.jf.funds.reporting.service.domain.*
-import ro.jf.funds.reporting.service.domain.BucketType.FORECAST
-import ro.jf.funds.reporting.service.domain.BucketType.REAL
+import ro.jf.funds.reporting.service.domain.BucketType
+import ro.jf.funds.reporting.service.domain.ForecastConfiguration
+import ro.jf.funds.reporting.service.domain.GroupedBudgetReportConfiguration
+import ro.jf.funds.reporting.service.domain.RecordFilter
+import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
+import ro.jf.funds.reporting.service.domain.ReportDataInterval
+import ro.jf.funds.reporting.service.domain.ReportGroup
+import ro.jf.funds.reporting.service.domain.ReportView
+import ro.jf.funds.reporting.service.domain.ReportsConfiguration
+import ro.jf.funds.reporting.service.domain.TimeBucket
+import ro.jf.funds.reporting.service.domain.YearMonth
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
+import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
 import java.math.BigDecimal
-import java.util.UUID.randomUUID
+import java.util.UUID
+import kotlin.plus
 
 class ReportDataServiceTest {
-    private val reportViewRepository = mock<ReportViewRepository>()
-    private val historicalPricingSdk = mock<HistoricalPricingSdk>()
-    private val fundTransactionSdk = mock<FundTransactionSdk>()
+    private val reportViewRepository = Mockito.mock<ReportViewRepository>()
+    private val historicalPricingSdk = Mockito.mock<HistoricalPricingSdk>()
+    private val fundTransactionSdk = Mockito.mock<FundTransactionSdk>()
     private val resolverRegistry = ReportDataResolverRegistry()
     private val reportDataService =
         ReportDataService(reportViewRepository, historicalPricingSdk, fundTransactionSdk, resolverRegistry)
 
-    private val userId = randomUUID()
-    private val reportViewId = randomUUID()
+    private val userId = UUID.randomUUID()
+    private val reportViewId = UUID.randomUUID()
     private val reportViewName = "view name"
-    private val expensesFundId = randomUUID()
+    private val expensesFundId = UUID.randomUUID()
     private val allLabels = labelsOf("need", "want")
 
     @Test
     fun `get net data grouped by months`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
-            currency = RON,
+            currency = Currency.Companion.RON,
             groups = null,
             reports = ReportsConfiguration()
                 .withNet(enabled = true, filter = RecordFilter(labels = allLabels))
@@ -70,38 +77,40 @@ class ReportDataServiceTest {
             )
         )
             .thenReturn(
-                ListTO.of(
+                ListTO.Companion.of(
                     ronTransaction(LocalDate(2021, 9, 3), -100, labelsOf("need")),
                     eurTransaction(LocalDate(2021, 9, 15), -40, labelsOf("want")),
                     ronTransaction(LocalDate(2021, 10, 7), -30, labelsOf("want")),
                     ronTransaction(LocalDate(2021, 10, 8), -16, labelsOf("other")),
                 )
             )
-        val conversionsResponse = mock<ConversionsResponse>()
-        whenever(conversionsResponse.getRate(eq(RON), eq(RON), any()))
+        val conversionsResponse = Mockito.mock<ConversionsResponse>()
+        whenever(conversionsResponse.getRate(eq(Currency.Companion.RON), eq(Currency.Companion.RON), any()))
             .thenReturn(BigDecimal.ONE)
-        whenever(conversionsResponse.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
+        whenever(conversionsResponse.getRate(eq(Currency.Companion.EUR), eq(Currency.Companion.RON), any())).thenReturn(
+            BigDecimal("5.0")
+        )
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
 
         val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
-        assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.interval).isEqualTo(interval)
-        assertThat(data.data[0].timeBucket)
-            .isEqualTo(TimeBucket(LocalDate.parse("2021-09-01"), LocalDate.parse("2021-09-30")))
-        assertThat(data.data[0].aggregate.net).isEqualByComparingTo(BigDecimal("-300.0"))
-        assertThat(data.data[1].timeBucket)
-            .isEqualTo(TimeBucket(LocalDate.parse("2021-10-01"), LocalDate.parse("2021-10-31")))
-        assertThat(data.data[1].aggregate.net).isEqualByComparingTo(BigDecimal("-30.0"))
-        assertThat(data.data[2].timeBucket)
-            .isEqualTo(TimeBucket(LocalDate.parse("2021-11-01"), LocalDate.parse("2021-11-30")))
-        assertThat(data.data[2].aggregate.net).isEqualByComparingTo(BigDecimal.ZERO)
+        Assertions.assertThat(data.reportViewId).isEqualTo(reportViewId)
+        Assertions.assertThat(data.interval).isEqualTo(interval)
+        Assertions.assertThat(data.data[0].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate.Companion.parse("2021-09-01"), LocalDate.Companion.parse("2021-09-30")))
+        Assertions.assertThat(data.data[0].aggregate.net).isEqualByComparingTo(BigDecimal("-300.0"))
+        Assertions.assertThat(data.data[1].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate.Companion.parse("2021-10-01"), LocalDate.Companion.parse("2021-10-31")))
+        Assertions.assertThat(data.data[1].aggregate.net).isEqualByComparingTo(BigDecimal("-30.0"))
+        Assertions.assertThat(data.data[2].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate.Companion.parse("2021-11-01"), LocalDate.Companion.parse("2021-11-30")))
+        Assertions.assertThat(data.data[2].aggregate.net).isEqualByComparingTo(BigDecimal.ZERO)
     }
 
     @Test
     fun `get net data grouped by months with forecast`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
-            currency = RON,
+            currency = Currency.Companion.RON,
             groups = null,
             reports = ReportsConfiguration()
                 .withNet(enabled = true, filter = RecordFilter(labels = allLabels)),
@@ -122,7 +131,7 @@ class ReportDataServiceTest {
             )
         )
             .thenReturn(
-                ListTO.of(
+                ListTO.Companion.of(
                     ronTransaction(LocalDate(2021, 1, 3), -100, labelsOf("need")),
                     ronTransaction(LocalDate(2021, 2, 15), -40, labelsOf("want")),
                     ronTransaction(LocalDate(2021, 3, 7), -30, labelsOf("want")),
@@ -131,29 +140,29 @@ class ReportDataServiceTest {
                     ronTransaction(LocalDate(2021, 6, 8), -50, labelsOf("want")),
                 )
             )
-        val conversionsResponse = mock<ConversionsResponse>()
+        val conversionsResponse = Mockito.mock<ConversionsResponse>()
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
 
         val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
-        val acceptedOffset = within(BigDecimal("0.01"))
+        val acceptedOffset = Assertions.within(BigDecimal("0.01"))
 
-        assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.interval).isEqualTo(interval)
-        assertThat(data.data).hasSize(9)
-        assertThat(data.data[5].bucketType).isEqualTo(REAL)
-        assertThat(data.data[5].aggregate.net).isCloseTo(BigDecimal(-50), acceptedOffset)
-        assertThat(data.data[6].timeBucket).isEqualTo(YearMonth(2021, 7).asTimeBucket())
-        assertThat(data.data[6].bucketType).isEqualTo(FORECAST)
-        assertThat(data.data[6].aggregate.net).isCloseTo(
+        Assertions.assertThat(data.reportViewId).isEqualTo(reportViewId)
+        Assertions.assertThat(data.interval).isEqualTo(interval)
+        Assertions.assertThat(data.data).hasSize(9)
+        Assertions.assertThat(data.data[5].bucketType).isEqualTo(BucketType.REAL)
+        Assertions.assertThat(data.data[5].aggregate.net).isCloseTo(BigDecimal(-50), acceptedOffset)
+        Assertions.assertThat(data.data[6].timeBucket).isEqualTo(YearMonth(2021, 7).asTimeBucket())
+        Assertions.assertThat(data.data[6].bucketType).isEqualTo(BucketType.FORECAST)
+        Assertions.assertThat(data.data[6].aggregate.net).isCloseTo(
             BigDecimal((-40 - 30 - 20 - 40 - 50) / 5.0),
             acceptedOffset
         ) // -36
-        assertThat(data.data[7].aggregate.net).isCloseTo(
+        Assertions.assertThat(data.data[7].aggregate.net).isCloseTo(
             BigDecimal((-30 - 20 - 40 - 50 - 36) / 5.0),
             acceptedOffset
         ) // -35.2
-        assertThat(data.data[8].aggregate.net).isCloseTo(
+        Assertions.assertThat(data.data[8].aggregate.net).isCloseTo(
             BigDecimal((-20 - 40 - 50 - 36 - 35.2) / 5.0),
             acceptedOffset
         ) // -36.24
@@ -162,10 +171,10 @@ class ReportDataServiceTest {
     @Test
     fun `get grouped net data grouped by months`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
-            currency = RON,
+            currency = Currency.Companion.RON,
             groups = listOf(
-                ReportGroup("Need", RecordFilter.byLabels("need")),
-                ReportGroup("Want", RecordFilter.byLabels("want"))
+                ReportGroup("Need", RecordFilter.Companion.byLabels("need")),
+                ReportGroup("Want", RecordFilter.Companion.byLabels("want"))
             ),
             reports = ReportsConfiguration()
                 .withGroupedNet(enabled = true)
@@ -181,40 +190,42 @@ class ReportDataServiceTest {
             )
         )
             .thenReturn(
-                ListTO.of(
-                    ronTransaction(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
-                    eurTransaction(LocalDate.parse("2021-09-04"), -10, labelsOf("need")),
-                    eurTransaction(LocalDate.parse("2021-09-15"), -40, labelsOf("want")),
-                    ronTransaction(LocalDate.parse("2021-10-18"), -30, labelsOf("want")),
-                    ronTransaction(LocalDate.parse("2021-09-28"), -16, labelsOf("other")),
+                ListTO.Companion.of(
+                    ronTransaction(LocalDate.Companion.parse("2021-09-03"), -100, labelsOf("need")),
+                    eurTransaction(LocalDate.Companion.parse("2021-09-04"), -10, labelsOf("need")),
+                    eurTransaction(LocalDate.Companion.parse("2021-09-15"), -40, labelsOf("want")),
+                    ronTransaction(LocalDate.Companion.parse("2021-10-18"), -30, labelsOf("want")),
+                    ronTransaction(LocalDate.Companion.parse("2021-09-28"), -16, labelsOf("other")),
                 )
             )
-        val conversionsResponse = mock<ConversionsResponse>()
-        whenever(conversionsResponse.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
+        val conversionsResponse = Mockito.mock<ConversionsResponse>()
+        whenever(conversionsResponse.getRate(eq(Currency.Companion.EUR), eq(Currency.Companion.RON), any())).thenReturn(
+            BigDecimal("5.0")
+        )
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
 
         val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
-        assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.interval).isEqualTo(interval)
-        assertThat(data.data).hasSize(2)
-        assertThat(data.data[0].timeBucket)
+        Assertions.assertThat(data.reportViewId).isEqualTo(reportViewId)
+        Assertions.assertThat(data.interval).isEqualTo(interval)
+        Assertions.assertThat(data.data).hasSize(2)
+        Assertions.assertThat(data.data[0].timeBucket)
             .isEqualTo(YearMonth(2021, 9).asTimeBucket())
-        assertThat(data.data[0].aggregate.groupedNet?.get("Need")).isEqualByComparingTo(BigDecimal("-150.0"))
-        assertThat(data.data[0].aggregate.groupedNet?.get("Want")).isEqualByComparingTo(BigDecimal("-200.0"))
-        assertThat(data.data[1].timeBucket)
+        Assertions.assertThat(data.data[0].aggregate.groupedNet?.get("Need")).isEqualByComparingTo(BigDecimal("-150.0"))
+        Assertions.assertThat(data.data[0].aggregate.groupedNet?.get("Want")).isEqualByComparingTo(BigDecimal("-200.0"))
+        Assertions.assertThat(data.data[1].timeBucket)
             .isEqualTo(YearMonth(2021, 10).asTimeBucket())
-        assertThat(data.data[1].aggregate.groupedNet?.get("Need")).isEqualByComparingTo(BigDecimal.ZERO)
-        assertThat(data.data[1].aggregate.groupedNet?.get("Want")).isEqualByComparingTo("-30.0")
+        Assertions.assertThat(data.data[1].aggregate.groupedNet?.get("Need")).isEqualByComparingTo(BigDecimal.ZERO)
+        Assertions.assertThat(data.data[1].aggregate.groupedNet?.get("Want")).isEqualByComparingTo("-30.0")
     }
 
     @Test
     fun `get grouped budget should distribute external income`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
-            currency = RON,
+            currency = Currency.Companion.RON,
             groups = listOf(
-                ReportGroup("Need", RecordFilter.byLabels("need")),
-                ReportGroup("Want", RecordFilter.byLabels("want"))
+                ReportGroup("Need", RecordFilter.Companion.byLabels("need")),
+                ReportGroup("Want", RecordFilter.Companion.byLabels("want"))
             ),
             reports = ReportsConfiguration()
                 .withGroupedBudget(
@@ -225,8 +236,10 @@ class ReportDataServiceTest {
                 )
         )
         whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
-        val conversions = mock<ConversionsResponse>()
-        whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.00"))
+        val conversions = Mockito.mock<ConversionsResponse>()
+        whenever(conversions.getRate(eq(Currency.Companion.EUR), eq(Currency.Companion.RON), any())).thenReturn(
+            BigDecimal("5.00")
+        )
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
         whenever(
@@ -237,7 +250,7 @@ class ReportDataServiceTest {
             )
         )
             .thenReturn(
-                ListTO.of(
+                ListTO.Companion.of(
                     // previous month with specific distribution
                     ronTransaction(LocalDate(2020, 1, 5), 1000, labelsOf("income")),
                     eurTransaction(LocalDate(2020, 1, 10), 500, labelsOf()),
@@ -252,50 +265,54 @@ class ReportDataServiceTest {
 
         val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
-        assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.interval).isEqualTo(interval)
-        assertThat(data.data).hasSize(2)
+        Assertions.assertThat(data.reportViewId).isEqualTo(reportViewId)
+        Assertions.assertThat(data.interval).isEqualTo(interval)
+        Assertions.assertThat(data.data).hasSize(2)
 
-        assertThat(data.data[0].timeBucket)
+        Assertions.assertThat(data.data[0].timeBucket)
             .isEqualTo(YearMonth(2020, 2).asTimeBucket())
         val groupedBudget1 = data.data[0].aggregate.groupedBudget ?: error("First grouped budget is null")
-        assertThat(groupedBudget1["Need"]).isNotNull
+        Assertions.assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
-            assertThat(it.allocated).isEqualByComparingTo(BigDecimal(1500 * 0.6 - 300 * 0.6 + 300 * 0.6 * 5))
-            assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
-            assertThat(it.left).isEqualByComparingTo(BigDecimal(1500 * 0.6 - 300 * 0.6 + 1000 * 0.6 + 300 * 0.6 * 5 + 500 * 0.6 * 5))
+            Assertions.assertThat(it.allocated).isEqualByComparingTo(BigDecimal(1500 * 0.6 - 300 * 0.6 + 300 * 0.6 * 5))
+            Assertions.assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
+            Assertions.assertThat(it.left)
+                .isEqualByComparingTo(BigDecimal(1500 * 0.6 - 300 * 0.6 + 1000 * 0.6 + 300 * 0.6 * 5 + 500 * 0.6 * 5))
         }
-        assertThat(groupedBudget1["Want"]).isNotNull
+        Assertions.assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
-            assertThat(it.allocated).isEqualByComparingTo(BigDecimal(1500 * 0.4 - 300 * 0.4 + 300 * 0.4 * 5))
-            assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
-            assertThat(it.left).isEqualByComparingTo(BigDecimal(1500 * 0.4 - 300 * 0.4 + 1000 * 0.4 + 300 * 0.4 * 5 + 500 * 0.4 * 5))
+            Assertions.assertThat(it.allocated).isEqualByComparingTo(BigDecimal(1500 * 0.4 - 300 * 0.4 + 300 * 0.4 * 5))
+            Assertions.assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
+            Assertions.assertThat(it.left)
+                .isEqualByComparingTo(BigDecimal(1500 * 0.4 - 300 * 0.4 + 1000 * 0.4 + 300 * 0.4 * 5 + 500 * 0.4 * 5))
         }
 
-        assertThat(data.data[1].timeBucket)
+        Assertions.assertThat(data.data[1].timeBucket)
             .isEqualTo(YearMonth(2020, 3).asTimeBucket())
         val groupedBudget2 = data.data[1].aggregate.groupedBudget ?: error("Second grouped budget is null")
-        assertThat(groupedBudget2["Need"]).isNotNull
+        Assertions.assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
-            assertThat(it.allocated).isEqualByComparingTo(BigDecimal(2000 * 0.6))
-            assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
-            assertThat(it.left).isEqualByComparingTo(BigDecimal(2000 * 0.6 + 1500 * 0.6 - 300 * 0.6 + 1000 * 0.6 + 300 * 0.6 * 5 + 500 * 0.6 * 5))
+            Assertions.assertThat(it.allocated).isEqualByComparingTo(BigDecimal(2000 * 0.6))
+            Assertions.assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
+            Assertions.assertThat(it.left)
+                .isEqualByComparingTo(BigDecimal(2000 * 0.6 + 1500 * 0.6 - 300 * 0.6 + 1000 * 0.6 + 300 * 0.6 * 5 + 500 * 0.6 * 5))
         }
-        assertThat(groupedBudget2["Want"]).isNotNull
+        Assertions.assertThat(groupedBudget2["Want"]).isNotNull
         groupedBudget2["Want"]?.let {
-            assertThat(it.allocated).isEqualByComparingTo(BigDecimal(2000 * 0.4))
-            assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
-            assertThat(it.left).isEqualByComparingTo(BigDecimal(2000 * 0.4 + 1500 * 0.4 - 300 * 0.4 + 1000 * 0.4 + 300 * 0.4 * 5 + 500 * 0.4 * 5))
+            Assertions.assertThat(it.allocated).isEqualByComparingTo(BigDecimal(2000 * 0.4))
+            Assertions.assertThat(it.spent).isEqualByComparingTo(BigDecimal.ZERO)
+            Assertions.assertThat(it.left)
+                .isEqualByComparingTo(BigDecimal(2000 * 0.4 + 1500 * 0.4 - 300 * 0.4 + 1000 * 0.4 + 300 * 0.4 * 5 + 500 * 0.4 * 5))
         }
     }
 
     @Test
     fun `get grouped budget should calculate expenses and distribute currencies`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
-            currency = RON,
+            currency = Currency.Companion.RON,
             groups = listOf(
-                ReportGroup("Need", RecordFilter.byLabels("need")),
-                ReportGroup("Want", RecordFilter.byLabels("want"))
+                ReportGroup("Need", RecordFilter.Companion.byLabels("need")),
+                ReportGroup("Want", RecordFilter.Companion.byLabels("want"))
             ),
             reports = ReportsConfiguration()
                 .withGroupedBudget(
@@ -306,8 +323,10 @@ class ReportDataServiceTest {
                 )
         )
         whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
-        val conversions = mock<ConversionsResponse>()
-        whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.00"))
+        val conversions = Mockito.mock<ConversionsResponse>()
+        whenever(conversions.getRate(eq(Currency.Companion.EUR), eq(Currency.Companion.RON), any())).thenReturn(
+            BigDecimal("5.00")
+        )
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 2))
         whenever(
@@ -318,7 +337,7 @@ class ReportDataServiceTest {
             )
         )
             .thenReturn(
-                ListTO.of(
+                ListTO.Companion.of(
                     // previous month with specific distribution
                     ronTransaction(LocalDate(2020, 1, 5), 1000, labelsOf("income")),
                     // first month
@@ -333,7 +352,7 @@ class ReportDataServiceTest {
 
         val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
-        assertThat(data.data).hasSize(1)
+        Assertions.assertThat(data.data).hasSize(1)
 
         val groupedBudget1 = data.data[0].aggregate.groupedBudget ?: error("First grouped budget is null")
 
@@ -354,28 +373,28 @@ class ReportDataServiceTest {
          *          1200 + 5A = 5.5(100 - A) => 650 = -10.5A => A = 61.905
          *      Real Left = 890.475 RON + 161.905 EUR
          */
-        val acceptedOffset = within(BigDecimal("0.01"))
-        assertThat(groupedBudget1["Need"]).isNotNull
+        val acceptedOffset = Assertions.within(BigDecimal("0.01"))
+        Assertions.assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
-            assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 5), acceptedOffset)
-            assertThat(it.spent).isCloseTo(BigDecimal(-800), acceptedOffset)
-            assertThat(it.left).isCloseTo(BigDecimal(1309.525 + 238.095 * 5), acceptedOffset)
+            Assertions.assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 5), acceptedOffset)
+            Assertions.assertThat(it.spent).isCloseTo(BigDecimal(-800), acceptedOffset)
+            Assertions.assertThat(it.left).isCloseTo(BigDecimal(1309.525 + 238.095 * 5), acceptedOffset)
         }
-        assertThat(groupedBudget1["Want"]).isNotNull
+        Assertions.assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
-            assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 5), acceptedOffset)
-            assertThat(it.spent).isCloseTo(BigDecimal(-500), acceptedOffset)
-            assertThat(it.left).isCloseTo(BigDecimal(890.475 + 161.905 * 5), acceptedOffset)
+            Assertions.assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 5), acceptedOffset)
+            Assertions.assertThat(it.spent).isCloseTo(BigDecimal(-500), acceptedOffset)
+            Assertions.assertThat(it.left).isCloseTo(BigDecimal(890.475 + 161.905 * 5), acceptedOffset)
         }
     }
 
     @Test
     fun `get grouped budget should adapt to changing currency exchange rates`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
-            currency = RON,
+            currency = Currency.Companion.RON,
             groups = listOf(
-                ReportGroup("Need", RecordFilter.byLabels("need")),
-                ReportGroup("Want", RecordFilter.byLabels("want"))
+                ReportGroup("Need", RecordFilter.Companion.byLabels("need")),
+                ReportGroup("Want", RecordFilter.Companion.byLabels("want"))
             ),
             reports = ReportsConfiguration()
                 .withGroupedBudget(
@@ -386,8 +405,8 @@ class ReportDataServiceTest {
                 )
         )
         whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
-        val conversions = mock<ConversionsResponse>()
-        whenever(conversions.getRate(eq(EUR), eq(RON), any()))
+        val conversions = Mockito.mock<ConversionsResponse>()
+        whenever(conversions.getRate(eq(Currency.Companion.EUR), eq(Currency.Companion.RON), any()))
             .thenAnswer {
                 val date = it.getArgument<LocalDate>(2)
                 if (date.month in listOf(Month.JANUARY, Month.FEBRUARY)) {
@@ -406,7 +425,7 @@ class ReportDataServiceTest {
             )
         )
             .thenReturn(
-                ListTO.of(
+                ListTO.Companion.of(
                     // first month
                     ronTransaction(LocalDate(2020, 2, 5), 2000, labelsOf()),
                     eurTransaction(LocalDate(2020, 2, 15), 500, labelsOf()),
@@ -422,9 +441,9 @@ class ReportDataServiceTest {
 
         val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
-        assertThat(data.data).hasSize(2)
+        Assertions.assertThat(data.data).hasSize(2)
 
-        val acceptedOffset = within(BigDecimal("0.1"))
+        val acceptedOffset = Assertions.within(BigDecimal("0.1"))
 
         /**
          * 2020 February
@@ -445,17 +464,17 @@ class ReportDataServiceTest {
          */
 
         val groupedBudget1 = data.data[0].aggregate.groupedBudget ?: error("First grouped budget is null")
-        assertThat(groupedBudget1["Need"]).isNotNull
+        Assertions.assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
-            assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 4.8), acceptedOffset)
-            assertThat(it.spent).isCloseTo(BigDecimal(-800), acceptedOffset)
-            assertThat(it.left).isCloseTo(BigDecimal(707.688 + 235.896 * 4.8), acceptedOffset)
+            Assertions.assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 4.8), acceptedOffset)
+            Assertions.assertThat(it.spent).isCloseTo(BigDecimal(-800), acceptedOffset)
+            Assertions.assertThat(it.left).isCloseTo(BigDecimal(707.688 + 235.896 * 4.8), acceptedOffset)
         }
-        assertThat(groupedBudget1["Want"]).isNotNull
+        Assertions.assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
-            assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 4.8), acceptedOffset)
-            assertThat(it.spent).isCloseTo(BigDecimal(4.8 * -100), acceptedOffset)
-            assertThat(it.left).isCloseTo(BigDecimal(492.312 + 164.104 * 4.8), acceptedOffset)
+            Assertions.assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 4.8), acceptedOffset)
+            Assertions.assertThat(it.spent).isCloseTo(BigDecimal(4.8 * -100), acceptedOffset)
+            Assertions.assertThat(it.left).isCloseTo(BigDecimal(492.312 + 164.104 * 4.8), acceptedOffset)
         }
 
         /**
@@ -476,27 +495,27 @@ class ReportDataServiceTest {
          *      Real Left = 1.491,0778 RON + 263,13138 EUR
          */
         val groupedBudget2 = data.data[1].aggregate.groupedBudget ?: error("First grouped budget is null")
-        assertThat(groupedBudget2["Need"]).isNotNull
+        Assertions.assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
-            assertThat(it.allocated).isCloseTo(BigDecimal(1500 + 240 * 4.9), acceptedOffset)
-            assertThat(it.spent).isCloseTo(BigDecimal(-200 * 4.9), acceptedOffset)
-            assertThat(it.left).isCloseTo(BigDecimal(1908.92217 + 336.86862 * 4.9), acceptedOffset)
+            Assertions.assertThat(it.allocated).isCloseTo(BigDecimal(1500 + 240 * 4.9), acceptedOffset)
+            Assertions.assertThat(it.spent).isCloseTo(BigDecimal(-200 * 4.9), acceptedOffset)
+            Assertions.assertThat(it.left).isCloseTo(BigDecimal(1908.92217 + 336.86862 * 4.9), acceptedOffset)
         }
-        assertThat(groupedBudget2["Want"]).isNotNull
+        Assertions.assertThat(groupedBudget2["Want"]).isNotNull
         groupedBudget2["Want"]?.let {
-            assertThat(it.allocated).isCloseTo(BigDecimal(1000 + 160 * 4.9), acceptedOffset)
-            assertThat(it.spent).isCloseTo(BigDecimal(-300), acceptedOffset)
-            assertThat(it.left).isCloseTo(BigDecimal(1491.0778 + 263.13138 * 4.9), acceptedOffset)
+            Assertions.assertThat(it.allocated).isCloseTo(BigDecimal(1000 + 160 * 4.9), acceptedOffset)
+            Assertions.assertThat(it.spent).isCloseTo(BigDecimal(-300), acceptedOffset)
+            Assertions.assertThat(it.left).isCloseTo(BigDecimal(1491.0778 + 263.13138 * 4.9), acceptedOffset)
         }
     }
 
     @Test
     fun `get grouped budget should adapt to budget distribution change`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
-            currency = RON,
+            currency = Currency.Companion.RON,
             groups = listOf(
-                ReportGroup("Need", RecordFilter.byLabels("need")),
-                ReportGroup("Want", RecordFilter.byLabels("want"))
+                ReportGroup("Need", RecordFilter.Companion.byLabels("need")),
+                ReportGroup("Want", RecordFilter.Companion.byLabels("want"))
             ),
             reports = ReportsConfiguration()
                 .withGroupedBudget(
@@ -508,8 +527,10 @@ class ReportDataServiceTest {
                 )
         )
         whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
-        val conversions = mock<ConversionsResponse>()
-        whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.00"))
+        val conversions = Mockito.mock<ConversionsResponse>()
+        whenever(conversions.getRate(eq(Currency.Companion.EUR), eq(Currency.Companion.RON), any())).thenReturn(
+            BigDecimal("5.00")
+        )
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
         whenever(
@@ -520,7 +541,7 @@ class ReportDataServiceTest {
             )
         )
             .thenReturn(
-                ListTO.of(
+                ListTO.Companion.of(
                     // first month
                     ronTransaction(LocalDate(2020, 2, 5), 2000, labelsOf()),
                     eurTransaction(LocalDate(2020, 2, 15), 500, labelsOf()),
@@ -536,9 +557,9 @@ class ReportDataServiceTest {
 
         val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
-        assertThat(data.data).hasSize(2)
+        Assertions.assertThat(data.data).hasSize(2)
 
-        val acceptedOffset = within(BigDecimal("0.01"))
+        val acceptedOffset = Assertions.within(BigDecimal("0.01"))
 
         /**
          * 2020 February
@@ -560,17 +581,17 @@ class ReportDataServiceTest {
          */
 
         val groupedBudget1 = data.data[0].aggregate.groupedBudget ?: error("First grouped budget is null")
-        assertThat(groupedBudget1["Need"]).isNotNull
+        Assertions.assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
-            assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 5), acceptedOffset)
-            assertThat(it.spent).isCloseTo(BigDecimal(-800), acceptedOffset)
-            assertThat(it.left).isCloseTo(BigDecimal(712.5 + 237.5 * 5), acceptedOffset)
+            Assertions.assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 5), acceptedOffset)
+            Assertions.assertThat(it.spent).isCloseTo(BigDecimal(-800), acceptedOffset)
+            Assertions.assertThat(it.left).isCloseTo(BigDecimal(712.5 + 237.5 * 5), acceptedOffset)
         }
-        assertThat(groupedBudget1["Want"]).isNotNull
+        Assertions.assertThat(groupedBudget1["Want"]).isNotNull
         groupedBudget1["Want"]?.let {
-            assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 5), acceptedOffset)
-            assertThat(it.spent).isCloseTo(BigDecimal(-100 * 5), acceptedOffset)
-            assertThat(it.left).isCloseTo(BigDecimal(487.5 + 162.5 * 5), acceptedOffset)
+            Assertions.assertThat(it.allocated).isCloseTo(BigDecimal(800 + 200 * 5), acceptedOffset)
+            Assertions.assertThat(it.spent).isCloseTo(BigDecimal(-100 * 5), acceptedOffset)
+            Assertions.assertThat(it.left).isCloseTo(BigDecimal(487.5 + 162.5 * 5), acceptedOffset)
         }
 
         /**
@@ -592,27 +613,27 @@ class ReportDataServiceTest {
          *      Real Left = 1248.4375 RON + 220.3125 EUR
          */
         val groupedBudget2 = data.data[1].aggregate.groupedBudget ?: error("First grouped budget is null")
-        assertThat(groupedBudget2["Need"]).isNotNull
+        Assertions.assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
-            assertThat(it.allocated).isCloseTo(BigDecimal(1750 + 280 * 5), acceptedOffset)
-            assertThat(it.spent).isCloseTo(BigDecimal(-200 * 5), acceptedOffset)
-            assertThat(it.left).isCloseTo(BigDecimal(2151.5625 + 379.6875 * 5), acceptedOffset)
+            Assertions.assertThat(it.allocated).isCloseTo(BigDecimal(1750 + 280 * 5), acceptedOffset)
+            Assertions.assertThat(it.spent).isCloseTo(BigDecimal(-200 * 5), acceptedOffset)
+            Assertions.assertThat(it.left).isCloseTo(BigDecimal(2151.5625 + 379.6875 * 5), acceptedOffset)
         }
-        assertThat(groupedBudget2["Want"]).isNotNull
+        Assertions.assertThat(groupedBudget2["Want"]).isNotNull
         groupedBudget2["Want"]?.let {
-            assertThat(it.allocated).isCloseTo(BigDecimal(750 + 120 * 5), acceptedOffset)
-            assertThat(it.spent).isCloseTo(BigDecimal(-300), acceptedOffset)
-            assertThat(it.left).isCloseTo(BigDecimal(1248.4375 + 220.3125 * 5), acceptedOffset)
+            Assertions.assertThat(it.allocated).isCloseTo(BigDecimal(750 + 120 * 5), acceptedOffset)
+            Assertions.assertThat(it.spent).isCloseTo(BigDecimal(-300), acceptedOffset)
+            Assertions.assertThat(it.left).isCloseTo(BigDecimal(1248.4375 + 220.3125 * 5), acceptedOffset)
         }
     }
 
     @Test
     fun `get grouped budget with forecast should include future estimated values`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
-            currency = RON,
+            currency = Currency.Companion.RON,
             groups = listOf(
-                ReportGroup("Need", RecordFilter.byLabels("need")),
-                ReportGroup("Want", RecordFilter.byLabels("want"))
+                ReportGroup("Need", RecordFilter.Companion.byLabels("need")),
+                ReportGroup("Want", RecordFilter.Companion.byLabels("want"))
             ),
             reports = ReportsConfiguration()
                 .withGroupedBudget(
@@ -624,7 +645,7 @@ class ReportDataServiceTest {
             forecast = ForecastConfiguration(3)
         )
         whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
-        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(mock())
+        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(Mockito.mock())
 
         val interval = ReportDataInterval.Monthly(
             YearMonth(2020, 1),
@@ -639,7 +660,7 @@ class ReportDataServiceTest {
             )
         )
             .thenReturn(
-                ListTO.of(
+                ListTO.Companion.of(
                     // first month
                     ronTransaction(LocalDate(2020, 1, 5), 2000, labelsOf()),
                     ronTransaction(LocalDate(2020, 1, 10), -500, labelsOf("need")),
@@ -662,18 +683,18 @@ class ReportDataServiceTest {
 
         val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
-        assertThat(data.data).hasSize(6)
+        Assertions.assertThat(data.data).hasSize(6)
 
-        val acceptedOffset = within(BigDecimal("0.01"))
+        val acceptedOffset = Assertions.within(BigDecimal("0.01"))
 
         val forecastMay = data.data[4]
-        assertThat(forecastMay.bucketType).isEqualTo(FORECAST)
+        Assertions.assertThat(forecastMay.bucketType).isEqualTo(BucketType.FORECAST)
         val forecastBudgetMay = forecastMay.aggregate.groupedBudget ?: error("First forecast budget is null")
-        assertThat(forecastBudgetMay["Need"]).isNotNull
+        Assertions.assertThat(forecastBudgetMay["Need"]).isNotNull
         forecastBudgetMay["Need"]?.let {
-            assertThat(it.allocated).isCloseTo(BigDecimal((2500 + 2000 + 1500) * 0.6 / 3.0), acceptedOffset)
-            assertThat(it.spent).isCloseTo(BigDecimal((-600 - 700 - 600) / 3.0), acceptedOffset)
-            assertThat(it.left).isCloseTo(
+            Assertions.assertThat(it.allocated).isCloseTo(BigDecimal((2500 + 2000 + 1500) * 0.6 / 3.0), acceptedOffset)
+            Assertions.assertThat(it.spent).isCloseTo(BigDecimal((-600 - 700 - 600) / 3.0), acceptedOffset)
+            Assertions.assertThat(it.left).isCloseTo(
                 BigDecimal(2400 + ((2500 + 2000 + 1500) * 0.6 - 600 - 700 - 600) / 3.0),
                 acceptedOffset
             )
@@ -683,7 +704,7 @@ class ReportDataServiceTest {
     @Test
     fun `get monthly value data with single currency`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
-            currency = RON,
+            currency = Currency.Companion.RON,
             groups = null,
             reports = ReportsConfiguration()
                 .withNet(enabled = true, filter = RecordFilter(labels = allLabels))
@@ -702,39 +723,39 @@ class ReportDataServiceTest {
             )
         )
             .thenReturn(
-                ListTO.of(
-                    ronTransaction(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
-                    ronTransaction(LocalDate.parse("2021-09-02"), 200, labelsOf("need")),
-                    ronTransaction(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
-                    ronTransaction(LocalDate.parse("2021-09-15"), -40, labelsOf("want")),
-                    ronTransaction(LocalDate.parse("2021-10-07"), 400, labelsOf("want")),
-                    ronTransaction(LocalDate.parse("2021-10-07"), -30, labelsOf("want")),
-                    ronTransaction(LocalDate.parse("2021-10-08"), -16, labelsOf("other")),
+                ListTO.Companion.of(
+                    ronTransaction(LocalDate.Companion.parse("2021-08-02"), 100, labelsOf("need")),
+                    ronTransaction(LocalDate.Companion.parse("2021-09-02"), 200, labelsOf("need")),
+                    ronTransaction(LocalDate.Companion.parse("2021-09-03"), -100, labelsOf("need")),
+                    ronTransaction(LocalDate.Companion.parse("2021-09-15"), -40, labelsOf("want")),
+                    ronTransaction(LocalDate.Companion.parse("2021-10-07"), 400, labelsOf("want")),
+                    ronTransaction(LocalDate.Companion.parse("2021-10-07"), -30, labelsOf("want")),
+                    ronTransaction(LocalDate.Companion.parse("2021-10-08"), -16, labelsOf("other")),
                 )
             )
 
         val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
-        assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.interval).isEqualTo(interval)
-        assertThat(data.data[0].aggregate.value?.start)
+        Assertions.assertThat(data.reportViewId).isEqualTo(reportViewId)
+        Assertions.assertThat(data.interval).isEqualTo(interval)
+        Assertions.assertThat(data.data[0].aggregate.value?.start)
             .isEqualByComparingTo(BigDecimal("100.0"))
-        assertThat(data.data[0].aggregate.value?.end)
+        Assertions.assertThat(data.data[0].aggregate.value?.end)
             .isEqualByComparingTo(BigDecimal("160.0"))
-        assertThat(data.data[1].aggregate.value?.start)
+        Assertions.assertThat(data.data[1].aggregate.value?.start)
             .isEqualByComparingTo(BigDecimal("160.0"))
-        assertThat(data.data[1].aggregate.value?.end)
+        Assertions.assertThat(data.data[1].aggregate.value?.end)
             .isEqualByComparingTo(BigDecimal("514.0"))
-        assertThat(data.data[2].aggregate.value?.start)
+        Assertions.assertThat(data.data[2].aggregate.value?.start)
             .isEqualByComparingTo(BigDecimal("514.0"))
-        assertThat(data.data[2].aggregate.value?.end)
+        Assertions.assertThat(data.data[2].aggregate.value?.end)
             .isEqualByComparingTo(BigDecimal("514.0"))
     }
 
     @Test
     fun `get monthly value data with multiple currencies`(): Unit = runBlocking {
         val reportDataConfiguration = ReportDataConfiguration(
-            currency = RON,
+            currency = Currency.Companion.RON,
             groups = null,
             reports = ReportsConfiguration()
                 .withValueReport(enabled = true),
@@ -750,59 +771,79 @@ class ReportDataServiceTest {
             )
         )
             .thenReturn(
-                ListTO.of(
-                    ronTransaction(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
-                    eurTransaction(LocalDate.parse("2021-08-05"), 20, labelsOf("need")),
-                    ronTransaction(LocalDate.parse("2021-09-02"), 100, labelsOf("need")),
-                    eurTransaction(LocalDate.parse("2021-09-03"), 20, labelsOf("need")),
+                ListTO.Companion.of(
+                    ronTransaction(LocalDate.Companion.parse("2021-08-02"), 100, labelsOf("need")),
+                    eurTransaction(LocalDate.Companion.parse("2021-08-05"), 20, labelsOf("need")),
+                    ronTransaction(LocalDate.Companion.parse("2021-09-02"), 100, labelsOf("need")),
+                    eurTransaction(LocalDate.Companion.parse("2021-09-03"), 20, labelsOf("need")),
                 )
             )
         val conversionRequest = ConversionsRequest(
             listOf(
-                ConversionRequest(EUR, RON, LocalDate(2021, 9, 1)),
-                ConversionRequest(EUR, RON, LocalDate(2021, 9, 30)),
-                ConversionRequest(EUR, RON, LocalDate(2021, 10, 1)),
-                ConversionRequest(EUR, RON, LocalDate(2021, 10, 31)),
+                ConversionRequest(Currency.Companion.EUR, Currency.Companion.RON, LocalDate(2021, 9, 1)),
+                ConversionRequest(Currency.Companion.EUR, Currency.Companion.RON, LocalDate(2021, 9, 30)),
+                ConversionRequest(Currency.Companion.EUR, Currency.Companion.RON, LocalDate(2021, 10, 1)),
+                ConversionRequest(Currency.Companion.EUR, Currency.Companion.RON, LocalDate(2021, 10, 31)),
             )
         )
         val conversionsResponse = ConversionsResponse(
             listOf(
-                ConversionResponse(EUR, RON, LocalDate(2021, 9, 1), BigDecimal("4.85")),
-                ConversionResponse(EUR, RON, LocalDate(2021, 9, 30), BigDecimal("4.9")),
-                ConversionResponse(EUR, RON, LocalDate(2021, 10, 1), BigDecimal("4.95")),
-                ConversionResponse(EUR, RON, LocalDate(2021, 10, 31), BigDecimal("5.0")),
+                ConversionResponse(
+                    Currency.Companion.EUR,
+                    Currency.Companion.RON,
+                    LocalDate(2021, 9, 1),
+                    BigDecimal("4.85")
+                ),
+                ConversionResponse(
+                    Currency.Companion.EUR,
+                    Currency.Companion.RON,
+                    LocalDate(2021, 9, 30),
+                    BigDecimal("4.9")
+                ),
+                ConversionResponse(
+                    Currency.Companion.EUR,
+                    Currency.Companion.RON,
+                    LocalDate(2021, 10, 1),
+                    BigDecimal("4.95")
+                ),
+                ConversionResponse(
+                    Currency.Companion.EUR,
+                    Currency.Companion.RON,
+                    LocalDate(2021, 10, 31),
+                    BigDecimal("5.0")
+                ),
             )
         )
         whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversionsResponse)
 
         val data = reportDataService.getReportViewData(userId, reportViewId, interval)
 
-        assertThat(data.reportViewId).isEqualTo(reportViewId)
-        assertThat(data.interval).isEqualTo(interval)
-        assertThat(data.data[0].timeBucket)
+        Assertions.assertThat(data.reportViewId).isEqualTo(reportViewId)
+        Assertions.assertThat(data.interval).isEqualTo(interval)
+        Assertions.assertThat(data.data[0].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2021, 9, 1), LocalDate(2021, 9, 30)))
-        assertThat(data.data[0].aggregate.value?.start).isEqualByComparingTo(BigDecimal("197.0"))
-        assertThat(data.data[0].aggregate.value?.end).isEqualByComparingTo(
+        Assertions.assertThat(data.data[0].aggregate.value?.start).isEqualByComparingTo(BigDecimal("197.0"))
+        Assertions.assertThat(data.data[0].aggregate.value?.end).isEqualByComparingTo(
             BigDecimal("200.0") + BigDecimal("4.9") * BigDecimal(
                 "40.0"
             )
         )
-        assertThat(data.data[1].timeBucket)
+        Assertions.assertThat(data.data[1].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2021, 10, 1), LocalDate(2021, 10, 31)))
-        assertThat(data.data[1].aggregate.value?.start).isEqualByComparingTo(
+        Assertions.assertThat(data.data[1].aggregate.value?.start).isEqualByComparingTo(
             BigDecimal("200.0") + BigDecimal("4.95") * BigDecimal(
                 "40.0"
             )
         )
-        assertThat(data.data[1].aggregate.value?.end).isEqualByComparingTo(
+        Assertions.assertThat(data.data[1].aggregate.value?.end).isEqualByComparingTo(
             BigDecimal("200.0") + BigDecimal("5.0") * BigDecimal(
                 "40.0"
             )
         )
 
         val conversionsRequestCaptor = argumentCaptor<ConversionsRequest>()
-        verify(historicalPricingSdk).convert(eq(userId), conversionsRequestCaptor.capture())
-        assertThat(conversionsRequestCaptor.firstValue.conversions).containsOnlyOnceElementsOf(
+        Mockito.verify(historicalPricingSdk).convert(eq(userId), conversionsRequestCaptor.capture())
+        Assertions.assertThat(conversionsRequestCaptor.firstValue.conversions).containsOnlyOnceElementsOf(
             conversionRequest.conversions
         )
     }
@@ -813,26 +854,26 @@ class ReportDataServiceTest {
 
     private fun ronTransaction(
         date: LocalDate, amount: Int, labels: List<Label>,
-    ) = transaction(date, RON, BigDecimal(amount), labels)
+    ) = transaction(date, Currency.Companion.RON, BigDecimal(amount), labels)
 
     private fun eurTransaction(
         date: LocalDate, amount: Int, labels: List<Label>,
-    ) = transaction(date, EUR, BigDecimal(amount), labels)
+    ) = transaction(date, Currency.Companion.EUR, BigDecimal(amount), labels)
 
     private fun transaction(
         date: LocalDate, unit: FinancialUnit, amount: BigDecimal, labels: List<Label>,
     ) = FundTransactionTO(
-        id = randomUUID(),
+        id = UUID.randomUUID(),
         userId = userId,
         dateTime = date.atTime(12, 0),
         records = listOf(
             FundRecordTO(
-                id = randomUUID(),
+                id = UUID.randomUUID(),
                 fundId = expensesFundId,
                 unit = unit,
                 amount = amount,
                 labels = labels,
-                accountId = randomUUID()
+                accountId = UUID.randomUUID()
             )
         )
     )

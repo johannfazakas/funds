@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.sdk
 
+import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
@@ -22,7 +23,6 @@ import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.api.serializer.YearMonthSerializer
 import java.math.BigDecimal
-import java.util.*
 import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerContainerExtension::class)
@@ -36,7 +36,7 @@ class ReportingSdkTest {
     private val viewName = "Expense Report"
 
     @Test
-    fun `create report view task`(mockServerClient: MockServerClient): Unit = runBlocking {
+    fun `create report view`(mockServerClient: MockServerClient): Unit = runBlocking {
         val request = CreateReportViewTO(
             name = viewName,
             fundId = fundId,
@@ -89,22 +89,27 @@ class ReportingSdkTest {
                 )
             ),
         )
-        mockServerClient.mockCreateReportViewTask(request, taskId, "IN_PROGRESS")
+        val expectedResponse = ReportViewTO(
+            id = viewId,
+            name = viewName,
+            fundId = fundId,
+            dataConfiguration = ReportDataConfigurationTO(
+                currency = RON,
+                groups = listOf(
+                    ReportGroupTO(name = "need", filter = RecordFilterTO.byLabels("need")),
+                    ReportGroupTO(name = "want", filter = RecordFilterTO.byLabels("want"))
+                ),
+                reports = ReportsConfigurationTO(
+                    NetReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want"))),
+                    ValueReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want")))
+                )
+            )
+        )
+        mockServerClient.mockCreateReportView(request, expectedResponse)
 
         val response = reportingSdk.createReportView(userId, request)
 
-        assertThat(response.taskId).isEqualTo(taskId)
-        assertThat(response.status).isEqualTo(ReportViewTaskStatus.IN_PROGRESS)
-    }
-
-    @Test
-    fun `get report view task`(mockServerClient: MockServerClient): Unit = runBlocking {
-        mockServerClient.mockGetReportViewTask(taskId, "IN_PROGRESS")
-
-        val response = reportingSdk.getReportViewTask(userId, taskId)
-
-        assertThat(response.taskId).isEqualTo(taskId)
-        assertThat(response.status).isEqualTo(ReportViewTaskStatus.IN_PROGRESS)
+        assertThat(response).isEqualTo(expectedResponse)
     }
 
     @Test
@@ -257,11 +262,11 @@ class ReportingSdkTest {
         assertThat(response).isEqualTo(expectedResponse)
     }
 
-    private fun MockServerClient.mockCreateReportViewTask(request: CreateReportViewTO, taskId: UUID, status: String) {
+    private fun MockServerClient.mockCreateReportView(request: CreateReportViewTO, reportView: ReportViewTO) {
         `when`(
             request()
                 .withMethod("POST")
-                .withPath("/funds-api/reporting/v1/report-views/tasks")
+                .withPath("/funds-api/reporting/v1/report-views")
                 .withHeader(USER_ID_HEADER, userId.toString())
                 .withContentType(MediaType.APPLICATION_JSON)
                 .withBody(
@@ -385,33 +390,10 @@ class ReportingSdkTest {
         )
             .respond(
                 response()
-                    .withStatusCode(202)
+                    .withStatusCode(HttpStatusCode.Created.value)
                     .withContentType(MediaType.APPLICATION_JSON)
                     .withBody(
-                        buildJsonObject {
-                            put("taskId", JsonPrimitive(taskId.toString()))
-                            put("status", JsonPrimitive(status))
-                        }.toString()
-                    )
-            )
-    }
-
-    private fun MockServerClient.mockGetReportViewTask(taskId: UUID, status: String) {
-        `when`(
-            request()
-                .withMethod("GET")
-                .withPath("/funds-api/reporting/v1/report-views/tasks/$taskId")
-                .withHeader(USER_ID_HEADER, userId.toString())
-        )
-            .respond(
-                response()
-                    .withStatusCode(200)
-                    .withContentType(MediaType.APPLICATION_JSON)
-                    .withBody(
-                        buildJsonObject {
-                            put("taskId", JsonPrimitive(taskId.toString()))
-                            put("status", JsonPrimitive(status))
-                        }.toString()
+                        reportViewJsonObject(reportView).toString()
                     )
             )
     }

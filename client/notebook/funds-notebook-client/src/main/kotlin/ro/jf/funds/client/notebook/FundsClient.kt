@@ -1,12 +1,14 @@
 package ro.jf.funds.client.notebook
 
-import com.charleskorn.kaml.*
+import com.charleskorn.kaml.AnchorsAndAliases
+import com.charleskorn.kaml.Yaml
+import com.charleskorn.kaml.YamlConfiguration
+import com.charleskorn.kaml.YamlMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import kotlinx.datetime.*
-import kotlinx.serialization.decodeFromString
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.account.sdk.AccountSdk
@@ -120,25 +122,7 @@ class FundsClient(
         val fund = fundSdk.getFundByName(user.id, FundName(fundName))
             ?: error("Fund with name '$fundName' not found for user ${user.username}")
         val request = CreateReportViewTO(reportViewName, fund.id, dataConfiguration)
-        var task: ReportViewTaskTO = reportingSdk.createReportView(user.id, request)
-        val timeout = Clock.System.now().plus(120.seconds)
-        while (task.status == ReportViewTaskStatus.IN_PROGRESS && Clock.System.now() < timeout) {
-            delay(2000)
-            task = reportingSdk.getReportViewTask(user.id, task.taskId)
-        }
-        when (task.status) {
-            ReportViewTaskStatus.COMPLETED -> {
-                task.report ?: error("No report found on completed report task")
-            }
-
-            ReportViewTaskStatus.FAILED -> {
-                throw IllegalStateException("Report view creation failed on task $task")
-            }
-
-            else -> {
-                throw IllegalStateException("Report view creation timed out on task $task")
-            }
-        }
+        reportingSdk.createReportView(user.id, request)
     }
 
     fun getYearlyReportViewData(
