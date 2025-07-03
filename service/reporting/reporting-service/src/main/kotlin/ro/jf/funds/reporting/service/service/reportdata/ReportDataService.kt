@@ -3,6 +3,8 @@ package ro.jf.funds.reporting.service.service.reportdata
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
+import ro.jf.funds.commons.observability.withSpan
+import ro.jf.funds.commons.observability.withSuspendingSpan
 import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
 import ro.jf.funds.fund.sdk.FundTransactionSdk
@@ -17,8 +19,6 @@ import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataForec
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolver
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverInput
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
-import ro.jf.funds.reporting.service.utils.withSpan
-import ro.jf.funds.reporting.service.utils.withSuspendingSpan
 import java.math.BigDecimal
 import java.util.*
 

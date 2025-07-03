@@ -8,6 +8,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.observability.withSuspendingSpan
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
@@ -24,21 +25,22 @@ class ReportingSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : ReportingApi {
-    override suspend fun createReportView(userId: UUID, request: CreateReportViewTO): ReportViewTO {
-        log.info { "Creating for user $userId report view $request." }
-        val response = httpClient.post("$baseUrl/funds-api/reporting/v1/report-views") {
-            header(USER_ID_HEADER, userId.toString())
-            contentType(ContentType.Application.Json)
-            setBody(request)
+    override suspend fun createReportView(userId: UUID, request: CreateReportViewTO): ReportViewTO =
+        withSuspendingSpan {
+            log.info { "Creating for user $userId report view $request." }
+            val response = httpClient.post("$baseUrl/funds-api/reporting/v1/report-views") {
+                header(USER_ID_HEADER, userId.toString())
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+            if (response.status != HttpStatusCode.Created) {
+                log.warn { "Unexpected response on create fund: $response" }
+                throw response.toApiException()
+            }
+            response.body()
         }
-        if (response.status != HttpStatusCode.Created) {
-            log.warn { "Unexpected response on create fund: $response" }
-            throw response.toApiException()
-        }
-        return response.body()
-    }
 
-    override suspend fun getReportView(userId: UUID, reportViewId: UUID): ReportViewTO {
+    override suspend fun getReportView(userId: UUID, reportViewId: UUID): ReportViewTO = withSuspendingSpan {
         log.info { "Getting report view for user $userId and report $reportViewId." }
         val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views/$reportViewId") {
             header(USER_ID_HEADER, userId.toString())
@@ -47,10 +49,10 @@ class ReportingSdk(
             log.warn { "Unexpected response on get report view: $response" }
             throw response.toApiException()
         }
-        return response.body()
+        response.body()
     }
 
-    override suspend fun listReportViews(userId: UUID): ListTO<ReportViewTO> {
+    override suspend fun listReportViews(userId: UUID): ListTO<ReportViewTO> = withSuspendingSpan {
         log.info { "Listing report views for user $userId." }
         val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
@@ -59,7 +61,7 @@ class ReportingSdk(
             log.warn { "Unexpected response on list report views: $response" }
             throw response.toApiException()
         }
-        return response.body()
+        response.body()
     }
 
     override suspend fun getYearlyReportViewData(
@@ -68,7 +70,7 @@ class ReportingSdk(
         fromYear: Int,
         toYear: Int,
         forecastUntilYear: Int?,
-    ): ReportDataTO {
+    ): ReportDataTO = withSuspendingSpan {
         log.info { "Get yearly report view data. userId = $userId, reportViewId = $reportViewId, fromYear: $fromYear, toYear: $toYear, forecastUntilYear: $forecastUntilYear" }
         val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data") {
             header(USER_ID_HEADER, userId.toString())
@@ -81,7 +83,7 @@ class ReportingSdk(
             log.warn { "Unexpected response on get report view data: $response" }
             throw response.toApiException()
         }
-        return response.body()
+        response.body()
     }
 
     override suspend fun getMonthlyReportViewData(
@@ -90,7 +92,7 @@ class ReportingSdk(
         fromYearMonth: YearMonthTO,
         toYearMonth: YearMonthTO,
         forecastUntilYearMonth: YearMonthTO?,
-    ): ReportDataTO {
+    ): ReportDataTO = withSuspendingSpan {
         log.info {
             "Get monthly report view data. userId = $userId, reportViewId = $reportViewId, fromYearMonth: $fromYearMonth, toYearMonth: $toYearMonth, forecastUntilYearMonth: $forecastUntilYearMonth"
         }
@@ -107,7 +109,7 @@ class ReportingSdk(
             log.warn { "Unexpected response on get report view data: $response" }
             throw response.toApiException()
         }
-        return response.body()
+        response.body()
     }
 
     override suspend fun getDailyReportViewData(
@@ -116,7 +118,7 @@ class ReportingSdk(
         fromDate: LocalDate,
         toDate: LocalDate,
         forecastUntilDate: LocalDate?,
-    ): ReportDataTO {
+    ): ReportDataTO = withSuspendingSpan {
         log.info {
             "Get daily report view data. userId = $userId, reportViewId = $reportViewId, fromDate: $fromDate, toDate: $toDate, forecastUntilDate: $forecastUntilDate"
         }
@@ -131,6 +133,6 @@ class ReportingSdk(
             log.warn { "Unexpected response on get report view data: $response" }
             throw response.toApiException()
         }
-        return response.body()
+        response.body()
     }
 }

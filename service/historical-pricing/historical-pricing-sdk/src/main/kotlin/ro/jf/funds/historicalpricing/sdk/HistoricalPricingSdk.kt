@@ -5,6 +5,7 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
+import ro.jf.funds.commons.observability.withSuspendingSpan
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
@@ -20,9 +21,9 @@ class HistoricalPricingSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) {
-    suspend fun convert(userId: UUID, request: ConversionsRequest): ConversionsResponse {
+    suspend fun convert(userId: UUID, request: ConversionsRequest): ConversionsResponse = withSuspendingSpan {
         if (request.conversions.isEmpty()) {
-            return ConversionsResponse.empty()
+            return@withSuspendingSpan ConversionsResponse.empty()
         }
         val response = httpClient.post("${baseUrl}/funds-api/historical-pricing/v1/conversions") {
             headers {
@@ -35,6 +36,6 @@ class HistoricalPricingSdk(
             log.warn { "Unexpected response on conversion: $response" }
             throw response.toApiException()
         }
-        return response.body()
+        response.body()
     }
 }

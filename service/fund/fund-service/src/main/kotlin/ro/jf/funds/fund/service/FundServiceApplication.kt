@@ -6,6 +6,7 @@ import org.koin.ktor.ext.get
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
+import ro.jf.funds.commons.config.configureTracing
 import ro.jf.funds.fund.service.config.configureFundErrorHandling
 import ro.jf.funds.fund.service.config.configureFundEventHandling
 import ro.jf.funds.fund.service.config.configureFundRouting
@@ -23,4 +24,5 @@ fun Application.module() {
     configureDatabaseMigration(get<DataSource>())
     configureFundRouting()
     configureFundEventHandling()
+    configureTracing()
 }

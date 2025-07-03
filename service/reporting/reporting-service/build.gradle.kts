@@ -10,12 +10,6 @@ dependencies {
     implementation(project(":fund:fund-sdk"))
     implementation(project(":historical-pricing:historical-pricing-sdk"))
     testImplementation(project(":commons:commons-test"))
-
-    implementation("io.opentelemetry:opentelemetry-api:1.48.0")
-    implementation("io.opentelemetry:opentelemetry-sdk:1.48.0")
-    implementation("io.opentelemetry.instrumentation:opentelemetry-ktor-3.0:2.16.0-alpha")
-    implementation("io.opentelemetry:opentelemetry-exporter-otlp:1.48.0")
-    implementation("io.opentelemetry:opentelemetry-extension-kotlin:1.48.0")
 }
 
 application {

@@ -10,6 +10,7 @@ import ro.jf.funds.account.service.config.configureAccountRouting
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
+import ro.jf.funds.commons.config.configureTracing
 import javax.sql.DataSource
 
 fun main(args: Array<String>) {
@@ -17,6 +18,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    configureTracing()
     configureDependencies(*accountDependencyModules)
     configureAccountErrorHandling()
     configureContentNegotiation()

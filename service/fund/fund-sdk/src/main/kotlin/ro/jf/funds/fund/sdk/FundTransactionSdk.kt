@@ -6,6 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.observability.withSuspendingSpan
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
@@ -21,28 +22,29 @@ class FundTransactionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : FundTransactionApi {
-    override suspend fun createTransaction(userId: UUID, transaction: CreateFundTransactionTO): FundTransactionTO {
-        val response = httpClient.post("$baseUrl$BASE_PATH/transactions") {
-            headers {
-                append(USER_ID_HEADER, userId.toString())
+    override suspend fun createTransaction(userId: UUID, transaction: CreateFundTransactionTO): FundTransactionTO =
+        withSuspendingSpan {
+            val response = httpClient.post("$baseUrl$BASE_PATH/transactions") {
+                headers {
+                    append(USER_ID_HEADER, userId.toString())
+                }
+                contentType(ContentType.Application.Json)
+                setBody(transaction)
             }
-            contentType(ContentType.Application.Json)
-            setBody(transaction)
+            if (response.status != HttpStatusCode.Created) {
+                log.warn { "Unexpected response on create transaction: $response" }
+                throw response.toApiException()
+            }
+            val fundTransaction = response.body<FundTransactionTO>()
+            log.debug { "Created fund transaction: $fundTransaction" }
+            fundTransaction
         }
-        if (response.status != HttpStatusCode.Created) {
-            log.warn { "Unexpected response on create transaction: $response" }
-            throw response.toApiException()
-        }
-        val fundTransaction = response.body<FundTransactionTO>()
-        log.debug { "Created fund transaction: $fundTransaction" }
-        return fundTransaction
-    }
 
     override suspend fun listTransactions(
         userId: UUID,
         fundId: UUID,
         filter: FundTransactionFilterTO,
-    ): ListTO<FundTransactionTO> {
+    ): ListTO<FundTransactionTO> = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds/$fundId/transactions") {
             filter.fromDate?.let { parameter("fromDate", it.toString()) }
             filter.toDate?.let { parameter("toDate", it.toString()) }
@@ -56,13 +58,13 @@ class FundTransactionSdk(
         }
         val transactions = response.body<ListTO<FundTransactionTO>>()
         log.debug { "Retrieved fund $fundId transactions: $transactions" }
-        return transactions
+        transactions
     }
 
     override suspend fun listTransactions(
         userId: UUID,
         filter: FundTransactionFilterTO,
-    ): ListTO<FundTransactionTO> {
+    ): ListTO<FundTransactionTO> = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
             filter.fromDate?.let { parameter("fromDate", it.toString()) }
             filter.toDate?.let { parameter("toDate", it.toString()) }
@@ -76,10 +78,10 @@ class FundTransactionSdk(
         }
         val transactions = response.body<ListTO<FundTransactionTO>>()
         log.debug { "Retrieved transactions: $transactions" }
-        return transactions
+        transactions
     }
 
-    override suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
+    override suspend fun deleteTransaction(userId: UUID, transactionId: UUID) = withSuspendingSpan() {
         val response = httpClient.delete("$baseUrl$BASE_PATH/transactions/$transactionId") {
             headers {
                 append(USER_ID_HEADER, userId.toString())

@@ -1,5 +1,6 @@
 ktor:
   application:
+    id: "funds::account-service"
     modules:
       - ro.jf.funds.account.service.AccountServiceApplicationKt.module
   deployment:
@@ -13,3 +14,7 @@ kafka:
   bootstrap-servers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:29092"
   group-id: account-service
   client-id: account-service
+observability:
+  enabled: true
+  otel-collector:
+    grpc-endpoint: "$OTEL_COLLECTOR_GRPC_ENDPOINT:http://localhost:4317/v1/traces"
