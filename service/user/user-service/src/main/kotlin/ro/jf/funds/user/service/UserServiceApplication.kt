@@ -16,9 +16,9 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    configureTracing()
     configureDependencies(userDependencies)
     configureContentNegotiation()
     configureDatabaseMigration(get<DataSource>())
     configureUserRouting()
-    configureTracing()
 }

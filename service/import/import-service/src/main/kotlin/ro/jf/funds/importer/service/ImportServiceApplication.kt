@@ -18,11 +18,11 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    configureTracing()
     configureDependencies(*importDependencyModules)
     configureImportErrorHandling()
     configureContentNegotiation()
     configureDatabaseMigration(get<DataSource>())
     configureImportEventHandling()
     configureImportRouting()
-    configureTracing()
 }

@@ -1,7 +1,7 @@
 package ro.jf.funds.reporting.service.service.reportdata.resolver
 
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.observability.withSpan
+import ro.jf.funds.commons.observability.tracing.withSpan
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.utils.getConversionRate

@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import org.apache.kafka.clients.producer.ProducerRecord
+import ro.jf.funds.commons.observability.tracing.kafka.sendWithTracing
 
 inline fun <reified T : Any> createProducer(properties: ProducerProperties, topic: Topic): Producer<T> =
     Producer(properties, topic, T::class.java)
@@ -38,7 +39,7 @@ open class Producer<T : Any>(
         val producerRecord = ProducerRecord(topic.value, key, value)
         headers.forEach { (k, v) -> producerRecord.headers().add(k, v.toByteArray()) }
         coroutineScope
-            .launch { kafkaProducer.send(producerRecord).get() }
+            .launch { kafkaProducer.sendWithTracing(producerRecord).get() }
             .join()
     }
 }

@@ -1,4 +1,4 @@
-package ro.jf.funds.commons.observability
+package ro.jf.funds.commons.observability.tracing
 
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span

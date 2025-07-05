@@ -9,7 +9,7 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.AccountTransactionApi
 import ro.jf.funds.account.api.model.*
 import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.observability.withSuspendingSpan
+import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.toApiException
 import java.util.*

@@ -4,6 +4,7 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.toListTO
 import ro.jf.funds.commons.web.userId
@@ -18,6 +19,8 @@ private val log = logger { }
 fun Routing.fundApiRouting(fundService: ro.jf.funds.fund.service.service.FundService) {
     route("/funds-api/fund/v1/funds") {
         get {
+            // TODO(Johann-32) temporary log
+            log.info { "Received headers: ${call.request.headers.toMap()}" }
             val userId = call.userId()
             log.debug { "List all accounts by user id $userId." }
             val funds = fundService.listFunds(userId)

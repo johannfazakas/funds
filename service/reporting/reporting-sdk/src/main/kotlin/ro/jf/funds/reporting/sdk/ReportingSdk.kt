@@ -8,7 +8,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.observability.withSuspendingSpan
+import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException

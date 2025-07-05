@@ -1,6 +1,6 @@
 package ro.jf.funds.reporting.service.service.reportdata.resolver
 
-import ro.jf.funds.commons.observability.withSpan
+import ro.jf.funds.commons.observability.tracing.withSpan
 import ro.jf.funds.reporting.service.domain.ByBucket
 import ro.jf.funds.reporting.service.domain.ByUnit
 import ro.jf.funds.reporting.service.domain.ReportRecord

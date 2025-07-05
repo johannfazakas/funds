@@ -2,7 +2,7 @@ package ro.jf.funds.importer.service.service.event
 
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.event.Event
-import ro.jf.funds.commons.event.Handler
+import ro.jf.funds.commons.event.EventHandler
 import ro.jf.funds.commons.model.GenericResponse
 import ro.jf.funds.importer.service.service.ImportService
 
@@ -10,7 +10,7 @@ private val log = logger { }
 
 class CreateFundTransactionsResponseHandler(
     private val importService: ImportService
-) : Handler<GenericResponse> {
+) : EventHandler<GenericResponse> {
     init {
         log.info { "CreateFundTransactionsResponseHandler initialized" }
     }

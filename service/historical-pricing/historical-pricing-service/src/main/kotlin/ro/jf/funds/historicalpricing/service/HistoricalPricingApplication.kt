@@ -17,10 +17,10 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    configureTracing()
     configureDependencies(historicalPricingDependencies)
     configureContentNegotiation()
     configureDatabaseMigration(get<DataSource>())
     configureHistoricalPricingRouting(get())
     configureHistoricalPricingErrorHandling()
-    configureTracing()
 }

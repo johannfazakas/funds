@@ -3,8 +3,8 @@ package ro.jf.funds.reporting.service.service.reportdata
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.observability.withSpan
-import ro.jf.funds.commons.observability.withSuspendingSpan
+import ro.jf.funds.commons.observability.tracing.withSpan
+import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
 import ro.jf.funds.fund.sdk.FundTransactionSdk
