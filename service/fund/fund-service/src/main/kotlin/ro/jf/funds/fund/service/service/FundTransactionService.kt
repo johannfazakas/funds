@@ -1,5 +1,6 @@
 package ro.jf.funds.fund.service.service
 
+import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.api.model.FundTransactionFilterTO
@@ -14,30 +15,30 @@ class FundTransactionService(
     suspend fun listTransactions(
         userId: UUID,
         filter: FundTransactionFilterTO = FundTransactionFilterTO.empty(),
-    ): List<FundTransaction> {
-        return accountTransactionAdapter.listTransactions(userId, filter = filter)
+    ): List<FundTransaction> = withSuspendingSpan {
+        accountTransactionAdapter.listTransactions(userId, filter = filter)
     }
 
     suspend fun listTransactions(
         userId: UUID,
         fundId: UUID,
         filter: FundTransactionFilterTO = FundTransactionFilterTO.empty(),
-    ): List<FundTransaction> {
-        return accountTransactionAdapter.listTransactions(userId, fundId, filter)
+    ): List<FundTransaction> = withSuspendingSpan {
+        accountTransactionAdapter.listTransactions(userId, fundId, filter)
     }
 
-    suspend fun createTransaction(userId: UUID, request: CreateFundTransactionTO): FundTransaction {
+    suspend fun createTransaction(userId: UUID, request: CreateFundTransactionTO): FundTransaction = withSuspendingSpan {
         validateTransactionFunds(userId, listOf(request))
-        return accountTransactionAdapter.createTransaction(userId, request)
+        accountTransactionAdapter.createTransaction(userId, request)
     }
 
-    suspend fun createTransactions(userId: UUID, correlationId: UUID, request: CreateFundTransactionsTO) {
+    suspend fun createTransactions(userId: UUID, correlationId: UUID, request: CreateFundTransactionsTO) = withSuspendingSpan {
         validateTransactionFunds(userId, request.transactions)
-        return accountTransactionAdapter.createTransactions(userId, correlationId, request)
+        accountTransactionAdapter.createTransactions(userId, correlationId, request)
     }
 
-    suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
-        return accountTransactionAdapter.deleteTransaction(userId, transactionId)
+    suspend fun deleteTransaction(userId: UUID, transactionId: UUID) = withSuspendingSpan {
+        accountTransactionAdapter.deleteTransaction(userId, transactionId)
     }
 
     private suspend fun validateTransactionFunds(userId: UUID, requests: List<CreateFundTransactionTO>) {

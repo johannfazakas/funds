@@ -16,6 +16,7 @@ import ro.jf.funds.account.service.persistence.AccountRepository.AccountTable
 import ro.jf.funds.commons.model.asLabels
 import ro.jf.funds.commons.model.asString
 import ro.jf.funds.commons.model.toFinancialUnit
+import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.commons.persistence.blockingTransaction
 import java.util.*
 
@@ -52,60 +53,75 @@ class AccountTransactionRepository(
         val value = varchar("value", 50)
     }
 
-    suspend fun findById(userId: UUID, transactionId: UUID): AccountTransaction? = blockingTransaction {
-        (AccountTransactionTable
-                leftJoin AccountRecordTable
-                leftJoin TransactionPropertyTable
-                leftJoin RecordPropertyTable)
-            .selectAll()
-            .where { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id eq transactionId) }
-            .toTransactions()
-            .singleOrNull()
+    suspend fun findById(userId: UUID, transactionId: UUID): AccountTransaction? = withSuspendingSpan {
+        blockingTransaction {
+            (AccountTransactionTable
+                    leftJoin AccountRecordTable
+                    leftJoin TransactionPropertyTable
+                    leftJoin RecordPropertyTable)
+                .selectAll()
+                .where { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id eq transactionId) }
+                .toTransactions()
+                .singleOrNull()
+        }
     }
 
     suspend fun list(
         userId: UUID,
         filter: AccountTransactionFilterTO,
-    ): List<AccountTransaction> = blockingTransaction {
-        AccountTransactionTable
-            .innerJoinWithMatchingTransactionProperties(userId, filter.transactionProperties)
-            .innerJoinWithMatchingRecordProperties(userId, filter.recordProperties)
-            .leftJoin(AccountRecordTable)
-            .leftJoin(TransactionPropertyTable)
-            .leftJoin(RecordPropertyTable)
-            .selectAll()
-            .where(toPredicate(userId, filter))
-            .toTransactions()
+    ): List<AccountTransaction> = withSuspendingSpan {
+        blockingTransaction {
+            AccountTransactionTable
+                .innerJoinWithMatchingTransactionProperties(userId, filter.transactionProperties)
+                .innerJoinWithMatchingRecordProperties(userId, filter.recordProperties)
+                .leftJoin(AccountRecordTable)
+                .leftJoin(TransactionPropertyTable)
+                .leftJoin(RecordPropertyTable)
+                .selectAll()
+                .where(toPredicate(userId, filter))
+                .toTransactions()
+        }
     }
 
-    suspend fun save(userId: UUID, command: CreateAccountTransactionTO): AccountTransaction = blockingTransaction {
-        saveTransaction(userId, command)
+    suspend fun save(userId: UUID, command: CreateAccountTransactionTO): AccountTransaction = withSuspendingSpan {
+        blockingTransaction {
+            saveTransaction(userId, command)
+        }
     }
 
     suspend fun saveAll(
         userId: UUID,
         requests: CreateAccountTransactionsTO,
-    ): List<AccountTransaction> = blockingTransaction {
-        requests.transactions.map { saveTransaction(userId, it) }
+    ): List<AccountTransaction> = withSuspendingSpan {
+        blockingTransaction {
+            requests.transactions.map { saveTransaction(userId, it) }
+        }
     }
 
-    suspend fun deleteByUserId(userId: UUID): Unit = blockingTransaction {
-        AccountRecordTable.deleteWhere { AccountRecordTable.userId eq userId }
-        AccountTransactionTable.deleteWhere { AccountTransactionTable.userId eq userId }
+    suspend fun deleteByUserId(userId: UUID): Unit = withSuspendingSpan {
+        blockingTransaction {
+            AccountRecordTable.deleteWhere { AccountRecordTable.userId eq userId }
+            AccountTransactionTable.deleteWhere { AccountTransactionTable.userId eq userId }
+        }
     }
 
-    suspend fun deleteById(userId: UUID, transactionId: UUID): Unit = blockingTransaction {
-        RecordPropertyTable.deleteWhere { RecordPropertyTable.userId eq userId and (RecordPropertyTable.transactionId eq transactionId) }
-        TransactionPropertyTable.deleteWhere { TransactionPropertyTable.userId eq userId and (TransactionPropertyTable.transactionId eq transactionId) }
-        AccountRecordTable.deleteWhere { AccountRecordTable.userId eq userId and (AccountRecordTable.transactionId eq transactionId) }
-        AccountTransactionTable.deleteWhere { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id eq transactionId) }
+    suspend fun deleteById(userId: UUID, transactionId: UUID): Unit = withSuspendingSpan {
+        blockingTransaction {
+            RecordPropertyTable.deleteWhere { RecordPropertyTable.userId eq userId and (RecordPropertyTable.transactionId eq transactionId) }
+            TransactionPropertyTable.deleteWhere { TransactionPropertyTable.userId eq userId and (TransactionPropertyTable.transactionId eq transactionId) }
+            AccountRecordTable.deleteWhere { AccountRecordTable.userId eq userId and (AccountRecordTable.transactionId eq transactionId) }
+            AccountTransactionTable.deleteWhere { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id eq transactionId) }
+        }
     }
 
-    suspend fun deleteAll(): Unit = blockingTransaction {
-        RecordPropertyTable.deleteAll()
-        TransactionPropertyTable.deleteAll()
-        AccountRecordTable.deleteAll()
-        AccountTransactionTable.deleteAll()
+
+    suspend fun deleteAll(): Unit = withSuspendingSpan {
+        blockingTransaction {
+            RecordPropertyTable.deleteAll()
+            TransactionPropertyTable.deleteAll()
+            AccountRecordTable.deleteAll()
+            AccountTransactionTable.deleteAll()
+        }
     }
 
     private fun ColumnSet.innerJoinWithMatchingTransactionProperties(

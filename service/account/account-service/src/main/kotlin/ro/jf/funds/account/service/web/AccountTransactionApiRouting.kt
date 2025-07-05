@@ -4,6 +4,7 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.toMap
 import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
@@ -39,6 +40,8 @@ fun Routing.accountTransactionApiRouting(transactionService: AccountTransactionS
             call.respond(transactions.toListTO(AccountTransaction::toTO))
         }
         get {
+            // TODO(Johann-32) temporary log
+            log.info { "Received headers: ${call.request.headers.toMap()}" }
             val userId = call.userId()
             log.debug { "List all transactions by user id $userId." }
             val transactionFilter = call.parameters.transactionFilter()

@@ -13,6 +13,7 @@ kotlin-logging = "3.0.5"
 logback = "1.4.14"
 opentelemetry = "1.48.0"
 opentelemetry-ktor = "2.16.0-alpha"
+opentelemetry-kafka = "2.16.0-alpha"
 junit = "5.12.2"
 junit-platform = "1.12.2"
 assertj = "3.26.0"
@@ -66,6 +67,7 @@ opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref
 opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "opentelemetry" }
 opentelemetry-extension-kotlin = { module = "io.opentelemetry:opentelemetry-extension-kotlin", version.ref = "opentelemetry" }
 opentelemetry-ktor = { module = "io.opentelemetry.instrumentation:opentelemetry-ktor-3.0", version.ref = "opentelemetry-ktor" }
+opentelemetry-kafka = { module = "io.opentelemetry.instrumentation:opentelemetry-kafka-clients-2.6", version.ref = "opentelemetry-kafka" }
 
 # other libraries
 kotlin-csv = { module = "com.jsoizo:kotlin-csv", version.ref = "kotlin-csv" }

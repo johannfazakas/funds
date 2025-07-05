@@ -5,7 +5,8 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.observability.withSuspendingSpan
+import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.user.api.UserServiceApi
 import ro.jf.funds.user.api.exception.UserApiException
@@ -23,7 +24,7 @@ class UserSdk(
     private val httpClient: HttpClient = createHttpClient(),
 ) : UserServiceApi {
     override suspend fun listUsers(): List<UserTO> = withSuspendingSpan {
-        val users = httpClient.get("$baseUrl$BASE_PATH/users").body<ro.jf.funds.commons.model.ListTO<UserTO>>()
+        val users = httpClient.get("$baseUrl$BASE_PATH/users").body<ListTO<UserTO>>()
         log.debug { "Retrieved users: $users" }
         users.items
     }
