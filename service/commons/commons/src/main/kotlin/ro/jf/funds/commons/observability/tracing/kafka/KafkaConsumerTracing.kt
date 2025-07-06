@@ -8,11 +8,8 @@ import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.TextMapGetter
 import io.opentelemetry.extension.kotlin.asContextElement
 import kotlinx.coroutines.withContext
-import mu.KotlinLogging.logger
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import java.nio.charset.StandardCharsets
-
-private val log = logger { }
 
 private const val INSTRUMENTATION_SCOPE_NAME = "ro.jf.funds.kafka.consumer"
 private const val INSTRUMENTATION_SCOPE_VERSION = "1.0.0"
@@ -37,15 +34,12 @@ suspend fun <K, V> ConsumerRecord<K, V>.handleWithTracing(
 
     val parentContext = textMapPropagator
         .extract(Context.current(), this, KafkaTextMapGetter)
-    log.info { "Kafka Consumer tracing. Extracted OpenTelemetry context: $parentContext" }
     val span = tracer.spanBuilder("${topic()}")
         .setParent(parentContext)
         .setSpanKind(SpanKind.CONSUMER)
         .setAttribute(KAFKA_TOPIC_ATTRIBUTE_KEY, topic())
         .setAttribute(KAFKA_PARTITION_ATTRIBUTE_KEY, partition().toLong())
         .startSpan()
-
-    log.info { "Kafka Consumer tracing. Created span: $span" }
 
     return span.makeCurrent().use {
         try {

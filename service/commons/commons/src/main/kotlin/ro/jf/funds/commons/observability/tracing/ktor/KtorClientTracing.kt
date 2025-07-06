@@ -5,7 +5,6 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.util.*
 import io.opentelemetry.api.GlobalOpenTelemetry
-import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.StatusCode
@@ -28,13 +27,10 @@ private object KtorClientTextMapSetter : TextMapSetter<HttpRequestBuilder> {
 }
 
 val KtorClientTracing = createClientPlugin("FundsKtorClientTracing") {
-    val openTelemetrySet = GlobalOpenTelemetry.get() != OpenTelemetry.noop()
     val tracer = GlobalOpenTelemetry.getTracer(INSTRUMENTATION_SCOPE_NAME, INSTRUMENTATION_SCOPE_VERSION)
     val propagator = GlobalOpenTelemetry.getPropagators().textMapPropagator
 
     onRequest { request, _ ->
-        if (!openTelemetrySet) return@onRequest
-
         val span = tracer.spanBuilder("${request.method.value}:${request.url.encodedPath}")
             .setSpanKind(SpanKind.CLIENT)
             .setParent(Context.current())
@@ -49,8 +45,6 @@ val KtorClientTracing = createClientPlugin("FundsKtorClientTracing") {
     }
 
     onResponse { response ->
-        if (!openTelemetrySet) return@onResponse
-
         val span = response.call.request.attributes[SPAN_ATTRIBUTE_KEY]
         val scope = response.call.request.attributes[SCOPE_ATTRIBUTE_KEY]
 

@@ -94,6 +94,7 @@ class AccountTransactionRepository(
         requests: CreateAccountTransactionsTO,
     ): List<AccountTransaction> = withSuspendingSpan {
         blockingTransaction {
+            // TODO(Johann-33) How could I save all with a single db call?
             requests.transactions.map { saveTransaction(userId, it) }
         }
     }

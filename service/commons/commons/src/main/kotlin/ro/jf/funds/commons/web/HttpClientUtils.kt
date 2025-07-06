@@ -12,9 +12,6 @@ import ro.jf.funds.commons.error.ApiException
 import ro.jf.funds.commons.error.ErrorTO
 import ro.jf.funds.commons.observability.tracing.ktor.KtorClientTracing
 
-// TODO(Johann-32) remove
-private val log = mu.KotlinLogging.logger { }
-
 fun createHttpClient() = HttpClient(CIO) {
     install(ContentNegotiation) {
         json(Json {

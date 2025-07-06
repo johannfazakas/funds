@@ -25,9 +25,11 @@ private val SERVICE_NAME_ATTRIBUTE_KEY = OpenTelemetryAttributeKey.stringKey("se
 private val logger = logger { }
 
 fun Application.configureTracing() {
-    // TODO(Johann-32) what if observability is not enabled? what will happen with ktor client and kafka?
     val observabilityEnabled = environment.getBooleanPropertyOrNull(OBSERVABILITY_ENABLED_KEY) ?: false
-    if (!observabilityEnabled) return
+    if (!observabilityEnabled) {
+        logger.info { "Observability is disabled, skipping OpenTelemetry initialization." }
+        return
+    }
     initOpenTelemetry()
     install(KtorServerTracing)
 }

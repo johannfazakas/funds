@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import ro.jf.funds.commons.serialization.UUIDSerializer
 import java.util.*
 
+// TODO(Johann) maybe I shouldn't use this at the db level
 @Serializable
 data class ImportTaskTO(
     @Serializable(with = UUIDSerializer::class)

@@ -41,7 +41,7 @@ class FundTransactionService(
         accountTransactionAdapter.deleteTransaction(userId, transactionId)
     }
 
-    private suspend fun validateTransactionFunds(userId: UUID, requests: List<CreateFundTransactionTO>) {
+    private suspend fun validateTransactionFunds(userId: UUID, requests: List<CreateFundTransactionTO>) = withSuspendingSpan {
         requests
             .asSequence()
             .flatMap { it.records }

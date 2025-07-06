@@ -18,9 +18,8 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    configureDependencies(fundDependencies)
-    // TODO(Johann-32) put tracing on the first place
     configureTracing()
+    configureDependencies(fundDependencies)
     configureContentNegotiation()
     configureFundErrorHandling()
     configureDatabaseMigration(get<DataSource>())
