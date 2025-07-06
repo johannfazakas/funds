@@ -15,8 +15,6 @@ import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.UrlAttributes
 import mu.KotlinLogging.logger
 
-private val log = logger { }
-
 private const val INSTRUMENTATION_SCOPE_NAME = "ro.jf.funds.ktor.server"
 private const val INSTRUMENTATION_SCOPE_VERSION = "1.0.0"
 
@@ -34,7 +32,6 @@ val KtorServerTracing = createApplicationPlugin(name = "FundsKtorServerTracing")
 
     onCall { call ->
         val parent = propagator.extract(Context.current(), call.request, KtorServerTextMapGetter)
-        log.info { "Tracing plugin. Extracted OpenTelemetry context: $parent" }
 
         val span = tracer.spanBuilder("${call.request.httpMethod.value}:${call.request.uri}")
             .setSpanKind(SpanKind.SERVER)
@@ -42,17 +39,13 @@ val KtorServerTracing = createApplicationPlugin(name = "FundsKtorServerTracing")
             .setAttribute(HttpAttributes.HTTP_REQUEST_METHOD, call.request.httpMethod.value)
             .setAttribute(UrlAttributes.URL_PATH, call.request.uri)
             .startSpan()
-        log.info { "Tracing plugin. Created span: $span" }
         val scope = span.makeCurrent()
         call.attributes.put(SPAN_KEY, span)
         call.attributes.put(SCOPE_KEY, scope)
     }
 
     on(ResponseSent) { call ->
-        // TODO(Johann-32) remove all tracing logs when done
-        log.info { "Tracing plugin. Response sent hook for ${call.request.httpMethod.value} ${call.request.uri}" }
         call.attributes.getOrNull(SPAN_KEY)?.apply {
-            log.info { "Tracing plugin. Response sent hook. span is $this" }
             call.response.status()?.let { statusCode ->
                 setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, statusCode.value)
             }
@@ -63,9 +56,7 @@ val KtorServerTracing = createApplicationPlugin(name = "FundsKtorServerTracing")
     }
 
     on(CallFailed) { call, cause ->
-        log.info { "Tracing plugin. Call failed hook for ${call.request.httpMethod.value} ${call.request.uri}" }
         call.attributes.getOrNull(SPAN_KEY)?.apply {
-            log.info { "Tracing plugin. Call failed hook. span is $this" }
             recordException(cause)
             setStatus(StatusCode.ERROR)
             end()

@@ -8,30 +8,31 @@ import ro.jf.funds.account.service.domain.AccountServiceException
 import ro.jf.funds.account.service.domain.AccountTransaction
 import ro.jf.funds.account.service.persistence.AccountRepository
 import ro.jf.funds.account.service.persistence.AccountTransactionRepository
+import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import java.util.*
 
 class AccountTransactionService(
     private val transactionRepository: AccountTransactionRepository,
     private val accountRepository: AccountRepository,
 ) {
-    suspend fun createTransaction(userId: UUID, request: CreateAccountTransactionTO): AccountTransaction {
+    suspend fun createTransaction(userId: UUID, request: CreateAccountTransactionTO): AccountTransaction = withSuspendingSpan {
         validateTransactionRequests(userId, listOf(request))
-        return transactionRepository.save(userId, request)
+        transactionRepository.save(userId, request)
     }
 
-    suspend fun createTransactions(userId: UUID, requests: CreateAccountTransactionsTO): List<AccountTransaction> {
+    suspend fun createTransactions(userId: UUID, requests: CreateAccountTransactionsTO): List<AccountTransaction> = withSuspendingSpan {
         validateTransactionRequests(userId, requests.transactions)
-        return transactionRepository.saveAll(userId, requests)
+        transactionRepository.saveAll(userId, requests)
     }
 
     suspend fun listTransactions(
         userId: UUID,
         filter: AccountTransactionFilterTO
-    ): List<AccountTransaction> {
-        return transactionRepository.list(userId, filter)
+    ): List<AccountTransaction> = withSuspendingSpan {
+        transactionRepository.list(userId, filter)
     }
 
-    suspend fun deleteTransaction(userId: UUID, transactionId: UUID) {
+    suspend fun deleteTransaction(userId: UUID, transactionId: UUID) = withSuspendingSpan {
         transactionRepository.deleteById(userId, transactionId)
     }
 

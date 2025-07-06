@@ -13,8 +13,6 @@ import org.apache.kafka.common.header.internals.RecordHeader
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.Future
 
-private val log = mu.KotlinLogging.logger { }
-
 private const val INSTRUMENTATION_SCOPE_NAME = "ro.jf.funds.kafka.producer"
 private const val INSTRUMENTATION_SCOPE_VERSION = "1.0.0"
 
@@ -42,8 +40,6 @@ fun <K, V> KafkaProducer<K, V>.sendWithTracing(
         .startSpan()
     val scope = span.makeCurrent()
     propagator.inject(Context.current(), record, KafkaTextMapSetter)
-    // TODO(Johann-32) remove
-    log.info { "Kafka tracing. Sending record with tracing: $record" }
 
     try {
         return send(record) { meta, ex ->

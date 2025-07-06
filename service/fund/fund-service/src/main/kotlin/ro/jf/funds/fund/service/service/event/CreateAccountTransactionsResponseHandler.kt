@@ -12,7 +12,7 @@ private val log = logger { }
 class CreateAccountTransactionsResponseHandler(
     private val createFundTransactionsResponseProducer: Producer<GenericResponse>,
 ) : EventHandler<GenericResponse> {
-    override suspend fun handle(event: Event<GenericResponse>) = withSuspendingSpan {
+    override suspend fun handle(event: Event<GenericResponse>): Unit = withSuspendingSpan {
         log.info { "Received create account transactions response $event" }
         val response = Event(event.userId, event.payload, event.correlationId, event.userId.toString())
         createFundTransactionsResponseProducer.send(response)
