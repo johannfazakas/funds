@@ -17,7 +17,6 @@ import ro.jf.funds.commons.config.getEnvironmentProperty
 import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.model.GenericResponse
 import ro.jf.funds.commons.persistence.getDataSource
-import ro.jf.funds.commons.persistence.getDbConnection
 import javax.sql.DataSource
 
 val CREATE_ACCOUNT_TRANSACTIONS_RESPONSE_PRODUCER = StringQualifier("CreateAccountTransactionsResponse")
@@ -33,7 +32,6 @@ val Application.accountDatabaseDependencies
     get() = module {
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
-        single { environment.getDbConnection() }
         single<AccountRepository> { AccountRepository(get()) }
         single<AccountTransactionRepository> { AccountTransactionRepository(get()) }
     }

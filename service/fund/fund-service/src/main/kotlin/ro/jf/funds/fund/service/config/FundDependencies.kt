@@ -16,7 +16,6 @@ import ro.jf.funds.commons.config.getEnvironmentProperty
 import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.model.GenericResponse
 import ro.jf.funds.commons.persistence.getDataSource
-import ro.jf.funds.commons.persistence.getDbConnection
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.fund.api.event.FUND_DOMAIN
 import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_REQUEST
@@ -28,7 +27,6 @@ import ro.jf.funds.fund.service.service.FundService
 import ro.jf.funds.fund.service.service.FundTransactionService
 import ro.jf.funds.fund.service.service.event.CreateAccountTransactionsResponseHandler
 import ro.jf.funds.fund.service.service.event.CreateFundTransactionsRequestHandler
-import java.sql.Connection
 import javax.sql.DataSource
 
 val CREATE_ACCOUNT_TRANSACTIONS_RESPONSE_CONSUMER: Qualifier =
@@ -51,7 +49,6 @@ private val Application.fundPersistenceDependencies
     get() = module {
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
-        single<Connection> { environment.getDbConnection() }
         single<FundRepository> { FundRepository(get()) }
     }
 

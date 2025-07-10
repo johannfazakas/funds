@@ -19,6 +19,7 @@ import ro.jf.funds.commons.model.toFinancialUnit
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.commons.persistence.blockingTransaction
 import java.util.*
+import java.util.UUID.randomUUID
 
 class AccountTransactionRepository(
     private val database: Database,
@@ -70,6 +71,7 @@ class AccountTransactionRepository(
         userId: UUID,
         filter: AccountTransactionFilterTO,
     ): List<AccountTransaction> = withSuspendingSpan {
+        // TODO(Johann) could withSuspendingSpan be merged in blockingTransaction?
         blockingTransaction {
             AccountTransactionTable
                 .innerJoinWithMatchingTransactionProperties(userId, filter.transactionProperties)
@@ -90,12 +92,41 @@ class AccountTransactionRepository(
     }
 
     suspend fun saveAll(
-        userId: UUID,
-        requests: CreateAccountTransactionsTO,
+        userId: UUID, requests: CreateAccountTransactionsTO,
     ): List<AccountTransaction> = withSuspendingSpan {
         blockingTransaction {
-            // TODO(Johann-33) How could I save all with a single db call?
-            requests.transactions.map { saveTransaction(userId, it) }
+            val storedTransactions =
+                AccountTransactionTable.batchInsert(
+                    requests.transactions,
+                    shouldReturnGeneratedValues = false
+                ) { command: CreateAccountTransactionTO ->
+                    this[AccountTransactionTable.id] = randomUUID()
+                    this[AccountTransactionTable.userId] = userId
+                    this[AccountTransactionTable.dateTime] = command.dateTime.toJavaLocalDateTime()
+                }
+            val transactionIdsToTransactionRequests = storedTransactions
+                .map { it[AccountTransactionTable.id].value }
+                .zip(requests.transactions)
+            val propertyRequestsByTransactionId = transactionIdsToTransactionRequests
+                .associate { (transactionId, command) -> transactionId to command.properties }
+            val storedTransactionPropertiesByTransactionId = saveTransactionProperties(
+                userId, propertyRequestsByTransactionId
+            )
+            val recordRequestsByTransactionId = transactionIdsToTransactionRequests
+                .associate { (transactionId, command) -> transactionId to command.records }
+            val storedRecordsByTransactionId = saveRecords(userId, recordRequestsByTransactionId)
+
+            storedTransactions
+                .map {
+                    val transactionId = it[AccountTransactionTable.id].value
+                    AccountTransaction(
+                        id = transactionId,
+                        userId = it[AccountTransactionTable.userId],
+                        dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
+                        records = storedRecordsByTransactionId[transactionId] ?: emptyList(),
+                        properties = storedTransactionPropertiesByTransactionId[transactionId] ?: emptyList()
+                    )
+                }
         }
     }
 
@@ -205,6 +236,125 @@ class AccountTransactionRepository(
                 dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
             )
         }
+
+    private fun saveRecords(
+        userId: UUID,
+        recordRequestsByTransactionId: Map<UUID, List<CreateAccountRecordTO>>,
+    ): Map<UUID, List<AccountRecord>> {
+        val transactionIdsToRecordRequest = recordRequestsByTransactionId
+            .flatMap { (transactionId, records) ->
+                records.map { record -> transactionId to record }
+            }
+        val storedRecords =
+            AccountRecordTable.batchInsert(transactionIdsToRecordRequest, shouldReturnGeneratedValues = false) {
+                this[AccountRecordTable.id] = randomUUID()
+                this[AccountRecordTable.userId] = userId
+                this[AccountRecordTable.transactionId] = it.first
+                this[AccountRecordTable.accountId] = it.second.accountId
+                this[AccountRecordTable.amount] = it.second.amount
+                this[AccountRecordTable.unitType] = it.second.unit.type.value
+                this[AccountRecordTable.unit] = it.second.unit.value
+                this[AccountRecordTable.labels] = it.second.labels.asString()
+            }
+
+        val transactionIdsByRecordId = storedRecords
+            .associate { it[AccountRecordTable.id].value to it[AccountRecordTable.transactionId] }
+        val recordIdsToPropertyRequests = transactionIdsToRecordRequest
+            .map { it.second }
+            .zip(storedRecords)
+            .associate { (recordRequest, storedRecord) ->
+                storedRecord[AccountRecordTable.id].value to recordRequest.properties
+            }
+        val recordPropertiesByRecordId = saveRecordProperties(
+            userId, recordIdsToPropertyRequests, transactionIdsByRecordId
+        )
+
+        return transactionIdsToRecordRequest
+            .map { it.first }
+            .zip(storedRecords)
+            .map { (transactionId, storedRecord) ->
+                transactionId to AccountRecord(
+                    id = storedRecord[AccountRecordTable.id].value,
+                    accountId = storedRecord[AccountRecordTable.accountId],
+                    amount = storedRecord[AccountRecordTable.amount],
+                    unit = toFinancialUnit(
+                        storedRecord[AccountRecordTable.unitType],
+                        storedRecord[AccountRecordTable.unit]
+                    ),
+                    labels = storedRecord[AccountRecordTable.labels].asLabels(),
+                    properties = recordPropertiesByRecordId[storedRecord[AccountRecordTable.id].value] ?: emptyList()
+                )
+            }
+            .groupBy({ it.first }) { it.second }
+    }
+
+    private fun saveTransactionProperties(
+        userId: UUID,
+        propertyRequestsByTransactionId: Map<UUID, List<PropertyTO>>,
+    ): Map<UUID, List<Property>> {
+        val transactionIdsToPropertyRequest = propertyRequestsByTransactionId
+            .flatMap { (transactionId, properties) ->
+                properties.map { transactionId to it }
+            }
+        val transactionPropertiesByTransactionId = TransactionPropertyTable
+            .batchInsert(
+                data = transactionIdsToPropertyRequest,
+                shouldReturnGeneratedValues = false
+            ) { (transactionId, property) ->
+                this[TransactionPropertyTable.id] = randomUUID()
+                this[TransactionPropertyTable.userId] = userId
+                this[TransactionPropertyTable.transactionId] = transactionId
+                this[TransactionPropertyTable.key] = property.key
+                this[TransactionPropertyTable.value] = property.value
+            }
+            .groupBy { it[TransactionPropertyTable.transactionId] }
+            .mapValues { (_, rows) ->
+                rows.map {
+                    Property(
+                        id = it[TransactionPropertyTable.id].value,
+                        key = it[TransactionPropertyTable.key],
+                        value = it[TransactionPropertyTable.value]
+                    )
+                }
+            }
+        return transactionPropertiesByTransactionId
+    }
+
+    private fun saveRecordProperties(
+        userId: UUID,
+        propertyRequestsByRecordId: Map<UUID, List<PropertyTO>>,
+        transactionIdByRecordId: Map<UUID, UUID>,
+    ): Map<UUID, List<Property>> {
+        val recordIdsToPropertyRequest = propertyRequestsByRecordId
+            .flatMap { (transactionId, properties) ->
+                properties.map { transactionId to it }
+            }
+        val storedTransactionProperties = RecordPropertyTable
+            .batchInsert(
+                data = recordIdsToPropertyRequest,
+                shouldReturnGeneratedValues = false
+            ) { (recordId, property) ->
+                this[RecordPropertyTable.id] = randomUUID()
+                this[RecordPropertyTable.userId] = userId
+                this[RecordPropertyTable.transactionId] =
+                    transactionIdByRecordId[recordId] ?: error("Transaction ID not found for record ID $recordId")
+                this[RecordPropertyTable.recordId] = recordId
+                this[RecordPropertyTable.key] = property.key
+                this[RecordPropertyTable.value] = property.value
+            }
+        val transactionPropertiesByTransactionId = storedTransactionProperties
+            .groupBy { it[RecordPropertyTable.recordId] }
+            .mapValues { (_, rows) ->
+                rows.map {
+                    Property(
+                        id = it[RecordPropertyTable.id].value,
+                        key = it[RecordPropertyTable.key],
+                        value = it[RecordPropertyTable.value]
+                    )
+                }
+            }
+        return transactionPropertiesByTransactionId
+    }
 
     private fun insertRecord(
         userId: UUID,

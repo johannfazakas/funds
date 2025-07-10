@@ -38,6 +38,7 @@ val dbConfig
         "database.url" to PostgresContainerExtension.jdbcUrl,
         "database.user" to PostgresContainerExtension.username,
         "database.password" to PostgresContainerExtension.password,
+        "database.connection-pool-size" to 4.toString(),
     )
 
 val kafkaConfig

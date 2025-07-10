@@ -19,6 +19,7 @@ database:
   url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/ff_reporting"
   user: postgres
   password: pass
+  connection-pool-size: "$DATABASE_CONNECTION_POOL_SIZE:10"
 observability:
   enabled: true
   otel-collector:

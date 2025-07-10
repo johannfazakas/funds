@@ -5,6 +5,7 @@ kotlinx-serialization = "1.8.1"
 kotlinx-datetime = "0.6.0"
 koin = "4.1.0"
 postgres = "42.7.6"
+hikari = "6.3.0"
 kafka = "3.8.0"
 flyway = "11.9.0"
 exposed = "0.61.0"
@@ -48,6 +49,7 @@ koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 
 # db
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgres" }
+hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 flyway = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }

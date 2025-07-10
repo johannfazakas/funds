@@ -12,10 +12,6 @@ private val log = logger { }
 class CreateFundTransactionsResponseHandler(
     private val importService: ImportService,
 ) : EventHandler<GenericResponse> {
-    init {
-        log.info { "CreateFundTransactionsResponseHandler initialized" }
-    }
-
     override suspend fun handle(event: Event<GenericResponse>): Unit = withSuspendingSpan {
         log.info { "Received event: $event" }
         val importTaskId = event.correlationId ?: error("Missing correlationId")

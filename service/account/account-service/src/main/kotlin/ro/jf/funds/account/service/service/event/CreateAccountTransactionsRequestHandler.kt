@@ -13,10 +13,10 @@ private val log = logger { }
 
 class CreateAccountTransactionsRequestHandler(
     private val accountTransactionService: AccountTransactionService,
-    private val createAccountTransactionsResponseProducer: Producer<GenericResponse>
+    private val createAccountTransactionsResponseProducer: Producer<GenericResponse>,
 ) : EventHandler<CreateAccountTransactionsTO> {
     override suspend fun handle(event: Event<CreateAccountTransactionsTO>) {
-        log.info { "Received create account transactions request $event" }
+        log.info { "Received create account transactions request. userId = ${event.userId}, size = ${event.payload.transactions.size}" }
         try {
             accountTransactionService.createTransactions(event.userId, event.payload)
             createAccountTransactionsResponseProducer

@@ -17,6 +17,7 @@ import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
+import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.user.api.model.CreateUserTO
 import ro.jf.funds.user.api.model.UserTO
 import ro.jf.funds.user.service.adapter.persistence.UserExposedRepository
@@ -154,11 +155,7 @@ class UserApiTest {
             configureUserRouting()
         }
         environment {
-            config = MapApplicationConfig(
-                "database.url" to PostgresContainerExtension.jdbcUrl,
-                "database.user" to PostgresContainerExtension.username,
-                "database.password" to PostgresContainerExtension.password
-            )
+            config = dbConfig
         }
     }
 }

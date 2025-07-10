@@ -24,6 +24,7 @@ dependencies {
     api(libs.ktor.client.content.negotiation)
 
     api(libs.postgresql)
+    api(libs.hikari)
     api(libs.flyway)
     api(libs.flyway.postgres)
 
