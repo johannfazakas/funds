@@ -19,6 +19,7 @@ object PostgresContainerExtension : BeforeAllCallback, AfterAllCallback {
         .withDatabaseName("mock")
         .withUsername("mock")
         .withPassword("mock")
+        .withCommand("postgres -c max_connections=200")
         .withReuse(true)
 
     val jdbcUrl: String

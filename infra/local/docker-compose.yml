@@ -8,10 +8,18 @@ services:
       - '5438:5432'
     volumes:
       - ./volumes/postgres/data:/var/lib/postgresql/data
-      - ./volumes/postgres/init/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./volumes/postgres/init/:/docker-entrypoint-initdb.d/
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=pass
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=all
+      - -c
+      - pg_stat_statements.max=25000
 
   kafka:
     image: bitnami/kafka:3.3.2

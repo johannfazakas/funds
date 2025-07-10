@@ -9,7 +9,6 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import ro.jf.funds.commons.persistence.getDataSource
-import ro.jf.funds.commons.persistence.getDbConnection
 import ro.jf.funds.historicalpricing.api.model.HistoricalPriceSource
 import ro.jf.funds.historicalpricing.service.persistence.CurrencyPairHistoricalPriceExposedRepository
 import ro.jf.funds.historicalpricing.service.persistence.InstrumentHistoricalPriceExposedRepository
@@ -29,7 +28,6 @@ val Application.historicalPricingDependencies
     get() = module {
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
-        single { environment.getDbConnection() }
         single {
             HttpClient(CIO) {
                 install(ContentNegotiation) {

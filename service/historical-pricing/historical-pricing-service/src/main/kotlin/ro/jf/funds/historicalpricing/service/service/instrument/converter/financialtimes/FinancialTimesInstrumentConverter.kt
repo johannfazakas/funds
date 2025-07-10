@@ -24,6 +24,7 @@ class FinancialTimesInstrumentConverter(
     private val httpClient: HttpClient,
     private val cachedProxy: MonthlyCachedInstrumentConverterProxy = MonthlyCachedInstrumentConverterProxy(),
 ) : InstrumentConverter {
+    // TODO(Johann) use kotlinx datetime here
     private val cellFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")
     private val queryParamFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
 

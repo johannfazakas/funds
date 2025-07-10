@@ -10,6 +10,7 @@ database:
   url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/ff_account"
   user: postgres
   password: pass
+  connection-pool-size: "$DATABASE_CONNECTION_POOL_SIZE:10"
 kafka:
   bootstrap-servers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:29092"
   group-id: account-service

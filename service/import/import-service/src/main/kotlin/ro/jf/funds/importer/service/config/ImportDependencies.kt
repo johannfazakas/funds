@@ -12,7 +12,6 @@ import ro.jf.funds.commons.config.getStringProperty
 import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.model.GenericResponse
 import ro.jf.funds.commons.persistence.getDataSource
-import ro.jf.funds.commons.persistence.getDbConnection
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.fund.api.event.FUND_DOMAIN
 import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_REQUEST
@@ -32,7 +31,6 @@ import ro.jf.funds.importer.service.service.event.CreateFundTransactionsResponse
 import ro.jf.funds.importer.service.service.parser.CsvParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
 import ro.jf.funds.importer.service.service.parser.WalletCsvImportParser
-import java.sql.Connection
 import javax.sql.DataSource
 
 private const val ACCOUNT_SERVICE_BASE_URL_PROPERTY = "integration.account-service.base-url"
@@ -54,7 +52,6 @@ private val Application.importPersistenceDependencies
     get() = module {
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
-        single<Connection> { environment.getDbConnection() }
         single<ImportTaskRepository> { ImportTaskRepository(get()) }
     }
 

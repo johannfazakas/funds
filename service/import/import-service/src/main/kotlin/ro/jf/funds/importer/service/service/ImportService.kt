@@ -26,7 +26,7 @@ class ImportService(
             log.info { "Importing files >> user = $userId configuration = $configuration files count = ${files.size}." }
             val importTask = importTaskRepository.save(userId, ImportTaskTO.Status.IN_PROGRESS)
             try {
-                // TODO(Johann-33) what if I would parallelize by file? And then merge the results on the task level?
+                // TODO(Johann-34) what if I would parallelize by file? And then merge the results on the task level?
                 val importItems = importParserRegistry[configuration.fileType].parse(configuration, files)
                 val fundTransactions = importFundConversionService.mapToFundRequest(userId, importItems)
                 createFundTransactionsProducer.send(Event(userId, fundTransactions, importTask.taskId))
@@ -47,6 +47,6 @@ class ImportService(
     }
 
     suspend fun failImport(userId: UUID, taskId: UUID, reason: String?) = withSuspendingSpan {
-        importTaskRepository.update(userId, ImportTaskTO(taskId, ImportTaskTO.Status.FAILED, reason))
+        importTaskRepository.update(userId, ImportTaskTO(taskId, ImportTaskTO.Status.FAILED, reason?.take(100)))
     }
 }
