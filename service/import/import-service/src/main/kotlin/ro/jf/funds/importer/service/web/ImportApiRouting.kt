@@ -15,8 +15,10 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.commons.web.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
+import ro.jf.funds.importer.service.domain.ImportFile
 import ro.jf.funds.importer.service.domain.exception.MissingImportConfigurationException
 import ro.jf.funds.importer.service.service.ImportService
+import ro.jf.funds.importer.service.web.mapper.toTO
 import java.util.*
 
 private val log = logger { }
@@ -31,10 +33,10 @@ fun Routing.importApiRouting(
 
             val requestParts: List<ImportPart> = call.readMultipartData()
 
-            val rawFileParts = requestParts.rawFileParts()
+            val importFiles = requestParts.rawFileParts()
 
             val importConfiguration: ImportConfigurationTO = requestParts.importConfigurationPart()
-            val importTask = importService.startImport(userId, importConfiguration, rawFileParts)
+            val importTask = importService.startImport(userId, importConfiguration, importFiles).toTO()
             val statusCode = when (importTask.status) {
                 ImportTaskTO.Status.FAILED -> HttpStatusCode.BadRequest
                 else -> HttpStatusCode.Accepted
@@ -48,7 +50,7 @@ fun Routing.importApiRouting(
                 ?: throw IllegalArgumentException("Missing taskId")
             log.info { "Import status request for user $userId and task $taskId." }
 
-            val importTask = importService.getImport(userId, taskId)
+            val importTask = importService.getImport(userId, taskId)?.toTO()
             if (importTask == null) {
                 call.respond(HttpStatusCode.NotFound)
             } else {
@@ -90,6 +92,6 @@ private fun List<ImportPart>.importConfigurationPart(): ImportConfigurationTO = 
     ?.let { json -> Json.decodeFromString<ImportConfigurationTO>(json) }
     ?: throw MissingImportConfigurationException("Missing import configuration")
 
-private fun List<ImportPart>.rawFileParts(): List<String> = this
+private fun List<ImportPart>.rawFileParts(): List<ImportFile> = this
     .filter { it.name != null && it.contentType == ContentType.Text.CSV }
-    .map { it.content }
+    .mapNotNull { part -> part.name?.let { ImportFile(it, part.content) } }

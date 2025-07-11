@@ -3,6 +3,7 @@ package ro.jf.funds.importer.service.service.conversion
 import mu.KotlinLogging.logger
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
+import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.api.model.FundName
@@ -27,11 +28,11 @@ class ImportFundConversionService(
     suspend fun mapToFundRequest(
         userId: UUID,
         parsedTransactions: List<ImportParsedTransaction>,
-    ): CreateFundTransactionsTO {
+    ): CreateFundTransactionsTO = withSuspendingSpan {
         log.info { "Handling import >> user = $userId items size = ${parsedTransactions.size}." }
         val accountStore = accountService.getAccountStore(userId)
         val fundStore = fundService.getFundStore(userId)
-        return parsedTransactions.toFundTransactions(userId, accountStore, fundStore).let(::CreateFundTransactionsTO)
+        parsedTransactions.toFundTransactions(userId, accountStore, fundStore).let(::CreateFundTransactionsTO)
     }
 
     private suspend fun List<ImportParsedTransaction>.toFundTransactions(

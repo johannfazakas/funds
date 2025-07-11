@@ -2,8 +2,9 @@ package ro.jf.funds.importer.service.persistence
 
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
+import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.commons.persistence.blockingTransaction
-import ro.jf.funds.importer.api.model.ImportTaskTO
+import ro.jf.funds.importer.service.domain.*
 import java.util.*
 
 class ImportTaskRepository(
@@ -11,59 +12,90 @@ class ImportTaskRepository(
 ) {
     object ImportTaskTable : UUIDTable("import_task") {
         val userId = uuid("user_id")
+    }
+
+    object ImportTaskPartTable : UUIDTable("import_task_part") {
+        val taskId = reference("task_id", ImportTaskTable)
+        val name = varchar("name", 255)
         val status = varchar("status", 50)
         val reason = varchar("reason", 255).nullable()
     }
 
-    suspend fun list(userId: UUID): List<ImportTaskTO> = blockingTransaction {
-        ImportTaskTable
-            .selectAll()
-            .where { ImportTaskTable.userId eq userId }
-            .toImportTasks()
-    }
-
-    suspend fun findById(userId: UUID, taskId: UUID): ImportTaskTO? = blockingTransaction {
-        ImportTaskTable
-            .selectAll()
-            .where { (ImportTaskTable.userId eq userId) and (ImportTaskTable.id eq taskId) }
-            .toImportTasks()
-            .singleOrNull()
-    }
-
-    suspend fun save(userId: UUID, status: ImportTaskTO.Status): ImportTaskTO = blockingTransaction {
-        val task = ImportTaskTable.insert {
-            it[ImportTaskTable.userId] = userId
-            it[ImportTaskTable.status] = status.name
-            it[ImportTaskTable.reason] = null
+    suspend fun listImportTasks(userId: UUID): List<ImportTask> = withSuspendingSpan {
+        blockingTransaction {
+            (ImportTaskTable leftJoin ImportTaskPartTable)
+                .selectAll()
+                .where { ImportTaskTable.userId eq userId }
+                .toImportTasks()
         }
-        task.let {
-            ImportTaskTO(
-                taskId = it[ImportTaskTable.id].value,
-                status = ImportTaskTO.Status.valueOf(it[ImportTaskTable.status]),
-                reason = it[ImportTaskTable.reason]
+    }
+
+    suspend fun findImportTaskById(userId: UUID, taskId: UUID): ImportTask? = withSuspendingSpan {
+        blockingTransaction {
+            (ImportTaskTable leftJoin ImportTaskPartTable)
+                .selectAll()
+                .where { (ImportTaskTable.userId eq userId) and (ImportTaskTable.id eq taskId) }
+                .toImportTasks()
+                .singleOrNull()
+        }
+    }
+
+    suspend fun startImportTask(command: StartImportTaskCommand): ImportTask = withSuspendingSpan {
+        blockingTransaction {
+            val task = ImportTaskTable.insert {
+                it[ImportTaskTable.userId] = command.userId
+            }
+            val taskId = task[ImportTaskTable.id].value
+            val taskParts = ImportTaskPartTable
+                .batchInsert(command.partNames, shouldReturnGeneratedValues = false) { partName ->
+                    this[ImportTaskPartTable.taskId] = taskId
+                    this[ImportTaskPartTable.name] = partName
+                    this[ImportTaskPartTable.status] = ImportTaskPartStatus.IN_PROGRESS.name
+                }
+            ImportTask(
+                taskId = taskId,
+                userId = command.userId,
+                parts = taskParts.map { row ->
+                    ImportTaskPart(
+                        taskPartId = row[ImportTaskPartTable.id].value,
+                        name = row[ImportTaskPartTable.name],
+                        status = ImportTaskPartStatus.valueOf(row[ImportTaskPartTable.status]),
+                        reason = row[ImportTaskPartTable.reason]
+                    )
+                }
             )
         }
     }
 
-    suspend fun update(userId: UUID, importTask: ImportTaskTO): ImportTaskTO = blockingTransaction {
-        ImportTaskTable.update({ (ImportTaskTable.userId eq userId) and (ImportTaskTable.id eq importTask.taskId) }) {
-            it[status] = importTask.status.name
-            it[reason] = importTask.reason
+    suspend fun updateTaskPart(command: UpdateImportTaskPartCommand) = withSuspendingSpan {
+        blockingTransaction {
+            ImportTaskPartTable.update({ ImportTaskPartTable.id eq command.taskPartId }) {
+                it[status] = command.status.name
+                it[reason] = command.reason
+            }
         }
-        importTask
     }
 
-    suspend fun deleteAll(): Unit = blockingTransaction {
-        ImportTaskTable.deleteAll()
+    suspend fun deleteAll(): Unit = withSuspendingSpan {
+        blockingTransaction {
+            ImportTaskTable.deleteAll()
+        }
     }
 
-    private fun Query.toImportTasks(): List<ImportTaskTO> = this
+    private fun Query.toImportTasks(): List<ImportTask> = this
         .groupBy { it[ImportTaskTable.id].value }
         .map { (_, rows) -> rows.toImportTask() }
 
-    private fun List<ResultRow>.toImportTask() = ImportTaskTO(
+    private fun List<ResultRow>.toImportTask() = ImportTask(
         taskId = this.first()[ImportTaskTable.id].value,
-        status = ImportTaskTO.Status.valueOf(this.first()[ImportTaskTable.status]),
-        reason = this.firstOrNull()?.get(ImportTaskTable.reason)
+        userId = this.first()[ImportTaskTable.userId],
+        parts = this.map { row ->
+            ImportTaskPart(
+                taskPartId = row[ImportTaskPartTable.id].value,
+                name = row[ImportTaskPartTable.name],
+                status = ImportTaskPartStatus.valueOf(row[ImportTaskPartTable.status]),
+                reason = row[ImportTaskPartTable.reason]
+            )
+        }
     )
 }

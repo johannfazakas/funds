@@ -12,7 +12,7 @@ class CreateFundTransactionsRequestHandler(
     private val fundTransactionService: FundTransactionService,
 ) : EventHandler<CreateFundTransactionsTO> {
     override suspend fun handle(event: Event<CreateFundTransactionsTO>) {
-        log.info { "Received create fund transactions request $event" }
+        log.info { "Received create fund transactions request. userId = ${event.userId}, payload size = ${event.payload.transactions.size}" }
         val correlationId = event.correlationId ?: error("Correlation id is required")
         fundTransactionService.createTransactions(event.userId, correlationId, event.payload)
     }

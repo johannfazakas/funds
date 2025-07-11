@@ -22,7 +22,8 @@ import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.test.utils.testTopicSupplier
 import ro.jf.funds.fund.api.event.FUND_DOMAIN
 import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_RESPONSE
-import ro.jf.funds.importer.api.model.ImportTaskTO
+import ro.jf.funds.importer.service.domain.ImportTaskPartStatus
+import ro.jf.funds.importer.service.domain.StartImportTaskCommand
 import ro.jf.funds.importer.service.module
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
 import java.time.Duration
@@ -52,14 +53,17 @@ class CreateFundTransactionsResponseHandlerTest {
         configureEnvironment(Application::module, dbConfig, kafkaConfig, integrationConfig)
         startApplication()
 
-        val importTask = importTaskRepository.save(userId, ImportTaskTO.Status.IN_PROGRESS)
-        val response = Event<GenericResponse>(userId, GenericResponse.Success, importTask.taskId)
+        val importTaskCommand = StartImportTaskCommand(userId, listOf("part1", "part2"))
+        val importTask = importTaskRepository.startImportTask(importTaskCommand)
+        val response = Event<GenericResponse>(userId, GenericResponse.Success, importTask.parts[0].taskPartId)
         fundTransactionsResponseProducer.send(response)
 
         await().atMost(Duration.ofSeconds(5)).untilAsserted {
-            val task = runBlocking { importTaskRepository.findById(userId, importTask.taskId) }
+            val task = runBlocking { importTaskRepository.findImportTaskById(userId, importTask.taskId) }
             assertThat(task).isNotNull
-            assertThat(task!!.status).isEqualTo(ImportTaskTO.Status.COMPLETED)
+            assertThat(task?.parts).isNotNull
+            assertThat(task?.findPartByName("part1")).isNotNull
+            assertThat(task?.findPartByName("part1")?.status).isEqualTo(ImportTaskPartStatus.COMPLETED)
         }
     }
 
@@ -68,15 +72,19 @@ class CreateFundTransactionsResponseHandlerTest {
         configureEnvironment(Application::module, dbConfig, kafkaConfig, integrationConfig)
         startApplication()
 
-        val importTask = importTaskRepository.save(userId, ImportTaskTO.Status.IN_PROGRESS)
+        val importTaskCommand = StartImportTaskCommand(userId, listOf("part1", "part2"))
+        val importTask = importTaskRepository.startImportTask(importTaskCommand)
+        val reason = ErrorTO("Title", "Detail")
         val response =
-            Event<GenericResponse>(userId, GenericResponse.Error(ErrorTO("Title", "Detail")), importTask.taskId)
+            Event<GenericResponse>(userId, GenericResponse.Error(reason), importTask.parts[0].taskPartId)
         fundTransactionsResponseProducer.send(response)
 
         await().atMost(Duration.ofSeconds(5)).untilAsserted {
-            val task = runBlocking { importTaskRepository.findById(userId, importTask.taskId) }
+            val task = runBlocking { importTaskRepository.findImportTaskById(userId, importTask.taskId) }
             assertThat(task).isNotNull
-            assertThat(task!!.status).isEqualTo(ImportTaskTO.Status.FAILED)
+            assertThat(task?.findPartByName("part1")).isNotNull
+            assertThat(task?.findPartByName("part1")?.status).isEqualTo(ImportTaskPartStatus.FAILED)
+            assertThat(task?.findPartByName("part1")?.reason).isEqualTo(reason.detail)
         }
     }
 
