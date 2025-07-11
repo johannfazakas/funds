@@ -29,28 +29,40 @@ class ImportService(
             log.info { "Importing files >> user = $userId configuration = $configuration files count = ${files.size}." }
             val importTask =
                 importTaskRepository.startImportTask(StartImportTaskCommand(userId, files.map { it.name }))
-            // TODO(Johann-34) these should run concurrently
-            files.forEach { file ->
-                val importTaskPart =
-                    importTask.findPartByName(file.name) ?: error("Import file ${file.name} not found")
-                try {
-                    val importTaskPart =
-                        importTask.findPartByName(file.name) ?: error("Import file ${file.name} not found")
-                    val importItems =
-                        importParserRegistry[configuration.fileType].parse(configuration, listOf(file.content))
-                    val fundTransactions = importFundConversionService.mapToFundRequest(userId, importItems)
-                    createFundTransactionsProducer.send(Event(userId, fundTransactions, importTaskPart.taskPartId))
-                } catch (e: Exception) {
-                    log.warn(e) { "Error while importing file >> user = $userId, fileName = ${file.name}, configuration = $configuration." }
-                    importTaskRepository.updateTaskPart(
-                        UpdateImportTaskPartCommand.failed(userId, importTaskPart.taskPartId, e.message)
-                    )
-                    return@withSuspendingSpan importTaskRepository.findImportTaskById(userId, importTask.taskId)
-                        ?: error("Import task not found in repository, although it was just saved.")
+            try {
+                coroutineScope {
+                    files
+                        .map { file -> launch { startFileImport(userId, importTask, file, configuration) } }
+                        .joinAll()
                 }
+            } catch (exception: Exception) {
+                log.warn { "Importing file parts failed >> exception = $exception" }
+                return@withSuspendingSpan importTaskRepository.findImportTaskById(userId, importTask.taskId)
+                    ?: error("Import task ${importTask.taskId} not found")
             }
             importTask
         }
+
+    private suspend fun startFileImport(
+        userId: UUID,
+        importTask: ImportTask,
+        file: ImportFile,
+        configuration: ImportConfigurationTO,
+    ) {
+        val importTaskPart =
+            importTask.findPartByName(file.name) ?: error("Import file ${file.name} not found")
+        try {
+            val importItems =
+                importParserRegistry[configuration.fileType].parse(configuration, listOf(file.content))
+            val fundTransactions = importFundConversionService.mapToFundRequest(userId, importItems)
+            createFundTransactionsProducer.send(Event(userId, fundTransactions, importTaskPart.taskPartId))
+        } catch (e: Exception) {
+            log.warn(e) { "Error while importing file >> user = $userId, fileName = ${file.name}, configuration = $configuration." }
+            val failTaskPartCommand = UpdateImportTaskPartCommand.failed(userId, importTaskPart.taskPartId, e.message)
+            importTaskRepository.updateTaskPart(failTaskPartCommand)
+            throw e
+        }
+    }
 
     suspend fun getImport(userId: UUID, taskId: UUID): ImportTask? = withSuspendingSpan {
         importTaskRepository.findImportTaskById(userId, taskId)
