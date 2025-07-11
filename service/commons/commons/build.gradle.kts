@@ -43,9 +43,7 @@ dependencies {
     api(libs.opentelemetry.sdk)
     api(libs.opentelemetry.exporter.otlp)
     api(libs.opentelemetry.extension.kotlin)
-    // TODO(Johann) not needed right?
-    api(libs.opentelemetry.ktor)
-    api(libs.opentelemetry.kafka)
+    api(libs.opentelemetry.semconv)
 
     testImplementation(project(":commons:commons-test"))
 }

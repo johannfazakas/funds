@@ -6,6 +6,7 @@ import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.toInstant
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.observability.tracing.withSpan
 import ro.jf.funds.importer.api.model.ExchangeMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO.*
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
@@ -29,8 +30,8 @@ class WalletCsvImportParser(
 
     override fun parse(
         importConfiguration: ImportConfigurationTO, files: List<String>,
-    ): List<ImportParsedTransaction> {
-        return files
+    ): List<ImportParsedTransaction> = withSpan("parse") {
+        files
             .parse()
             .groupBy { it.transactionId(importConfiguration.exchangeMatchers) }
             .map { (transactionId, csvRows) -> toTransaction(importConfiguration, transactionId, csvRows) }
