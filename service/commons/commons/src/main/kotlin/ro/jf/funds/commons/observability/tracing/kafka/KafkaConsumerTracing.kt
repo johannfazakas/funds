@@ -34,7 +34,7 @@ suspend fun <K, V> ConsumerRecord<K, V>.handleWithTracing(
 
     val parentContext = textMapPropagator
         .extract(Context.current(), this, KafkaTextMapGetter)
-    val span = tracer.spanBuilder("${topic()}")
+    val span = tracer.spanBuilder("consume ${topic()}")
         .setParent(parentContext)
         .setSpanKind(SpanKind.CONSUMER)
         .setAttribute(KAFKA_TOPIC_ATTRIBUTE_KEY, topic())

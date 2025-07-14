@@ -24,10 +24,21 @@ fun <T> withSpan(spanName: String, vararg attributes: Pair<String, Any?>, block:
     }
 }
 
-suspend fun <T> withSuspendingSpan(vararg attributes: Pair<String, Any?>, block: suspend () -> T): T {
-    val klass = block.javaClass.enclosingClass.name
-    val method = block.javaClass.enclosingMethod.name
-    val span = buildSpan(klass, method, attributes.toList())
+suspend fun <T> withSuspendingSpan(attributes: Map<String, Any?> = emptyMap(), block: suspend () -> T): T =
+    withSuspendingSpan(
+        className = block.javaClass.enclosingClass.name,
+        methodName = block.javaClass.enclosingMethod.name,
+        attributes = attributes,
+        block = block
+    )
+
+suspend fun <T> withSuspendingSpan(
+    className: String,
+    methodName: String,
+    attributes: Map<String, Any?> = emptyMap(),
+    block: suspend () -> T,
+): T {
+    val span = buildSpan(className, methodName, attributes.toList())
     return span.makeCurrent().use {
         try {
             withContext(span.asContextElement()) {
