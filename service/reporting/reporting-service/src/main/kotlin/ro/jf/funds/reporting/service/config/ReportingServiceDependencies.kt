@@ -17,7 +17,6 @@ import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
 import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
-import ro.jf.funds.reporting.service.persistence.ReportRecordRepository
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
@@ -42,7 +41,6 @@ private val Application.persistenceDependencies
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
         single<ReportViewRepository> { ReportViewRepository(get()) }
-        single<ReportRecordRepository> { ReportRecordRepository(get()) }
     }
 
 private val Application.eventProducerDependencies

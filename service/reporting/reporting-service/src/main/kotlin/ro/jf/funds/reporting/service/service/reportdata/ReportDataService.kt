@@ -66,13 +66,9 @@ class ReportDataService(
             .filter { record -> record.fundId == reportView.fundId }
             .map { record ->
                 ReportRecord(
-                    id = UUID.randomUUID(),
-                    userId = userId,
-                    reportViewId = reportView.id,
                     date = this.dateTime.date,
                     unit = record.unit,
                     amount = record.amount,
-                    recordId = record.id,
                     labels = record.labels,
                 )
             }

@@ -1,6 +1,9 @@
 package ro.jf.funds.importer.service.service
 
 
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.event.Event
 import ro.jf.funds.commons.event.Producer
@@ -49,8 +52,8 @@ class ImportService(
         file: ImportFile,
         configuration: ImportConfigurationTO,
     ) {
-        val importTaskPart =
-            importTask.findPartByName(file.name) ?: error("Import file ${file.name} not found")
+        val importTaskPart = importTask.findPartByName(file.name)
+            ?: error("Import file ${file.name} not found")
         try {
             val importItems =
                 importParserRegistry[configuration.fileType].parse(configuration, listOf(file.content))

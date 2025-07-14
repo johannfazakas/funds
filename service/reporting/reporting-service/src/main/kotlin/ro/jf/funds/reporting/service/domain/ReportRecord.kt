@@ -4,14 +4,8 @@ import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Label
 import java.math.BigDecimal
-import java.util.*
 
 data class ReportRecord(
-    val id: UUID,
-    val userId: UUID,
-    // TODO(Johann) remove irrelevant values
-    val reportViewId: UUID,
-    val recordId: UUID,
     val date: LocalDate,
     val unit: FinancialUnit,
     val amount: BigDecimal,

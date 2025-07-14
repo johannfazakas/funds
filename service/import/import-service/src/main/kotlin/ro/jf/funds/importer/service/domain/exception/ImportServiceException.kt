@@ -4,7 +4,6 @@ sealed class ImportServiceException(message: String, cause: Throwable? = null) :
 
 class ImportFormatException(message: String, cause: Throwable? = null) : ImportServiceException(message, cause)
 
-// TODO(Johann) could actually be more detailed?
 class ImportDataException(message: String, cause: Throwable? = null) : ImportServiceException(message, cause)
 
 class MissingImportConfigurationException(message: String) : ImportServiceException(message)
