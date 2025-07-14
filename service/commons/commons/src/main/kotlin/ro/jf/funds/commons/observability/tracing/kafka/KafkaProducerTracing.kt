@@ -34,7 +34,7 @@ fun <K, V> KafkaProducer<K, V>.sendWithTracing(
 ): Future<RecordMetadata> {
     val tracer = GlobalOpenTelemetry.getTracer(INSTRUMENTATION_SCOPE_NAME, INSTRUMENTATION_SCOPE_VERSION)
     val propagator = GlobalOpenTelemetry.getPropagators().textMapPropagator
-    val span = tracer.spanBuilder("${record.topic()}")
+    val span = tracer.spanBuilder("produce ${record.topic()}")
         .setSpanKind(SpanKind.PRODUCER)
         .setParent(Context.current())
         .startSpan()
