@@ -16,7 +16,6 @@ import ro.jf.funds.account.service.persistence.AccountRepository.AccountTable
 import ro.jf.funds.commons.model.asLabels
 import ro.jf.funds.commons.model.asString
 import ro.jf.funds.commons.model.toFinancialUnit
-import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.commons.persistence.blockingTransaction
 import java.util.*
 import java.util.UUID.randomUUID
@@ -54,106 +53,91 @@ class AccountTransactionRepository(
         val value = varchar("value", 50)
     }
 
-    suspend fun findById(userId: UUID, transactionId: UUID): AccountTransaction? = withSuspendingSpan {
-        blockingTransaction {
-            (AccountTransactionTable
-                    leftJoin AccountRecordTable
-                    leftJoin TransactionPropertyTable
-                    leftJoin RecordPropertyTable)
-                .selectAll()
-                .where { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id eq transactionId) }
-                .toTransactions()
-                .singleOrNull()
-        }
+    suspend fun findById(userId: UUID, transactionId: UUID): AccountTransaction? = blockingTransaction {
+        (AccountTransactionTable
+                leftJoin AccountRecordTable
+                leftJoin TransactionPropertyTable
+                leftJoin RecordPropertyTable)
+            .selectAll()
+            .where { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id eq transactionId) }
+            .toTransactions()
+            .singleOrNull()
     }
 
     suspend fun list(
         userId: UUID,
         filter: AccountTransactionFilterTO,
-    ): List<AccountTransaction> = withSuspendingSpan {
-        // TODO(Johann) could withSuspendingSpan be merged in blockingTransaction?
-        blockingTransaction {
-            AccountTransactionTable
-                .innerJoinWithMatchingTransactionProperties(userId, filter.transactionProperties)
-                .innerJoinWithMatchingRecordProperties(userId, filter.recordProperties)
-                .leftJoin(AccountRecordTable)
-                .leftJoin(TransactionPropertyTable)
-                .leftJoin(RecordPropertyTable)
-                .selectAll()
-                .where(toPredicate(userId, filter))
-                .toTransactions()
-        }
+    ): List<AccountTransaction> = blockingTransaction {
+        AccountTransactionTable
+            .innerJoinWithMatchingTransactionProperties(userId, filter.transactionProperties)
+            .innerJoinWithMatchingRecordProperties(userId, filter.recordProperties)
+            .leftJoin(AccountRecordTable)
+            .leftJoin(TransactionPropertyTable)
+            .leftJoin(RecordPropertyTable)
+            .selectAll()
+            .where(toPredicate(userId, filter))
+            .toTransactions()
     }
 
-    suspend fun save(userId: UUID, command: CreateAccountTransactionTO): AccountTransaction = withSuspendingSpan {
-        blockingTransaction {
-            saveTransaction(userId, command)
-        }
+    suspend fun save(userId: UUID, command: CreateAccountTransactionTO): AccountTransaction = blockingTransaction {
+        saveTransaction(userId, command)
     }
 
     suspend fun saveAll(
         userId: UUID, requests: CreateAccountTransactionsTO,
-    ): List<AccountTransaction> = withSuspendingSpan {
-        blockingTransaction {
-            val storedTransactions =
-                AccountTransactionTable.batchInsert(
-                    requests.transactions,
-                    shouldReturnGeneratedValues = false
-                ) { command: CreateAccountTransactionTO ->
-                    this[AccountTransactionTable.id] = randomUUID()
-                    this[AccountTransactionTable.userId] = userId
-                    this[AccountTransactionTable.dateTime] = command.dateTime.toJavaLocalDateTime()
-                }
-            val transactionIdsToTransactionRequests = storedTransactions
-                .map { it[AccountTransactionTable.id].value }
-                .zip(requests.transactions)
-            val propertyRequestsByTransactionId = transactionIdsToTransactionRequests
-                .associate { (transactionId, command) -> transactionId to command.properties }
-            val storedTransactionPropertiesByTransactionId = saveTransactionProperties(
-                userId, propertyRequestsByTransactionId
-            )
-            val recordRequestsByTransactionId = transactionIdsToTransactionRequests
-                .associate { (transactionId, command) -> transactionId to command.records }
-            val storedRecordsByTransactionId = saveRecords(userId, recordRequestsByTransactionId)
+    ): List<AccountTransaction> = blockingTransaction {
+        val storedTransactions =
+            AccountTransactionTable.batchInsert(
+                requests.transactions,
+                shouldReturnGeneratedValues = false
+            ) { command: CreateAccountTransactionTO ->
+                this[AccountTransactionTable.id] = randomUUID()
+                this[AccountTransactionTable.userId] = userId
+                this[AccountTransactionTable.dateTime] = command.dateTime.toJavaLocalDateTime()
+            }
+        val transactionIdsToTransactionRequests = storedTransactions
+            .map { it[AccountTransactionTable.id].value }
+            .zip(requests.transactions)
+        val propertyRequestsByTransactionId = transactionIdsToTransactionRequests
+            .associate { (transactionId, command) -> transactionId to command.properties }
+        val storedTransactionPropertiesByTransactionId = saveTransactionProperties(
+            userId, propertyRequestsByTransactionId
+        )
+        val recordRequestsByTransactionId = transactionIdsToTransactionRequests
+            .associate { (transactionId, command) -> transactionId to command.records }
+        val storedRecordsByTransactionId = saveRecords(userId, recordRequestsByTransactionId)
 
-            storedTransactions
-                .map {
-                    val transactionId = it[AccountTransactionTable.id].value
-                    AccountTransaction(
-                        id = transactionId,
-                        userId = it[AccountTransactionTable.userId],
-                        dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
-                        records = storedRecordsByTransactionId[transactionId] ?: emptyList(),
-                        properties = storedTransactionPropertiesByTransactionId[transactionId] ?: emptyList()
-                    )
-                }
-        }
+        storedTransactions
+            .map {
+                val transactionId = it[AccountTransactionTable.id].value
+                AccountTransaction(
+                    id = transactionId,
+                    userId = it[AccountTransactionTable.userId],
+                    dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
+                    records = storedRecordsByTransactionId[transactionId] ?: emptyList(),
+                    properties = storedTransactionPropertiesByTransactionId[transactionId] ?: emptyList()
+                )
+            }
     }
 
-    suspend fun deleteByUserId(userId: UUID): Unit = withSuspendingSpan {
-        blockingTransaction {
-            AccountRecordTable.deleteWhere { AccountRecordTable.userId eq userId }
-            AccountTransactionTable.deleteWhere { AccountTransactionTable.userId eq userId }
-        }
+    suspend fun deleteByUserId(userId: UUID): Unit = blockingTransaction {
+        AccountRecordTable.deleteWhere { AccountRecordTable.userId eq userId }
+        AccountTransactionTable.deleteWhere { AccountTransactionTable.userId eq userId }
     }
 
-    suspend fun deleteById(userId: UUID, transactionId: UUID): Unit = withSuspendingSpan {
-        blockingTransaction {
-            RecordPropertyTable.deleteWhere { RecordPropertyTable.userId eq userId and (RecordPropertyTable.transactionId eq transactionId) }
-            TransactionPropertyTable.deleteWhere { TransactionPropertyTable.userId eq userId and (TransactionPropertyTable.transactionId eq transactionId) }
-            AccountRecordTable.deleteWhere { AccountRecordTable.userId eq userId and (AccountRecordTable.transactionId eq transactionId) }
-            AccountTransactionTable.deleteWhere { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id eq transactionId) }
-        }
+    suspend fun deleteById(userId: UUID, transactionId: UUID): Unit = blockingTransaction {
+        RecordPropertyTable.deleteWhere { RecordPropertyTable.userId eq userId and (RecordPropertyTable.transactionId eq transactionId) }
+        TransactionPropertyTable.deleteWhere { TransactionPropertyTable.userId eq userId and (TransactionPropertyTable.transactionId eq transactionId) }
+        AccountRecordTable.deleteWhere { AccountRecordTable.userId eq userId and (AccountRecordTable.transactionId eq transactionId) }
+        AccountTransactionTable.deleteWhere { AccountTransactionTable.userId eq userId and (AccountTransactionTable.id eq transactionId) }
     }
 
 
-    suspend fun deleteAll(): Unit = withSuspendingSpan {
-        blockingTransaction {
-            RecordPropertyTable.deleteAll()
-            TransactionPropertyTable.deleteAll()
-            AccountRecordTable.deleteAll()
-            AccountTransactionTable.deleteAll()
-        }
+    suspend fun deleteAll(): Unit = blockingTransaction {
+        RecordPropertyTable.deleteAll()
+        TransactionPropertyTable.deleteAll()
+        AccountRecordTable.deleteAll()
+        AccountTransactionTable.deleteAll()
     }
 
     private fun ColumnSet.innerJoinWithMatchingTransactionProperties(

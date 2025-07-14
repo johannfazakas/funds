@@ -7,7 +7,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import ro.jf.funds.commons.observability.tracing.kafka.handleWithTracing
-import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import java.time.Duration
 import java.util.*
 
@@ -37,7 +36,7 @@ open class Consumer<T>(
             while (isActive) {
                 val records = consumer.poll(Duration.ofMillis(500))
                 records.forEach { record ->
-                    record.handleWithTracing { withSuspendingSpan { handler.handle(mapper.invoke(this)) } }
+                    record.handleWithTracing { handler.handle(mapper.invoke(this)) }
                 }
             }
         }
