@@ -6,7 +6,7 @@ import ro.jf.funds.commons.model.Symbol
 
 @Serializable
 enum class Instrument(val symbol: Symbol, val mainCurrency: Currency, val source: HistoricalPriceSource) {
-    // TODO(Johann) how should these instruments be manager, the symbol doesn't seem right, 28304712 is not what would be used in funds
+    // TODO(Johann) how should these instruments be managed, the symbol doesn't seem right, 28304712 is not what would be used in funds
     SXR8_DE(Symbol("SXR8.DE"), Currency.EUR, HistoricalPriceSource.YAHOO),
     QDVE_DE(Symbol("QDVE.DE"), Currency.EUR, HistoricalPriceSource.YAHOO),
     ENUL_DE(Symbol("EUNL.DE"), Currency.EUR, HistoricalPriceSource.YAHOO),

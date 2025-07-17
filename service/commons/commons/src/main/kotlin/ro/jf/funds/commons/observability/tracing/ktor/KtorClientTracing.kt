@@ -57,6 +57,4 @@ val KtorClientTracing = createClientPlugin("FundsKtorClientTracing") {
         span.end()
         scope.close()
     }
-
-    // TODO(Johann) what is there is a request error? And you don't end up handling onResponse?
 }

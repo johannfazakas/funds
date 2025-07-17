@@ -8,6 +8,7 @@ import ro.jf.funds.account.service.domain.AccountTransaction
 
 fun AccountTransaction.toTO(): AccountTransactionTO = AccountTransactionTO(
     id = id,
+    externalId = externalId,
     dateTime = dateTime,
     records = records.map(AccountRecord::toTO),
     properties = properties.map { PropertyTO(it.key to it.value) },

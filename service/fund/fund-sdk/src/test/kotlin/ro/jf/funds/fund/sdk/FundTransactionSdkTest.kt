@@ -44,6 +44,7 @@ class FundTransactionSdkTest {
 
     private val userId = randomUUID()
     private val transactionId = randomUUID()
+    private val transactionExternalId = randomUUID().toString()
     private val dateTime = "2024-07-22T09:17"
     private val recordId = randomUUID()
     private val accountId = randomUUID()
@@ -68,6 +69,7 @@ class FundTransactionSdkTest {
                         buildJsonObject {
                             put("id", JsonPrimitive(transactionId.toString()))
                             put("userId", JsonPrimitive(userId.toString()))
+                            put("externalId", JsonPrimitive(transactionExternalId))
                             put("dateTime", JsonPrimitive(dateTime))
                             put("records", buildJsonArray {
                                 add(buildJsonObject {
@@ -89,6 +91,7 @@ class FundTransactionSdkTest {
             userId,
             CreateFundTransactionTO(
                 dateTime = LocalDateTime.parse(dateTime),
+                externalId = transactionExternalId,
                 records = listOf(
                     CreateFundRecordTO(
                         accountId = accountId,
@@ -133,6 +136,7 @@ class FundTransactionSdkTest {
                                         "dateTime",
                                         JsonPrimitive(dateTime)
                                     )
+                                    put("externalId", JsonPrimitive(transactionExternalId))
                                     put("records", buildJsonArray {
                                         add(buildJsonObject {
                                             put("id", JsonPrimitive(recordId.toString()))
@@ -184,6 +188,7 @@ class FundTransactionSdkTest {
                                 add(buildJsonObject {
                                     put("id", JsonPrimitive(transactionId.toString()))
                                     put("userId", JsonPrimitive(userId.toString()))
+                                    put("externalId", JsonPrimitive(transactionExternalId))
                                     put(
                                         "dateTime",
                                         JsonPrimitive(dateTime)

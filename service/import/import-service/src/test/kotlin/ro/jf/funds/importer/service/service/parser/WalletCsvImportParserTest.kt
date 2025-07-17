@@ -31,7 +31,7 @@ class WalletCsvImportParserTest {
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(1)
-        assertThat(importTransactions[0].transactionId).isNotNull()
+        assertThat(importTransactions[0].transactionExternalId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-31T02:00:49")
         assertThat(importTransactions[0].records).hasSize(1)
         assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
@@ -65,7 +65,7 @@ class WalletCsvImportParserTest {
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(1)
-        assertThat(importTransactions[0].transactionId).isNotNull()
+        assertThat(importTransactions[0].transactionExternalId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-31T02:00:49")
         assertThat(importTransactions[0].records).hasSize(2)
         assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
@@ -100,7 +100,7 @@ class WalletCsvImportParserTest {
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(1)
-        assertThat(importTransactions[0].transactionId).isNotNull()
+        assertThat(importTransactions[0].transactionExternalId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-04-23T21:45:02")
         assertThat(importTransactions[0].records).hasSize(3)
         assertThat(importTransactions[0].records).containsExactlyInAnyOrder(
@@ -150,7 +150,7 @@ class WalletCsvImportParserTest {
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(1)
-        assertThat(importTransactions[0].transactionId).isNotNull()
+        assertThat(importTransactions[0].transactionExternalId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-06T02:00:23")
         assertThat(importTransactions[0].records).hasSize(3)
 
@@ -195,7 +195,7 @@ class WalletCsvImportParserTest {
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(1)
-        assertThat(importTransactions[0].transactionId).isNotNull()
+        assertThat(importTransactions[0].transactionExternalId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-06T02:00:23")
         assertThat(importTransactions[0].records).hasSize(3)
 

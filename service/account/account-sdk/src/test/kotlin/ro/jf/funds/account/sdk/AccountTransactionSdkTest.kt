@@ -45,6 +45,7 @@ class AccountTransactionSdkTest {
     @Test
     fun `test create transaction`(mockServerClient: MockServerClient): Unit = runBlocking {
         val userId = randomUUID()
+        val transactionExternalId = randomUUID().toString()
         val rawTransactionDateTime = "2021-09-01T12:00:00"
         val transactionDateTime = LocalDateTime.parse("2021-09-01T12:00:00")
         val accountId1 = randomUUID()
@@ -64,6 +65,7 @@ class AccountTransactionSdkTest {
                             buildJsonObject {
                                 put("required", buildJsonArray {
                                     add(JsonPrimitive("dateTime"))
+                                    add(JsonPrimitive("externalId"))
                                     add(JsonPrimitive("records"))
                                     add(JsonPrimitive("properties"))
                                 })
@@ -97,6 +99,7 @@ class AccountTransactionSdkTest {
                         buildJsonObject {
                             put("id", JsonPrimitive(transactionId.toString()))
                             put("userId", JsonPrimitive(userId.toString()))
+                            put("externalId", JsonPrimitive(transactionExternalId))
                             put("dateTime", JsonPrimitive(rawTransactionDateTime))
                             put("records", buildJsonArray {
                                 add(buildJsonObject {
@@ -146,6 +149,7 @@ class AccountTransactionSdkTest {
             )
         val createTransactionRequest = CreateAccountTransactionTO(
             dateTime = transactionDateTime,
+            externalId = transactionExternalId,
             records = listOf(
                 CreateAccountRecordTO(
                     randomUUID(), BigDecimal("100.25"), Currency.RON,
@@ -178,6 +182,7 @@ class AccountTransactionSdkTest {
     fun `test list transactions`(mockServerClient: MockServerClient): Unit = runBlocking {
         val userId = randomUUID()
         val transactionId = randomUUID()
+        val transactionExternalId = randomUUID().toString()
         val recordId = randomUUID()
         val accountId = randomUUID()
         val dateTime = "2024-07-22T09:17"
@@ -212,6 +217,7 @@ class AccountTransactionSdkTest {
                                         "dateTime",
                                         JsonPrimitive(dateTime)
                                     )
+                                    put("externalId", JsonPrimitive(transactionExternalId))
                                     put("records", buildJsonArray {
                                         add(buildJsonObject {
                                             put("id", JsonPrimitive(recordId.toString()))

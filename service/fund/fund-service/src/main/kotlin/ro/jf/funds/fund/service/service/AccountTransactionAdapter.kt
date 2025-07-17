@@ -62,6 +62,7 @@ class AccountTransactionAdapter(
     private fun CreateFundTransactionTO.toAccountTransactionTO() =
         CreateAccountTransactionTO(
             dateTime = dateTime,
+            externalId = externalId,
             records = records.map { record ->
                 CreateAccountRecordTO(
                     accountId = record.accountId,

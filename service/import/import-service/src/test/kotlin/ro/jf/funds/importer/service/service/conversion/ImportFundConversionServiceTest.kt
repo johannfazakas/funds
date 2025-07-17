@@ -57,9 +57,10 @@ class ImportFundConversionServiceTest {
     @Test
     fun `should map single record import transactions`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:17:00")
+        val transactionExternalId = "transaction-1"
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
-                transactionId = "transaction-1",
+                transactionExternalId = transactionExternalId,
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
@@ -84,6 +85,7 @@ class ImportFundConversionServiceTest {
         assertThat(fundTransactions.transactions).containsExactlyInAnyOrder(
             CreateFundTransactionTO(
                 dateTime = transactionDateTime,
+                externalId = transactionExternalId,
                 records = listOf(
                     CreateFundRecordTO(
                         fundId = expensedFund.id,
@@ -103,7 +105,7 @@ class ImportFundConversionServiceTest {
         val transactionDate = transactionDateTime.date
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
-                transactionId = "transaction-1",
+                transactionExternalId = "transaction-1",
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
@@ -140,9 +142,10 @@ class ImportFundConversionServiceTest {
     @Test
     fun `should map transfer import transactions`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:18:00")
+        val transactionExternalId = "transaction-2"
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
-                transactionId = "transaction-2",
+                transactionExternalId = transactionExternalId,
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
@@ -176,6 +179,7 @@ class ImportFundConversionServiceTest {
         assertThat(fundTransactions.transactions).containsExactlyInAnyOrder(
             CreateFundTransactionTO(
                 dateTime = transactionDateTime,
+                externalId = transactionExternalId,
                 records = listOf(
                     CreateFundRecordTO(
                         fundId = incomeFund.id,
@@ -202,7 +206,7 @@ class ImportFundConversionServiceTest {
         val transactionDate = transactionDateTime.date
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
-                transactionId = "transaction-2",
+                transactionExternalId = "transaction-2",
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
@@ -256,7 +260,7 @@ class ImportFundConversionServiceTest {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:18:00")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
-                transactionId = "transaction-id",
+                transactionExternalId = "transaction-id",
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
@@ -314,7 +318,7 @@ class ImportFundConversionServiceTest {
         val dateTime = LocalDateTime.parse("2019-04-01T09:18:00")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
-                transactionId = "transaction-1",
+                transactionExternalId = "transaction-1",
                 dateTime = dateTime,
                 records = listOf(
                     ImportParsedRecord(
@@ -393,7 +397,7 @@ class ImportFundConversionServiceTest {
         val userId = randomUUID()
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
-                transactionId = "transaction-1",
+                transactionExternalId = "transaction-1",
                 dateTime = LocalDateTime(2024, 7, 22, 9, 17),
                 records = listOf(
                     ImportParsedRecord(
@@ -425,7 +429,7 @@ class ImportFundConversionServiceTest {
         val userId = randomUUID()
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
-                transactionId = "transaction-1",
+                transactionExternalId = "transaction-1",
                 dateTime = LocalDateTime(2024, 7, 22, 9, 17),
                 records = listOf(
                     ImportParsedRecord(

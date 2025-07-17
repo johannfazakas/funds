@@ -60,6 +60,7 @@ class ImplicitTransferFundConverter : ImportFundConverter {
     ): CreateFundTransactionTO {
         return CreateFundTransactionTO(
             dateTime = transaction.dateTime,
+            externalId = transaction.transactionExternalId,
             records = transaction.records.map { record ->
                 record.toImportCurrencyFundRecord(
                     transaction.dateTime.date,

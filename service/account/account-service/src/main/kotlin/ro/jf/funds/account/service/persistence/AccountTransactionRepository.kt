@@ -25,6 +25,7 @@ class AccountTransactionRepository(
 ) {
     object AccountTransactionTable : UUIDTable("transaction") {
         val userId = uuid("user_id")
+        val externalId = varchar("external_id", 100)
         val dateTime = datetime("date_time")
     }
 
@@ -89,22 +90,24 @@ class AccountTransactionRepository(
         val storedTransactions =
             AccountTransactionTable.batchInsert(
                 requests.transactions,
+                ignore = true, // skipping potential transaction id clashes
                 shouldReturnGeneratedValues = false
             ) { command: CreateAccountTransactionTO ->
                 this[AccountTransactionTable.id] = randomUUID()
                 this[AccountTransactionTable.userId] = userId
+                this[AccountTransactionTable.externalId] = command.externalId
                 this[AccountTransactionTable.dateTime] = command.dateTime.toJavaLocalDateTime()
             }
+        val transactionRequestsByExternalId = requests.transactions.associateBy { it.externalId }
         val transactionIdsToTransactionRequests = storedTransactions
-            .map { it[AccountTransactionTable.id].value }
-            .zip(requests.transactions)
+            .associate { it[AccountTransactionTable.id].value to transactionRequestsByExternalId[it[AccountTransactionTable.externalId]]!! }
         val propertyRequestsByTransactionId = transactionIdsToTransactionRequests
-            .associate { (transactionId, command) -> transactionId to command.properties }
+            .mapValues { (_, command) -> command.properties }
         val storedTransactionPropertiesByTransactionId = saveTransactionProperties(
             userId, propertyRequestsByTransactionId
         )
         val recordRequestsByTransactionId = transactionIdsToTransactionRequests
-            .associate { (transactionId, command) -> transactionId to command.records }
+            .mapValues { (_, command) -> command.records }
         val storedRecordsByTransactionId = saveRecords(userId, recordRequestsByTransactionId)
 
         storedTransactions
@@ -113,6 +116,7 @@ class AccountTransactionRepository(
                 AccountTransaction(
                     id = transactionId,
                     userId = it[AccountTransactionTable.userId],
+                    externalId = it[AccountTransactionTable.externalId],
                     dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
                     records = storedRecordsByTransactionId[transactionId] ?: emptyList(),
                     properties = storedTransactionPropertiesByTransactionId[transactionId] ?: emptyList()
@@ -212,11 +216,13 @@ class AccountTransactionRepository(
     ) =
         AccountTransactionTable.insert {
             it[AccountTransactionTable.userId] = userId
+            it[AccountTransactionTable.externalId] = command.externalId
             it[dateTime] = command.dateTime.toJavaLocalDateTime()
         }.let {
             AccountTransaction(
                 id = it[AccountTransactionTable.id].value,
                 userId = it[AccountTransactionTable.userId],
+                externalId = it[AccountTransactionTable.externalId],
                 dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
             )
         }
@@ -434,6 +440,7 @@ class AccountTransactionRepository(
         return AccountTransaction(
             id = this.first()[AccountTransactionTable.id].value,
             userId = this.first()[AccountTransactionTable.userId],
+            externalId = this.first()[AccountTransactionTable.externalId],
             dateTime = this.first()[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
             records = toRecords(),
             properties = toTransactionProperties()
