@@ -17,6 +17,7 @@ data class CreateFundTransactionsTO(
 @Serializable
 data class CreateFundTransactionTO(
     val dateTime: LocalDateTime,
+    val externalId: String,
     val records: List<CreateFundRecordTO>,
 )
 

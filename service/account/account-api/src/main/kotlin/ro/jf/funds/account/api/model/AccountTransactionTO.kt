@@ -9,6 +9,7 @@ import java.util.*
 data class AccountTransactionTO(
     @Serializable(with = UUIDSerializer::class)
     val id: UUID,
+    val externalId: String,
     val dateTime: LocalDateTime,
     val records: List<AccountRecordTO>,
     val properties: List<PropertyTO>,

@@ -12,6 +12,7 @@ import ro.jf.funds.importer.api.model.FundMatcherTO.*
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.service.domain.*
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
+import java.util.*
 
 private const val ACCOUNT_NAME_COLUMN = "account"
 private const val AMOUNT_COLUMN = "amount"
@@ -48,14 +49,15 @@ class WalletCsvImportParser(
         return when (exchangeMatchers.getExchangeMatcher(labels())) {
             is ExchangeMatcherTO.ByLabel -> listOf(
                 this.getDateTime(DATE_COLUMN, dateTimeFormat).inWholeMinutes(),
-            ).hashCode().toString()
+            ).joinToString()
 
+            // TODO(Johann) could have the same rule for all. hash the transaction id based on note and date. that's all. get rid of exchange labels.
             null -> listOf(
                 this.getString(NOTE_COLUMN),
                 this.getBigDecimal(AMOUNT_COLUMN).abs(),
                 this.getString(DATE_COLUMN)
-            ).hashCode().toString()
-        }
+            ).joinToString()
+        }.let { UUID.nameUUIDFromBytes(it.toByteArray()).toString() }
     }
 
     private fun LocalDateTime.inWholeMinutes(): Long = this.toInstant(TimeZone.UTC).epochSeconds / 60
@@ -66,7 +68,7 @@ class WalletCsvImportParser(
         csvRows: List<CsvRow>,
     ): ImportParsedTransaction {
         return ImportParsedTransaction(
-            transactionId = transactionId,
+            transactionExternalId = transactionId,
             dateTime = csvRows.minOf { it.getDateTime(DATE_COLUMN, dateTimeFormat) },
             records = csvRows.flatMap { csvRow -> toImportRecords(importConfiguration, csvRow) }
         )

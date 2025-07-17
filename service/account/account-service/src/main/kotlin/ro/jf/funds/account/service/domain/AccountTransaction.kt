@@ -9,6 +9,7 @@ import java.util.*
 data class AccountTransaction(
     val id: UUID,
     val userId: UUID,
+    val externalId: String,
     val dateTime: LocalDateTime,
     val records: List<AccountRecord> = emptyList(),
     val properties: List<Property> = emptyList(),

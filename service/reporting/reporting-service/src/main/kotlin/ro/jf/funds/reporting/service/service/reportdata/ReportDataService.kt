@@ -38,6 +38,7 @@ class ReportDataService(
         val reportView = reportViewRepository.findById(userId, reportViewId)
             ?: throw ReportingException.ReportViewNotFound(userId, reportViewId)
         val reportRecords = getReportRecords(reportView, interval)
+        // TODO(Johann) centralize logs with loki
         log.info { "Found ${reportRecords.size} records for report $reportViewId in interval $interval" }
         val catalog = RecordCatalog(reportRecords, interval)
         val reportDataConfiguration = reportView.dataConfiguration

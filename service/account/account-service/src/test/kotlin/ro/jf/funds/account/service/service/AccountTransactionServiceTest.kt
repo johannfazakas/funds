@@ -37,7 +37,7 @@ class AccountTransactionServiceTest {
     fun `given create single transaction`(): Unit = runBlocking {
         val recordRequest1 = CreateAccountRecordTO(cashAccount.id, BigDecimal("42.50"), Currency.RON)
         val recordRequest2 = CreateAccountRecordTO(incomeAccount.id, BigDecimal("-42.50"), Currency.RON)
-        val transactionRequest = CreateAccountTransactionTO(dateTime1, listOf(recordRequest1, recordRequest2))
+        val transactionRequest = CreateAccountTransactionTO(dateTime1, "eid", listOf(recordRequest1, recordRequest2))
         val expectedTransaction = mock<AccountTransaction>()
 
         whenever(accountRepository.findById(userId, cashAccount.id)).thenReturn(cashAccount)
@@ -53,7 +53,7 @@ class AccountTransactionServiceTest {
     fun `given create single transaction when currency mismatch should raise error`(): Unit = runBlocking {
         val recordRequest1 = CreateAccountRecordTO(cashAccount.id, BigDecimal("42.50"), Currency.RON)
         val recordRequest2 = CreateAccountRecordTO(cashAccount.id, BigDecimal("-42.50"), Currency.EUR)
-        val transactionRequest = CreateAccountTransactionTO(dateTime1, listOf(recordRequest1, recordRequest2))
+        val transactionRequest = CreateAccountTransactionTO(dateTime1, "eid", listOf(recordRequest1, recordRequest2))
         val expectedTransaction = mock<AccountTransaction>()
 
         whenever(accountRepository.findById(userId, cashAccount.id)).thenReturn(cashAccount)
@@ -68,8 +68,8 @@ class AccountTransactionServiceTest {
         val recordRequest1 = CreateAccountRecordTO(cashAccount.id, BigDecimal("42.50"), Currency.RON)
         val recordRequest2 = CreateAccountRecordTO(incomeAccount.id, BigDecimal("-42.50"), Currency.RON)
         val recordRequest3 = CreateAccountRecordTO(cashAccount.id, BigDecimal("12.50"), Currency.RON)
-        val transactionRequest1 = CreateAccountTransactionTO(dateTime1, listOf(recordRequest1, recordRequest2))
-        val transactionRequest2 = CreateAccountTransactionTO(dateTime2, listOf(recordRequest3))
+        val transactionRequest1 = CreateAccountTransactionTO(dateTime1, "eid1", listOf(recordRequest1, recordRequest2))
+        val transactionRequest2 = CreateAccountTransactionTO(dateTime2, "eid2", listOf(recordRequest3))
         val batchRequest = CreateAccountTransactionsTO(listOf(transactionRequest1, transactionRequest2))
         val expectedTransaction1 = mock<AccountTransaction>()
         val expectedTransaction2 = mock<AccountTransaction>()
@@ -89,8 +89,8 @@ class AccountTransactionServiceTest {
         val recordRequest1 = CreateAccountRecordTO(cashAccount.id, BigDecimal("42.50"), Currency.RON)
         val recordRequest2 = CreateAccountRecordTO(incomeAccount.id, BigDecimal("-42.50"), Currency.RON)
         val recordRequest3 = CreateAccountRecordTO(cashAccount.id, BigDecimal("12.50"), Currency.RON)
-        val transactionRequest1 = CreateAccountTransactionTO(dateTime1, listOf(recordRequest1, recordRequest2))
-        val transactionRequest2 = CreateAccountTransactionTO(dateTime2, listOf(recordRequest3))
+        val transactionRequest1 = CreateAccountTransactionTO(dateTime1, "eid1", listOf(recordRequest1, recordRequest2))
+        val transactionRequest2 = CreateAccountTransactionTO(dateTime2, "eid2", listOf(recordRequest3))
         val batchRequest = CreateAccountTransactionsTO(listOf(transactionRequest1, transactionRequest2))
         val expectedTransaction1 = mock<AccountTransaction>()
         val expectedTransaction2 = mock<AccountTransaction>()

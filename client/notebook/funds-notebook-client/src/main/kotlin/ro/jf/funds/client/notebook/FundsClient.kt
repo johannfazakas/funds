@@ -25,6 +25,7 @@ import ro.jf.funds.user.api.model.UserTO
 import ro.jf.funds.user.sdk.UserSdk
 import java.io.File
 import java.math.BigDecimal
+import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
 class FundsClient(
@@ -78,6 +79,8 @@ class FundsClient(
                 ?: error("Account '${initialBalance.accountName}' not found")
             CreateFundTransactionTO(
                 dateTime = dateTime,
+                externalId = listOf(dateTime, initialBalance.accountName, initialBalance.amount).joinToString()
+                    .let { UUID.nameUUIDFromBytes(it.toByteArray()).toString() },
                 records = listOf(
                     CreateFundRecordTO(
                         fundId = fund.id,

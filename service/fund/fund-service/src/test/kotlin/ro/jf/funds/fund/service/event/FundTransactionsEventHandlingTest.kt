@@ -73,10 +73,12 @@ class FundTransactionsEventHandlingTest {
         val producer =
             createProducer<CreateFundTransactionsTO>(producerProperties, createFundTransactionsRequestTopic)
 
+        val externalId = randomUUID().toString()
         val createFundTransactionsTO = CreateFundTransactionsTO(
             transactions = listOf(
                 CreateFundTransactionTO(
                     dateTime = dateTime,
+                    externalId = externalId,
                     records = listOf(
                         CreateFundRecordTO(
                             fundId = fund.id,
@@ -103,6 +105,7 @@ class FundTransactionsEventHandlingTest {
                     transactions = listOf(
                         CreateAccountTransactionTO(
                             dateTime = dateTime,
+                            externalId = externalId,
                             records = listOf(
                                 CreateAccountRecordTO(
                                     accountId = accountId,

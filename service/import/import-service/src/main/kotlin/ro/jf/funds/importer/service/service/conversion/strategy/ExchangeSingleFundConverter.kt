@@ -106,6 +106,7 @@ class ExchangeSingleFundConverter : ImportFundConverter {
 
         return CreateFundTransactionTO(
             dateTime = transaction.dateTime,
+            externalId = transaction.transactionExternalId,
             records = listOfNotNull(creditFundRecord, debitFundRecord, feeFundRecord)
         )
     }

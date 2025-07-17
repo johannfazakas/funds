@@ -42,6 +42,7 @@ class FundTransactionServiceTest {
     private val expensesFundId = randomUUID()
 
     private val transactionId = randomUUID()
+    private val transactionExternalId = randomUUID().toString()
 
     private val record1Id = randomUUID()
     private val record2Id = randomUUID()
@@ -50,6 +51,7 @@ class FundTransactionServiceTest {
     fun `given create valid transaction`(): Unit = runBlocking {
         val request = CreateFundTransactionTO(
             dateTime = transactionTime,
+            externalId = transactionExternalId,
             records = listOf(
                 CreateFundRecordTO(
                     fundId = workFundId,
@@ -68,6 +70,7 @@ class FundTransactionServiceTest {
         )
         val expectedCreateAccountTransactionRequest = CreateAccountTransactionTO(
             dateTime = transactionTime,
+            externalId = transactionExternalId,
             records = listOf(
                 CreateAccountRecordTO(
                     accountId = companyAccountId,
@@ -91,6 +94,7 @@ class FundTransactionServiceTest {
         whenever(accountTransactionSdk.createTransaction(userId, expectedCreateAccountTransactionRequest)).thenReturn(
             AccountTransactionTO(
                 id = transactionId,
+                externalId = transactionExternalId,
                 dateTime = transactionTime,
                 records = listOf(
                     AccountRecordTO(
@@ -140,6 +144,7 @@ class FundTransactionServiceTest {
                     AccountTransactionTO(
                         id = transactionId,
                         dateTime = transactionTime,
+                        externalId = transactionExternalId,
                         records = listOf(
                             AccountRecordTO(
                                 id = record1Id,
@@ -195,6 +200,7 @@ class FundTransactionServiceTest {
                     AccountTransactionTO(
                         id = transactionId,
                         dateTime = transactionTime,
+                        externalId = transactionExternalId,
                         records = listOf(
                             AccountRecordTO(
                                 id = record1Id,
