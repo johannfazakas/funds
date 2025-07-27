@@ -14,6 +14,7 @@ class CurrencyService(
         targetCurrency: Currency,
         dates: List<LocalDate>,
     ): List<ConversionResponse> {
+        // TODO(Johann) investigate why does it take so much when historical prices were not stored before
         val storedHistoricalPricesByDate = currencyPairHistoricalPriceRepository
             .getHistoricalPrices(sourceCurrency, targetCurrency, dates)
             .map { ConversionResponse(sourceCurrency, targetCurrency, it.date, it.price) }

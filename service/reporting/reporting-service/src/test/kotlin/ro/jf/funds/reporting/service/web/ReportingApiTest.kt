@@ -30,6 +30,7 @@ import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.*
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.FundTransactionFilterTO
+import ro.jf.funds.fund.api.model.FundTransactionTO
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
@@ -39,14 +40,13 @@ import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.config.configureReportingErrorHandling
 import ro.jf.funds.reporting.service.config.configureReportingRouting
 import ro.jf.funds.reporting.service.config.reportingDependencies
-import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
-import ro.jf.funds.reporting.service.domain.RecordFilter
-import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
-import ro.jf.funds.reporting.service.domain.ReportsConfiguration
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
+import ro.jf.funds.reporting.service.service.data.ConversionRateService
 import ro.jf.funds.reporting.service.utils.record
 import ro.jf.funds.reporting.service.utils.transaction
 import java.math.BigDecimal
+import java.util.*
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
@@ -57,7 +57,7 @@ class ReportingApiTest {
     private val consumerProperties = ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer")
     private val reportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)
     private val fundTransactionSdk = mock<FundTransactionSdk>()
-    private val historicalPricingSdk = mock<HistoricalPricingSdk>()
+    private val conversionRateService = mock<ConversionRateService>()
 
     private val userId = randomUUID()
     private val expenseFundId = randomUUID()
@@ -177,14 +177,14 @@ class ReportingApiTest {
         val httpClient = createJsonHttpClient()
         val reportView = reportViewRepository.save(reportViewCommand)
         val conversions = mock<ConversionsResponse>()
-        whenever(conversions.getRate(eq(EUR), eq(RON), any())).thenReturn(BigDecimal("5.0"))
-        whenever(historicalPricingSdk.convert(eq(userId), any())).thenReturn(conversions)
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
 
         val fromDate = LocalDate(2021, 1, 1)
         val toDate = LocalDate(2021, 1, 28)
-        val filter = FundTransactionFilterTO(toDate = toDate)
-        whenever(fundTransactionSdk.listTransactions(userId, reportView.fundId, filter)).thenReturn(
-            ListTO.of(
+        val interval = ReportDataInterval.Daily(fromDate, toDate, null)
+        mockTransactions(
+            interval, reportView.fundId, listOf(
                 transaction(
                     userId, LocalDate(2021, 1, 2).atTime(12, 0),
                     listOf(
@@ -235,10 +235,33 @@ class ReportingApiTest {
             )
     }
 
+    private suspend fun mockTransactions(
+        interval: ReportDataInterval,
+        fundId: UUID,
+        transactions: List<FundTransactionTO>,
+    ) {
+        whenever(
+            fundTransactionSdk.listTransactions(
+                userId,
+                fundId,
+                FundTransactionFilterTO(null, interval.getPreviousLastDay())
+            )
+        ).thenReturn(ListTO(transactions.filter { it.dateTime.date <= interval.getPreviousLastDay() }))
+        interval.getBuckets().forEach { bucket ->
+            whenever(
+                fundTransactionSdk.listTransactions(
+                    userId,
+                    fundId,
+                    FundTransactionFilterTO(bucket.from, bucket.to)
+                )
+            ).thenReturn(ListTO(transactions.filter { it.dateTime.date >= bucket.from && it.dateTime.date <= bucket.to }))
+        }
+    }
+
     private fun Application.testModule() {
         val importAppTestModule = module {
             single<FundTransactionSdk> { fundTransactionSdk }
-            single<HistoricalPricingSdk> { historicalPricingSdk }
+            single<ConversionRateService> { conversionRateService }
         }
         configureDependencies(reportingDependencies, importAppTestModule)
         configureReportingErrorHandling()

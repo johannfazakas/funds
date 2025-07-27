@@ -58,7 +58,9 @@ class ConversionServiceTest {
         assertThat(response.getRate(Currency.RON, Currency.EUR, date1)).isEqualTo(BigDecimal("0.2"))
         assertThat(response.getRate(Currency.RON, Currency.EUR, date2)).isEqualTo(BigDecimal("0.21"))
         assertThat(response.getRate(Currency.EUR, Currency.RON, date3)).isEqualTo(BigDecimal("4.9"))
-        assertThat(response.getRate(Currency.RON, Currency.EUR, date3)).isNull()
+        assertThatThrownBy {
+            assertThat(response.getRate(Currency.RON, Currency.EUR, date3))
+        }
     }
 
     @Test
@@ -90,7 +92,9 @@ class ConversionServiceTest {
         assertThat(response.getRate(Currency.RON, Currency.EUR, date1)).isEqualTo(BigDecimal("0.2"))
         assertThat(response.getRate(Currency.RON, Currency.EUR, date2)).isEqualTo(BigDecimal("0.21"))
         assertThat(response.getRate(Currency.EUR, Currency.RON, date3)).isEqualTo(BigDecimal("4.9"))
-        assertThat(response.getRate(Currency.RON, Currency.EUR, date3)).isNull()
+        assertThatThrownBy {
+            assertThat(response.getRate(Currency.RON, Currency.EUR, date3))
+        }
     }
 
     @Test

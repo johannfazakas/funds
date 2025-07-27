@@ -18,7 +18,7 @@ import ro.jf.funds.reporting.service.domain.ReportDataInterval
 import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.domain.YearMonth
 import ro.jf.funds.reporting.service.service.ReportViewService
-import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
+import ro.jf.funds.reporting.service.service.data.ReportDataService
 import ro.jf.funds.reporting.service.web.mapper.toDomain
 import ro.jf.funds.reporting.service.web.mapper.toTO
 import java.util.*

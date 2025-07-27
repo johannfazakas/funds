@@ -14,10 +14,10 @@ data class YearMonth(
     override fun compareTo(other: YearMonth): Int =
         LocalDate(year, month, 1).compareTo(LocalDate(other.year, other.month, 1))
 
-    fun asTimeBucket(): TimeBucket = TimeBucket(
-        from = LocalDate(year, month, 1),
-        to = LocalDate(year, month, 1).plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY),
-    )
+    val startDate by lazy { LocalDate(year, month, 1) }
+    val endDate by lazy { LocalDate(year, month, 1).plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY) }
+
+    fun asTimeBucket() = TimeBucket(from = startDate, to = endDate)
 
     fun next(): YearMonth {
         val nextMonth = if (month == 12) 1 else month + 1

@@ -15,7 +15,7 @@ data class ByGroup<T>(
             .let(::ByGroup)
     }
 
-    fun <R> mapValues(transform: (Pair<String, T>) -> R): ByGroup<R> {
+    suspend fun <R> mapValues(transform: suspend (Pair<String, T>) -> R): ByGroup<R> {
         return ByGroup(itemByBucket.mapValues { (group, initial) -> transform(group to initial) })
     }
 
