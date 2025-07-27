@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.service.domain
 
+import kotlinx.coroutines.flow.*
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
@@ -23,26 +24,42 @@ sealed class ReportDataInterval() {
     fun getNextBucket(previous: TimeBucket): TimeBucket =
         getBucket(previous.to.plus(1, DateTimeUnit.DAY))
 
-    fun <D> generateBucketedData(
-        function: (TimeBucket) -> D,
+    fun getPreviousLastDay(): LocalDate = fromDate.minus(1, DateTimeUnit.DAY)
+
+    suspend fun <D> generateBucketedData(
+        function: suspend (TimeBucket) -> D,
     ): Map<TimeBucket, D> =
         generateSequence(getFirstBucket()) { getNextBucket(it) }
             .takeWhile { it.from <= toDate }
+            .asFlow()
             .map { bucket -> bucket to function(bucket) }
-            .toMap()
+            .toList().toMap()
 
-    fun <D> generateBucketedData(
+    suspend fun <D> generateBucketedData(
         previousData: D,
-        function: (TimeBucket, D) -> D,
-    ): Map<TimeBucket, D> =
-        generateSequence(getFirstBucket().let {
-            it to function(it, previousData)
-        }) { (previousBucket, previousData) ->
-            getNextBucket(previousBucket)
-                .takeIf { it.from <= toDate }
-                ?.let { it to function(it, previousData) }
+        function: suspend (TimeBucket, D) -> D,
+    ): Map<TimeBucket, D> {
+        return generateFlow(
+            seed = { getFirstBucket().let { firstBucket -> firstBucket to function(firstBucket, previousData) } },
+            next = { (previousBucket, previousData) ->
+                getNextBucket(previousBucket)
+                    .takeIf { it.from <= toDate }
+                    ?.let { it to function(it, previousData) }
+            },
+        )
+            .toList().toMap()
+    }
+
+    private fun <D : Any> generateFlow(
+        seed: suspend () -> D,
+        next: suspend (D) -> D?,
+    ): Flow<D> = flow {
+        var value: D? = seed()
+        while (value != null) {
+            emit(value)
+            value = next(value)
         }
-            .toMap()
+    }
 
     fun <D> generateForecastData(
         inputBuckets: Int,

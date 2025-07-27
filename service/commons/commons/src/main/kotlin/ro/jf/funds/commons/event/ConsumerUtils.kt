@@ -34,7 +34,7 @@ open class Consumer<T>(
         consumer.subscribe(listOf(topic.value))
         consumerJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
-                val records = consumer.poll(Duration.ofMillis(500))
+                val records = consumer.poll(Duration.ofMillis(100))
                 records.forEach { record ->
                     record.handleWithTracing { handler.handle(mapper.invoke(this)) }
                 }

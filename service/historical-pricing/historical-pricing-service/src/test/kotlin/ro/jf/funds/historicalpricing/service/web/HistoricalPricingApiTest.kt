@@ -7,6 +7,7 @@ import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.datetime.LocalDate
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.dsl.module
@@ -77,7 +78,9 @@ class HistoricalPricingApiTest {
         assertThat(conversionsResponse.getRate(Currency.RON, Currency.EUR, date1)).isEqualTo("0.2".toBigDecimal())
         assertThat(conversionsResponse.getRate(Currency.RON, Currency.EUR, date2)).isEqualTo("0.21".toBigDecimal())
         assertThat(conversionsResponse.getRate(Currency.EUR, Currency.RON, date3)).isEqualTo("4.9".toBigDecimal())
-        assertThat(conversionsResponse.getRate(Currency.RON, Currency.EUR, date3)).isNull()
+        assertThatThrownBy {
+            assertThat(conversionsResponse.getRate(Currency.RON, Currency.EUR, date3))
+        }
     }
 
     private fun Application.testModule() {

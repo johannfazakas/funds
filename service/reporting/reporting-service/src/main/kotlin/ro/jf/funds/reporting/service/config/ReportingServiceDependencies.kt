@@ -19,8 +19,9 @@ import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
 import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.ReportViewService
-import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
-import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
+import ro.jf.funds.reporting.service.service.data.ConversionRateService
+import ro.jf.funds.reporting.service.service.data.ReportDataService
+import ro.jf.funds.reporting.service.service.data.resolver.*
 import javax.sql.DataSource
 
 private const val FUND_SERVICE_BASE_URL_PROPERTY = "integration.fund-service.base-url"
@@ -66,6 +67,11 @@ private val Application.integrationDependencies
 private val Application.serviceDependencies
     get() = module {
         single<ReportViewService> { ReportViewService(get()) }
-        single<ReportDataResolverRegistry> { ReportDataResolverRegistry() }
-        single<ReportDataService> { ReportDataService(get(), get(), get(), get()) }
+        single<ConversionRateService> { ConversionRateService(get()) }
+        single<GroupedNetDataResolver> { GroupedNetDataResolver(get()) }
+        single<GroupedBudgetDataResolver> { GroupedBudgetDataResolver(get()) }
+        single<ValueReportDataResolver> { ValueReportDataResolver(get()) }
+        single<NetDataResolver> { NetDataResolver(get()) }
+        single<ReportDataResolverRegistry> { ReportDataResolverRegistry(get(), get(), get(), get()) }
+        single<ReportDataService> { ReportDataService(get(), get(), get()) }
     }
