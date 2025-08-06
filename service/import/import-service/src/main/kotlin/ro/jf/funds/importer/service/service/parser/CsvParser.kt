@@ -1,6 +1,7 @@
 package ro.jf.funds.importer.service.service.parser
 
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.DateTimeFormat
 import ro.jf.funds.importer.service.domain.exception.ImportFormatException
@@ -17,6 +18,9 @@ value class CsvRow(private val values: Map<String, String>) {
     fun getDateTime(column: String, format: DateTimeFormat<LocalDateTime>) =
         getRawCell(column).toDateTime(format)
 
+    fun getDate(column: String, format: DateTimeFormat<LocalDate>) =
+        getRawCell(column).toDate(format)
+
     fun getDateTimeOrNull(column: String, format: DateTimeFormat<LocalDateTime>) =
         getRawCellOrNull(column)?.toDateTime(format)
 
@@ -27,6 +31,12 @@ value class CsvRow(private val values: Map<String, String>) {
 
     private fun String.toDateTime(format: DateTimeFormat<LocalDateTime>) = try {
         LocalDateTime.parse(this, format)
+    } catch (e: Exception) {
+        throw ImportFormatException("Error parsing date $this with format $format", e)
+    }
+
+    private fun String.toDate(format: DateTimeFormat<LocalDate>) = try {
+        LocalDate.parse(this, format)
     } catch (e: Exception) {
         throw ImportFormatException("Error parsing date $this with format $format", e)
     }

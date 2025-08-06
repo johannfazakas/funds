@@ -64,13 +64,13 @@ class ImportApiTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO("ING old", AccountName("ING"))
+                AccountMatcherTO.ByName("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
                 FundMatcherTO.ByLabel("Gifts", FundName("Expenses")),
                 FundMatcherTO.ByLabel("C&T - Gas & Parking", FundName("Expenses")),
-                FundMatcherTO.ByAccountLabelWithTransfer(
+                FundMatcherTO.ByAccountLabelWithPostTransfer(
                     "ING old",
                     "Work Income",
                     FundName("Work"),
@@ -160,13 +160,13 @@ class ImportApiTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO("ING old", AccountName("ING"))
+                AccountMatcherTO.ByName("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
                 FundMatcherTO.ByLabel("Gifts", FundName("Expenses")),
                 FundMatcherTO.ByLabel("C&T - Gas & Parking", FundName("Expenses")),
-                FundMatcherTO.ByAccountLabelWithTransfer(
+                FundMatcherTO.ByAccountLabelWithPostTransfer(
                     "ING old",
                     "Work Income",
                     FundName("Work"),
@@ -207,13 +207,13 @@ class ImportApiTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO("Something else", AccountName("ING"))
+                AccountMatcherTO.ByName("Something else", AccountName("ING"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
                 FundMatcherTO.ByLabel("Gifts", FundName("Expenses")),
                 FundMatcherTO.ByLabel("C&T - Gas & Parking", FundName("Expenses")),
-                FundMatcherTO.ByAccountLabelWithTransfer(
+                FundMatcherTO.ByAccountLabelWithPostTransfer(
                     "ING old",
                     "Work Income",
                     FundName("Work"),

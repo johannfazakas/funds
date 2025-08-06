@@ -1,12 +1,28 @@
 package ro.jf.funds.importer.api.model
 
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
 import ro.jf.funds.account.api.model.AccountName
 
+@OptIn(ExperimentalSerializationApi::class)
+@JsonClassDiscriminator("type")
 @Serializable
-data class AccountMatcherTO(
-    val importAccountName: String,
-    val accountName: AccountName
+sealed class AccountMatcherTO(
 ) {
-    constructor(pair: Pair<String, AccountName>) : this(pair.first, pair.second)
+    abstract val importAccountName: String
+
+    @Serializable
+    @SerialName("by_name")
+    data class ByName(
+        override val importAccountName: String,
+        val accountName: AccountName,
+    ) : AccountMatcherTO()
+
+    @Serializable
+    @SerialName("skipped")
+    data class Skipped(
+        override val importAccountName: String,
+    ) : AccountMatcherTO()
 }

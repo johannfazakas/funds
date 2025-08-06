@@ -34,17 +34,28 @@ sealed class FundMatcherTO {
         override val fundName: FundName,
     ) : FundMatcherTO()
 
+    // TODO(Johann) verify that bt work taxes are correctly imported (ex. May CASS payment). Also check September 2021 minus.
+
     @Serializable
-    @SerialName("by_label_with_transfer")
-    data class ByLabelWithTransfer(
+    @SerialName("by_label_with_post_transfer")
+    data class ByLabelWithPostTransfer(
         val importLabel: String,
         val initialFundName: FundName,
         override val fundName: FundName,
     ) : FundMatcherTO()
 
     @Serializable
-    @SerialName("by_account_label_with_transfer")
-    data class ByAccountLabelWithTransfer(
+    @SerialName("by_account_label_with_post_transfer")
+    data class ByAccountLabelWithPostTransfer(
+        val importAccountName: String,
+        val importLabel: String,
+        val initialFundName: FundName,
+        override val fundName: FundName,
+    ) : FundMatcherTO()
+
+    @Serializable
+    @SerialName("by_account_label_with_pre_transfer")
+    data class ByAccountLabelWithPreTransfer(
         val importAccountName: String,
         val importLabel: String,
         val initialFundName: FundName,

@@ -29,6 +29,7 @@ import ro.jf.funds.importer.service.service.conversion.ImportFundConverter
 import ro.jf.funds.importer.service.service.conversion.strategy.*
 import ro.jf.funds.importer.service.service.event.CreateFundTransactionsResponseHandler
 import ro.jf.funds.importer.service.service.parser.CsvParser
+import ro.jf.funds.importer.service.service.parser.FundsFormatImportParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
 import ro.jf.funds.importer.service.service.parser.WalletCsvImportParser
 import javax.sql.DataSource
@@ -85,7 +86,8 @@ private val Application.importServiceDependencies
     get() = module {
         single<CsvParser> { CsvParser() }
         single<WalletCsvImportParser> { WalletCsvImportParser(get()) }
-        single<ImportParserRegistry> { ImportParserRegistry(get()) }
+        single<FundsFormatImportParser> { FundsFormatImportParser(get()) }
+        single<ImportParserRegistry> { ImportParserRegistry(get(), get()) }
         single<AccountService> { AccountService(get()) }
         single<FundService> { FundService(get()) }
         single<SingleRecordFundConverter> { SingleRecordFundConverter() } bind ImportFundConverter::class

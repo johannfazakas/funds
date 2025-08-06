@@ -7,10 +7,17 @@ import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.LabelMatcherTO
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 
-fun List<AccountMatcherTO>.getAccountName(importAccountName: String): AccountName =
-    firstOrNull { it.importAccountName == importAccountName }
-        ?.accountName
+fun List<AccountMatcherTO>.getAccountName(importAccountName: String): AccountName? {
+    val matcher = firstOrNull { it.importAccountName == importAccountName }
         ?: throw ImportDataException("Account name not matched: $importAccountName")
+    return matcher
+        .let { matcher ->
+            when (matcher) {
+                is AccountMatcherTO.ByName -> matcher.accountName
+                is AccountMatcherTO.Skipped -> null
+            }
+        }
+}
 
 fun List<FundMatcherTO>.getFundMatcher(importAccountName: String, importLabels: List<String>): FundMatcherTO =
     firstOrNull { it.matches(importAccountName, importLabels) }
@@ -21,8 +28,9 @@ fun FundMatcherTO.matches(importAccountName: String, importLabels: List<String>)
         is FundMatcherTO.ByAccount -> this.importAccountName == importAccountName
         is FundMatcherTO.ByLabel -> this.importLabel in importLabels
         is FundMatcherTO.ByAccountLabel -> this.importAccountName == importAccountName && this.importLabel in importLabels
-        is FundMatcherTO.ByLabelWithTransfer -> this.importLabel in importLabels
-        is FundMatcherTO.ByAccountLabelWithTransfer -> this.importAccountName == importAccountName && this.importLabel in importLabels
+        is FundMatcherTO.ByLabelWithPostTransfer -> this.importLabel in importLabels
+        is FundMatcherTO.ByAccountLabelWithPostTransfer -> this.importAccountName == importAccountName && this.importLabel in importLabels
+        is FundMatcherTO.ByAccountLabelWithPreTransfer -> this.importAccountName == importAccountName && this.importLabel in importLabels
     }
 }
 

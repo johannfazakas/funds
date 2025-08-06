@@ -1,6 +1,6 @@
 ### https://currencybeacon.com/api-documentation
 ### Convert EUR -> RON
-GET	https://api.currencybeacon.com/v1/historical?base=EUR&symbols=RON&date=2024-05-05&api_key=Tvq2HYD17h6pLceGMPY0iL4VECzVcm3H
+GET	https://api.currencybeacon.com/v1/historical?base=EUR&symbols=RON&date=2022-05-30&api_key=Tvq2HYD17h6pLceGMPY0iL4VECzVcm3H
 
 ### Convert RON -> EUR
-GET	https://api.currencybeacon.com/v1/historical?base=RON&symbols=EUR&date=2024-05-05&api_key=Tvq2HYD17h6pLceGMPY0iL4VECzVcm3H
+GET	https://api.currencybeacon.com/v1/historical?base=RON&symbols=EUR&date=2022-06-25&api_key=Tvq2HYD17h6pLceGMPY0iL4VECzVcm3H
