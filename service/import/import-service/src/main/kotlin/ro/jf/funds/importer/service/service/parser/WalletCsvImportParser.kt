@@ -35,7 +35,7 @@ class WalletCsvImportParser(
         files
             .parse()
             .groupBy { it.transactionId(importConfiguration.exchangeMatchers) }
-            .map { (transactionId, csvRows) -> toTransaction(importConfiguration, transactionId, csvRows) }
+            .mapNotNull { (transactionId, csvRows) -> toTransaction(importConfiguration, transactionId, csvRows) }
     }
 
     private fun List<String>.parse(): List<CsvRow> {
@@ -66,17 +66,34 @@ class WalletCsvImportParser(
         importConfiguration: ImportConfigurationTO,
         transactionId: String,
         csvRows: List<CsvRow>,
-    ): ImportParsedTransaction {
+    ): ImportParsedTransaction? {
+        val records = toImportRecords(importConfiguration, csvRows)
+        if (records == null) {
+            return null
+        }
         return ImportParsedTransaction(
             transactionExternalId = transactionId,
             dateTime = csvRows.minOf { it.getDateTime(DATE_COLUMN, dateTimeFormat) },
-            records = csvRows.flatMap { csvRow -> toImportRecords(importConfiguration, csvRow) }
+            records = records
         )
     }
 
-    private fun toImportRecords(importConfiguration: ImportConfigurationTO, csvRow: CsvRow): List<ImportParsedRecord> {
+    private fun toImportRecords(
+        importConfiguration: ImportConfigurationTO,
+        csvRows: List<CsvRow>,
+    ): List<ImportParsedRecord>? {
+        val parsedRecords = csvRows.map { toImportRecords(importConfiguration, it) }
+        val mappedParsedRecords = parsedRecords.filterNotNull()
+        return if (mappedParsedRecords.size < parsedRecords.size)
+            null
+        else
+            mappedParsedRecords.flatten()
+    }
+
+    private fun toImportRecords(importConfiguration: ImportConfigurationTO, csvRow: CsvRow): List<ImportParsedRecord>? {
         val importAccountName = csvRow.getString(ACCOUNT_NAME_COLUMN)
         val accountName = importConfiguration.accountMatchers.getAccountName(importAccountName)
+        if (accountName == null) return null
         val importLabels = csvRow.getString(LABEL_COLUMN).labels()
         val currency = csvRow.getString(CURRENCY_COLUMN)
         val amount = csvRow.getBigDecimal(AMOUNT_COLUMN)
@@ -88,7 +105,7 @@ class WalletCsvImportParser(
             is ByAccount, is ByLabel, is ByAccountLabel ->
                 listOf(ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount, labels))
 
-            is ByAccountLabelWithTransfer -> {
+            is ByAccountLabelWithPostTransfer -> {
                 listOf(
                     ImportParsedRecord(accountName, fundMatcher.initialFundName, Currency(currency), amount, labels),
                     ImportParsedRecord(
@@ -98,7 +115,17 @@ class WalletCsvImportParser(
                 )
             }
 
-            is ByLabelWithTransfer -> {
+            is ByAccountLabelWithPreTransfer -> {
+                listOf(
+                    ImportParsedRecord(
+                        accountName, fundMatcher.initialFundName, Currency(currency), amount, emptyList()
+                    ),
+                    ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount.negate(), emptyList()),
+                    ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount, labels),
+                )
+            }
+
+            is ByLabelWithPostTransfer -> {
                 listOf(
                     ImportParsedRecord(accountName, fundMatcher.initialFundName, Currency(currency), amount, labels),
                     ImportParsedRecord(

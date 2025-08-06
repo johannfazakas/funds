@@ -28,6 +28,13 @@ fun toFinancialUnit(unitType: UnitType, unit: String): FinancialUnit = when (uni
 sealed class FinancialUnit {
     abstract val value: String
     abstract val type: UnitType
+
+    companion object {
+        fun of(unitType: String, unit: String): FinancialUnit = when (UnitType.fromString(unitType)) {
+            UnitType.CURRENCY -> Currency(unit)
+            UnitType.SYMBOL -> Symbol(unit)
+        }
+    }
 }
 
 @Serializable(with = CurrencySerializer::class)

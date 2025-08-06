@@ -35,7 +35,7 @@ class ImportSdkTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO("Cash RON", AccountName("Cash"))
+                AccountMatcherTO.ByName("Cash RON", AccountName("Cash"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
@@ -83,7 +83,7 @@ class ImportSdkTest {
             val importConfiguration = ImportConfigurationTO(
                 fileType = ImportFileTypeTO.WALLET_CSV,
                 accountMatchers = listOf(
-                    AccountMatcherTO("Cash RON", AccountName("Cash"))
+                    AccountMatcherTO.ByName("Cash RON", AccountName("Cash"))
                 ),
                 fundMatchers = listOf(
                     FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
@@ -125,7 +125,7 @@ class ImportSdkTest {
             val importConfiguration = ImportConfigurationTO(
                 fileType = ImportFileTypeTO.WALLET_CSV,
                 accountMatchers = listOf(
-                    AccountMatcherTO("Cash RON", AccountName("Cash"))
+                    AccountMatcherTO.ByName("Cash RON", AccountName("Cash"))
                 ),
                 fundMatchers = listOf(
                     FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))

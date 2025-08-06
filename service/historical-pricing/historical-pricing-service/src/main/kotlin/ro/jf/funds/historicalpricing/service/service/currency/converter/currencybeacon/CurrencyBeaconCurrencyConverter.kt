@@ -3,7 +3,10 @@ package ro.jf.funds.historicalpricing.service.service.currency.converter.currenc
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
+import mu.KotlinLogging
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyConverter
@@ -14,17 +17,42 @@ import java.time.LocalDate as JavaLocalDate
 private const val CURRENCY_BEACON_API_KEY = "Tvq2HYD17h6pLceGMPY0iL4VECzVcm3H"
 private val QUERY_PARAM_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
+private val log = KotlinLogging.logger {}
+
 class CurrencyBeaconCurrencyConverter(
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
 ) : CurrencyConverter {
 
     override suspend fun convert(
         sourceCurrency: Currency,
         targetCurrency: Currency,
-        dates: List<LocalDate>
-    ): List<ConversionResponse> = dates.map { date -> convert(sourceCurrency, targetCurrency, date) }
+        dates: List<LocalDate>,
+    ): List<ConversionResponse> = dates.map { date -> convertSafely(sourceCurrency, targetCurrency, date) }
 
-    private suspend fun convert(sourceCurrency: Currency, targetCurrency: Currency, date: LocalDate): ConversionResponse {
+    private suspend fun convertSafely(
+        sourceCurrency: Currency,
+        targetCurrency: Currency,
+        date: LocalDate,
+        attempt: Int = 0,
+    ): ConversionResponse {
+        try {
+            return convert(sourceCurrency, targetCurrency, date)
+        } catch (exception: Exception) {
+            if (attempt < 3) {
+                return convertSafely(sourceCurrency, targetCurrency, date.minus(1, DateTimeUnit.DAY), attempt + 1)
+                    .copy(date = date)
+            } else {
+                log.warn { "Could not convert $sourceCurrency to $targetCurrency" }
+                throw exception
+            }
+        }
+    }
+
+    private suspend fun convert(
+        sourceCurrency: Currency,
+        targetCurrency: Currency,
+        date: LocalDate,
+    ): ConversionResponse {
         val price = httpClient.get("https://api.currencybeacon.com/v1/historical") {
             parameter("base", sourceCurrency.value)
             parameter("symbols", targetCurrency.value)

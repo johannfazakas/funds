@@ -22,7 +22,7 @@ class WalletCsvImportParserTest {
         )
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
-            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
+            accountMatchers = listOf(AccountMatcherTO.ByName("ING old", AccountName("ING"))),
             fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses"))),
             labelMatchers = listOf(LabelMatcherTO("Basic - Food", Label("Basic"))),
             exchangeMatchers = emptyList()
@@ -50,8 +50,8 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO("ING old", AccountName("ING")),
-                AccountMatcherTO("Cash RON", AccountName("Cash"))
+                AccountMatcherTO.ByName("ING old", AccountName("ING")),
+                AccountMatcherTO.ByName("Cash RON", AccountName("Cash"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
@@ -86,8 +86,8 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO("Euro", AccountName("Cash EUR")),
-                AccountMatcherTO("Cash RON", AccountName("Cash RON"))
+                AccountMatcherTO.ByName("Euro", AccountName("Cash EUR")),
+                AccountMatcherTO.ByName("Cash RON", AccountName("Cash RON"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByAccount("Euro", FundName("Expenses")),
@@ -136,10 +136,10 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO("ING old", AccountName("ING"))
+                AccountMatcherTO.ByName("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabelWithTransfer(
+                FundMatcherTO.ByLabelWithPostTransfer(
                     importLabel = "Gift income", FundName("Gift income"), FundName("Expenses")
                 ),
             ),
@@ -178,10 +178,10 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO("ING old", AccountName("ING"))
+                AccountMatcherTO.ByName("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByAccountLabelWithTransfer(
+                FundMatcherTO.ByAccountLabelWithPostTransfer(
                     "ING old",
                     importLabel = "Work Income",
                     FundName("Work"),
@@ -222,7 +222,7 @@ class WalletCsvImportParserTest {
         )
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
-            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
+            accountMatchers = listOf(AccountMatcherTO.ByName("ING old", AccountName("ING"))),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
                 FundMatcherTO.ByAccount("ING old", FundName("Savings"))
@@ -244,7 +244,7 @@ class WalletCsvImportParserTest {
         )
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
-            accountMatchers = listOf(AccountMatcherTO("ING new", AccountName("ING"))),
+            accountMatchers = listOf(AccountMatcherTO.ByName("ING new", AccountName("ING"))),
             fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses"))),
             exchangeMatchers = emptyList()
         )
@@ -261,7 +261,7 @@ class WalletCsvImportParserTest {
         """.trimIndent()
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
-            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
+            accountMatchers = listOf(AccountMatcherTO.ByName("ING old", AccountName("ING"))),
             fundMatchers = listOf(FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses"))),
             exchangeMatchers = emptyList()
         )
@@ -269,6 +269,32 @@ class WalletCsvImportParserTest {
         assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
             .isInstanceOf(ImportDataException::class.java)
             .hasMessage("No import data")
+    }
+
+    @Test
+    fun `should skip transactions involving skipped account`() {
+        val fileContent = generateFileContent(
+            WalletCsvRowContent("ING old", "RON", "-400.00", "", "2019-01-31 02:00:49"),
+            WalletCsvRowContent("Skipped account", "RON", "400.00", "", "2019-01-31 02:00:49")
+        )
+        val importConfiguration = ImportConfigurationTO(
+            fileType = ImportFileTypeTO.WALLET_CSV,
+            accountMatchers = listOf(
+                AccountMatcherTO.ByName("ING old", AccountName("ING")),
+                AccountMatcherTO.Skipped("Skipped account")
+            ),
+            fundMatchers = listOf(
+                FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
+                FundMatcherTO.ByLabel("Basic - Food", FundName("Income")),
+                FundMatcherTO.ByAccount("ING old", FundName("Expenses")),
+                FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
+            ),
+            exchangeMatchers = emptyList()
+        )
+
+        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+
+        assertThat(importTransactions).hasSize(0)
     }
 
     private data class WalletCsvRowContent(
