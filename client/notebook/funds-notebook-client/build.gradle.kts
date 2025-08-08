@@ -28,6 +28,7 @@ dependencies {
     implementation("ro.jf.funds:import-sdk:1.0.0")
     implementation("ro.jf.funds:reporting-sdk:1.0.0")
     implementation("org.jetbrains.kotlinx:kandy-lets-plot:0.8.0")
+    implementation("org.jetbrains.kotlinx:kandy-api:0.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
     implementation("com.charleskorn.kaml:kaml:0.83.0")

@@ -44,6 +44,7 @@ sealed class FundMatcherTO {
         override val fundName: FundName,
     ) : FundMatcherTO()
 
+    // TODO(Johann) not sure about these implicit fund transfers, what other options do I have?
     @Serializable
     @SerialName("by_account_label_with_post_transfer")
     data class ByAccountLabelWithPostTransfer(
