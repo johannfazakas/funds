@@ -9,6 +9,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import kotlinx.datetime.*
+import kotlinx.datetime.TimeZone
+import org.jetbrains.kotlinx.dataframe.DataFrame
+import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
+import org.jetbrains.kotlinx.kandy.dsl.internal.dataframe.DataFramePlotBuilder
+import org.jetbrains.kotlinx.kandy.dsl.plot
+import org.jetbrains.kotlinx.kandy.ir.Plot
+import org.jetbrains.kotlinx.kandy.letsplot.feature.layout
+import org.jetbrains.kotlinx.kandy.letsplot.layers.area
+import org.jetbrains.kotlinx.kandy.letsplot.layers.bars
+import org.jetbrains.kotlinx.kandy.letsplot.layers.line
+import org.jetbrains.kotlinx.kandy.letsplot.x
+import org.jetbrains.kotlinx.kandy.util.color.Color
+import org.jetbrains.kotlinx.kandy.util.context.invoke
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.account.sdk.AccountSdk
@@ -160,6 +173,104 @@ class FundsClient(
         val reportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportName }
             ?: error("Report view with name '$reportName' not found for user ${user.username}")
         reportingSdk.getDailyReportViewData(user.id, reportView.id, fromDate, toDate, forecastUntilDate)
+    }
+
+    fun plotReportData(
+        title: String,
+        reportData: ReportDataTO,
+        plottedLines: Map<Color, (ReportDataItemTO) -> BigDecimal> = emptyMap(),
+        plottedAreas: Map<Color, (ReportDataItemTO) -> BigDecimal> = emptyMap(),
+    ): Plot {
+        val plottedData = plottedLines + plottedAreas
+        val dataFrame = plottedData
+            .map { (color, dataMapper) ->
+                color.toString() to reportData.data.map { data -> dataMapper(data) }
+            }
+            .plus("timeBucket" to reportData.data.map { it.timeBucket.from })
+            .let { dataFrameOf(*it.toTypedArray()) }
+
+        return dataFrame
+            .plot {
+                plotForecastBorderLine(plottedData, dataFrame, reportData)
+                plotTimeAxis(reportData)
+                line {
+                    y.constant(0)
+                }
+                plottedLines.forEach { (color, _) ->
+                    line {
+                        y(color.toString())
+                        this.color = color
+                    }
+                }
+                plottedAreas.forEach { (color, _) ->
+                    area {
+                        y(color.toString())
+                        borderLine {
+                            this.color = color
+                        }
+                    }
+                }
+                layout {
+                    this.title = title
+                    size = 2400 to 1200
+                }
+            }
+    }
+
+    private fun DataFramePlotBuilder<Any?>.plotTimeAxis(reportData: ReportDataTO) {
+        x("timeBucket") {
+            val format = when (reportData.interval.granularity) {
+                TimeGranularityTO.YEARLY -> "%Y"
+                TimeGranularityTO.MONTHLY -> "%b %Y"
+                TimeGranularityTO.DAILY -> "%d %b %Y"
+            }
+            axis.breaks(
+                reportData.data
+                    .map { it.timeBucket.from.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds() }, format
+            )
+        }
+    }
+
+    private fun DataFramePlotBuilder<Any?>.plotForecastBorderLine(
+        plottedData: Map<Color, (ReportDataItemTO) -> BigDecimal>,
+        dataFrame: DataFrame<*>,
+        reportData: ReportDataTO,
+    ) {
+        line {
+            val values = plottedData.keys
+                .flatMap { dataFrame[it.toString()].values() }
+                .map { it as BigDecimal }
+            val forecastBorderMin = values.minOrNull()?.takeIf { it < BigDecimal.ZERO } ?: BigDecimal.ZERO
+            val forecastBorderMax = values.maxOrNull()?.takeIf { it > BigDecimal.ZERO } ?: BigDecimal.ZERO
+            val forecastBorderX = when (reportData.interval.granularity) {
+                TimeGranularityTO.YEARLY -> reportData.interval.toDate.minus(183, DateTimeUnit.DAY)
+                TimeGranularityTO.MONTHLY -> reportData.interval.toDate.minus(15, DateTimeUnit.DAY)
+                TimeGranularityTO.DAILY -> reportData.interval.toDate.minus(1, DateTimeUnit.DAY)
+            }
+            y(listOf(forecastBorderMin, forecastBorderMax))
+            x.constant(forecastBorderX.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds())
+        }
+    }
+
+    fun plotReport(): Plot {
+        val averageTemperature = dataFrameOf(
+            "city" to listOf("New York", "London", "Berlin", "Yerevan", "Tokyo"),
+            "average temperature" to listOf(12.5, 11.0, 9.6, 11.5, 16.0)
+        )
+
+        // Construct a plot using the data from the DataFrame
+        return averageTemperature.plot {
+            // Add bars to the plot
+            // Each bar represents the average temperature in a city
+            bars {
+                x("city") // Set the cities' data on the X-axis
+                y("average temperature") { // Set the temperatures' data on the Y-axis
+                    axis.name = "Average Temperature (°C)" // Assign a name to the Y-axis
+                }
+            }
+            // Set the title of the plot
+            layout.title = "Kandy Getting Started Example"
+        }
     }
 
     inline fun <reified T> fromYaml(yamlFile: File, path: String? = null): T {
