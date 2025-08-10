@@ -56,5 +56,5 @@ val Application.historicalPricingDependencies
         single { CurrencyBeaconCurrencyConverter(get()) }
         single { CurrencyService(get<CurrencyBeaconCurrencyConverter>(), get()) }
         single { InstrumentService(get(), get(), get()) }
-        single { ConversionService(get()) }
+        single { ConversionService(get(), get()) }
     }

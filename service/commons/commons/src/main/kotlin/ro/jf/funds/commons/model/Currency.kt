@@ -48,6 +48,7 @@ data class Currency(override val value: String) : FinancialUnit() {
     }
 }
 
+// TODO(Johann) maybe financial instrument would be better?
 @Serializable(with = SymbolSerializer::class)
 data class Symbol(override val value: String) : FinancialUnit() {
     override val type = UnitType.SYMBOL

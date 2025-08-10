@@ -17,13 +17,21 @@ import ro.jf.funds.historicalpricing.service.domain.HistoricalPricingExceptions
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyConverter
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyPairHistoricalPriceRepository
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyService
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverterRegistry
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentHistoricalPriceRepository
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentService
 import java.math.BigDecimal
 
 class ConversionServiceTest {
     private val currencyConverter = mock<CurrencyConverter>()
-    private val historicalPriceRepository = mock<CurrencyPairHistoricalPriceRepository>()
+    private val currencyHistoricalPriceRepository = mock<CurrencyPairHistoricalPriceRepository>()
+    private val instrumentHistoricalPriceRepository = mock<InstrumentHistoricalPriceRepository>()
+    private val instrumentConverterRegistry = mock<InstrumentConverterRegistry>()
 
-    private val conversionService = ConversionService(CurrencyService(currencyConverter, historicalPriceRepository))
+    val currencyService = CurrencyService(currencyConverter, currencyHistoricalPriceRepository)
+    val instrumentService =
+        InstrumentService(instrumentConverterRegistry, instrumentHistoricalPriceRepository, currencyService)
+    private val conversionService = ConversionService(currencyService, instrumentService)
 
     private val date1 = LocalDate.parse("2025-02-01")
     private val date2 = LocalDate.parse("2025-02-02")
@@ -31,14 +39,20 @@ class ConversionServiceTest {
 
     @Test
     fun `should return saved conversions when available`(): Unit = runBlocking {
-        whenever(historicalPriceRepository.getHistoricalPrices(Currency.RON, Currency.EUR, listOf(date1, date2)))
+        whenever(
+            currencyHistoricalPriceRepository.getHistoricalPrices(
+                Currency.RON,
+                Currency.EUR,
+                listOf(date1, date2)
+            )
+        )
             .thenReturn(
                 listOf(
                     CurrencyPairHistoricalPrice(Currency.RON, Currency.EUR, date1, BigDecimal("0.2")),
                     CurrencyPairHistoricalPrice(Currency.RON, Currency.EUR, date2, BigDecimal("0.21"))
                 )
             )
-        whenever(historicalPriceRepository.getHistoricalPrices(Currency.EUR, Currency.RON, listOf(date3)))
+        whenever(currencyHistoricalPriceRepository.getHistoricalPrices(Currency.EUR, Currency.RON, listOf(date3)))
             .thenReturn(
                 listOf(
                     CurrencyPairHistoricalPrice(Currency.EUR, Currency.RON, date3, BigDecimal("4.9"))
@@ -65,13 +79,19 @@ class ConversionServiceTest {
 
     @Test
     fun `should return and save new conversions when not available in storage`(): Unit = runBlocking {
-        whenever(historicalPriceRepository.getHistoricalPrices(Currency.RON, Currency.EUR, listOf(date1, date2)))
+        whenever(
+            currencyHistoricalPriceRepository.getHistoricalPrices(
+                Currency.RON,
+                Currency.EUR,
+                listOf(date1, date2)
+            )
+        )
             .thenReturn(
                 listOf(
                     CurrencyPairHistoricalPrice(Currency.RON, Currency.EUR, date1, BigDecimal("0.2")),
                 )
             )
-        whenever(historicalPriceRepository.getHistoricalPrices(Currency.EUR, Currency.RON, listOf(date3)))
+        whenever(currencyHistoricalPriceRepository.getHistoricalPrices(Currency.EUR, Currency.RON, listOf(date3)))
             .thenReturn(emptyList())
         whenever(currencyConverter.convert(Currency.RON, Currency.EUR, listOf(date2)))
             .thenReturn(listOf(ConversionResponse(Currency.RON, Currency.EUR, date2, BigDecimal("0.21"))))

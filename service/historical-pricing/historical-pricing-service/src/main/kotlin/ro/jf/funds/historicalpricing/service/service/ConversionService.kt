@@ -1,28 +1,49 @@
 package ro.jf.funds.historicalpricing.service.service
 
+import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Symbol
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
+import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.service.domain.HistoricalPricingExceptions
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyService
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentService
 
 class ConversionService(
     private val currencyService: CurrencyService,
+    private val instrumentService: InstrumentService,
 ) {
     suspend fun convert(request: ConversionsRequest): ConversionsResponse {
         request.conversions.firstOrNull { it.isSymbolConversion() }
             ?.let { throw HistoricalPricingExceptions.ConversionNotPermitted(it.sourceUnit, it.targetUnit) }
 
         return request.conversions
-            .filter { it.sourceUnit is Currency && it.targetUnit is Currency }
-            .groupBy { it.sourceUnit as Currency to it.targetUnit as Currency }
+            .groupBy { it.sourceUnit to it.targetUnit }
             .map { (currencyPair, requests) ->
-                currencyService.convert(currencyPair.first, currencyPair.second, requests.map { it.date })
+                convert(currencyPair.first, currencyPair.second, requests.map { it.date })
             }
             .flatten()
             .let { ConversionsResponse(it) }
+    }
+
+    private suspend fun convert(
+        sourceUnit: FinancialUnit,
+        targetUnit: FinancialUnit,
+        dates: List<LocalDate>,
+    ): List<ConversionResponse> {
+        return when (targetUnit) {
+            is Currency -> {
+                when (sourceUnit) {
+                    is Currency -> currencyService.convert(sourceUnit, targetUnit, dates)
+                    is Symbol -> instrumentService.convert(sourceUnit, targetUnit, dates)
+                }
+            }
+
+            is Symbol -> error("Conversion to financial instrument not accepted")
+        }
     }
 
     private fun ConversionRequest.isSymbolConversion(): Boolean = sourceUnit is Symbol || targetUnit is Symbol

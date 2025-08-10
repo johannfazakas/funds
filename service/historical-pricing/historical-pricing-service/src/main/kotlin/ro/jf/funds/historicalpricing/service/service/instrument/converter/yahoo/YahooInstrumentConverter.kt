@@ -34,7 +34,7 @@ class YahooInstrumentConverter(
             parameter("interval", ONE_DAY)
             parameter("period1", from.timestamp().toString())
             parameter("period2", to.timestamp().toString())
-            parameter("symbol", instrument.symbol)
+            parameter("symbol", instrument.conversionSymbol)
         }.body<YahooChartResponse>()
             .toConversionResponses(instrument)
     } catch (e: Exception) {
