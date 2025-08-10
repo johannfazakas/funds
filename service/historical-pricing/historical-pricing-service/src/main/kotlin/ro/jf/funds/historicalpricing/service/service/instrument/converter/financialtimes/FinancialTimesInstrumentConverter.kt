@@ -42,7 +42,7 @@ class FinancialTimesInstrumentConverter(
             .get("https://markets.ft.com/data/equities/ajax/get-historical-prices") {
                 parameter("startDate", from.asQueryParam())
                 parameter("endDate", to.asQueryParam())
-                parameter("symbol", instrument.symbol)
+                parameter("symbol", instrument.conversionSymbol)
 
             }
             .body<FTHtmlResponse>()

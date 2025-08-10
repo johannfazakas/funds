@@ -62,7 +62,7 @@ class BTInstrumentConverter(
     }
 
     suspend fun initiateDownloadSession(instrument: Instrument): String {
-        val response = httpClient.post("https://www.btassetmanagement.ro/${instrument.symbol}") {
+        val response = httpClient.post("https://www.btassetmanagement.ro/${instrument.conversionSymbol}") {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(FormDataContent(Parameters.build {
                 append("tip_titlu", "Valoare titlu")
