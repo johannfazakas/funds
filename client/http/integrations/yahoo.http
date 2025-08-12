@@ -11,15 +11,41 @@ GET https://query1.finance.yahoo.com/v8/finance/chart/IMAEA.XC?
     &lang=en-US
     &region=US
 
-### Get IMAEA.XC historical data
-GET https://query1.finance.yahoo.com/v8/finance/chart/IMAEA.XC?
+### Get IMAEA.XD historical data
+GET https://query1.finance.yahoo.com/v8/finance/chart/IMAEA.XD?
+    events=capitalGain%7Cdiv%7Csplit
+    &formatted=true
+    &includeAdjustedClose=true
+    &interval=1d
+    &period1=1651363200
+    &period2=1653955200
+    &symbol=IMAEA.XD
+    &userYfid=true
+    &lang=en-US
+    &region=US
+
+### Get EUNL.DE historical data
+GET https://query1.finance.yahoo.com/v8/finance/chart/EUNL.DE?
     events=capitalGain%7Cdiv%7Csplit
     &formatted=true
     &includeAdjustedClose=true
     &interval=1d
     &period1=1709276742
     &period2=1717049116
-    &symbol=IMAEA.XC
+    &symbol=EUNL.DE
+    &userYfid=true
+    &lang=en-US
+    &region=US
+
+### Get IS3N.DE historical data
+GET https://query1.finance.yahoo.com/v8/finance/chart/IS3N.DE?
+    events=capitalGain%7Cdiv%7Csplit
+    &formatted=true
+    &includeAdjustedClose=true
+    &interval=1d
+    &period1=1651409877
+    &period2=1717049116
+    &symbol=IS3N.DE
     &userYfid=true
     &lang=en-US
     &region=US

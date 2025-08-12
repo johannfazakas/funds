@@ -9,6 +9,6 @@ sealed class HistoricalPricingExceptions : RuntimeException() {
     ) : HistoricalPricingExceptions()
 
     class ConversionNotPermitted(
-        val sourceUnit: FinancialUnit, val targetUnit: FinancialUnit,
+        val sourceUnit: FinancialUnit, val targetUnit: FinancialUnit
     ) : HistoricalPricingExceptions()
 }
