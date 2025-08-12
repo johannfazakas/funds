@@ -25,7 +25,7 @@ import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.service.conversion.AccountService
 import ro.jf.funds.importer.service.service.conversion.FundService
 import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService
-import ro.jf.funds.importer.service.service.conversion.ImportFundConverter
+import ro.jf.funds.importer.service.service.conversion.ImportTransactionConverter
 import ro.jf.funds.importer.service.service.conversion.strategy.*
 import ro.jf.funds.importer.service.service.event.CreateFundTransactionsResponseHandler
 import ro.jf.funds.importer.service.service.parser.CsvParser
@@ -90,11 +90,12 @@ private val Application.importServiceDependencies
         single<ImportParserRegistry> { ImportParserRegistry(get(), get()) }
         single<AccountService> { AccountService(get()) }
         single<FundService> { FundService(get()) }
-        single<SingleRecordFundConverter> { SingleRecordFundConverter() } bind ImportFundConverter::class
-        single<TransferFundConverter> { TransferFundConverter() } bind ImportFundConverter::class
-        single<ImplicitTransferFundConverter> { ImplicitTransferFundConverter() } bind ImportFundConverter::class
-        single<ExchangeSingleFundConverter> { ExchangeSingleFundConverter() } bind ImportFundConverter::class
-        single<ImportFundConverterRegistry> { ImportFundConverterRegistry(getAll()) }
+        single<SingleRecordTransactionConverter> { SingleRecordTransactionConverter() } bind ImportTransactionConverter::class
+        single<TransferTransactionConverter> { TransferTransactionConverter() } bind ImportTransactionConverter::class
+        single<ImplicitTransferTransactionConverter> { ImplicitTransferTransactionConverter() } bind ImportTransactionConverter::class
+        single<ExchangeSingleTransactionConverter> { ExchangeSingleTransactionConverter() } bind ImportTransactionConverter::class
+        single<InvestmentTransactionConverter> { InvestmentTransactionConverter() } bind ImportTransactionConverter::class
+        single<ImportTransactionConverterRegistry> { ImportTransactionConverterRegistry(getAll()) }
         single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get(), get()) }
         single<ImportService> { ImportService(get(), get(), get(), get()) }
         single<CreateFundTransactionsResponseHandler> {

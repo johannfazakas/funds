@@ -9,6 +9,7 @@ import ro.jf.funds.historicalpricing.api.model.Instrument
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.MonthlyCachedInstrumentConverterProxy
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.yahoo.model.YahooChartResponse
+import java.math.BigDecimal
 
 private const val ONE_DAY = "1d"
 
@@ -17,7 +18,7 @@ class YahooInstrumentConverter(
     private val cachedProxy: MonthlyCachedInstrumentConverterProxy = MonthlyCachedInstrumentConverterProxy(),
 ) : InstrumentConverter {
     override suspend fun convert(instrument: Instrument, dates: List<LocalDate>): List<ConversionResponse> =
-        dates.map { date -> convert(instrument, date) }
+        dates.map { date -> checkHardcodedValues(instrument, date) ?: convert(instrument, date) }
 
     private suspend fun convert(instrument: Instrument, date: LocalDate): ConversionResponse {
         return cachedProxy.getCachedOrConvert(instrument, date) { from, to ->
@@ -30,7 +31,7 @@ class YahooInstrumentConverter(
         from: LocalDate,
         to: LocalDate,
     ) = try {
-        httpClient.get("https://query1.finance.yahoo.com/v8/finance/chart/${instrument.symbol}") {
+        httpClient.get("https://query1.finance.yahoo.com/v8/finance/chart/${instrument.conversionSymbol}") {
             parameter("interval", ONE_DAY)
             parameter("period1", from.timestamp().toString())
             parameter("period2", to.timestamp().toString())
@@ -38,7 +39,10 @@ class YahooInstrumentConverter(
         }.body<YahooChartResponse>()
             .toConversionResponses(instrument)
     } catch (e: Exception) {
-        throw IllegalArgumentException("Failed to fetch data for $instrument form $from to $to", e)
+        throw IllegalArgumentException(
+            "Failed to fetch data for $instrument from $from (${from.timestamp()}) to $to (${to.timestamp()})",
+            e
+        )
     }
 
     private fun YahooChartResponse.toConversionResponses(instrument: Instrument): List<ConversionResponse> {
@@ -56,6 +60,29 @@ class YahooInstrumentConverter(
                     )
                 }
             }
+    }
+
+    // IMAE doesn't have values for 2022 and I couldn't find a library/api that could provide it
+    private fun checkHardcodedValues(instrument: Instrument, date: LocalDate): ConversionResponse? {
+        if (instrument == Instrument.IMAE_NL) {
+            if (date.year == 2022) {
+                val rate = when (date.month) {
+                    Month.MAY -> BigDecimal("63.54")
+                    Month.JUNE -> BigDecimal("63.90")
+                    Month.JULY -> BigDecimal("59.025")
+                    Month.AUGUST -> BigDecimal("63.43")
+                    Month.SEPTEMBER -> BigDecimal("59.94")
+                    Month.OCTOBER -> BigDecimal("56.56")
+                    Month.NOVEMBER -> BigDecimal("60.34")
+                    Month.DECEMBER -> BigDecimal("64.725")
+                    else -> null
+                }
+                if (rate != null) {
+                    return ConversionResponse(instrument.symbol, instrument.mainCurrency, date, rate)
+                }
+            }
+        }
+        return null
     }
 
     private fun LocalDate.timestamp(): Long = atStartOfDayIn(TimeZone.UTC).epochSeconds

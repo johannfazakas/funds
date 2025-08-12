@@ -119,7 +119,7 @@ class ConversionServiceTest {
 
     @Test
     fun `should raise an exception when attempting to convert investment symbols`(): Unit = runBlocking {
-        val request = ConversionsRequest(listOf(ConversionRequest(Symbol("SXR8_DE"), Currency.EUR, date1)))
+        val request = ConversionsRequest(listOf(ConversionRequest(Currency.EUR, Symbol("SXR8_DE"), date1)))
 
         assertThatThrownBy { runBlocking { conversionService.convert(request) } }
             .isInstanceOf(HistoricalPricingExceptions.ConversionNotPermitted::class.java)

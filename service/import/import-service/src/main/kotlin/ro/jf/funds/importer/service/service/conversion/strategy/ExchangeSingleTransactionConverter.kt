@@ -12,12 +12,12 @@ import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.service.conversion.ImportFundConverter
+import ro.jf.funds.importer.service.service.conversion.ImportTransactionConverter
 import ro.jf.funds.importer.service.service.conversion.getRequiredImportConversions
 import ro.jf.funds.importer.service.service.conversion.toFundRecordAmount
 import java.math.BigDecimal
 
-class ExchangeSingleFundConverter : ImportFundConverter {
+class ExchangeSingleTransactionConverter : ImportTransactionConverter {
     override fun matches(
         transaction: ImportParsedTransaction,
         accountStore: Store<AccountName, AccountTO>,

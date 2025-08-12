@@ -59,10 +59,6 @@ class FundsFormatImportParser(
         if (records == null) {
             return null
         }
-        if (records.any { it.unit is Symbol }) {
-            // TODO(Johann-41) skipping symbols as they are not covered by historical reports
-            return null
-        }
         return ImportParsedTransaction(
             transactionExternalId = transactionId,
             dateTime = csvRows.minOf { it.getDate(DATE_COLUMN, dateFormat) }.atTime(0, 0),

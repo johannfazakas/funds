@@ -49,7 +49,7 @@ class FundsFormatImportParserTest {
 
         val importTransactions = fundsFormatImportParser.parse(importConfiguration, listOf(fileContent))
 
-        assertThat(importTransactions).hasSize(1)
+        assertThat(importTransactions).hasSize(2)
         val transfer = importTransactions[0]
         assertThat(transfer.transactionExternalId).isNotNull
         assertThat(transfer.dateTime).isEqualTo(LocalDateTime.parse("2022-04-04T00:00:00"))
@@ -65,21 +65,20 @@ class FundsFormatImportParserTest {
         assertThat(transfer.records[1].amount).isEqualByComparingTo(BigDecimal("600.0"))
         assertThat(transfer.records[1].labels).containsExactly(Label("investment"))
 
-        // TODO(Johann-41) enable test
-//        val investment = importTransactions[1]
-//        assertThat(investment.transactionExternalId).isNotNull
-//        assertThat(investment.dateTime).isEqualTo(LocalDateTime.parse("2022-04-05T00:00:00"))
-//        assertThat(investment.records).hasSize(2)
-//        assertThat(investment.records[0].accountName).isEqualTo(AccountName("XTB EUR"))
-//        assertThat(investment.records[0].fundName).isEqualTo(FundName("Investments"))
-//        assertThat(investment.records[0].unit).isEqualTo(Currency.EUR)
-//        assertThat(investment.records[0].amount).isEqualByComparingTo(BigDecimal("-544.25"))
-//        assertThat(investment.records[0].labels).isEmpty()
-//        assertThat(investment.records[1].accountName).isEqualTo(AccountName("XTB EUNL"))
-//        assertThat(investment.records[1].fundName).isEqualTo(FundName("Investments"))
-//        assertThat(investment.records[1].unit).isEqualTo(Symbol("EUNL"))
-//        assertThat(investment.records[1].amount).isEqualByComparingTo(BigDecimal("7.0"))
-//        assertThat(investment.records[1].labels).isEmpty()
+        val investment = importTransactions[1]
+        assertThat(investment.transactionExternalId).isNotNull
+        assertThat(investment.dateTime).isEqualTo(LocalDateTime.parse("2022-04-05T00:00:00"))
+        assertThat(investment.records).hasSize(2)
+        assertThat(investment.records[0].accountName).isEqualTo(AccountName("XTB EUR"))
+        assertThat(investment.records[0].fundName).isEqualTo(FundName("Investments"))
+        assertThat(investment.records[0].unit).isEqualTo(Currency.EUR)
+        assertThat(investment.records[0].amount).isEqualByComparingTo(BigDecimal("-544.25"))
+        assertThat(investment.records[0].labels).isEmpty()
+        assertThat(investment.records[1].accountName).isEqualTo(AccountName("XTB EUNL"))
+        assertThat(investment.records[1].fundName).isEqualTo(FundName("Investments"))
+        assertThat(investment.records[1].unit).isEqualTo(Symbol("EUNL"))
+        assertThat(investment.records[1].amount).isEqualByComparingTo(BigDecimal("7.0"))
+        assertThat(investment.records[1].labels).isEmpty()
     }
 
     data class FundsFormatCsvRowContent(

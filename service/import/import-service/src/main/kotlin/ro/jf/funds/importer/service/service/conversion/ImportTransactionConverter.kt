@@ -10,7 +10,7 @@ import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
 
-interface ImportFundConverter {
+interface ImportTransactionConverter {
     fun matches(
         transaction: ImportParsedTransaction,
         accountStore: Store<AccountName, AccountTO>,

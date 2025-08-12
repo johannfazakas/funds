@@ -17,9 +17,6 @@ class ConversionService(
     private val instrumentService: InstrumentService,
 ) {
     suspend fun convert(request: ConversionsRequest): ConversionsResponse {
-        request.conversions.firstOrNull { it.isSymbolConversion() }
-            ?.let { throw HistoricalPricingExceptions.ConversionNotPermitted(it.sourceUnit, it.targetUnit) }
-
         return request.conversions
             .groupBy { it.sourceUnit to it.targetUnit }
             .map { (currencyPair, requests) ->
@@ -42,7 +39,7 @@ class ConversionService(
                 }
             }
 
-            is Symbol -> error("Conversion to financial instrument not accepted")
+            is Symbol -> throw HistoricalPricingExceptions.ConversionNotPermitted(sourceUnit, targetUnit)
         }
     }
 

@@ -26,11 +26,11 @@ import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.service.conversion.strategy.ExchangeSingleFundConverter
-import ro.jf.funds.importer.service.service.conversion.strategy.ImplicitTransferFundConverter
-import ro.jf.funds.importer.service.service.conversion.strategy.ImportFundConverterRegistry
-import ro.jf.funds.importer.service.service.conversion.strategy.SingleRecordFundConverter
-import ro.jf.funds.importer.service.service.conversion.strategy.TransferFundConverter
+import ro.jf.funds.importer.service.service.conversion.strategy.ExchangeSingleTransactionConverter
+import ro.jf.funds.importer.service.service.conversion.strategy.ImplicitTransferTransactionConverter
+import ro.jf.funds.importer.service.service.conversion.strategy.ImportTransactionConverterRegistry
+import ro.jf.funds.importer.service.service.conversion.strategy.SingleRecordTransactionConverter
+import ro.jf.funds.importer.service.service.conversion.strategy.TransferTransactionConverter
 import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID
@@ -41,16 +41,16 @@ class ImportFundConversionServiceTest {
     private val fundSdk = mock<FundSdk>()
     private val fundService = FundService(fundSdk)
     private val historicalPricingSdk = mock<HistoricalPricingSdk>()
-    private val importFundConverterRegistry = ImportFundConverterRegistry(
+    private val importTransactionConverterRegistry = ImportTransactionConverterRegistry(
         listOf(
-            SingleRecordFundConverter(),
-            TransferFundConverter(),
-            ImplicitTransferFundConverter(),
-            ExchangeSingleFundConverter()
+            SingleRecordTransactionConverter(),
+            TransferTransactionConverter(),
+            ImplicitTransferTransactionConverter(),
+            ExchangeSingleTransactionConverter()
         )
     )
     private val importFundConversionService =
-        ImportFundConversionService(accountService, fundService, importFundConverterRegistry, historicalPricingSdk)
+        ImportFundConversionService(accountService, fundService, importTransactionConverterRegistry, historicalPricingSdk)
 
     private val userId: UUID = randomUUID()
 

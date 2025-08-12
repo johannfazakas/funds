@@ -45,7 +45,7 @@ fun HistoricalPricingExceptions.toError(): ErrorTO {
     return when (this) {
         is HistoricalPricingExceptions.ConversionNotPermitted -> ErrorTO(
             title = "Conversion not permitted",
-            detail = null
+            detail = "Conversion not permitted from ${this.sourceUnit} to ${this.targetUnit}",
         )
 
         is HistoricalPricingExceptions.HistoricalPriceNotFound -> ErrorTO(
