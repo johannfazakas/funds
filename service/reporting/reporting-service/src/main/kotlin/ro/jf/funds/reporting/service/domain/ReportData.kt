@@ -1,5 +1,7 @@
 package ro.jf.funds.reporting.service.domain
 
+import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Symbol
 import java.math.BigDecimal
 import java.util.*
 
@@ -25,6 +27,20 @@ data class ReportDataAggregate(
     val value: ValueReport? = null,
     val groupedNet: ByGroup<BigDecimal>? = null,
     val groupedBudget: ByGroup<Budget>? = null,
+    val performance: PerformanceReport? = null,
+    // TODO(Johann) implement performance by unit. it could also be by group defined on unit
+    val instrumentPerformance: ByUnit<PerformanceReport>? = null,
+)
+
+// TODO(Johann) add bucket investment and profit also
+// TODO(Johann) add total value maybe, which is not equal to investment + profit
+data class PerformanceReport(
+    val accumulatedInvestment: BigDecimal,
+    val accumulatedProfit: BigDecimal,
+
+    val investmentsByCurrency: Map<Currency, BigDecimal>,
+    val assetsBySymbol: Map<Symbol, BigDecimal>,
+    // TODO(Johann) could also add percentages
 )
 
 data class ValueReport(

@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Label
 
+// TODO(Johann) whey are all these serializable?
 @Serializable
 data class ReportDataConfiguration(
     val currency: Currency,
@@ -36,6 +37,7 @@ data class ReportsConfiguration(
     val valueReport: ValueReportConfiguration = ValueReportConfiguration(enabled = false),
     val groupedNet: GenericReportConfiguration = GenericReportConfiguration(enabled = false),
     val groupedBudget: GroupedBudgetReportConfiguration = GroupedBudgetReportConfiguration(enabled = false, listOf()),
+    val performance: PerformanceReportConfiguration = PerformanceReportConfiguration(enabled = false),
 ) {
     fun withNet(enabled: Boolean, filter: RecordFilter? = null) = copy(net = NetReportConfiguration(enabled, filter))
     fun withGroupedNet(enabled: Boolean) = copy(groupedNet = GenericReportConfiguration(enabled))
@@ -46,6 +48,8 @@ data class ReportsConfiguration(
         enabled: Boolean,
         distributions: List<GroupedBudgetReportConfiguration.BudgetDistribution> = listOf(),
     ) = copy(groupedBudget = GroupedBudgetReportConfiguration(enabled, distributions))
+
+    fun withPerformanceReport(enabled: Boolean) = copy(performance = PerformanceReportConfiguration(enabled))
 }
 
 @Serializable
@@ -93,6 +97,11 @@ data class GroupedBudgetReportConfiguration(
             ?: error("no default distribution")
     }
 }
+
+@Serializable
+data class PerformanceReportConfiguration(
+    val enabled: Boolean,
+)
 
 @Serializable
 data class ForecastConfiguration(

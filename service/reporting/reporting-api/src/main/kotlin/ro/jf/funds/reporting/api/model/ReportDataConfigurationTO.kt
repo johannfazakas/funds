@@ -33,6 +33,7 @@ data class ReportsConfigurationTO(
     val valueReport: ValueReportConfigurationTO = ValueReportConfigurationTO(false),
     val groupedNet: GenericReportConfigurationTO = GenericReportConfigurationTO(false),
     val groupedBudget: GroupedBudgetReportConfigurationTO = GroupedBudgetReportConfigurationTO(false, listOf()),
+    val performanceReport: PerformanceReportConfigurationTO = PerformanceReportConfigurationTO(false),
 )
 
 @Serializable
@@ -70,6 +71,11 @@ data class GroupedBudgetReportConfigurationTO(
         val percentage: Int,
     )
 }
+
+@Serializable
+data class PerformanceReportConfigurationTO(
+    val enabled: Boolean,
+)
 
 @Serializable
 data class ForecastConfigurationTO(
