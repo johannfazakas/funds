@@ -11,12 +11,10 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import ro.jf.funds.commons.model.*
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
-import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Label
-import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.fund.api.model.FundRecordTO
 import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
@@ -28,24 +26,28 @@ import ro.jf.funds.reporting.service.service.data.ReportDataService
 import ro.jf.funds.reporting.service.service.data.resolver.*
 import java.math.BigDecimal
 import java.util.*
+import java.util.UUID.randomUUID
 
 class ReportDataServiceTest {
     private val reportViewRepository = mock<ReportViewRepository>()
     private val conversionRateService = mock<ConversionRateService>()
     private val fundTransactionSdk = mock<FundTransactionSdk>()
+
     private val resolverRegistry = ReportDataResolverRegistry(
         NetDataResolver(conversionRateService),
         ValueReportDataResolver(conversionRateService),
         GroupedNetDataResolver(conversionRateService),
-        GroupedBudgetDataResolver(conversionRateService)
+        GroupedBudgetDataResolver(conversionRateService),
+        PerformanceReportDataResolver(conversionRateService)
     )
     private val reportDataService =
         ReportDataService(reportViewRepository, fundTransactionSdk, resolverRegistry)
 
-    private val userId = UUID.randomUUID()
-    private val reportViewId = UUID.randomUUID()
+    private val userId = randomUUID()
+    private val reportViewId = randomUUID()
     private val reportViewName = "view name"
-    private val expensesFundId = UUID.randomUUID()
+    private val expensesFundId = randomUUID()
+    private val investmentFundId = randomUUID()
     private val allLabels = labelsOf("need", "want")
 
     @Test
@@ -58,10 +60,10 @@ class ReportDataServiceTest {
                 .withValueReport(enabled = true, filter = RecordFilter(labels = allLabels)),
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(reportView(reportDataConfiguration))
+            .thenReturn(reportView(reportDataConfiguration, expensesFundId))
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 11))
         mockTransactions(
-            interval, listOf(
+            interval, expensesFundId, listOf(
                 ronTransaction(LocalDate(2021, 9, 3), -100, labelsOf("need")),
                 eurTransaction(LocalDate(2021, 9, 15), -40, labelsOf("want")),
                 ronTransaction(LocalDate(2021, 10, 7), -30, labelsOf("want")),
@@ -77,13 +79,13 @@ class ReportDataServiceTest {
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.interval).isEqualTo(interval)
         assertThat(data.data[0].timeBucket)
-            .isEqualTo(TimeBucket(LocalDate.Companion.parse("2021-09-01"), LocalDate.Companion.parse("2021-09-30")))
+            .isEqualTo(TimeBucket(LocalDate.parse("2021-09-01"), LocalDate.parse("2021-09-30")))
         assertThat(data.data[0].aggregate.net).isEqualByComparingTo(BigDecimal("-300.0"))
         assertThat(data.data[1].timeBucket)
-            .isEqualTo(TimeBucket(LocalDate.Companion.parse("2021-10-01"), LocalDate.Companion.parse("2021-10-31")))
+            .isEqualTo(TimeBucket(LocalDate.parse("2021-10-01"), LocalDate.parse("2021-10-31")))
         assertThat(data.data[1].aggregate.net).isEqualByComparingTo(BigDecimal("-30.0"))
         assertThat(data.data[2].timeBucket)
-            .isEqualTo(TimeBucket(LocalDate.Companion.parse("2021-11-01"), LocalDate.Companion.parse("2021-11-30")))
+            .isEqualTo(TimeBucket(LocalDate.parse("2021-11-01"), LocalDate.parse("2021-11-30")))
         assertThat(data.data[2].aggregate.net).isEqualByComparingTo(BigDecimal.ZERO)
     }
 
@@ -97,14 +99,14 @@ class ReportDataServiceTest {
             forecast = ForecastConfiguration(5)
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(reportView(reportDataConfiguration))
+            .thenReturn(reportView(reportDataConfiguration, expensesFundId))
         val interval = ReportDataInterval.Monthly(
             YearMonth(2021, 1),
             YearMonth(2021, 6),
             YearMonth(2021, 9)
         )
         mockTransactions(
-            interval, listOf(
+            interval, expensesFundId, listOf(
                 ronTransaction(LocalDate(2021, 1, 3), -100, labelsOf("need")),
                 ronTransaction(LocalDate(2021, 2, 15), -40, labelsOf("want")),
                 ronTransaction(LocalDate(2021, 3, 7), -30, labelsOf("want")),
@@ -152,15 +154,15 @@ class ReportDataServiceTest {
                 .withGroupedNet(enabled = true)
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(reportView(reportDataConfiguration))
+            .thenReturn(reportView(reportDataConfiguration, expensesFundId))
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 10))
         mockTransactions(
-            interval, listOf(
-                ronTransaction(LocalDate.Companion.parse("2021-09-03"), -100, labelsOf("need")),
-                eurTransaction(LocalDate.Companion.parse("2021-09-04"), -10, labelsOf("need")),
-                eurTransaction(LocalDate.Companion.parse("2021-09-15"), -40, labelsOf("want")),
-                ronTransaction(LocalDate.Companion.parse("2021-10-18"), -30, labelsOf("want")),
-                ronTransaction(LocalDate.Companion.parse("2021-09-28"), -16, labelsOf("other")),
+            interval, expensesFundId, listOf(
+                ronTransaction(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
+                eurTransaction(LocalDate.parse("2021-09-04"), -10, labelsOf("need")),
+                eurTransaction(LocalDate.parse("2021-09-15"), -40, labelsOf("want")),
+                ronTransaction(LocalDate.parse("2021-10-18"), -30, labelsOf("want")),
+                ronTransaction(LocalDate.parse("2021-09-28"), -16, labelsOf("other")),
             )
         )
         whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
@@ -197,12 +199,17 @@ class ReportDataServiceTest {
                     ),
                 )
         )
-        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
+        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(
+            reportView(
+                reportDataConfiguration,
+                expensesFundId
+            )
+        )
         whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.00"))
         whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
         mockTransactions(
-            interval, listOf(
+            interval, expensesFundId, listOf(
                 // previous month with specific distribution
                 ronTransaction(LocalDate(2020, 1, 5), 1000, labelsOf("income")),
                 eurTransaction(LocalDate(2020, 1, 10), 500, labelsOf()),
@@ -274,12 +281,17 @@ class ReportDataServiceTest {
                     ),
                 )
         )
-        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
+        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(
+            reportView(
+                reportDataConfiguration,
+                expensesFundId
+            )
+        )
         whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
         whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 2))
         mockTransactions(
-            interval, listOf(
+            interval, expensesFundId, listOf(
                 // previous month with specific distribution
                 ronTransaction(LocalDate(2020, 1, 5), 1000, labelsOf("income")),
                 // first month
@@ -346,7 +358,12 @@ class ReportDataServiceTest {
                     ),
                 )
         )
-        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
+        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(
+            reportView(
+                reportDataConfiguration,
+                expensesFundId
+            )
+        )
         whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenAnswer {
             val date = it.getArgument<LocalDate>(1)
             if (date.month in listOf(Month.JANUARY, Month.FEBRUARY)) {
@@ -359,7 +376,7 @@ class ReportDataServiceTest {
             .thenReturn(BigDecimal.ONE)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
         mockTransactions(
-            interval, listOf(
+            interval, expensesFundId, listOf(
                 // first month
                 ronTransaction(LocalDate(2020, 2, 5), 2000, labelsOf()),
                 eurTransaction(LocalDate(2020, 2, 15), 500, labelsOf()),
@@ -460,12 +477,17 @@ class ReportDataServiceTest {
                     ),
                 )
         )
-        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
+        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(
+            reportView(
+                reportDataConfiguration,
+                expensesFundId
+            )
+        )
         whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
         whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
         mockTransactions(
-            interval, listOf(
+            interval, expensesFundId, listOf(
                 // first month
                 ronTransaction(LocalDate(2020, 2, 5), 2000, labelsOf()),
                 eurTransaction(LocalDate(2020, 2, 15), 500, labelsOf()),
@@ -568,7 +590,8 @@ class ReportDataServiceTest {
                 ),
             forecast = ForecastConfiguration(3)
         )
-        whenever(reportViewRepository.findById(userId, reportViewId)).thenReturn(reportView(reportDataConfiguration))
+        whenever(reportViewRepository.findById(userId, reportViewId))
+            .thenReturn(reportView(reportDataConfiguration, expensesFundId))
         whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
 
         val interval = ReportDataInterval.Monthly(
@@ -577,7 +600,7 @@ class ReportDataServiceTest {
             YearMonth(2020, 6)
         )
         mockTransactions(
-            interval, listOf(
+            interval, expensesFundId, listOf(
                 // first month
                 ronTransaction(LocalDate(2020, 1, 5), 2000, labelsOf()),
                 ronTransaction(LocalDate(2020, 1, 10), -500, labelsOf("need")),
@@ -628,18 +651,18 @@ class ReportDataServiceTest {
                 .withValueReport(enabled = true),
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(reportView(reportDataConfiguration))
+            .thenReturn(reportView(reportDataConfiguration, expensesFundId))
         whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 11))
         mockTransactions(
-            interval, listOf(
-                ronTransaction(LocalDate.Companion.parse("2021-08-02"), 100, labelsOf("need")),
-                ronTransaction(LocalDate.Companion.parse("2021-09-02"), 200, labelsOf("need")),
-                ronTransaction(LocalDate.Companion.parse("2021-09-03"), -100, labelsOf("need")),
-                ronTransaction(LocalDate.Companion.parse("2021-09-15"), -40, labelsOf("want")),
-                ronTransaction(LocalDate.Companion.parse("2021-10-07"), 400, labelsOf("want")),
-                ronTransaction(LocalDate.Companion.parse("2021-10-07"), -30, labelsOf("want")),
-                ronTransaction(LocalDate.Companion.parse("2021-10-08"), -16, labelsOf("other")),
+            interval, expensesFundId, listOf(
+                ronTransaction(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
+                ronTransaction(LocalDate.parse("2021-09-02"), 200, labelsOf("need")),
+                ronTransaction(LocalDate.parse("2021-09-03"), -100, labelsOf("need")),
+                ronTransaction(LocalDate.parse("2021-09-15"), -40, labelsOf("want")),
+                ronTransaction(LocalDate.parse("2021-10-07"), 400, labelsOf("want")),
+                ronTransaction(LocalDate.parse("2021-10-07"), -30, labelsOf("want")),
+                ronTransaction(LocalDate.parse("2021-10-08"), -16, labelsOf("other")),
             )
         )
 
@@ -670,14 +693,14 @@ class ReportDataServiceTest {
                 .withValueReport(enabled = true),
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
-            .thenReturn(reportView(reportDataConfiguration))
+            .thenReturn(reportView(reportDataConfiguration, expensesFundId))
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 10))
         mockTransactions(
-            interval, listOf(
-                ronTransaction(LocalDate.Companion.parse("2021-08-02"), 100, labelsOf("need")),
-                eurTransaction(LocalDate.Companion.parse("2021-08-05"), 20, labelsOf("need")),
-                ronTransaction(LocalDate.Companion.parse("2021-09-02"), 100, labelsOf("need")),
-                eurTransaction(LocalDate.Companion.parse("2021-09-03"), 20, labelsOf("need")),
+            interval, expensesFundId, listOf(
+                ronTransaction(LocalDate.parse("2021-08-02"), 100, labelsOf("need")),
+                eurTransaction(LocalDate.parse("2021-08-05"), 20, labelsOf("need")),
+                ronTransaction(LocalDate.parse("2021-09-02"), 100, labelsOf("need")),
+                eurTransaction(LocalDate.parse("2021-09-03"), 20, labelsOf("need")),
             )
         )
         whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenAnswer {
@@ -719,9 +742,77 @@ class ReportDataServiceTest {
         )
     }
 
+    @Test
+    fun `get investment performance data`(): Unit = runBlocking {
+        val reportDataConfiguration = ReportDataConfiguration(
+            currency = EUR,
+            groups = null,
+            reports = ReportsConfiguration()
+                .withPerformanceReport(enabled = true),
+        )
+        whenever(reportViewRepository.findById(userId, reportViewId))
+            .thenReturn(reportView(reportDataConfiguration, investmentFundId))
+        val interval = ReportDataInterval.Monthly(YearMonth(2022, 5), YearMonth(2022, 6))
+        mockTransactions(
+            interval, investmentFundId, listOf(
+                investmentEurTransfer(LocalDate.parse("2022-04-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-04-18"), 300, Symbol("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-04-18"), 90, Symbol("I2"), 3),
+
+                investmentEurTransfer(LocalDate.parse("2022-05-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-05-18"), 290, Symbol("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-05-18"), 96, Symbol("I2"), 3),
+
+                investmentEurTransfer(LocalDate.parse("2022-06-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-06-18"), 305, Symbol("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-06-18"), 102, Symbol("I2"), 3),
+            )
+        )
+        whenever(conversionRateService.getRate(eq(userId), any(), any(), eq(EUR))).thenAnswer {
+            val date: LocalDate = it.getArgument<LocalDate>(1)
+            val sourceUnit: FinancialUnit = it.getArgument(2)
+            val targetUnit: Currency = it.getArgument(3)
+            if (sourceUnit == targetUnit) return@thenAnswer BigDecimal.ONE
+            when (sourceUnit) {
+                Symbol("I1") -> when {
+                    date.month == Month.APRIL -> BigDecimal("298")
+                    date.month == Month.MAY -> BigDecimal("289")
+                    date.month == Month.JUNE -> BigDecimal("303")
+                    else -> error("unexpected")
+                }
+
+                Symbol("I2") -> when {
+                    date.month == Month.APRIL -> BigDecimal("29")
+                    date.month == Month.MAY -> BigDecimal("31")
+                    date.month == Month.JUNE -> BigDecimal("33")
+                    else -> error("unexpected")
+                }
+
+                else -> error("unexpected")
+            }
+        }
+
+        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
+
+        assertThat(data.reportViewId).isEqualTo(reportViewId)
+        assertThat(data.interval).isEqualTo(interval)
+        assertThat(data.data).hasSize(2)
+
+        assertThat(data.data[0].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate(2022, 5, 1), LocalDate(2022, 5, 31)))
+        assertThat(data.data[0].aggregate.performance?.accumulatedInvestment).isEqualByComparingTo(BigDecimal(300 + 90 + 290 + 96))
+        assertThat(data.data[0].aggregate.performance?.accumulatedProfit).isEqualByComparingTo(BigDecimal(2 * 289 - (300 + 290) + 6 * 31 - (90 + 96)))
+
+        assertThat(data.data[1].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate(2022, 6, 1), LocalDate(2022, 6, 30)))
+        assertThat(data.data[1].aggregate.performance?.accumulatedInvestment).isEqualByComparingTo(BigDecimal(300 + 90 + 290 + 96 + 305 + 102))
+        assertThat(data.data[1].aggregate.performance?.accumulatedProfit).isEqualByComparingTo(BigDecimal(3 * 303 - (300 + 290 + 305) + 9 * 33 - (90 + 96 + 102)))
+    }
+
     private fun reportView(
         dataConfiguration: ReportDataConfiguration,
-    ) = ReportView(reportViewId, userId, reportViewName, expensesFundId, dataConfiguration)
+        fundId: UUID,
+    ) = ReportView(reportViewId, userId, reportViewName, fundId, dataConfiguration)
 
     private fun ronTransaction(
         date: LocalDate, amount: Int, labels: List<Label>,
@@ -731,29 +822,79 @@ class ReportDataServiceTest {
         date: LocalDate, amount: Int, labels: List<Label>,
     ) = transaction(date, EUR, BigDecimal(amount), labels)
 
+    private fun investmentEurTransfer(date: LocalDate, amountEur: Int) =
+        FundTransactionTO(
+            id = randomUUID(),
+            userId = userId,
+            dateTime = date.atTime(12, 0),
+            records = listOf(
+                FundRecordTO(
+                    id = randomUUID(),
+                    fundId = expensesFundId,
+                    accountId = randomUUID(),
+                    amount = BigDecimal(amountEur * -1),
+                    unit = EUR,
+                    labels = labelsOf("investment")
+                ),
+                FundRecordTO(
+                    id = randomUUID(),
+                    fundId = investmentFundId,
+                    accountId = randomUUID(),
+                    amount = BigDecimal(amountEur),
+                    unit = EUR,
+                    labels = labelsOf("investment")
+                )
+            )
+        )
+
+    private fun investmentOpenPosition(date: LocalDate, eurAmount: Int, instrument: Symbol, instrumentAmount: Int) =
+        FundTransactionTO(
+            id = randomUUID(),
+            userId = userId,
+            dateTime = date.atTime(12, 0),
+            records = listOf(
+                FundRecordTO(
+                    id = randomUUID(),
+                    fundId = investmentFundId,
+                    accountId = randomUUID(),
+                    amount = BigDecimal(eurAmount * -1),
+                    unit = EUR,
+                ),
+                FundRecordTO(
+                    id = randomUUID(),
+                    fundId = investmentFundId,
+                    accountId = randomUUID(),
+                    amount = BigDecimal(instrumentAmount),
+                    unit = instrument,
+                )
+            )
+        )
+
     private fun transaction(
         date: LocalDate, unit: FinancialUnit, amount: BigDecimal, labels: List<Label>,
     ) = FundTransactionTO(
-        id = UUID.randomUUID(),
+        id = randomUUID(),
         userId = userId,
         dateTime = date.atTime(12, 0),
         records = listOf(
             FundRecordTO(
-                id = UUID.randomUUID(),
+                id = randomUUID(),
                 fundId = expensesFundId,
                 unit = unit,
                 amount = amount,
                 labels = labels,
-                accountId = UUID.randomUUID()
+                accountId = randomUUID()
             )
         )
     )
 
-    private suspend fun mockTransactions(interval: ReportDataInterval, transactions: List<FundTransactionTO>) {
+    private suspend fun mockTransactions(
+        interval: ReportDataInterval, fundId: UUID, transactions: List<FundTransactionTO>,
+    ) {
         whenever(
             fundTransactionSdk.listTransactions(
                 userId,
-                expensesFundId,
+                fundId,
                 FundTransactionFilterTO(null, interval.getPreviousLastDay())
             )
         ).thenReturn(ListTO(transactions.filter { it.dateTime.date <= interval.getPreviousLastDay() }))
@@ -761,7 +902,7 @@ class ReportDataServiceTest {
             whenever(
                 fundTransactionSdk.listTransactions(
                     userId,
-                    expensesFundId,
+                    fundId,
                     FundTransactionFilterTO(bucket.from, bucket.to)
                 )
             ).thenReturn(ListTO(transactions.filter { it.dateTime.date >= bucket.from && it.dateTime.date <= bucket.to }))

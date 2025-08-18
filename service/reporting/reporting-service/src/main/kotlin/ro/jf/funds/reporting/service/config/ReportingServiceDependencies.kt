@@ -72,6 +72,7 @@ private val Application.serviceDependencies
         single<GroupedBudgetDataResolver> { GroupedBudgetDataResolver(get()) }
         single<ValueReportDataResolver> { ValueReportDataResolver(get()) }
         single<NetDataResolver> { NetDataResolver(get()) }
-        single<ReportDataResolverRegistry> { ReportDataResolverRegistry(get(), get(), get(), get()) }
+        single<PerformanceReportDataResolver> { PerformanceReportDataResolver(get()) }
+        single<ReportDataResolverRegistry> { ReportDataResolverRegistry(get(), get(), get(), get(), get()) }
         single<ReportDataService> { ReportDataService(get(), get(), get()) }
     }

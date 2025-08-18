@@ -2,6 +2,7 @@ package ro.jf.funds.reporting.sdk
 
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
@@ -36,7 +37,7 @@ class ReportingSdkTest {
     private val viewName = "Expense Report"
 
     @Test
-    fun `create report view`(mockServerClient: MockServerClient): Unit = runBlocking {
+    fun `create report view`(mockServerClient: MockServerClient): Unit = runTest {
         val request = CreateReportViewTO(
             name = viewName,
             fundId = fundId,
