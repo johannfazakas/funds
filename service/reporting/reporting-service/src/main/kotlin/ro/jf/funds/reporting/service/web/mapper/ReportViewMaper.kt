@@ -41,6 +41,9 @@ fun ReportView.toTO(): ReportViewTO = ReportViewTO(
                         )
                     }
                 )
+            },
+            performanceReport = dataConfiguration.reports.performance.let {
+                PerformanceReportConfigurationTO(it.enabled)
             }
         ),
     ),
@@ -65,6 +68,7 @@ fun ReportDataConfigurationTO.toDomain() = ReportDataConfiguration(
             reports.valueReport.filter?.let { RecordFilter(it.labels) }),
         groupedNet = GenericReportConfiguration(reports.groupedNet.enabled),
         groupedBudget = reports.groupedBudget.toDomain(),
+        performance = PerformanceReportConfiguration(reports.performanceReport.enabled),
     ),
     forecast = ForecastConfiguration(
         inputBuckets = forecast.inputBuckets,

@@ -56,6 +56,7 @@ fun Routing.reportingApiRouting(
             call.respond(status = HttpStatusCode.OK, message = response)
         }
 
+        // TODO(Johann) could create dedicated endpoints for different data types, it would lead to less nulls and !! in data. it would be easier to test
         get("/{reportViewId}/data") {
             val userId = call.userId()
             val reportViewId =
@@ -65,7 +66,6 @@ fun Routing.reportingApiRouting(
             log.info { "Get report data request for user $userId and report view $reportViewId in interval $interval." }
             val reportData = reportDataService.getReportViewData(userId, reportViewId, interval).toTO()
             call.respond(status = HttpStatusCode.OK, message = reportData)
-
         }
     }
 }
