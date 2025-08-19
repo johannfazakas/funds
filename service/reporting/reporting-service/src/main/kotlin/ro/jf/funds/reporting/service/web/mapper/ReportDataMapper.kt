@@ -41,6 +41,9 @@ fun ReportData.toTO(): ReportDataTO {
                             left = budget.left
                         )
                     }
+                },
+                performance = dataItem.aggregate.performance?.let {
+                    PerformanceReportTO(it.accumulatedInvestment, it.accumulatedProfit)
                 }
             )
         }

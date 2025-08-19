@@ -28,6 +28,7 @@ data class ReportDataItemTO(
     val value: ValueReportTO? = null,
     val groupedNet: List<ReportDataGroupedNetItemTO>? = null,
     val groupedBudget: List<ReportDataGroupedBudgetItemTO>? = null,
+    val performance: PerformanceReportTO? = null,
 )
 
 @Serializable
@@ -58,4 +59,12 @@ data class ValueReportTO(
     val min: BigDecimal = BigDecimal.ZERO,
     @Serializable(with = BigDecimalSerializer::class)
     val max: BigDecimal = BigDecimal.ZERO,
+)
+
+@Serializable
+data class PerformanceReportTO(
+    @Serializable(with = BigDecimalSerializer::class)
+    val accumulatedInvestment: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
+    val accumulatedProfit: BigDecimal,
 )
