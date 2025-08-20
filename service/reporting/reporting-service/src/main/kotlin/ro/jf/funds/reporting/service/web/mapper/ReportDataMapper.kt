@@ -43,7 +43,13 @@ fun ReportData.toTO(): ReportDataTO {
                     }
                 },
                 performance = dataItem.aggregate.performance?.let {
-                    PerformanceReportTO(it.accumulatedInvestment, it.accumulatedProfit)
+                    PerformanceReportTO(
+                        totalAssetsValue = it.totalAssetsValue,
+                        totalInvestment = it.totalInvestment,
+                        currentInvestment = it.currentInvestment,
+                        totalProfit = it.totalProfit,
+                        currentProfit = it.currentProfit,
+                    )
                 }
             )
         }

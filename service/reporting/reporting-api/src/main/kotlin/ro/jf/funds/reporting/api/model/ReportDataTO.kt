@@ -64,7 +64,15 @@ data class ValueReportTO(
 @Serializable
 data class PerformanceReportTO(
     @Serializable(with = BigDecimalSerializer::class)
-    val accumulatedInvestment: BigDecimal,
+    val totalAssetsValue: BigDecimal,
+
     @Serializable(with = BigDecimalSerializer::class)
-    val accumulatedProfit: BigDecimal,
+    val totalInvestment: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
+    val currentInvestment: BigDecimal,
+
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalProfit: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
+    val currentProfit: BigDecimal,
 )
