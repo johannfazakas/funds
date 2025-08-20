@@ -800,13 +800,29 @@ class ReportDataServiceTest {
 
         assertThat(data.data[0].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2022, 5, 1), LocalDate(2022, 5, 31)))
-        assertThat(data.data[0].aggregate.performance?.accumulatedInvestment).isEqualByComparingTo(BigDecimal(300 + 90 + 290 + 96))
-        assertThat(data.data[0].aggregate.performance?.accumulatedProfit).isEqualByComparingTo(BigDecimal(2 * 289 - (300 + 290) + 6 * 31 - (90 + 96)))
+        // 2 * 289 + 6 * 31 = 764
+        assertThat(data.data[0].aggregate.performance?.totalAssetsValue).isEqualByComparingTo(BigDecimal(764))
+        // 300 + 90 + 290 + 96 = 776
+        assertThat(data.data[0].aggregate.performance?.totalInvestment).isEqualByComparingTo(BigDecimal(776))
+        // 764 - 776 = -12
+        assertThat(data.data[0].aggregate.performance?.totalProfit).isEqualByComparingTo(BigDecimal(-12))
+        // 290 + 96 = 386
+        assertThat(data.data[0].aggregate.performance?.currentInvestment).isEqualByComparingTo(BigDecimal(386))
+        // -12 - (298 + 3 * 29 - 300 - 90) = -7
+        assertThat(data.data[0].aggregate.performance?.currentProfit).isEqualByComparingTo(BigDecimal(-7))
 
         assertThat(data.data[1].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2022, 6, 1), LocalDate(2022, 6, 30)))
-        assertThat(data.data[1].aggregate.performance?.accumulatedInvestment).isEqualByComparingTo(BigDecimal(300 + 90 + 290 + 96 + 305 + 102))
-        assertThat(data.data[1].aggregate.performance?.accumulatedProfit).isEqualByComparingTo(BigDecimal(3 * 303 - (300 + 290 + 305) + 9 * 33 - (90 + 96 + 102)))
+        // 3 * 303 + 9 * 33 = 1206
+        assertThat(data.data[1].aggregate.performance?.totalAssetsValue).isEqualByComparingTo(BigDecimal(1206))
+        // 776 + 305 + 102 = 1183
+        assertThat(data.data[1].aggregate.performance?.totalInvestment).isEqualByComparingTo(BigDecimal(1183))
+        // 1206 - 1183 = 23
+        assertThat(data.data[1].aggregate.performance?.totalProfit).isEqualByComparingTo(BigDecimal(23))
+        // 305 + 102 = 407
+        assertThat(data.data[1].aggregate.performance?.currentInvestment).isEqualByComparingTo(BigDecimal(407))
+        // 23 - -12 = 35
+        assertThat(data.data[1].aggregate.performance?.currentProfit).isEqualByComparingTo(BigDecimal(35))
     }
 
     private fun reportView(

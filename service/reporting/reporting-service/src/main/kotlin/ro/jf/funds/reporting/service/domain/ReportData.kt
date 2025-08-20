@@ -32,11 +32,15 @@ data class ReportDataAggregate(
     val instrumentPerformance: ByUnit<PerformanceReport>? = null,
 )
 
-// TODO(Johann) add bucket investment and profit also
-// TODO(Johann) add total value maybe, which is not equal to investment + profit
+// TODO(Johann-48) add total value maybe, which is not equal to investment + profit
 data class PerformanceReport(
-    val accumulatedInvestment: BigDecimal,
-    val accumulatedProfit: BigDecimal,
+    val totalAssetsValue: BigDecimal,
+
+    val totalInvestment: BigDecimal,
+    val currentInvestment: BigDecimal,
+
+    val totalProfit: BigDecimal,
+    val currentProfit: BigDecimal,
 
     val investmentsByCurrency: Map<Currency, BigDecimal>,
     val assetsBySymbol: Map<Symbol, BigDecimal>,
