@@ -45,6 +45,7 @@ fun ReportData.toTO(): ReportDataTO {
                 performance = dataItem.aggregate.performance?.let {
                     PerformanceReportTO(
                         totalAssetsValue = it.totalAssetsValue,
+                        totalCurrencyValue = it.totalCurrencyValue,
                         totalInvestment = it.totalInvestment,
                         currentInvestment = it.currentInvestment,
                         totalProfit = it.totalProfit,

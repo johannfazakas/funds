@@ -35,6 +35,7 @@ data class ReportDataAggregate(
 // TODO(Johann-48) add total value maybe, which is not equal to investment + profit
 data class PerformanceReport(
     val totalAssetsValue: BigDecimal,
+    val totalCurrencyValue: BigDecimal,
 
     val totalInvestment: BigDecimal,
     val currentInvestment: BigDecimal,
@@ -43,6 +44,7 @@ data class PerformanceReport(
     val currentProfit: BigDecimal,
 
     val investmentsByCurrency: Map<Currency, BigDecimal>,
+    val valueByCurrency: Map<Currency, BigDecimal>,
     val assetsBySymbol: Map<Symbol, BigDecimal>,
     // TODO(Johann) could also add percentages
 )
