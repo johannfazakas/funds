@@ -752,7 +752,11 @@ class ReportDataServiceTest {
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration, investmentFundId))
-        val interval = ReportDataInterval.Monthly(YearMonth(2022, 5), YearMonth(2022, 6))
+        val interval = ReportDataInterval.Monthly(
+            YearMonth(2022, 5),
+            YearMonth(2022, 6),
+            YearMonth(2022, 8)
+        )
         mockTransactions(
             interval, investmentFundId, listOf(
                 investmentEurTransfer(LocalDate.parse("2022-04-15"), 400),
@@ -796,12 +800,14 @@ class ReportDataServiceTest {
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.interval).isEqualTo(interval)
-        assertThat(data.data).hasSize(2)
+        assertThat(data.data).hasSize(4)
 
         assertThat(data.data[0].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2022, 5, 1), LocalDate(2022, 5, 31)))
         // 2 * 289 + 6 * 31 = 764
         assertThat(data.data[0].aggregate.performance?.totalAssetsValue).isEqualByComparingTo(BigDecimal(764))
+        // 400 - 300 - 90 + 400 - 290 - 96 = 24
+        assertThat(data.data[0].aggregate.performance?.totalCurrencyValue).isEqualByComparingTo(BigDecimal(24))
         // 300 + 90 + 290 + 96 = 776
         assertThat(data.data[0].aggregate.performance?.totalInvestment).isEqualByComparingTo(BigDecimal(776))
         // 764 - 776 = -12
@@ -813,6 +819,8 @@ class ReportDataServiceTest {
 
         assertThat(data.data[1].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2022, 6, 1), LocalDate(2022, 6, 30)))
+        // 24 + 400 - 305 - 102 = 17
+        assertThat(data.data[1].aggregate.performance?.totalCurrencyValue).isEqualByComparingTo(BigDecimal(17))
         // 3 * 303 + 9 * 33 = 1206
         assertThat(data.data[1].aggregate.performance?.totalAssetsValue).isEqualByComparingTo(BigDecimal(1206))
         // 776 + 305 + 102 = 1183
