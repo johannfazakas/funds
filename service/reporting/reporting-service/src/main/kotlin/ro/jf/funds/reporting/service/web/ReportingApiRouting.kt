@@ -14,6 +14,7 @@ import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.ReportViewTO
 import ro.jf.funds.reporting.api.model.TimeGranularityTO
 import ro.jf.funds.reporting.api.serializer.YearMonthSerializer
+import ro.jf.funds.reporting.service.domain.ReportDataAggregate
 import ro.jf.funds.reporting.service.domain.ReportDataInterval
 import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.domain.YearMonth
@@ -64,8 +65,19 @@ fun Routing.reportingApiRouting(
                     ?: error("Missing reportViewId path parameter")
             val interval = call.reportDataInterval()
             log.info { "Get report data request for user $userId and report view $reportViewId in interval $interval." }
-            val reportData = reportDataService.getReportViewData(userId, reportViewId, interval).toTO()
+            val reportData = reportDataService
+                .getReportViewData(userId, reportViewId, interval)
+                .toTO(ReportDataAggregate::toTO)
             call.respond(status = HttpStatusCode.OK, message = reportData)
+        }
+
+        get("/{reportViewId}/data/net") {
+            val userId = call.userId()
+            val reportViewId =
+                call.parameters["reportViewId"]?.let(UUID::fromString)
+                    ?: error("Missing reportViewId path parameter")
+            val interval = call.reportDataInterval()
+
         }
     }
 }

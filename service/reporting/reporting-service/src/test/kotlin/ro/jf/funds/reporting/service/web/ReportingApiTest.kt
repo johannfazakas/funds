@@ -33,7 +33,6 @@ import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
-import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
 import ro.jf.funds.reporting.api.model.*
@@ -212,7 +211,7 @@ class ReportingApiTest {
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-        val reportData = response.body<ReportDataTO>()
+        val reportData = response.body<ReportDataTO<ReportDataAggregateTO>>()
         assertThat(reportData.viewId).isEqualTo(reportView.id)
         assertThat(reportData.data).hasSize(28)
         assertThat(reportData.data[0])
@@ -220,8 +219,15 @@ class ReportingApiTest {
                 ReportDataItemTO(
                     timeBucket = DateIntervalTO(LocalDate(2021, 1, 1), LocalDate(2021, 1, 1)),
                     bucketType = BucketTypeTO.REAL,
-                    net = BigDecimal("0.0"),
-                    value = ValueReportTO(BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0"), BigDecimal("0.0")),
+                    data = ReportDataAggregateTO(
+                        net = BigDecimal("0.0"),
+                        value = ValueReportTO(
+                            BigDecimal("0.0"),
+                            BigDecimal("0.0"),
+                            BigDecimal("0.0"),
+                            BigDecimal("0.0")
+                        ),
+                    )
                 )
             )
         assertThat(reportData.data[1])
@@ -229,8 +235,15 @@ class ReportingApiTest {
                 ReportDataItemTO(
                     timeBucket = DateIntervalTO(LocalDate(2021, 1, 2), LocalDate(2021, 1, 2)),
                     bucketType = BucketTypeTO.REAL,
-                    net = BigDecimal("-75.0"),
-                    value = ValueReportTO(BigDecimal("0.0"), BigDecimal("-75.0"), BigDecimal("0.0"), BigDecimal("0.0")),
+                    data = ReportDataAggregateTO(
+                        net = BigDecimal("-75.0"),
+                        value = ValueReportTO(
+                            BigDecimal("0.0"),
+                            BigDecimal("-75.0"),
+                            BigDecimal("0.0"),
+                            BigDecimal("0.0")
+                        ),
+                    )
                 )
             )
     }

@@ -7,11 +7,11 @@ import java.math.BigDecimal
 import java.util.*
 
 @Serializable
-data class ReportDataTO(
+data class ReportDataTO<T>(
     @Serializable(with = UUIDSerializer::class)
     val viewId: UUID,
     val interval: ReportDataIntervalTO,
-    val data: List<ReportDataItemTO>,
+    val data: List<ReportDataItemTO<T>>,
 )
 
 enum class BucketTypeTO {
@@ -20,9 +20,14 @@ enum class BucketTypeTO {
 }
 
 @Serializable
-data class ReportDataItemTO(
+data class ReportDataItemTO<T>(
     val timeBucket: DateIntervalTO,
     val bucketType: BucketTypeTO,
+    val data: T,
+)
+
+@Serializable
+data class ReportDataAggregateTO(
     @Serializable(with = BigDecimalSerializer::class)
     val net: BigDecimal? = null,
     val value: ValueReportTO? = null,
