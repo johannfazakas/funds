@@ -70,7 +70,7 @@ class ReportingSdk(
         fromYear: Int,
         toYear: Int,
         forecastUntilYear: Int?,
-    ): ReportDataTO = withSuspendingSpan {
+    ): ReportDataTO<ReportDataAggregateTO> = withSuspendingSpan {
         log.info { "Get yearly report view data. userId = $userId, reportViewId = $reportViewId, fromYear: $fromYear, toYear: $toYear, forecastUntilYear: $forecastUntilYear" }
         val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data") {
             header(USER_ID_HEADER, userId.toString())
@@ -92,7 +92,7 @@ class ReportingSdk(
         fromYearMonth: YearMonthTO,
         toYearMonth: YearMonthTO,
         forecastUntilYearMonth: YearMonthTO?,
-    ): ReportDataTO = withSuspendingSpan {
+    ): ReportDataTO<ReportDataAggregateTO> = withSuspendingSpan {
         log.info {
             "Get monthly report view data. userId = $userId, reportViewId = $reportViewId, fromYearMonth: $fromYearMonth, toYearMonth: $toYearMonth, forecastUntilYearMonth: $forecastUntilYearMonth"
         }
@@ -118,7 +118,7 @@ class ReportingSdk(
         fromDate: LocalDate,
         toDate: LocalDate,
         forecastUntilDate: LocalDate?,
-    ): ReportDataTO = withSuspendingSpan {
+    ): ReportDataTO<ReportDataAggregateTO> = withSuspendingSpan {
         log.info {
             "Get daily report view data. userId = $userId, reportViewId = $reportViewId, fromDate: $fromDate, toDate: $toDate, forecastUntilDate: $forecastUntilDate"
         }

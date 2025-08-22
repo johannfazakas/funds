@@ -4,8 +4,10 @@ import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Label
 import java.math.BigDecimal
+import java.util.UUID
 
 data class ReportRecord(
+    val transactionId: UUID,
     val date: LocalDate,
     val unit: FinancialUnit,
     val amount: BigDecimal,

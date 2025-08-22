@@ -31,7 +31,6 @@ class ReportingSdkTest {
     private val reportingSdk = ReportingSdk(baseUrl = MockServerContainerExtension.baseUrl)
 
     private val userId = randomUUID()
-    private val taskId = randomUUID()
     private val viewId = randomUUID()
     private val fundId = randomUUID()
     private val viewName = "Expense Report"
@@ -167,7 +166,7 @@ class ReportingSdkTest {
 
     @Test
     fun `get report view data`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val expectedResponse = ReportDataTO(
+        val expectedResponse = ReportDataTO<ReportDataAggregateTO>(
             viewId = viewId,
             interval = ReportDataIntervalTO(
                 granularity = TimeGranularityTO.MONTHLY,
@@ -178,78 +177,84 @@ class ReportingSdkTest {
                 ReportDataItemTO(
                     timeBucket = DateIntervalTO(YearMonthTO(2024, 11), YearMonthTO(2024, 11)),
                     bucketType = BucketTypeTO.REAL,
-                    net = BigDecimal("200.0"),
-                    value = ValueReportTO(
-                        start = BigDecimal("210.0"),
-                        end = BigDecimal("200.0"),
-                        min = BigDecimal("150.0"),
-                        max = BigDecimal("220.0")
-                    ),
-                    groupedNet = null,
-                    groupedBudget = listOf(
-                        ReportDataGroupedBudgetItemTO(
-                            group = "need",
-                            allocated = BigDecimal("150.0"),
-                            spent = BigDecimal("100.0"),
-                            left = BigDecimal("50.0")
+                    data = ReportDataAggregateTO(
+                        net = BigDecimal("200.0"),
+                        value = ValueReportTO(
+                            start = BigDecimal("210.0"),
+                            end = BigDecimal("200.0"),
+                            min = BigDecimal("150.0"),
+                            max = BigDecimal("220.0")
                         ),
-                        ReportDataGroupedBudgetItemTO(
-                            group = "want",
-                            allocated = BigDecimal("200.0"),
-                            spent = BigDecimal("100.0"),
-                            left = BigDecimal("100.0")
+                        groupedNet = null,
+                        groupedBudget = listOf(
+                            ReportDataGroupedBudgetItemTO(
+                                group = "need",
+                                allocated = BigDecimal("150.0"),
+                                spent = BigDecimal("100.0"),
+                                left = BigDecimal("50.0")
+                            ),
+                            ReportDataGroupedBudgetItemTO(
+                                group = "want",
+                                allocated = BigDecimal("200.0"),
+                                spent = BigDecimal("100.0"),
+                                left = BigDecimal("100.0")
+                            )
                         )
                     )
                 ),
                 ReportDataItemTO(
                     timeBucket = DateIntervalTO(YearMonthTO(2024, 12), YearMonthTO(2024, 12)),
                     bucketType = BucketTypeTO.REAL,
-                    net = BigDecimal("300.0"),
-                    value = ValueReportTO(
-                        start = BigDecimal("310.0"),
-                        end = BigDecimal("300.0"),
-                        min = BigDecimal("250.0"),
-                        max = BigDecimal("320.0")
-                    ),
-                    groupedNet = null,
-                    groupedBudget = listOf(
-                        ReportDataGroupedBudgetItemTO(
-                            group = "need",
-                            allocated = BigDecimal("200.0"),
-                            spent = BigDecimal("150.0"),
-                            left = BigDecimal("50.0")
+                    data = ReportDataAggregateTO(
+                        net = BigDecimal("300.0"),
+                        value = ValueReportTO(
+                            start = BigDecimal("310.0"),
+                            end = BigDecimal("300.0"),
+                            min = BigDecimal("250.0"),
+                            max = BigDecimal("320.0")
                         ),
-                        ReportDataGroupedBudgetItemTO(
-                            group = "want",
-                            allocated = BigDecimal("300.0"),
-                            spent = BigDecimal("150.0"),
-                            left = BigDecimal("150.0")
+                        groupedNet = null,
+                        groupedBudget = listOf(
+                            ReportDataGroupedBudgetItemTO(
+                                group = "need",
+                                allocated = BigDecimal("200.0"),
+                                spent = BigDecimal("150.0"),
+                                left = BigDecimal("50.0")
+                            ),
+                            ReportDataGroupedBudgetItemTO(
+                                group = "want",
+                                allocated = BigDecimal("300.0"),
+                                spent = BigDecimal("150.0"),
+                                left = BigDecimal("150.0")
+                            )
                         )
                     )
                 ),
                 ReportDataItemTO(
                     timeBucket = DateIntervalTO(YearMonthTO(2025, 1), YearMonthTO(2025, 1)),
                     bucketType = BucketTypeTO.REAL,
-                    net = BigDecimal("400.0"),
-                    value = ValueReportTO(
-                        start = BigDecimal("410.0"),
-                        end = BigDecimal("400.0"),
-                        min = BigDecimal("350.0"),
-                        max = BigDecimal("420.0")
-                    ),
-                    groupedNet = null,
-                    groupedBudget = listOf(
-                        ReportDataGroupedBudgetItemTO(
-                            group = "need",
-                            allocated = BigDecimal("300.0"),
-                            spent = BigDecimal("200.0"),
-                            left = BigDecimal("100.0")
+                    data = ReportDataAggregateTO(
+                        net = BigDecimal("400.0"),
+                        value = ValueReportTO(
+                            start = BigDecimal("410.0"),
+                            end = BigDecimal("400.0"),
+                            min = BigDecimal("350.0"),
+                            max = BigDecimal("420.0")
                         ),
-                        ReportDataGroupedBudgetItemTO(
-                            group = "want",
-                            allocated = BigDecimal("400.0"),
-                            spent = BigDecimal("200.0"),
-                            left = BigDecimal("200.0")
+                        groupedNet = null,
+                        groupedBudget = listOf(
+                            ReportDataGroupedBudgetItemTO(
+                                group = "need",
+                                allocated = BigDecimal("300.0"),
+                                spent = BigDecimal("200.0"),
+                                left = BigDecimal("100.0")
+                            ),
+                            ReportDataGroupedBudgetItemTO(
+                                group = "want",
+                                allocated = BigDecimal("400.0"),
+                                spent = BigDecimal("200.0"),
+                                left = BigDecimal("200.0")
+                            )
                         )
                     )
                 )
@@ -489,7 +494,7 @@ class ReportingSdkTest {
             })
         })
 
-    private fun MockServerClient.mockGetReportData(expectedResponse: ReportDataTO) {
+    private fun MockServerClient.mockGetReportData(expectedResponse: ReportDataTO<ReportDataAggregateTO>) {
         `when`(
             request()
                 .withMethod("GET")
@@ -537,24 +542,29 @@ class ReportingSdkTest {
                                                 put("to", JsonPrimitive(item.timeBucket.to.toString()))
                                             })
                                             put("bucketType", JsonPrimitive(item.bucketType.name))
-                                            put("net", JsonPrimitive(item.net.toString()))
-                                            put("value", buildJsonObject {
-                                                put("start", JsonPrimitive(item.value?.start.toString()))
-                                                put("end", JsonPrimitive(item.value?.end.toString()))
-                                                put("min", JsonPrimitive(item.value?.min.toString()))
-                                                put("max", JsonPrimitive(item.value?.max.toString()))
-                                            })
-                                            put("groupedBudget", buildJsonArray {
-                                                item.groupedBudget?.forEach { group ->
-                                                    add(
-                                                        buildJsonObject {
-                                                            put("group", JsonPrimitive(group.group))
-                                                            put("spent", JsonPrimitive(group.spent.toString()))
-                                                            put("allocated", JsonPrimitive(group.allocated.toString()))
-                                                            put("left", JsonPrimitive(group.left.toString()))
-                                                        }
-                                                    )
-                                                }
+                                            put("data", buildJsonObject {
+                                                put("net", JsonPrimitive(item.data.net.toString()))
+                                                put("value", buildJsonObject {
+                                                    put("start", JsonPrimitive(item.data.value?.start.toString()))
+                                                    put("end", JsonPrimitive(item.data.value?.end.toString()))
+                                                    put("min", JsonPrimitive(item.data.value?.min.toString()))
+                                                    put("max", JsonPrimitive(item.data.value?.max.toString()))
+                                                })
+                                                put("groupedBudget", buildJsonArray {
+                                                    item.data.groupedBudget?.forEach { group ->
+                                                        add(
+                                                            buildJsonObject {
+                                                                put("group", JsonPrimitive(group.group))
+                                                                put("spent", JsonPrimitive(group.spent.toString()))
+                                                                put(
+                                                                    "allocated",
+                                                                    JsonPrimitive(group.allocated.toString())
+                                                                )
+                                                                put("left", JsonPrimitive(group.left.toString()))
+                                                            }
+                                                        )
+                                                    }
+                                                })
                                             })
                                         }
                                     )

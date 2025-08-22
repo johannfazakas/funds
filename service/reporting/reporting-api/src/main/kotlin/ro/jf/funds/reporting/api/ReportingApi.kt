@@ -2,10 +2,7 @@ package ro.jf.funds.reporting.api
 
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.reporting.api.model.CreateReportViewTO
-import ro.jf.funds.reporting.api.model.ReportDataTO
-import ro.jf.funds.reporting.api.model.ReportViewTO
-import ro.jf.funds.reporting.api.model.YearMonthTO
+import ro.jf.funds.reporting.api.model.*
 import java.util.*
 
 interface ReportingApi {
@@ -19,7 +16,7 @@ interface ReportingApi {
         fromYear: Int,
         toYear: Int,
         forecastUntilYear: Int? = null,
-    ): ReportDataTO
+    ): ReportDataTO<ReportDataAggregateTO>
 
     suspend fun getMonthlyReportViewData(
         userId: UUID,
@@ -27,7 +24,7 @@ interface ReportingApi {
         fromYearMonth: YearMonthTO,
         toYearMonth: YearMonthTO,
         forecastUntilYearMonth: YearMonthTO? = null,
-    ): ReportDataTO
+    ): ReportDataTO<ReportDataAggregateTO>
 
     suspend fun getDailyReportViewData(
         userId: UUID,
@@ -35,5 +32,5 @@ interface ReportingApi {
         fromDate: LocalDate,
         toDate: LocalDate,
         forecastUntilDate: LocalDate? = null,
-    ): ReportDataTO
+    ): ReportDataTO<ReportDataAggregateTO>
 }

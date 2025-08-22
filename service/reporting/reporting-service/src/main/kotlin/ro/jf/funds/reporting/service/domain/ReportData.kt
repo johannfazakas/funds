@@ -5,10 +5,10 @@ import ro.jf.funds.commons.model.Symbol
 import java.math.BigDecimal
 import java.util.*
 
-data class ReportData(
+data class ReportData<T>(
     val reportViewId: UUID,
     val interval: ReportDataInterval,
-    val data: List<BucketData<ReportDataAggregate>>,
+    val data: List<BucketData<T>>,
 )
 
 enum class BucketType {
@@ -19,10 +19,12 @@ enum class BucketType {
 data class BucketData<D>(
     val timeBucket: TimeBucket,
     val bucketType: BucketType,
-    val aggregate: D,
+    val data: D,
 )
 
+// TODO(Johann) aggregate is a bit weird to use. huge object.
 data class ReportDataAggregate(
+    // TODO(Johann) might wrap BigDecimal in a class maybe
     val net: BigDecimal? = null,
     val value: ValueReport? = null,
     val groupedNet: ByGroup<BigDecimal>? = null,
@@ -32,7 +34,6 @@ data class ReportDataAggregate(
     val instrumentPerformance: ByUnit<PerformanceReport>? = null,
 )
 
-// TODO(Johann-48) add total value maybe, which is not equal to investment + profit
 data class PerformanceReport(
     val totalAssetsValue: BigDecimal,
     val totalCurrencyValue: BigDecimal,
