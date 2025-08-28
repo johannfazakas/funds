@@ -4,8 +4,6 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import kotlinx.datetime.LocalDate
-import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
@@ -14,7 +12,6 @@ import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
 import ro.jf.funds.reporting.api.ReportingApi
 import ro.jf.funds.reporting.api.model.*
-import ro.jf.funds.reporting.api.serializer.YearMonthSerializer
 import java.util.*
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5212"
@@ -64,20 +61,17 @@ class ReportingSdk(
         response.body()
     }
 
-    override suspend fun getYearlyReportViewData(
+    // TODO(Johann) remove this endpoint
+    @Deprecated("Will have to be replaced by specific endpoints")
+    override suspend fun getReportViewData(
         userId: UUID,
         reportViewId: UUID,
-        fromYear: Int,
-        toYear: Int,
-        forecastUntilYear: Int?,
+        reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<ReportDataAggregateTO> = withSuspendingSpan {
-        log.info { "Get yearly report view data. userId = $userId, reportViewId = $reportViewId, fromYear: $fromYear, toYear: $toYear, forecastUntilYear: $forecastUntilYear" }
+        log.info { "Get report view data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
         val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data") {
             header(USER_ID_HEADER, userId.toString())
-            parameter("granularity", TimeGranularityTO.YEARLY.name)
-            parameter("fromYear", fromYear.toString())
-            parameter("toYear", toYear.toString())
-            forecastUntilYear?.let { parameter("forecastUntilYear", it.toString()) }
+            dataIntervalParameters(reportDataInterval)
         }
         if (response.status != HttpStatusCode.OK) {
             log.warn { "Unexpected response on get report view data: $response" }
@@ -86,53 +80,28 @@ class ReportingSdk(
         response.body()
     }
 
-    override suspend fun getMonthlyReportViewData(
-        userId: UUID,
-        reportViewId: UUID,
-        fromYearMonth: YearMonthTO,
-        toYearMonth: YearMonthTO,
-        forecastUntilYearMonth: YearMonthTO?,
-    ): ReportDataTO<ReportDataAggregateTO> = withSuspendingSpan {
-        log.info {
-            "Get monthly report view data. userId = $userId, reportViewId = $reportViewId, fromYearMonth: $fromYearMonth, toYearMonth: $toYearMonth, forecastUntilYearMonth: $forecastUntilYearMonth"
-        }
-        val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data") {
-            header(USER_ID_HEADER, userId.toString())
-            parameter("granularity", TimeGranularityTO.MONTHLY.name)
-            parameter("fromYearMonth", Json.encodeToString(YearMonthSerializer(), fromYearMonth))
-            parameter("toYearMonth", Json.encodeToString(YearMonthSerializer(), toYearMonth))
-            forecastUntilYearMonth?.let {
-                parameter("forecastUntilYearMonth", Json.encodeToString(YearMonthSerializer(), it))
+    private fun HttpRequestBuilder.dataIntervalParameters(reportDataInterval: ReportDataIntervalTO) {
+        parameter("granularity", reportDataInterval.granularity.name)
+        when (reportDataInterval) {
+            is ReportDataIntervalTO.Daily -> {
+                parameter("fromDate", reportDataInterval.fromDate.toString())
+                parameter("toDate", reportDataInterval.toDate.toString())
+                reportDataInterval.forecastUntilDate?.let { parameter("forecastUntilDate", it.toString()) }
+            }
+
+            is ReportDataIntervalTO.Monthly -> {
+                parameter("fromYearMonth", reportDataInterval.fromYearMonth.toString())
+                parameter("toYearMonth", reportDataInterval.toYearMonth.toString())
+                reportDataInterval.forecastUntilYearMonth?.let {
+                    parameter("forecastUntilYearMonth", it.toString())
+                }
+            }
+
+            is ReportDataIntervalTO.Yearly -> {
+                parameter("fromYear", reportDataInterval.fromYear.toString())
+                parameter("toYear", reportDataInterval.toYear.toString())
+                reportDataInterval.forecastUntilYear?.let { parameter("forecastUntilYear", it.toString()) }
             }
         }
-        if (response.status != HttpStatusCode.OK) {
-            log.warn { "Unexpected response on get report view data: $response" }
-            throw response.toApiException()
-        }
-        response.body()
-    }
-
-    override suspend fun getDailyReportViewData(
-        userId: UUID,
-        reportViewId: UUID,
-        fromDate: LocalDate,
-        toDate: LocalDate,
-        forecastUntilDate: LocalDate?,
-    ): ReportDataTO<ReportDataAggregateTO> = withSuspendingSpan {
-        log.info {
-            "Get daily report view data. userId = $userId, reportViewId = $reportViewId, fromDate: $fromDate, toDate: $toDate, forecastUntilDate: $forecastUntilDate"
-        }
-        val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data") {
-            header(USER_ID_HEADER, userId.toString())
-            parameter("granularity", TimeGranularityTO.DAILY.name)
-            parameter("fromDate", fromDate.toString())
-            parameter("toDate", toDate.toString())
-            forecastUntilDate?.let { parameter("forecastUntilDate", it.toString()) }
-        }
-        if (response.status != HttpStatusCode.OK) {
-            log.warn { "Unexpected response on get report view data: $response" }
-            throw response.toApiException()
-        }
-        response.body()
     }
 }

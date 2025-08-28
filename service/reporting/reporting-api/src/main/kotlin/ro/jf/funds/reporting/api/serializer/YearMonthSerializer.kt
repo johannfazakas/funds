@@ -14,11 +14,10 @@ class YearMonthSerializer : KSerializer<YearMonthTO> {
 
     override fun deserialize(decoder: Decoder): YearMonthTO {
         val value = decoder.decodeString()
-        val (year, month) = value.split("-").map { it.toInt() }
-        return YearMonthTO(year, month)
+        return YearMonthTO.parse(value)
     }
 
     override fun serialize(encoder: Encoder, value: YearMonthTO) {
-        encoder.encodeString("${value.year}-${value.month}")
+        encoder.encodeString(value.toString())
     }
 }

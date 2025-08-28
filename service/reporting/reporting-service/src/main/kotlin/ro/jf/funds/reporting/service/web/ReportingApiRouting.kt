@@ -6,14 +6,13 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.LocalDate
-import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.web.userId
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.ReportViewTO
 import ro.jf.funds.reporting.api.model.TimeGranularityTO
-import ro.jf.funds.reporting.api.serializer.YearMonthSerializer
+import ro.jf.funds.reporting.api.model.YearMonthTO
 import ro.jf.funds.reporting.service.domain.ReportDataAggregate
 import ro.jf.funds.reporting.service.domain.ReportDataInterval
 import ro.jf.funds.reporting.service.domain.ReportingException
@@ -118,11 +117,10 @@ private fun ApplicationCall.dailyReportDataInterval(): ReportDataInterval.Daily 
             ?: throw ReportingException.MissingIntervalStart(),
         toDate = parameters["toDate"]?.let(LocalDate::parse)
             ?: throw ReportingException.MissingIntervalEnd(),
-        forecastUntilDate = parameters["forecastUntil"]?.let(LocalDate::parse)
+        forecastUntilDate = parameters["forecastUntilDate"]?.let(LocalDate::parse)
     )
 }
 
 private fun String.parseYearMonth(): YearMonth =
-    Json.decodeFromString(YearMonthSerializer(), this)
+    YearMonthTO.parse(this)
         .let { yearMonth -> YearMonth(year = yearMonth.year, month = yearMonth.month) }
-
