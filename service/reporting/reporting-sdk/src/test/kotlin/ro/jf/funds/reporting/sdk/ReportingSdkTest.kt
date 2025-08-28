@@ -3,11 +3,7 @@ package ro.jf.funds.reporting.sdk
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.LocalDate
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -166,12 +162,11 @@ class ReportingSdkTest {
 
     @Test
     fun `get report view data`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val expectedResponse = ReportDataTO<ReportDataAggregateTO>(
+        val expectedResponse = ReportDataTO(
             viewId = viewId,
-            interval = ReportDataIntervalTO(
-                granularity = TimeGranularityTO.MONTHLY,
-                fromDate = LocalDate(2024, 11, 1),
-                toDate = LocalDate(2025, 1, 31),
+            interval = ReportDataIntervalTO.Monthly(
+                fromYearMonth = YearMonthTO(2024, 11),
+                toYearMonth = YearMonthTO(2025, 1),
             ),
             data = listOf(
                 ReportDataItemTO(
@@ -263,7 +258,11 @@ class ReportingSdkTest {
         mockServerClient.mockGetReportData(expectedResponse)
 
         val response =
-            reportingSdk.getMonthlyReportViewData(userId, viewId, YearMonthTO(2024, 11), YearMonthTO(2025, 1))
+            reportingSdk.getReportViewData(
+                userId,
+                viewId,
+                ReportDataIntervalTO.Monthly(YearMonthTO(2024, 11), YearMonthTO(2025, 1))
+            )
 
         assertThat(response).isEqualTo(expectedResponse)
     }
@@ -500,17 +499,7 @@ class ReportingSdkTest {
                 .withMethod("GET")
                 .withPath("/funds-api/reporting/v1/report-views/$viewId/data")
                 .withQueryStringParameters(
-                    mapOf(
-                        "granularity" to listOf(expectedResponse.interval.granularity.name),
-                        "fromYearMonth" to expectedResponse.interval.fromDate
-                            .let { YearMonthTO(it.year, it.monthNumber) }
-                            .let { it -> Json.encodeToString(YearMonthSerializer(), it) }
-                            .let { it: String -> listOf(it) },
-                        "toYearMonth" to expectedResponse.interval.toDate
-                            .let { YearMonthTO(it.year, it.monthNumber) }
-                            .let { it -> Json.encodeToString(YearMonthSerializer(), it) }
-                            .let { it: String -> listOf(it) },
-                    )
+                    expectedDateIntervalQueryParameters(expectedResponse.interval)
                 )
                 .withHeader(USER_ID_HEADER, userId.toString())
         )
@@ -521,18 +510,7 @@ class ReportingSdkTest {
                     .withBody(
                         buildJsonObject {
                             put("viewId", JsonPrimitive(expectedResponse.viewId.toString()))
-                            put("interval", buildJsonObject {
-                                put("granularity", JsonPrimitive(expectedResponse.interval.granularity.name))
-                                put(
-                                    "fromDate",
-                                    JsonPrimitive(expectedResponse.interval.fromDate.toString())
-                                )
-                                put("toDate", JsonPrimitive(expectedResponse.interval.toDate.toString()))
-                                put(
-                                    "forecastUntilDate",
-                                    JsonPrimitive(expectedResponse.interval.forecastUntilDate?.toString())
-                                )
-                            })
+                            put("interval", buildDataIntervalJson(expectedResponse.interval))
                             put("data", buildJsonArray {
                                 expectedResponse.data.forEach { item ->
                                     add(
@@ -573,5 +551,82 @@ class ReportingSdkTest {
                         }.toString()
                     )
             )
+    }
+
+    private fun expectedDateIntervalQueryParameters(interval: ReportDataIntervalTO): Map<String, List<String>> {
+        return when (interval) {
+            is ReportDataIntervalTO.Daily -> {
+                mapOf(
+                    "granularity" to interval.granularity.name,
+                    "fromDate" to interval.fromDate.toString(),
+                    "toDate" to interval.toDate.toString(),
+                    "forecastUntilDate" to interval.forecastUntilDate?.toString(),
+                )
+            }
+
+            is ReportDataIntervalTO.Monthly -> {
+                mapOf(
+                    "granularity" to interval.granularity.name,
+                    "fromYearMonth" to interval.fromYearMonth.toString(),
+                    "toYearMonth" to interval.toYearMonth.toString(),
+                    "forecastUntilYearMonth" to interval.forecastUntilYearMonth?.toString(),
+                )
+            }
+
+            is ReportDataIntervalTO.Yearly -> {
+                mapOf(
+                    "granularity" to interval.granularity.name,
+                    "fromYear" to interval.fromYear.toString(),
+                    "toYear" to interval.toYear.toString(),
+                    "forecastUntilYear" to interval.forecastUntilYear?.toString(),
+                )
+            }
+        }
+            .mapValues { listOfNotNull(it.value) }
+            .filter { it.value.isNotEmpty() }
+    }
+
+    private fun buildDataIntervalJson(
+        interval: ReportDataIntervalTO,
+    ): JsonObject = buildJsonObject {
+        put("granularity", JsonPrimitive(interval.granularity.name))
+        when (interval) {
+            is ReportDataIntervalTO.Yearly -> {
+                put("fromYear", JsonPrimitive(interval.fromYear.toString()))
+                put("toYear", JsonPrimitive(interval.toYear.toString()))
+                if (interval.forecastUntilYear != null) {
+                    put("forecastUntilYear", JsonPrimitive(interval.forecastUntilYear.toString()))
+                }
+            }
+
+            is ReportDataIntervalTO.Monthly -> {
+                put(
+                    "fromYearMonth",
+                    Json.encodeToJsonElement(YearMonthSerializer(), interval.fromYearMonth)
+                )
+                put(
+                    "toYearMonth",
+                    Json.encodeToJsonElement(YearMonthSerializer(), interval.toYearMonth)
+                )
+                if (interval.forecastUntilYearMonth != null) {
+                    put(
+                        "forecastUntilYearMonth",
+                        Json.encodeToJsonElement(YearMonthSerializer(), interval.forecastUntilYearMonth!!)
+                    )
+                }
+            }
+
+            is ReportDataIntervalTO.Daily -> {
+                put(
+                    "fromDate",
+                    JsonPrimitive(interval.fromDate.toString())
+                )
+                put("toDate", JsonPrimitive(interval.toDate.toString()))
+                put(
+                    "forecastUntilDate",
+                    JsonPrimitive(interval.forecastUntilDate?.toString())
+                )
+            }
+        }
     }
 }

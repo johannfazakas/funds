@@ -6,16 +6,7 @@ import ro.jf.funds.reporting.service.domain.*
 fun <D, TO> ReportData<D>.toTO(itemMapper: (D) -> TO): ReportDataTO<TO> {
     return ReportDataTO(
         viewId = this.reportViewId,
-        interval = ReportDataIntervalTO(
-            granularity = when (this.interval) {
-                is ReportDataInterval.Yearly -> TimeGranularityTO.YEARLY
-                is ReportDataInterval.Monthly -> TimeGranularityTO.MONTHLY
-                is ReportDataInterval.Daily -> TimeGranularityTO.DAILY
-            },
-            fromDate = this.interval.fromDate,
-            toDate = this.interval.toDate,
-            forecastUntilDate = this.interval.forecastUntilDate,
-        ),
+        interval = this.interval.toDate(),
         data = data.map { dataItem: BucketData<D> ->
             ReportDataItemTO(
                 timeBucket = DateIntervalTO(dataItem.timeBucket.from, dataItem.timeBucket.to),
@@ -25,6 +16,20 @@ fun <D, TO> ReportData<D>.toTO(itemMapper: (D) -> TO): ReportDataTO<TO> {
         }
     )
 }
+
+fun ReportDataInterval.toDate(): ReportDataIntervalTO =
+    when (this) {
+        is ReportDataInterval.Yearly -> ReportDataIntervalTO.Yearly(this.fromYear, this.toYear, this.forecastUntilYear)
+        is ReportDataInterval.Monthly -> ReportDataIntervalTO.Monthly(
+            this.fromYearMonth.toTO(),
+            this.toYearMonth.toTO(),
+            this.forecastUntilYearMonth?.toTO()
+        )
+
+        is ReportDataInterval.Daily -> ReportDataIntervalTO.Daily(this.fromDate, this.toDate, this.forecastUntilDate)
+    }
+
+fun YearMonth.toTO() = YearMonthTO(this.year, this.month)
 
 fun ReportDataAggregate.toTO(): ReportDataAggregateTO =
     ReportDataAggregateTO(

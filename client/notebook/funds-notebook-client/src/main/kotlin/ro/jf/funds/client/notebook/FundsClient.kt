@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import kotlinx.datetime.*
-import kotlinx.datetime.TimeZone
 import org.jetbrains.kotlinx.dataframe.DataFrame
 import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
 import org.jetbrains.kotlinx.kandy.dsl.internal.dataframe.DataFramePlotBuilder
@@ -141,45 +140,21 @@ class FundsClient(
         reportingSdk.createReportView(user.id, request)
     }
 
-    fun getYearlyReportViewData(
-        user: UserTO, reportName: String, fromYear: Int, toYear: Int, forecastUntilYear: Int? = null,
-    ): ReportDataTO = run {
-        val reportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportName }
+    fun getReportViewData(
+        user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
+    ): ReportDataTO<ReportDataAggregateTO> = run {
+        val reportView = reportingSdk.listReportViews(user.id).items
+            .firstOrNull { it.name == reportName }
             ?: error("Report view with name '$reportName' not found for user ${user.username}")
-        reportingSdk.getYearlyReportViewData(user.id, reportView.id, fromYear, toYear, forecastUntilYear)
-    }
 
-    fun getMonthlyReportViewData(
-        user: UserTO,
-        reportName: String,
-        fromYearMonth: YearMonthTO,
-        toYearMonth: YearMonthTO,
-        forecastUntilYearMonth: YearMonthTO? = null,
-    ): ReportDataTO = run {
-        val reportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportName }
-            ?: error("Report view with name '$reportName' not found for user ${user.username}")
-        reportingSdk.getMonthlyReportViewData(
-            user.id, reportView.id, fromYearMonth, toYearMonth, forecastUntilYearMonth
-        )
-    }
-
-    fun getDailyReportViewData(
-        user: UserTO,
-        reportName: String,
-        fromDate: LocalDate,
-        toDate: LocalDate,
-        forecastUntilDate: LocalDate? = null,
-    ): ReportDataTO = run {
-        val reportView = reportingSdk.listReportViews(user.id).items.firstOrNull { it.name == reportName }
-            ?: error("Report view with name '$reportName' not found for user ${user.username}")
-        reportingSdk.getDailyReportViewData(user.id, reportView.id, fromDate, toDate, forecastUntilDate)
+        reportingSdk.getReportViewData(user.id, reportView.id, reportDataIntervalTO)
     }
 
     fun plotReportData(
         title: String,
-        reportData: ReportDataTO,
-        plottedLines: Map<Color, (ReportDataItemTO) -> BigDecimal> = emptyMap(),
-        plottedAreas: Map<Color, (ReportDataItemTO) -> BigDecimal> = emptyMap(),
+        reportData: ReportDataTO<ReportDataAggregateTO>,
+        plottedLines: Map<Color, (ReportDataItemTO<ReportDataAggregateTO>) -> BigDecimal> = emptyMap(),
+        plottedAreas: Map<Color, (ReportDataItemTO<ReportDataAggregateTO>) -> BigDecimal> = emptyMap(),
     ): Plot {
         val plottedData = plottedLines + plottedAreas
         val dataFrame = plottedData
@@ -217,7 +192,7 @@ class FundsClient(
             }
     }
 
-    private fun DataFramePlotBuilder<Any?>.plotTimeAxis(reportData: ReportDataTO) {
+    private fun DataFramePlotBuilder<Any?>.plotTimeAxis(reportData: ReportDataTO<ReportDataAggregateTO>) {
         x("timeBucket") {
             val format = when (reportData.interval.granularity) {
                 TimeGranularityTO.YEARLY -> "%Y"
@@ -232,9 +207,9 @@ class FundsClient(
     }
 
     private fun DataFramePlotBuilder<Any?>.plotForecastBorderLine(
-        plottedData: Map<Color, (ReportDataItemTO) -> BigDecimal>,
+        plottedData: Map<Color, (ReportDataItemTO<ReportDataAggregateTO>) -> BigDecimal>,
         dataFrame: DataFrame<*>,
-        reportData: ReportDataTO,
+        reportData: ReportDataTO<ReportDataAggregateTO>,
     ) {
         line {
             val values = plottedData.keys
