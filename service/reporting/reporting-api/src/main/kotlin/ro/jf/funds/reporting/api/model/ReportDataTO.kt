@@ -30,12 +30,19 @@ data class ReportDataItemTO<T>(
 data class ReportDataAggregateTO(
     @Serializable(with = BigDecimalSerializer::class)
     val net: BigDecimal? = null,
-    val value: ValueReportTO? = null,
+    val value: ValueReportItemTO? = null,
     val groupedNet: List<ReportDataGroupedNetItemTO>? = null,
     val groupedBudget: List<ReportDataGroupedBudgetItemTO>? = null,
     val performance: PerformanceReportTO? = null,
 )
 
+@Serializable
+data class ReportDataNetItemTO(
+    @Serializable(with = BigDecimalSerializer::class)
+    val net: BigDecimal,
+)
+
+// TODO(Johann) remove all the nullables in these classes
 @Serializable
 data class ReportDataGroupedNetItemTO(
     val group: String,
@@ -54,8 +61,9 @@ data class ReportDataGroupedBudgetItemTO(
     val left: BigDecimal?,
 )
 
+// TODO(Johann) names don't seem aligned very well
 @Serializable
-data class ValueReportTO(
+data class ValueReportItemTO(
     @Serializable(with = BigDecimalSerializer::class)
     val start: BigDecimal = BigDecimal.ZERO,
     @Serializable(with = BigDecimalSerializer::class)

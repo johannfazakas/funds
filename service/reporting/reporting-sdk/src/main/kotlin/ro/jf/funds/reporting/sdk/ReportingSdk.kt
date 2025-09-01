@@ -69,15 +69,80 @@ class ReportingSdk(
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<ReportDataAggregateTO> = withSuspendingSpan {
         log.info { "Get report view data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
-        val response = httpClient.get("$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data") {
+        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data")
+    }
+
+    override suspend fun getNetData(
+        userId: UUID,
+        reportViewId: UUID,
+        reportDataInterval: ReportDataIntervalTO,
+    ): ReportDataTO<ReportDataNetItemTO> = withSuspendingSpan {
+        log.info { "Get net data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/net")
+    }
+
+    override suspend fun getGroupedNetData(
+        userId: UUID,
+        reportViewId: UUID,
+        reportDataInterval: ReportDataIntervalTO,
+    ): ReportDataTO<List<ReportDataGroupedNetItemTO>> = withSuspendingSpan {
+        log.info { "Get grouped net data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        getData(
+            userId,
+            reportDataInterval,
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/grouped-net"
+        )
+    }
+
+    override suspend fun getValueData(
+        userId: UUID,
+        reportViewId: UUID,
+        reportDataInterval: ReportDataIntervalTO,
+    ): ReportDataTO<ValueReportItemTO> = withSuspendingSpan {
+        log.info { "Get value data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/value")
+    }
+
+    override suspend fun getGroupedBudgetData(
+        userId: UUID,
+        reportViewId: UUID,
+        reportDataInterval: ReportDataIntervalTO,
+    ): ReportDataTO<List<ReportDataGroupedBudgetItemTO>> = withSuspendingSpan {
+        log.info { "Get grouped budget data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        getData(
+            userId,
+            reportDataInterval,
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/grouped-budget"
+        )
+    }
+
+    override suspend fun getPerformanceData(
+        userId: UUID,
+        reportViewId: UUID,
+        reportDataInterval: ReportDataIntervalTO,
+    ): ReportDataTO<PerformanceReportTO> = withSuspendingSpan {
+        log.info { "Get performance data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        getData(
+            userId,
+            reportDataInterval,
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/performance"
+        )
+    }
+
+    private suspend inline fun <reified T> getData(
+        userId: UUID,
+        reportDataInterval: ReportDataIntervalTO,
+        urlString: String,
+    ): ReportDataTO<T> {
+        val response = httpClient.get(urlString) {
             header(USER_ID_HEADER, userId.toString())
             dataIntervalParameters(reportDataInterval)
         }
         if (response.status != HttpStatusCode.OK) {
-            log.warn { "Unexpected response on get report view data: $response" }
+            log.warn { "Unexpected response on get net data: $response" }
             throw response.toApiException()
         }
-        response.body()
+        return response.body()
     }
 
     private fun HttpRequestBuilder.dataIntervalParameters(reportDataInterval: ReportDataIntervalTO) {

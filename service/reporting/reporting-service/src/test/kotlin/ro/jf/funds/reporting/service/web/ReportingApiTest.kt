@@ -221,7 +221,7 @@ class ReportingApiTest {
                     bucketType = BucketTypeTO.REAL,
                     data = ReportDataAggregateTO(
                         net = BigDecimal("0.0"),
-                        value = ValueReportTO(
+                        value = ValueReportItemTO(
                             BigDecimal("0.0"),
                             BigDecimal("0.0"),
                             BigDecimal("0.0"),
@@ -237,7 +237,7 @@ class ReportingApiTest {
                     bucketType = BucketTypeTO.REAL,
                     data = ReportDataAggregateTO(
                         net = BigDecimal("-75.0"),
-                        value = ValueReportTO(
+                        value = ValueReportItemTO(
                             BigDecimal("0.0"),
                             BigDecimal("-75.0"),
                             BigDecimal("0.0"),

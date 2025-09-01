@@ -174,7 +174,7 @@ class ReportingSdkTest {
                     bucketType = BucketTypeTO.REAL,
                     data = ReportDataAggregateTO(
                         net = BigDecimal("200.0"),
-                        value = ValueReportTO(
+                        value = ValueReportItemTO(
                             start = BigDecimal("210.0"),
                             end = BigDecimal("200.0"),
                             min = BigDecimal("150.0"),
@@ -202,7 +202,7 @@ class ReportingSdkTest {
                     bucketType = BucketTypeTO.REAL,
                     data = ReportDataAggregateTO(
                         net = BigDecimal("300.0"),
-                        value = ValueReportTO(
+                        value = ValueReportItemTO(
                             start = BigDecimal("310.0"),
                             end = BigDecimal("300.0"),
                             min = BigDecimal("250.0"),
@@ -230,7 +230,7 @@ class ReportingSdkTest {
                     bucketType = BucketTypeTO.REAL,
                     data = ReportDataAggregateTO(
                         net = BigDecimal("400.0"),
-                        value = ValueReportTO(
+                        value = ValueReportItemTO(
                             start = BigDecimal("410.0"),
                             end = BigDecimal("400.0"),
                             min = BigDecimal("350.0"),
@@ -255,10 +255,53 @@ class ReportingSdkTest {
                 )
             )
         )
-        mockServerClient.mockGetReportData(expectedResponse)
+        mockServerClient.mockGetReportData("/funds-api/reporting/v1/report-views/$viewId/data", expectedResponse, ::buildAggregateItemJsonObject)
 
         val response =
             reportingSdk.getReportViewData(
+                userId,
+                viewId,
+                ReportDataIntervalTO.Monthly(YearMonthTO(2024, 11), YearMonthTO(2025, 1))
+            )
+
+        assertThat(response).isEqualTo(expectedResponse)
+    }
+
+    @Test
+    fun `get net data`(mockServerClient: MockServerClient): Unit = runBlocking {
+        val expectedResponse = ReportDataTO(
+            viewId = viewId,
+            interval = ReportDataIntervalTO.Monthly(
+                fromYearMonth = YearMonthTO(2024, 11),
+                toYearMonth = YearMonthTO(2025, 1),
+            ),
+            data = listOf(
+                ReportDataItemTO(
+                    timeBucket = DateIntervalTO(YearMonthTO(2024, 11), YearMonthTO(2024, 11)),
+                    bucketType = BucketTypeTO.REAL,
+                    data = ReportDataNetItemTO(BigDecimal("200.0"))
+                ),
+                ReportDataItemTO(
+                    timeBucket = DateIntervalTO(YearMonthTO(2024, 12), YearMonthTO(2024, 12)),
+                    bucketType = BucketTypeTO.REAL,
+                    data = ReportDataNetItemTO(BigDecimal("300.0"))
+                ),
+                ReportDataItemTO(
+                    timeBucket = DateIntervalTO(YearMonthTO(2025, 1), YearMonthTO(2025, 1)),
+                    bucketType = BucketTypeTO.REAL,
+                    data = ReportDataNetItemTO(BigDecimal("400.0"))
+                )
+            )
+        )
+
+        mockServerClient.mockGetReportData(
+            "/funds-api/reporting/v1/report-views/$viewId/data/net",
+            expectedResponse,
+            ::buildNetItemJsonObject
+        )
+
+        val response =
+            reportingSdk.getNetData(
                 userId,
                 viewId,
                 ReportDataIntervalTO.Monthly(YearMonthTO(2024, 11), YearMonthTO(2025, 1))
@@ -493,13 +536,17 @@ class ReportingSdkTest {
             })
         })
 
-    private fun MockServerClient.mockGetReportData(expectedResponse: ReportDataTO<ReportDataAggregateTO>) {
+    private fun <T> MockServerClient.mockGetReportData(
+        path: String,
+        response: ReportDataTO<T>,
+        itemDataMapper: (T) -> JsonObject,
+    ) {
         `when`(
             request()
                 .withMethod("GET")
-                .withPath("/funds-api/reporting/v1/report-views/$viewId/data")
+                .withPath(path)
                 .withQueryStringParameters(
-                    expectedDateIntervalQueryParameters(expectedResponse.interval)
+                    expectedDateIntervalQueryParameters(response.interval)
                 )
                 .withHeader(USER_ID_HEADER, userId.toString())
         )
@@ -509,10 +556,10 @@ class ReportingSdkTest {
                     .withContentType(MediaType.APPLICATION_JSON)
                     .withBody(
                         buildJsonObject {
-                            put("viewId", JsonPrimitive(expectedResponse.viewId.toString()))
-                            put("interval", buildDataIntervalJson(expectedResponse.interval))
+                            put("viewId", JsonPrimitive(response.viewId.toString()))
+                            put("interval", buildDataIntervalJson(response.interval))
                             put("data", buildJsonArray {
-                                expectedResponse.data.forEach { item ->
+                                response.data.forEach { item ->
                                     add(
                                         buildJsonObject {
                                             put("timeBucket", buildJsonObject {
@@ -520,30 +567,7 @@ class ReportingSdkTest {
                                                 put("to", JsonPrimitive(item.timeBucket.to.toString()))
                                             })
                                             put("bucketType", JsonPrimitive(item.bucketType.name))
-                                            put("data", buildJsonObject {
-                                                put("net", JsonPrimitive(item.data.net.toString()))
-                                                put("value", buildJsonObject {
-                                                    put("start", JsonPrimitive(item.data.value?.start.toString()))
-                                                    put("end", JsonPrimitive(item.data.value?.end.toString()))
-                                                    put("min", JsonPrimitive(item.data.value?.min.toString()))
-                                                    put("max", JsonPrimitive(item.data.value?.max.toString()))
-                                                })
-                                                put("groupedBudget", buildJsonArray {
-                                                    item.data.groupedBudget?.forEach { group ->
-                                                        add(
-                                                            buildJsonObject {
-                                                                put("group", JsonPrimitive(group.group))
-                                                                put("spent", JsonPrimitive(group.spent.toString()))
-                                                                put(
-                                                                    "allocated",
-                                                                    JsonPrimitive(group.allocated.toString())
-                                                                )
-                                                                put("left", JsonPrimitive(group.left.toString()))
-                                                            }
-                                                        )
-                                                    }
-                                                })
-                                            })
+                                            put("data", itemDataMapper(item.data))
                                         }
                                     )
                                 }
@@ -552,6 +576,37 @@ class ReportingSdkTest {
                     )
             )
     }
+
+    private fun buildAggregateItemJsonObject(itemData: ReportDataAggregateTO): JsonObject =
+        buildJsonObject {
+            put("net", JsonPrimitive(itemData.net.toString()))
+            put("value", buildJsonObject {
+                put("start", JsonPrimitive(itemData.value?.start.toString()))
+                put("end", JsonPrimitive(itemData.value?.end.toString()))
+                put("min", JsonPrimitive(itemData.value?.min.toString()))
+                put("max", JsonPrimitive(itemData.value?.max.toString()))
+            })
+            put("groupedBudget", buildJsonArray {
+                itemData.groupedBudget?.forEach { group ->
+                    add(
+                        buildJsonObject {
+                            put("group", JsonPrimitive(group.group))
+                            put("spent", JsonPrimitive(group.spent.toString()))
+                            put(
+                                "allocated",
+                                JsonPrimitive(group.allocated.toString())
+                            )
+                            put("left", JsonPrimitive(group.left.toString()))
+                        }
+                    )
+                }
+            })
+        }
+
+    private fun buildNetItemJsonObject(itemData: ReportDataNetItemTO): JsonObject =
+        buildJsonObject {
+            put("net", JsonPrimitive(itemData.net.toString()))
+        }
 
     private fun expectedDateIntervalQueryParameters(interval: ReportDataIntervalTO): Map<String, List<String>> {
         return when (interval) {

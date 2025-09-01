@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import kotlinx.datetime.*
+import kotlinx.datetime.TimeZone
 import org.jetbrains.kotlinx.dataframe.DataFrame
 import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
 import org.jetbrains.kotlinx.kandy.dsl.internal.dataframe.DataFramePlotBuilder
@@ -150,16 +151,51 @@ class FundsClient(
         reportingSdk.getReportViewData(user.id, reportView.id, reportDataIntervalTO)
     }
 
-    fun plotReportData(
+    fun getReportNetData(
+        user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
+    ): ReportDataTO<ReportDataNetItemTO> = run {
+        val reportView = getReportViewByName(user, reportName)
+        reportingSdk.getNetData(user.id, reportView.id, reportDataIntervalTO)
+    }
+
+    fun getReportGroupedNetData(
+        user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
+    ): ReportDataTO<List<ReportDataGroupedNetItemTO>> = run {
+        val reportView = getReportViewByName(user, reportName)
+        reportingSdk.getGroupedNetData(user.id, reportView.id, reportDataIntervalTO)
+    }
+
+    fun getReportValueData(
+        user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
+    ): ReportDataTO<ValueReportItemTO> = run {
+        val reportView = getReportViewByName(user, reportName)
+        reportingSdk.getValueData(user.id, reportView.id, reportDataIntervalTO)
+    }
+
+    fun getReportGroupedBudgetData(
+        user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
+    ): ReportDataTO<List<ReportDataGroupedBudgetItemTO>> = run {
+        val reportView = getReportViewByName(user, reportName)
+        reportingSdk.getGroupedBudgetData(user.id, reportView.id, reportDataIntervalTO)
+    }
+
+    fun getReportPerformanceData(
+        user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
+    ): ReportDataTO<PerformanceReportTO> = run {
+        val reportView = getReportViewByName(user, reportName)
+        reportingSdk.getPerformanceData(user.id, reportView.id, reportDataIntervalTO)
+    }
+
+    fun <T> plotReportData(
         title: String,
-        reportData: ReportDataTO<ReportDataAggregateTO>,
-        plottedLines: Map<Color, (ReportDataItemTO<ReportDataAggregateTO>) -> BigDecimal> = emptyMap(),
-        plottedAreas: Map<Color, (ReportDataItemTO<ReportDataAggregateTO>) -> BigDecimal> = emptyMap(),
+        reportData: ReportDataTO<T>,
+        plottedLines: Map<Color, (T) -> BigDecimal> = emptyMap(),
+        plottedAreas: Map<Color, (T) -> BigDecimal> = emptyMap(),
     ): Plot {
         val plottedData = plottedLines + plottedAreas
         val dataFrame = plottedData
             .map { (color, dataMapper) ->
-                color.toString() to reportData.data.map { data -> dataMapper(data) }
+                color.toString() to reportData.data.map { data -> dataMapper(data.data) }
             }
             .plus("timeBucket" to reportData.data.map { it.timeBucket.from })
             .let { dataFrameOf(*it.toTypedArray()) }
@@ -192,7 +228,7 @@ class FundsClient(
             }
     }
 
-    private fun DataFramePlotBuilder<Any?>.plotTimeAxis(reportData: ReportDataTO<ReportDataAggregateTO>) {
+    private fun DataFramePlotBuilder<Any?>.plotTimeAxis(reportData: ReportDataTO<*>) {
         x("timeBucket") {
             val format = when (reportData.interval.granularity) {
                 TimeGranularityTO.YEARLY -> "%Y"
@@ -206,10 +242,10 @@ class FundsClient(
         }
     }
 
-    private fun DataFramePlotBuilder<Any?>.plotForecastBorderLine(
-        plottedData: Map<Color, (ReportDataItemTO<ReportDataAggregateTO>) -> BigDecimal>,
+    private fun <T> DataFramePlotBuilder<Any?>.plotForecastBorderLine(
+        plottedData: Map<Color, (T) -> BigDecimal>,
         dataFrame: DataFrame<*>,
-        reportData: ReportDataTO<ReportDataAggregateTO>,
+        reportData: ReportDataTO<T>,
     ) {
         line {
             val values = plottedData.keys
@@ -257,6 +293,12 @@ class FundsClient(
                 ?: error("Path '$path' not found in YAML file '${yamlFile.name}'")
         }
         return yaml.decodeFromYamlNode(yamlNode)
+    }
+
+    private suspend fun getReportViewByName(user: UserTO, reportName: String): ReportViewTO {
+        return reportingSdk.listReportViews(user.id).items
+            .firstOrNull { it.name == reportName }
+            ?: error("Report view with name '$reportName' not found for user ${user.username}")
     }
 
     private fun <T> run(block: suspend () -> T): T = scope.future { block() }.join()
