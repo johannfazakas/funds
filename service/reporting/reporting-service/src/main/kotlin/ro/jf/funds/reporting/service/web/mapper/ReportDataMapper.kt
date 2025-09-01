@@ -2,6 +2,7 @@ package ro.jf.funds.reporting.service.web.mapper
 
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.domain.*
+import java.math.BigDecimal
 
 fun <D, TO> ReportData<D>.toTO(itemMapper: (D) -> TO): ReportDataTO<TO> {
     return ReportDataTO(
@@ -35,7 +36,7 @@ fun ReportDataAggregate.toTO(): ReportDataAggregateTO =
     ReportDataAggregateTO(
         net = this.net,
         value = this.value?.let {
-            ValueReportTO(start = it.start, end = it.end, min = it.min, max = it.max)
+            ValueReportItemTO(start = it.start, end = it.end, min = it.min, max = it.max)
         },
         groupedNet = this.run {
             groupedNet?.map { (group, net) ->
@@ -71,3 +72,41 @@ fun BucketType.toTO(): BucketTypeTO = when (this) {
     BucketType.REAL -> BucketTypeTO.REAL
     BucketType.FORECAST -> BucketTypeTO.FORECAST
 }
+
+fun BigDecimal.toNetTO(): ReportDataNetItemTO = ReportDataNetItemTO(this)
+
+fun ByGroup<BigDecimal>.toGroupedNetTO(): List<ReportDataGroupedNetItemTO> =
+    this.map { (group, net) ->
+        ReportDataGroupedNetItemTO(
+            group = group,
+            net = net
+        )
+    }
+
+fun ValueReport.toValueReportTO(): ValueReportItemTO =
+    ValueReportItemTO(
+        start = this.start,
+        end = this.end,
+        min = this.min,
+        max = this.max
+    )
+
+fun ByGroup<Budget>.toGroupedBudgetTO(): List<ReportDataGroupedBudgetItemTO> =
+    this.map { (group, budget) ->
+        ReportDataGroupedBudgetItemTO(
+            group = group,
+            allocated = budget.allocated,
+            spent = budget.spent,
+            left = budget.left
+        )
+    }
+
+fun PerformanceReport.toPerformanceTO(): PerformanceReportTO =
+    PerformanceReportTO(
+        totalAssetsValue = this.totalAssetsValue,
+        totalCurrencyValue = this.totalCurrencyValue,
+        totalInvestment = this.totalInvestment,
+        currentInvestment = this.currentInvestment,
+        totalProfit = this.totalProfit,
+        currentProfit = this.currentProfit
+    )

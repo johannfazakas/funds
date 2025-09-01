@@ -1,6 +1,5 @@
 package ro.jf.funds.reporting.service.domain
 
-import ro.jf.funds.reporting.api.model.YearMonthTO
 import java.util.*
 
 
@@ -36,4 +35,7 @@ sealed class ReportingException(message: String) : RuntimeException(message) {
 
     class GroupBudgetPercentageSumInvalid(val userId: UUID, val from: YearMonth?, val sum: Int) :
         ReportingException("Group budget percentage sum $sum is invalid for distribution starting at $from")
+
+    class FeatureDisabled(val userId: UUID, reportViewId: UUID) :
+        ReportingException("Feature is disabled for user $userId on reportView $reportViewId")
 }
