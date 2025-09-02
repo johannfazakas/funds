@@ -9,12 +9,6 @@ interface ReportingApi {
     suspend fun listReportViews(userId: UUID): ListTO<ReportViewTO>
     suspend fun getReportView(userId: UUID, reportViewId: UUID): ReportViewTO
 
-    suspend fun getReportViewData(
-        userId: UUID,
-        reportViewId: UUID,
-        reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<ReportDataAggregateTO>
-
     suspend fun getNetData(
         userId: UUID,
         reportViewId: UUID,
@@ -25,20 +19,19 @@ interface ReportingApi {
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<List<GroupNetReportTO>>
+    ): ReportDataTO<GroupedTO<GroupNetReportTO>>
 
     suspend fun getValueData(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<ValueReportItemTO>
+    ): ReportDataTO<ValueReportTO>
 
-    // TODO(Johann) think again, should T be a List here?
     suspend fun getGroupedBudgetData(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<List<ReportDataGroupedBudgetItemTO>>
+    ): ReportDataTO<GroupedTO<GroupedBudgetReportTO>>
 
     suspend fun getPerformanceData(
         userId: UUID,

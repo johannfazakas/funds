@@ -10,8 +10,8 @@ fun <D, TO> ReportData<D>.toTO(itemMapper: (D) -> TO): ReportDataTO<TO> {
         timeBuckets = buckets.map { dataItem: BucketData<D> ->
             BucketDataTO(
                 timeBucket = DateIntervalTO(dataItem.timeBucket.from, dataItem.timeBucket.to),
-                bucketType = dataItem.bucketType.toTO(),
-                report = itemMapper(dataItem.data)
+                bucketType = dataItem.bucketType.toBucketTypeTO(),
+                report = itemMapper(dataItem.report)
             )
         }
     )
@@ -21,79 +21,45 @@ fun ReportDataInterval.toDate(): ReportDataIntervalTO =
     when (this) {
         is ReportDataInterval.Yearly -> ReportDataIntervalTO.Yearly(this.fromYear, this.toYear, this.forecastUntilYear)
         is ReportDataInterval.Monthly -> ReportDataIntervalTO.Monthly(
-            this.fromYearMonth.toTO(),
-            this.toYearMonth.toTO(),
-            this.forecastUntilYearMonth?.toTO()
+            this.fromYearMonth.toYearMonthTO(),
+            this.toYearMonth.toYearMonthTO(),
+            this.forecastUntilYearMonth?.toYearMonthTO()
         )
 
         is ReportDataInterval.Daily -> ReportDataIntervalTO.Daily(this.fromDate, this.toDate, this.forecastUntilDate)
     }
 
-fun YearMonth.toTO() = YearMonthTO(this.year, this.month)
+fun YearMonth.toYearMonthTO() = YearMonthTO(this.year, this.month)
 
-fun ReportDataAggregate.toTO(): ReportDataAggregateTO =
-    ReportDataAggregateTO(
-        net = this.net?.let { NetReportTO(it.net)},
-        value = this.value?.let {
-            ValueReportItemTO(start = it.start, end = it.end, min = it.min, max = it.max)
-        },
-        groupedNet = this.run {
-            groupedNet?.map { (group, netReport) ->
-                GroupNetReportTO(
-                    group = group,
-                    net = netReport.net
-                )
-            }
-        },
-        groupedBudget = this.run {
-            groupedBudget?.map { (group, budget) ->
-                ReportDataGroupedBudgetItemTO(
-                    group = group,
-                    allocated = budget.allocated,
-                    spent = budget.spent,
-                    left = budget.left
-                )
-            }
-        },
-        performance = this.performance?.let {
-            PerformanceReportTO(
-                totalAssetsValue = it.totalAssetsValue,
-                totalCurrencyValue = it.totalCurrencyValue,
-                totalInvestment = it.totalInvestment,
-                currentInvestment = it.currentInvestment,
-                totalProfit = it.totalProfit,
-                currentProfit = it.currentProfit,
-            )
-        }
-    )
-
-fun BucketType.toTO(): BucketTypeTO = when (this) {
+fun BucketType.toBucketTypeTO(): BucketTypeTO = when (this) {
     BucketType.REAL -> BucketTypeTO.REAL
     BucketType.FORECAST -> BucketTypeTO.FORECAST
 }
 
 fun NetReport.toNetReportTO(): NetReportTO = NetReportTO(this.net)
 
-fun ByGroup<NetReport>.toGroupedNetTO(): List<GroupNetReportTO> =
+fun ByGroup<NetReport>.toGroupedNetTO(): GroupedTO<GroupNetReportTO> =
     this.map { (group, report) -> GroupNetReportTO(group = group, net = report.net) }
+        .let(::GroupedTO)
 
-fun ValueReport.toValueReportTO(): ValueReportItemTO =
-    ValueReportItemTO(
+fun ValueReport.toValueReportTO(): ValueReportTO =
+    ValueReportTO(
         start = this.start,
         end = this.end,
         min = this.min,
         max = this.max
     )
 
-fun ByGroup<Budget>.toGroupedBudgetTO(): List<ReportDataGroupedBudgetItemTO> =
+fun ByGroup<Budget>.toGroupedBudgetTO(): GroupedTO<GroupedBudgetReportTO> =
     this.map { (group, budget) ->
-        ReportDataGroupedBudgetItemTO(
+        GroupedBudgetReportTO(
             group = group,
             allocated = budget.allocated,
             spent = budget.spent,
             left = budget.left
         )
     }
+        .let(::GroupedTO)
 
 fun PerformanceReport.toPerformanceTO(): PerformanceReportTO =
     PerformanceReportTO(

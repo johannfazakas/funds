@@ -43,16 +43,16 @@ data class BucketDataTO<T>(
     val report: T,
 )
 
-// TODO(Johann) remove this
 @Serializable
-data class ReportDataAggregateTO(
-    val net: NetReportTO? = null,
-    val value: ValueReportItemTO? = null,
-    // TODO(Johann) a generic group wrapper might help, might expose some methods
-    val groupedNet: List<GroupNetReportTO>? = null,
-    val groupedBudget: List<ReportDataGroupedBudgetItemTO>? = null,
-    val performance: PerformanceReportTO? = null,
-)
+data class GroupedTO<T : GroupDataTO>(val groups: List<T>) {
+    operator fun get(group: String): T {
+        return groups.first { it.group == group }
+    }
+}
+
+interface GroupDataTO {
+    val group: String
+}
 
 @Serializable
 data class NetReportTO(
@@ -63,25 +63,24 @@ data class NetReportTO(
 // TODO(Johann) remove all the nullables in these classes
 @Serializable
 data class GroupNetReportTO(
-    val group: String,
+    override val group: String,
     @Serializable(with = BigDecimalSerializer::class)
     val net: BigDecimal,
-)
+) : GroupDataTO
 
 @Serializable
-data class ReportDataGroupedBudgetItemTO(
-    val group: String,
+data class GroupedBudgetReportTO(
+    override val group: String,
     @Serializable(with = BigDecimalSerializer::class)
     var allocated: BigDecimal?,
     @Serializable(with = BigDecimalSerializer::class)
     val spent: BigDecimal?,
     @Serializable(with = BigDecimalSerializer::class)
     val left: BigDecimal?,
-)
+) : GroupDataTO
 
-// TODO(Johann) names don't seem aligned very well
 @Serializable
-data class ValueReportItemTO(
+data class ValueReportTO(
     @Serializable(with = BigDecimalSerializer::class)
     val start: BigDecimal = BigDecimal.ZERO,
     @Serializable(with = BigDecimalSerializer::class)

@@ -61,36 +61,25 @@ class ReportingSdk(
         response.body()
     }
 
-    // TODO(Johann) remove this endpoint
-    @Deprecated("Will have to be replaced by specific endpoints")
-    override suspend fun getReportViewData(
-        userId: UUID,
-        reportViewId: UUID,
-        reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<ReportDataAggregateTO> = withSuspendingSpan {
-        log.info { "Get report view reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
-        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata")
-    }
-
     override suspend fun getNetData(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<NetReportTO> = withSuspendingSpan {
         log.info { "Get net reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
-        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata/net")
+        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/net")
     }
 
     override suspend fun getGroupedNetData(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<List<GroupNetReportTO>> = withSuspendingSpan {
+    ): ReportDataTO<GroupedTO<GroupNetReportTO>> = withSuspendingSpan {
         log.info { "Get grouped net reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
         getData(
             userId,
             reportDataInterval,
-            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata/grouped-net"
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/grouped-net"
         )
     }
 
@@ -98,21 +87,25 @@ class ReportingSdk(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<ValueReportItemTO> = withSuspendingSpan {
+    ): ReportDataTO<ValueReportTO> = withSuspendingSpan {
         log.info { "Get value reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
-        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata/value")
+        getData(
+            userId,
+            reportDataInterval,
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/value"
+        )
     }
 
     override suspend fun getGroupedBudgetData(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<List<ReportDataGroupedBudgetItemTO>> = withSuspendingSpan {
+    ): ReportDataTO<GroupedTO<GroupedBudgetReportTO>> = withSuspendingSpan {
         log.info { "Get grouped budget reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
         getData(
             userId,
             reportDataInterval,
-            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata/grouped-budget"
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/grouped-budget"
         )
     }
 
@@ -125,7 +118,7 @@ class ReportingSdk(
         getData(
             userId,
             reportDataInterval,
-            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata/performance"
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/performance"
         )
     }
 
