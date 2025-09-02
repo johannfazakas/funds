@@ -160,6 +160,7 @@ class FundsClient(
 
     fun getReportGroupedNetData(
         user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
+        // TODO(Johann) should this have a list return type? not sure. some wrapper might be created
     ): ReportDataTO<List<ReportDataGroupedNetItemTO>> = run {
         val reportView = getReportViewByName(user, reportName)
         reportingSdk.getGroupedNetData(user.id, reportView.id, reportDataIntervalTO)

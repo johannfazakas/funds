@@ -12,7 +12,24 @@ data class ReportDataTO<T>(
     val viewId: UUID,
     val interval: ReportDataIntervalTO,
     val data: List<ReportDataItemTO<T>>,
-)
+) {
+    fun <O, R> merge(other: ReportDataTO<O>, combiner: (T, O) -> R): ReportDataTO<R> {
+        require(viewId == other.viewId) { "Only reports on the same view can be combined" }
+        require(interval == other.interval) { "Only reports on the same interval can be combined" }
+        return ReportDataTO(
+            this.viewId,
+            this.interval,
+            this.data.zip(other.data)
+                .map { (thisItem, otherItem) ->
+                    ReportDataItemTO(
+                        thisItem.timeBucket,
+                        thisItem.bucketType,
+                        combiner(thisItem.data, otherItem.data)
+                    )
+                },
+        )
+    }
+}
 
 enum class BucketTypeTO {
     REAL,
