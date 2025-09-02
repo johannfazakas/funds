@@ -40,7 +40,7 @@ class FundsFormatImportParser(
     private fun List<String>.parse(): List<CsvRow> {
         val rawImportItems = this.map { csvParser.parse(it) }.flatten()
         if (rawImportItems.isEmpty())
-            throw ImportDataException("No import data")
+            throw ImportDataException("No import reportdata")
         return rawImportItems
     }
 

@@ -2,17 +2,16 @@ package ro.jf.funds.reporting.service.web.mapper
 
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.domain.*
-import java.math.BigDecimal
 
 fun <D, TO> ReportData<D>.toTO(itemMapper: (D) -> TO): ReportDataTO<TO> {
     return ReportDataTO(
         viewId = this.reportViewId,
         interval = this.interval.toDate(),
-        data = data.map { dataItem: BucketData<D> ->
-            ReportDataItemTO(
+        timeBuckets = buckets.map { dataItem: BucketData<D> ->
+            BucketDataTO(
                 timeBucket = DateIntervalTO(dataItem.timeBucket.from, dataItem.timeBucket.to),
                 bucketType = dataItem.bucketType.toTO(),
-                data = itemMapper(dataItem.data)
+                report = itemMapper(dataItem.data)
             )
         }
     )
@@ -34,15 +33,15 @@ fun YearMonth.toTO() = YearMonthTO(this.year, this.month)
 
 fun ReportDataAggregate.toTO(): ReportDataAggregateTO =
     ReportDataAggregateTO(
-        net = this.net,
+        net = this.net?.let { NetReportTO(it.net)},
         value = this.value?.let {
             ValueReportItemTO(start = it.start, end = it.end, min = it.min, max = it.max)
         },
         groupedNet = this.run {
-            groupedNet?.map { (group, net) ->
-                ReportDataGroupedNetItemTO(
+            groupedNet?.map { (group, netReport) ->
+                GroupNetReportTO(
                     group = group,
-                    net = net
+                    net = netReport.net
                 )
             }
         },
@@ -73,15 +72,10 @@ fun BucketType.toTO(): BucketTypeTO = when (this) {
     BucketType.FORECAST -> BucketTypeTO.FORECAST
 }
 
-fun BigDecimal.toNetTO(): ReportDataNetItemTO = ReportDataNetItemTO(this)
+fun NetReport.toNetReportTO(): NetReportTO = NetReportTO(this.net)
 
-fun ByGroup<BigDecimal>.toGroupedNetTO(): List<ReportDataGroupedNetItemTO> =
-    this.map { (group, net) ->
-        ReportDataGroupedNetItemTO(
-            group = group,
-            net = net
-        )
-    }
+fun ByGroup<NetReport>.toGroupedNetTO(): List<GroupNetReportTO> =
+    this.map { (group, report) -> GroupNetReportTO(group = group, net = report.net) }
 
 fun ValueReport.toValueReportTO(): ValueReportItemTO =
     ValueReportItemTO(

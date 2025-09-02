@@ -60,7 +60,7 @@ class ImportApiTest {
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
-        val csvFile = File("src/test/resources/data/wallet_export.csv")
+        val csvFile = File("src/test/resources/reportdata/wallet_export.csv")
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
@@ -130,7 +130,7 @@ class ImportApiTest {
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
-        val csvFile = File("src/test/resources/data/wallet_export.csv")
+        val csvFile = File("src/test/resources/reportdata/wallet_export.csv")
 
         val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
             header(USER_ID_HEADER, userId.toString())
@@ -156,7 +156,7 @@ class ImportApiTest {
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
-        val csvFile = File("src/test/resources/data/invalid_export.csv")
+        val csvFile = File("src/test/resources/reportdata/invalid_export.csv")
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
@@ -203,7 +203,7 @@ class ImportApiTest {
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
-        val csvFile = File("src/test/resources/data/wallet_export.csv")
+        val csvFile = File("src/test/resources/reportdata/wallet_export.csv")
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(

@@ -1,4 +1,4 @@
-package ro.jf.funds.reporting.service.service.data
+package ro.jf.funds.reporting.service.service.reportdata
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,7 +17,7 @@ import java.util.*
 class ConversionRateService(
     private val historicalPricingSdk: HistoricalPricingSdk,
 ) {
-    // TODO(Johann) this will grow indefinitely. what other options do I have for an in memory cache? I would like old data to be removed
+    // TODO(Johann) this will grow indefinitely. what other options do I have for an in memory cache? I would like old reportdata to be removed
     private val cache: MutableMap<Pair<UUID, ConversionRequest>, BigDecimal> = mutableMapOf()
     private val cacheWriteMutex = Mutex()
 

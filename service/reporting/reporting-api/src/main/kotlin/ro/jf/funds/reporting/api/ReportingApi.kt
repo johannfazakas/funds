@@ -19,13 +19,13 @@ interface ReportingApi {
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<ReportDataNetItemTO>
+    ): ReportDataTO<NetReportTO>
 
     suspend fun getGroupedNetData(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<List<ReportDataGroupedNetItemTO>>
+    ): ReportDataTO<List<GroupNetReportTO>>
 
     suspend fun getValueData(
         userId: UUID,

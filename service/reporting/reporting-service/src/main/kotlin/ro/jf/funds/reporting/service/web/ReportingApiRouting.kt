@@ -18,7 +18,7 @@ import ro.jf.funds.reporting.service.domain.ReportDataInterval
 import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.domain.YearMonth
 import ro.jf.funds.reporting.service.service.ReportViewService
-import ro.jf.funds.reporting.service.service.data.ReportDataService
+import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
 import ro.jf.funds.reporting.service.web.mapper.*
 import java.util.*
 
@@ -55,14 +55,14 @@ fun Routing.reportingApiRouting(
             call.respond(status = HttpStatusCode.OK, message = response)
         }
 
-        // TODO(Johann) could create dedicated endpoints for different data types, it would lead to less nulls and !! in data. it would be easier to test
+        // TODO(Johann) could create dedicated endpoints for different reportdata types, it would lead to less nulls and !! in reportdata. it would be easier to test
         get("/{reportViewId}/data") {
             val userId = call.userId()
             val reportViewId =
                 call.parameters["reportViewId"]?.let(UUID::fromString)
                     ?: error("Missing reportViewId path parameter")
             val interval = call.reportDataInterval()
-            log.info { "Get report data request for user $userId and report view $reportViewId in interval $interval." }
+            log.info { "Get report reportdata request for user $userId and report view $reportViewId in interval $interval." }
             val reportData = reportDataService
                 .getReportViewData(userId, reportViewId, interval)
                 .toTO(ReportDataAggregate::toTO)
@@ -73,8 +73,8 @@ fun Routing.reportingApiRouting(
             val userId = call.userId()
             val reportViewId = call.reportViewId()
             val interval = call.reportDataInterval()
-            log.info { "Get net data request for user $userId and report view $reportViewId in interval $interval." }
-            val reportData = reportDataService.getNetData(userId, reportViewId, interval).toTO { it.toNetTO() }
+            log.info { "Get net reportdata request for user $userId and report view $reportViewId in interval $interval." }
+            val reportData = reportDataService.getNetData(userId, reportViewId, interval).toTO { it.toNetReportTO() }
             call.respond(status = HttpStatusCode.OK, message = reportData)
         }
 
@@ -82,7 +82,7 @@ fun Routing.reportingApiRouting(
             val userId = call.userId()
             val reportViewId = call.reportViewId()
             val interval = call.reportDataInterval()
-            log.info { "Get grouped net data request for user $userId and report view $reportViewId in interval $interval." }
+            log.info { "Get grouped net reportdata request for user $userId and report view $reportViewId in interval $interval." }
             val reportData =
                 reportDataService.getGroupedNetData(userId, reportViewId, interval).toTO { it.toGroupedNetTO() }
             call.respond(status = HttpStatusCode.OK, message = reportData)
@@ -92,7 +92,7 @@ fun Routing.reportingApiRouting(
             val userId = call.userId()
             val reportViewId = call.reportViewId()
             val interval = call.reportDataInterval()
-            log.info { "Get value data request for user $userId and report view $reportViewId in interval $interval." }
+            log.info { "Get value reportdata request for user $userId and report view $reportViewId in interval $interval." }
             val reportData = reportDataService.getValueData(userId, reportViewId, interval).toTO { it.toValueReportTO() }
             call.respond(status = HttpStatusCode.OK, message = reportData)
         }
@@ -101,7 +101,7 @@ fun Routing.reportingApiRouting(
             val userId = call.userId()
             val reportViewId = call.reportViewId()
             val interval = call.reportDataInterval()
-            log.info { "Get grouped budget data request for user $userId and report view $reportViewId in interval $interval." }
+            log.info { "Get grouped budget reportdata request for user $userId and report view $reportViewId in interval $interval." }
             val reportData =
                 reportDataService.getGroupedBudgetData(userId, reportViewId, interval).toTO { it.toGroupedBudgetTO() }
             call.respond(status = HttpStatusCode.OK, message = reportData)
@@ -111,7 +111,7 @@ fun Routing.reportingApiRouting(
             val userId = call.userId()
             val reportViewId = call.reportViewId()
             val interval = call.reportDataInterval()
-            log.info { "Get performance data request for user $userId and report view $reportViewId in interval $interval." }
+            log.info { "Get performance reportdata request for user $userId and report view $reportViewId in interval $interval." }
             val reportData = reportDataService.getPerformanceData(userId, reportViewId, interval).toTO { it.toPerformanceTO() }
             call.respond(status = HttpStatusCode.OK, message = reportData)
         }

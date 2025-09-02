@@ -153,7 +153,7 @@ class FundsClient(
 
     fun getReportNetData(
         user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
-    ): ReportDataTO<ReportDataNetItemTO> = run {
+    ): ReportDataTO<NetReportTO> = run {
         val reportView = getReportViewByName(user, reportName)
         reportingSdk.getNetData(user.id, reportView.id, reportDataIntervalTO)
     }
@@ -161,7 +161,7 @@ class FundsClient(
     fun getReportGroupedNetData(
         user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
         // TODO(Johann) should this have a list return type? not sure. some wrapper might be created
-    ): ReportDataTO<List<ReportDataGroupedNetItemTO>> = run {
+    ): ReportDataTO<List<GroupNetReportTO>> = run {
         val reportView = getReportViewByName(user, reportName)
         reportingSdk.getGroupedNetData(user.id, reportView.id, reportDataIntervalTO)
     }
@@ -196,9 +196,9 @@ class FundsClient(
         val plottedData = plottedLines + plottedAreas
         val dataFrame = plottedData
             .map { (color, dataMapper) ->
-                color.toString() to reportData.data.map { data -> dataMapper(data.data) }
+                color.toString() to reportData.timeBuckets.map { data -> dataMapper(data.report) }
             }
-            .plus("timeBucket" to reportData.data.map { it.timeBucket.from })
+            .plus("timeBucket" to reportData.timeBuckets.map { it.timeBucket.from })
             .let { dataFrameOf(*it.toTypedArray()) }
 
         return dataFrame
@@ -237,7 +237,7 @@ class FundsClient(
                 TimeGranularityTO.DAILY -> "%d %b %Y"
             }
             axis.breaks(
-                reportData.data
+                reportData.timeBuckets
                     .map { it.timeBucket.from.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds() }, format
             )
         }
@@ -270,13 +270,13 @@ class FundsClient(
             "average temperature" to listOf(12.5, 11.0, 9.6, 11.5, 16.0)
         )
 
-        // Construct a plot using the data from the DataFrame
+        // Construct a plot using the reportdata from the DataFrame
         return averageTemperature.plot {
             // Add bars to the plot
             // Each bar represents the average temperature in a city
             bars {
-                x("city") // Set the cities' data on the X-axis
-                y("average temperature") { // Set the temperatures' data on the Y-axis
+                x("city") // Set the cities' reportdata on the X-axis
+                y("average temperature") { // Set the temperatures' reportdata on the Y-axis
                     axis.name = "Average Temperature (°C)" // Assign a name to the Y-axis
                 }
             }

@@ -8,7 +8,7 @@ import java.util.*
 data class ReportData<T>(
     val reportViewId: UUID,
     val interval: ReportDataInterval,
-    val data: List<BucketData<T>>,
+    val buckets: List<BucketData<T>>,
 )
 
 enum class BucketType {
@@ -24,14 +24,17 @@ data class BucketData<D>(
 
 // TODO(Johann) aggregate is a bit weird to use. huge object.
 data class ReportDataAggregate(
-    // TODO(Johann) might wrap BigDecimal in a class maybe
-    val net: BigDecimal? = null,
+    val net: NetReport? = null,
     val value: ValueReport? = null,
-    val groupedNet: ByGroup<BigDecimal>? = null,
+    val groupedNet: ByGroup<NetReport>? = null,
     val groupedBudget: ByGroup<Budget>? = null,
     val performance: PerformanceReport? = null,
     // TODO(Johann) implement performance by unit. it could also be by group defined on unit
     val instrumentPerformance: ByUnit<PerformanceReport>? = null,
+)
+
+data class NetReport(
+    val net: BigDecimal,
 )
 
 data class PerformanceReport(
