@@ -26,5 +26,5 @@ gradle-app.setting
 # Docker local volumes
 infra/local/volumes/*/data/
 
-# data
+# reportdata
 data/

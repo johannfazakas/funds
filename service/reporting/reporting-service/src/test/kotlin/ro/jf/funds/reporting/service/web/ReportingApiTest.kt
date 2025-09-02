@@ -41,7 +41,7 @@ import ro.jf.funds.reporting.service.config.configureReportingRouting
 import ro.jf.funds.reporting.service.config.reportingDependencies
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
-import ro.jf.funds.reporting.service.service.data.ConversionRateService
+import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
 import ro.jf.funds.reporting.service.utils.record
 import ro.jf.funds.reporting.service.utils.transaction
 import java.math.BigDecimal
@@ -213,14 +213,14 @@ class ReportingApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val reportData = response.body<ReportDataTO<ReportDataAggregateTO>>()
         assertThat(reportData.viewId).isEqualTo(reportView.id)
-        assertThat(reportData.data).hasSize(28)
-        assertThat(reportData.data[0])
+        assertThat(reportData.timeBuckets).hasSize(28)
+        assertThat(reportData.timeBuckets[0])
             .isEqualTo(
-                ReportDataItemTO(
+                BucketDataTO(
                     timeBucket = DateIntervalTO(LocalDate(2021, 1, 1), LocalDate(2021, 1, 1)),
                     bucketType = BucketTypeTO.REAL,
-                    data = ReportDataAggregateTO(
-                        net = BigDecimal("0.0"),
+                    report = ReportDataAggregateTO(
+                        net = NetReportTO(BigDecimal("0.0")),
                         value = ValueReportItemTO(
                             BigDecimal("0.0"),
                             BigDecimal("0.0"),
@@ -230,13 +230,13 @@ class ReportingApiTest {
                     )
                 )
             )
-        assertThat(reportData.data[1])
+        assertThat(reportData.timeBuckets[1])
             .isEqualTo(
-                ReportDataItemTO(
+                BucketDataTO(
                     timeBucket = DateIntervalTO(LocalDate(2021, 1, 2), LocalDate(2021, 1, 2)),
                     bucketType = BucketTypeTO.REAL,
-                    data = ReportDataAggregateTO(
-                        net = BigDecimal("-75.0"),
+                    report = ReportDataAggregateTO(
+                        net = NetReportTO(BigDecimal("-75.0")),
                         value = ValueReportItemTO(
                             BigDecimal("0.0"),
                             BigDecimal("-75.0"),

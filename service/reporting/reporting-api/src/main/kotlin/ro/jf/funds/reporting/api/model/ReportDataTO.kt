@@ -11,7 +11,7 @@ data class ReportDataTO<T>(
     @Serializable(with = UUIDSerializer::class)
     val viewId: UUID,
     val interval: ReportDataIntervalTO,
-    val data: List<ReportDataItemTO<T>>,
+    val timeBuckets: List<BucketDataTO<T>>,
 ) {
     fun <O, R> merge(other: ReportDataTO<O>, combiner: (T, O) -> R): ReportDataTO<R> {
         require(viewId == other.viewId) { "Only reports on the same view can be combined" }
@@ -19,12 +19,12 @@ data class ReportDataTO<T>(
         return ReportDataTO(
             this.viewId,
             this.interval,
-            this.data.zip(other.data)
+            this.timeBuckets.zip(other.timeBuckets)
                 .map { (thisItem, otherItem) ->
-                    ReportDataItemTO(
+                    BucketDataTO(
                         thisItem.timeBucket,
                         thisItem.bucketType,
-                        combiner(thisItem.data, otherItem.data)
+                        combiner(thisItem.report, otherItem.report)
                     )
                 },
         )
@@ -37,34 +37,35 @@ enum class BucketTypeTO {
 }
 
 @Serializable
-data class ReportDataItemTO<T>(
+data class BucketDataTO<T>(
     val timeBucket: DateIntervalTO,
     val bucketType: BucketTypeTO,
-    val data: T,
+    val report: T,
 )
 
+// TODO(Johann) remove this
 @Serializable
 data class ReportDataAggregateTO(
-    @Serializable(with = BigDecimalSerializer::class)
-    val net: BigDecimal? = null,
+    val net: NetReportTO? = null,
     val value: ValueReportItemTO? = null,
-    val groupedNet: List<ReportDataGroupedNetItemTO>? = null,
+    // TODO(Johann) a generic group wrapper might help, might expose some methods
+    val groupedNet: List<GroupNetReportTO>? = null,
     val groupedBudget: List<ReportDataGroupedBudgetItemTO>? = null,
     val performance: PerformanceReportTO? = null,
 )
 
 @Serializable
-data class ReportDataNetItemTO(
+data class NetReportTO(
     @Serializable(with = BigDecimalSerializer::class)
     val net: BigDecimal,
 )
 
 // TODO(Johann) remove all the nullables in these classes
 @Serializable
-data class ReportDataGroupedNetItemTO(
+data class GroupNetReportTO(
     val group: String,
     @Serializable(with = BigDecimalSerializer::class)
-    val net: BigDecimal?,
+    val net: BigDecimal,
 )
 
 @Serializable

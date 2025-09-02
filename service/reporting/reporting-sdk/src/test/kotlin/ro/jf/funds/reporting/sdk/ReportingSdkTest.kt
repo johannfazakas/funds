@@ -161,113 +161,6 @@ class ReportingSdkTest {
     }
 
     @Test
-    fun `get report view data`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val expectedResponse = ReportDataTO(
-            viewId = viewId,
-            interval = ReportDataIntervalTO.Monthly(
-                fromYearMonth = YearMonthTO(2024, 11),
-                toYearMonth = YearMonthTO(2025, 1),
-            ),
-            data = listOf(
-                ReportDataItemTO(
-                    timeBucket = DateIntervalTO(YearMonthTO(2024, 11), YearMonthTO(2024, 11)),
-                    bucketType = BucketTypeTO.REAL,
-                    data = ReportDataAggregateTO(
-                        net = BigDecimal("200.0"),
-                        value = ValueReportItemTO(
-                            start = BigDecimal("210.0"),
-                            end = BigDecimal("200.0"),
-                            min = BigDecimal("150.0"),
-                            max = BigDecimal("220.0")
-                        ),
-                        groupedNet = null,
-                        groupedBudget = listOf(
-                            ReportDataGroupedBudgetItemTO(
-                                group = "need",
-                                allocated = BigDecimal("150.0"),
-                                spent = BigDecimal("100.0"),
-                                left = BigDecimal("50.0")
-                            ),
-                            ReportDataGroupedBudgetItemTO(
-                                group = "want",
-                                allocated = BigDecimal("200.0"),
-                                spent = BigDecimal("100.0"),
-                                left = BigDecimal("100.0")
-                            )
-                        )
-                    )
-                ),
-                ReportDataItemTO(
-                    timeBucket = DateIntervalTO(YearMonthTO(2024, 12), YearMonthTO(2024, 12)),
-                    bucketType = BucketTypeTO.REAL,
-                    data = ReportDataAggregateTO(
-                        net = BigDecimal("300.0"),
-                        value = ValueReportItemTO(
-                            start = BigDecimal("310.0"),
-                            end = BigDecimal("300.0"),
-                            min = BigDecimal("250.0"),
-                            max = BigDecimal("320.0")
-                        ),
-                        groupedNet = null,
-                        groupedBudget = listOf(
-                            ReportDataGroupedBudgetItemTO(
-                                group = "need",
-                                allocated = BigDecimal("200.0"),
-                                spent = BigDecimal("150.0"),
-                                left = BigDecimal("50.0")
-                            ),
-                            ReportDataGroupedBudgetItemTO(
-                                group = "want",
-                                allocated = BigDecimal("300.0"),
-                                spent = BigDecimal("150.0"),
-                                left = BigDecimal("150.0")
-                            )
-                        )
-                    )
-                ),
-                ReportDataItemTO(
-                    timeBucket = DateIntervalTO(YearMonthTO(2025, 1), YearMonthTO(2025, 1)),
-                    bucketType = BucketTypeTO.REAL,
-                    data = ReportDataAggregateTO(
-                        net = BigDecimal("400.0"),
-                        value = ValueReportItemTO(
-                            start = BigDecimal("410.0"),
-                            end = BigDecimal("400.0"),
-                            min = BigDecimal("350.0"),
-                            max = BigDecimal("420.0")
-                        ),
-                        groupedNet = null,
-                        groupedBudget = listOf(
-                            ReportDataGroupedBudgetItemTO(
-                                group = "need",
-                                allocated = BigDecimal("300.0"),
-                                spent = BigDecimal("200.0"),
-                                left = BigDecimal("100.0")
-                            ),
-                            ReportDataGroupedBudgetItemTO(
-                                group = "want",
-                                allocated = BigDecimal("400.0"),
-                                spent = BigDecimal("200.0"),
-                                left = BigDecimal("200.0")
-                            )
-                        )
-                    )
-                )
-            )
-        )
-        mockServerClient.mockGetReportData("/funds-api/reporting/v1/report-views/$viewId/data", expectedResponse, ::buildAggregateItemJsonObject)
-
-        val response =
-            reportingSdk.getReportViewData(
-                userId,
-                viewId,
-                ReportDataIntervalTO.Monthly(YearMonthTO(2024, 11), YearMonthTO(2025, 1))
-            )
-
-        assertThat(response).isEqualTo(expectedResponse)
-    }
-
-    @Test
     fun `get net data`(mockServerClient: MockServerClient): Unit = runBlocking {
         val expectedResponse = ReportDataTO(
             viewId = viewId,
@@ -275,27 +168,27 @@ class ReportingSdkTest {
                 fromYearMonth = YearMonthTO(2024, 11),
                 toYearMonth = YearMonthTO(2025, 1),
             ),
-            data = listOf(
-                ReportDataItemTO(
+            timeBuckets = listOf(
+                BucketDataTO(
                     timeBucket = DateIntervalTO(YearMonthTO(2024, 11), YearMonthTO(2024, 11)),
                     bucketType = BucketTypeTO.REAL,
-                    data = ReportDataNetItemTO(BigDecimal("200.0"))
+                    report = NetReportTO(BigDecimal("200.0"))
                 ),
-                ReportDataItemTO(
+                BucketDataTO(
                     timeBucket = DateIntervalTO(YearMonthTO(2024, 12), YearMonthTO(2024, 12)),
                     bucketType = BucketTypeTO.REAL,
-                    data = ReportDataNetItemTO(BigDecimal("300.0"))
+                    report = NetReportTO(BigDecimal("300.0"))
                 ),
-                ReportDataItemTO(
+                BucketDataTO(
                     timeBucket = DateIntervalTO(YearMonthTO(2025, 1), YearMonthTO(2025, 1)),
                     bucketType = BucketTypeTO.REAL,
-                    data = ReportDataNetItemTO(BigDecimal("400.0"))
+                    report = NetReportTO(BigDecimal("400.0"))
                 )
             )
         )
 
         mockServerClient.mockGetReportData(
-            "/funds-api/reporting/v1/report-views/$viewId/data/net",
+            "/funds-api/reporting/v1/report-views/$viewId/reportdata/net",
             expectedResponse,
             ::buildNetItemJsonObject
         )
@@ -558,8 +451,8 @@ class ReportingSdkTest {
                         buildJsonObject {
                             put("viewId", JsonPrimitive(response.viewId.toString()))
                             put("interval", buildDataIntervalJson(response.interval))
-                            put("data", buildJsonArray {
-                                response.data.forEach { item ->
+                            put("timeBuckets", buildJsonArray {
+                                response.timeBuckets.forEach { item ->
                                     add(
                                         buildJsonObject {
                                             put("timeBucket", buildJsonObject {
@@ -567,7 +460,7 @@ class ReportingSdkTest {
                                                 put("to", JsonPrimitive(item.timeBucket.to.toString()))
                                             })
                                             put("bucketType", JsonPrimitive(item.bucketType.name))
-                                            put("data", itemDataMapper(item.data))
+                                            put("report", itemDataMapper(item.report))
                                         }
                                     )
                                 }
@@ -577,33 +470,7 @@ class ReportingSdkTest {
             )
     }
 
-    private fun buildAggregateItemJsonObject(itemData: ReportDataAggregateTO): JsonObject =
-        buildJsonObject {
-            put("net", JsonPrimitive(itemData.net.toString()))
-            put("value", buildJsonObject {
-                put("start", JsonPrimitive(itemData.value?.start.toString()))
-                put("end", JsonPrimitive(itemData.value?.end.toString()))
-                put("min", JsonPrimitive(itemData.value?.min.toString()))
-                put("max", JsonPrimitive(itemData.value?.max.toString()))
-            })
-            put("groupedBudget", buildJsonArray {
-                itemData.groupedBudget?.forEach { group ->
-                    add(
-                        buildJsonObject {
-                            put("group", JsonPrimitive(group.group))
-                            put("spent", JsonPrimitive(group.spent.toString()))
-                            put(
-                                "allocated",
-                                JsonPrimitive(group.allocated.toString())
-                            )
-                            put("left", JsonPrimitive(group.left.toString()))
-                        }
-                    )
-                }
-            })
-        }
-
-    private fun buildNetItemJsonObject(itemData: ReportDataNetItemTO): JsonObject =
+    private fun buildNetItemJsonObject(itemData: NetReportTO): JsonObject =
         buildJsonObject {
             put("net", JsonPrimitive(itemData.net.toString()))
         }

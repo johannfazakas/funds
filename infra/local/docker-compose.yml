@@ -7,7 +7,7 @@ services:
     ports:
       - '5438:5432'
     volumes:
-      - ./volumes/postgres/data:/var/lib/postgresql/data
+      - ./volumes/postgres/reportdata:/var/lib/postgresql/reportdata
       - ./volumes/postgres/init/:/docker-entrypoint-initdb.d/
     environment:
       - POSTGRES_USER=postgres
@@ -38,7 +38,7 @@ services:
       - KAFKA_CFG_MESSAGE_MAX_BYTES=20971520
       - KAFKA_CFG_SOCKET_REQUEST_MAX_BYTES=20971520
     volumes:
-      - ./volumes/kafka/data:/bitnami/kafka
+      - ./volumes/kafka/reportdata:/bitnami/kafka
 
   user-service:
     image: funds/user-service:latest
@@ -150,7 +150,7 @@ services:
       - '4418:4318'   # OTLP HTTP ingest
     volumes:
       - ./volumes/tempo/tempo-config.yaml:/etc/tempo.yaml
-      - ./volumes/tempo/data:/tmp/tempo
+      - ./volumes/tempo/reportdata:/tmp/tempo
 
   grafana:
     image: grafana/grafana:12.0.1
@@ -163,4 +163,4 @@ services:
     depends_on:
       - tempo
     volumes:
-      - ./volumes/grafana/data:/var/lib/grafana
+      - ./volumes/grafana/reportdata:/var/lib/grafana

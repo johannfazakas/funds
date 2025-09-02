@@ -268,7 +268,7 @@ class WalletCsvImportParserTest {
 
         assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
             .isInstanceOf(ImportDataException::class.java)
-            .hasMessage("No import data")
+            .hasMessage("No import reportdata")
     }
 
     @Test

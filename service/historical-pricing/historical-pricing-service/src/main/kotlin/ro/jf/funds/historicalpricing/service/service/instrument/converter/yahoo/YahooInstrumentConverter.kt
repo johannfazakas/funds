@@ -40,7 +40,7 @@ class YahooInstrumentConverter(
             .toConversionResponses(instrument)
     } catch (e: Exception) {
         throw IllegalArgumentException(
-            "Failed to fetch data for $instrument from $from (${from.timestamp()}) to $to (${to.timestamp()})",
+            "Failed to fetch reportdata for $instrument from $from (${from.timestamp()}) to $to (${to.timestamp()})",
             e
         )
     }

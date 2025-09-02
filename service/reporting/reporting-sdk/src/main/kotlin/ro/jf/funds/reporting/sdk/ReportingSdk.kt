@@ -68,29 +68,29 @@ class ReportingSdk(
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<ReportDataAggregateTO> = withSuspendingSpan {
-        log.info { "Get report view data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
-        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data")
+        log.info { "Get report view reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata")
     }
 
     override suspend fun getNetData(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<ReportDataNetItemTO> = withSuspendingSpan {
-        log.info { "Get net data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
-        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/net")
+    ): ReportDataTO<NetReportTO> = withSuspendingSpan {
+        log.info { "Get net reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata/net")
     }
 
     override suspend fun getGroupedNetData(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<List<ReportDataGroupedNetItemTO>> = withSuspendingSpan {
-        log.info { "Get grouped net data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+    ): ReportDataTO<List<GroupNetReportTO>> = withSuspendingSpan {
+        log.info { "Get grouped net reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
         getData(
             userId,
             reportDataInterval,
-            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/grouped-net"
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata/grouped-net"
         )
     }
 
@@ -99,8 +99,8 @@ class ReportingSdk(
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<ValueReportItemTO> = withSuspendingSpan {
-        log.info { "Get value data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
-        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/value")
+        log.info { "Get value reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        getData(userId, reportDataInterval, "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata/value")
     }
 
     override suspend fun getGroupedBudgetData(
@@ -108,11 +108,11 @@ class ReportingSdk(
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<List<ReportDataGroupedBudgetItemTO>> = withSuspendingSpan {
-        log.info { "Get grouped budget data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        log.info { "Get grouped budget reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
         getData(
             userId,
             reportDataInterval,
-            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/grouped-budget"
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata/grouped-budget"
         )
     }
 
@@ -121,11 +121,11 @@ class ReportingSdk(
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<PerformanceReportTO> = withSuspendingSpan {
-        log.info { "Get performance data. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        log.info { "Get performance reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
         getData(
             userId,
             reportDataInterval,
-            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/performance"
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/reportdata/performance"
         )
     }
 
@@ -139,7 +139,7 @@ class ReportingSdk(
             dataIntervalParameters(reportDataInterval)
         }
         if (response.status != HttpStatusCode.OK) {
-            log.warn { "Unexpected response on get net data: $response" }
+            log.warn { "Unexpected response on get net reportdata: $response" }
             throw response.toApiException()
         }
         return response.body()

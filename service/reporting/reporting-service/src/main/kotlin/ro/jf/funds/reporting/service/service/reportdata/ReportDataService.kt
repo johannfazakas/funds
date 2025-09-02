@@ -1,4 +1,4 @@
-package ro.jf.funds.reporting.service.service.data
+package ro.jf.funds.reporting.service.service.reportdata
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -13,11 +13,10 @@ import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.domain.ReportingException.FeatureDisabled
 import ro.jf.funds.reporting.service.domain.ReportingException.ReportViewNotFound
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
-import ro.jf.funds.reporting.service.service.data.resolver.ReportDataForecastInput
-import ro.jf.funds.reporting.service.service.data.resolver.ReportDataResolver
-import ro.jf.funds.reporting.service.service.data.resolver.ReportDataResolverInput
-import ro.jf.funds.reporting.service.service.data.resolver.ReportDataResolverRegistry
-import java.math.BigDecimal
+import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataForecastInput
+import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolver
+import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverInput
+import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
 import java.util.*
 
 private val log = logger { }
@@ -41,12 +40,11 @@ class ReportDataService(
         }
     }
 
-    // TODO(Johann) I think this shouldn't return a <BigDecimal>, it could be wrapped.
     suspend fun getNetData(
         userId: UUID,
         reportViewId: UUID,
         interval: ReportDataInterval,
-    ): ReportData<BigDecimal> = withSuspendingSpan {
+    ): ReportData<NetReport> = withSuspendingSpan {
         getData(userId, reportViewId, interval, { it.net.enabled }, ::getNetData)
     }
 
@@ -54,7 +52,7 @@ class ReportDataService(
         userId: UUID,
         reportViewId: UUID,
         interval: ReportDataInterval,
-    ): ReportData<ByGroup<BigDecimal>> = withSuspendingSpan {
+    ): ReportData<ByGroup<NetReport>> = withSuspendingSpan {
         getData(userId, reportViewId, interval, { it.groupedNet.enabled }, ::getGroupedNetData)
     }
 
@@ -116,7 +114,7 @@ class ReportDataService(
     private suspend fun getPreviousRecords(reportView: ReportView, interval: ReportDataInterval): List<ReportRecord> =
         getReportRecords(reportView, null, interval.getPreviousLastDay())
 
-    // TODO(Johann) keep in mind that only grouped budget and net data require previous records.
+    // TODO(Johann) keep in mind that only grouped budget and net reportdata require previous records.
     private suspend fun getReportRecords(
         reportView: ReportView,
         fromDate: LocalDate?,
@@ -184,9 +182,9 @@ class ReportDataService(
         reportView: ReportView,
         interval: ReportDataInterval,
         recordStore: RecordStore,
-    ): ReportData<BigDecimal> = withSuspendingSpan {
+    ): ReportData<NetReport> = withSuspendingSpan {
         val input = ReportDataResolverInput(reportView.userId, interval, recordStore, reportView.dataConfiguration)
-        val netData = resolveNetData(input) ?: error("Net data could not be found")
+        val netData = resolveNetData(input) ?: error("Net reportdata could not be found")
         generateReportData(reportView.id, interval) { timeBucket -> netData[timeBucket] }
     }
 
@@ -194,9 +192,9 @@ class ReportDataService(
         reportView: ReportView,
         interval: ReportDataInterval,
         recordStore: RecordStore,
-    ): ReportData<ByGroup<BigDecimal>> = withSuspendingSpan {
+    ): ReportData<ByGroup<NetReport>> = withSuspendingSpan {
         val input = ReportDataResolverInput(reportView.userId, interval, recordStore, reportView.dataConfiguration)
-        val groupedNetData = resolveGroupedNetData(input) ?: error("Grouped net data could not be found")
+        val groupedNetData = resolveGroupedNetData(input) ?: error("Grouped net reportdata could not be found")
         generateReportData(reportView.id, interval) { timeBucket -> groupedNetData[timeBucket] }
     }
 
@@ -206,7 +204,7 @@ class ReportDataService(
         recordStore: RecordStore,
     ): ReportData<ValueReport> = withSuspendingSpan {
         val input = ReportDataResolverInput(reportView.userId, interval, recordStore, reportView.dataConfiguration)
-        val valueData = resolveValueReportData(input) ?: error("Value data could not be found")
+        val valueData = resolveValueReportData(input) ?: error("Value reportdata could not be found")
         generateReportData(reportView.id, interval) { timeBucket -> valueData[timeBucket] }
     }
 
@@ -216,7 +214,7 @@ class ReportDataService(
         recordStore: RecordStore,
     ): ReportData<ByGroup<Budget>> = withSuspendingSpan {
         val input = ReportDataResolverInput(reportView.userId, interval, recordStore, reportView.dataConfiguration)
-        val groupedBudgetData = resolveGroupedBudgetData(input) ?: error("Grouped budget data could not be found")
+        val groupedBudgetData = resolveGroupedBudgetData(input) ?: error("Grouped budget reportdata could not be found")
         generateReportData(reportView.id, interval) { timeBucket -> groupedBudgetData[timeBucket] }
     }
 
@@ -226,7 +224,7 @@ class ReportDataService(
         recordStore: RecordStore,
     ): ReportData<PerformanceReport> = withSuspendingSpan {
         val input = ReportDataResolverInput(reportView.userId, interval, recordStore, reportView.dataConfiguration)
-        val performanceData = resolvePerformanceReportData(input) ?: error("Performance data could not be found")
+        val performanceData = resolvePerformanceReportData(input) ?: error("Performance reportdata could not be found")
         generateReportData(reportView.id, interval) { timeBucket -> performanceData[timeBucket] }
     }
 
@@ -238,7 +236,7 @@ class ReportDataService(
         ReportData(
             reportViewId = reportViewId,
             interval = interval,
-            data = sequenceOf(
+            buckets = sequenceOf(
                 interval.getBuckets().map { it to BucketType.REAL },
                 interval.getForecastBuckets().map { it to BucketType.FORECAST }
             )
@@ -247,17 +245,17 @@ class ReportDataService(
                     BucketData<T>(
                         timeBucket = bucket,
                         bucketType = bucketType,
-                        data = bucketDataSupplier(bucket) ?: error("Bucket data could not be found"),
+                        data = bucketDataSupplier(bucket) ?: error("Bucket reportdata could not be found"),
                     )
                 }
                 .toList<BucketData<T>>()
         )
 
-    private suspend fun resolveNetData(input: ReportDataResolverInput): ByBucket<BigDecimal>? {
+    private suspend fun resolveNetData(input: ReportDataResolverInput): ByBucket<NetReport>? {
         return resolveRealAndForecastData(resolverRegistry.net, input)
     }
 
-    private suspend fun resolveGroupedNetData(input: ReportDataResolverInput): ByBucket<ByGroup<BigDecimal>>? {
+    private suspend fun resolveGroupedNetData(input: ReportDataResolverInput): ByBucket<ByGroup<NetReport>>? {
         return resolveRealAndForecastData(resolverRegistry.groupedNet, input)
     }
 
