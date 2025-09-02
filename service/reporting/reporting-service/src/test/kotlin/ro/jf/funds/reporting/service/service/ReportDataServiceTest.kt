@@ -73,19 +73,19 @@ class ReportDataServiceTest {
         whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
         whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
 
-        val data = reportDataService.getNetData(userId, reportViewId, interval)
+        val data = reportDataService.getNetReport(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.interval).isEqualTo(interval)
         assertThat(data.buckets[0].timeBucket)
             .isEqualTo(TimeBucket(LocalDate.parse("2021-09-01"), LocalDate.parse("2021-09-30")))
-        assertThat(data.buckets[0].data.net).isEqualByComparingTo(BigDecimal("-300.0"))
+        assertThat(data.buckets[0].report.net).isEqualByComparingTo(BigDecimal("-300.0"))
         assertThat(data.buckets[1].timeBucket)
             .isEqualTo(TimeBucket(LocalDate.parse("2021-10-01"), LocalDate.parse("2021-10-31")))
-        assertThat(data.buckets[1].data.net).isEqualByComparingTo(BigDecimal("-30.0"))
+        assertThat(data.buckets[1].report.net).isEqualByComparingTo(BigDecimal("-30.0"))
         assertThat(data.buckets[2].timeBucket)
             .isEqualTo(TimeBucket(LocalDate.parse("2021-11-01"), LocalDate.parse("2021-11-30")))
-        assertThat(data.buckets[2].data.net).isEqualByComparingTo(BigDecimal.ZERO)
+        assertThat(data.buckets[2].report.net).isEqualByComparingTo(BigDecimal.ZERO)
     }
 
     @Test
@@ -116,7 +116,7 @@ class ReportDataServiceTest {
         )
         whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
 
-        val data = reportDataService.getNetData(userId, reportViewId, interval)
+        val data = reportDataService.getNetReport(userId, reportViewId, interval)
 
         val acceptedOffset = within(BigDecimal("0.01"))
 
@@ -124,18 +124,18 @@ class ReportDataServiceTest {
         assertThat(data.interval).isEqualTo(interval)
         assertThat(data.buckets).hasSize(9)
         assertThat(data.buckets[5].bucketType).isEqualTo(BucketType.REAL)
-        assertThat(data.buckets[5].data.net).isCloseTo(BigDecimal(-50), acceptedOffset)
+        assertThat(data.buckets[5].report.net).isCloseTo(BigDecimal(-50), acceptedOffset)
         assertThat(data.buckets[6].timeBucket).isEqualTo(YearMonth(2021, 7).asTimeBucket())
         assertThat(data.buckets[6].bucketType).isEqualTo(BucketType.FORECAST)
-        assertThat(data.buckets[6].data.net).isCloseTo(
+        assertThat(data.buckets[6].report.net).isCloseTo(
             BigDecimal((-40 - 30 - 20 - 40 - 50) / 5.0),
             acceptedOffset
         ) // -36
-        assertThat(data.buckets[7].data.net).isCloseTo(
+        assertThat(data.buckets[7].report.net).isCloseTo(
             BigDecimal((-30 - 20 - 40 - 50 - 36) / 5.0),
             acceptedOffset
         ) // -35.2
-        assertThat(data.buckets[8].data.net).isCloseTo(
+        assertThat(data.buckets[8].report.net).isCloseTo(
             BigDecimal((-20 - 40 - 50 - 36 - 35.2) / 5.0),
             acceptedOffset
         ) // -36.24
@@ -167,19 +167,19 @@ class ReportDataServiceTest {
         whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
         whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
 
-        val data = reportDataService.getGroupedNetData(userId, reportViewId, interval)
+        val data = reportDataService.getGroupedNetReport(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.interval).isEqualTo(interval)
         assertThat(data.buckets).hasSize(2)
         assertThat(data.buckets[0].timeBucket)
             .isEqualTo(YearMonth(2021, 9).asTimeBucket())
-        assertThat(data.buckets[0].data["Need"]?.net).isEqualByComparingTo(BigDecimal("-150.0"))
-        assertThat(data.buckets[0].data["Want"]?.net).isEqualByComparingTo(BigDecimal("-200.0"))
+        assertThat(data.buckets[0].report["Need"]?.net).isEqualByComparingTo(BigDecimal("-150.0"))
+        assertThat(data.buckets[0].report["Want"]?.net).isEqualByComparingTo(BigDecimal("-200.0"))
         assertThat(data.buckets[1].timeBucket)
             .isEqualTo(YearMonth(2021, 10).asTimeBucket())
-        assertThat(data.buckets[1].data["Need"]?.net).isEqualByComparingTo(BigDecimal.ZERO)
-        assertThat(data.buckets[1].data["Want"]?.net).isEqualByComparingTo("-30.0")
+        assertThat(data.buckets[1].report["Need"]?.net).isEqualByComparingTo(BigDecimal.ZERO)
+        assertThat(data.buckets[1].report["Want"]?.net).isEqualByComparingTo("-30.0")
     }
 
     @Test
@@ -221,7 +221,7 @@ class ReportDataServiceTest {
             )
         )
 
-        val data = reportDataService.getGroupedBudgetData(userId, reportViewId, interval)
+        val data = reportDataService.getGroupedBudgetReport(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.interval).isEqualTo(interval)
@@ -229,7 +229,7 @@ class ReportDataServiceTest {
 
         assertThat(data.buckets[0].timeBucket)
             .isEqualTo(YearMonth(2020, 2).asTimeBucket())
-        val groupedBudget1 = data.buckets[0].data
+        val groupedBudget1 = data.buckets[0].report
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
             assertThat(it.allocated).isEqualByComparingTo(BigDecimal(1500 * 0.6 - 300 * 0.6 + 300 * 0.6 * 5))
@@ -247,7 +247,7 @@ class ReportDataServiceTest {
 
         assertThat(data.buckets[1].timeBucket)
             .isEqualTo(YearMonth(2020, 3).asTimeBucket())
-        val groupedBudget2 = data.buckets[1].data
+        val groupedBudget2 = data.buckets[1].report
         assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
             assertThat(it.allocated).isEqualByComparingTo(BigDecimal(2000 * 0.6))
@@ -303,11 +303,11 @@ class ReportDataServiceTest {
             )
         )
 
-        val data = reportDataService.getGroupedBudgetData(userId, reportViewId, interval)
+        val data = reportDataService.getGroupedBudgetReport(userId, reportViewId, interval)
 
         assertThat(data.buckets).hasSize(1)
 
-        val groupedBudget1 = data.buckets[0].data
+        val groupedBudget1 = data.buckets[0].report
 
         /**
          * Total left = 2200 RON + 400 EUR
@@ -389,7 +389,7 @@ class ReportDataServiceTest {
             )
         )
 
-        val data = reportDataService.getReportViewData(userId, reportViewId, interval)
+        val data = reportDataService.getGroupedBudgetReport(userId, reportViewId, interval)
 
         assertThat(data.buckets).hasSize(2)
 
@@ -413,7 +413,7 @@ class ReportDataServiceTest {
          *      Real Left = 492.3120 RON + 164.104 EUR
          */
 
-        val groupedBudget1 = data.buckets[0].data.groupedBudget ?: error("First grouped budget is null")
+        val groupedBudget1 = data.buckets[0].report
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 4.8), acceptedOffset)
@@ -444,7 +444,7 @@ class ReportDataServiceTest {
          *          1192.312 RON + 324.104 EUR * 4.9 = X (3400 + 600 * 4.9) => X = 2.780,4216 / 6340 = 0,4385523028
          *      Real Left = 1.491,0778 RON + 263,13138 EUR
          */
-        val groupedBudget2 = data.buckets[1].data.groupedBudget ?: error("First grouped budget is null")
+        val groupedBudget2 = data.buckets[1].report
         assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(1500 + 240 * 4.9), acceptedOffset)
@@ -500,7 +500,7 @@ class ReportDataServiceTest {
             )
         )
 
-        val data = reportDataService.getGroupedBudgetData(userId, reportViewId, interval)
+        val data = reportDataService.getGroupedBudgetReport(userId, reportViewId, interval)
 
         assertThat(data.buckets).hasSize(2)
 
@@ -525,7 +525,7 @@ class ReportDataServiceTest {
          *      Real Left = 487.5 RON + 162.5 EUR
          */
 
-        val groupedBudget1 = data.buckets[0].data
+        val groupedBudget1 = data.buckets[0].report
         assertThat(groupedBudget1["Need"]).isNotNull
         groupedBudget1["Need"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(1200 + 300 * 5), acceptedOffset)
@@ -557,7 +557,7 @@ class ReportDataServiceTest {
          *          937.5 RON + 282.5 EUR * 5 = X (3400 + 600 * 59) => X = 2350 / 6400 = 0,3671875
          *      Real Left = 1248.4375 RON + 220.3125 EUR
          */
-        val groupedBudget2 = data.buckets[1].data
+        val groupedBudget2 = data.buckets[1].report
         assertThat(groupedBudget2["Need"]).isNotNull
         groupedBudget2["Need"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal(1750 + 280 * 5), acceptedOffset)
@@ -620,7 +620,7 @@ class ReportDataServiceTest {
             )
         )
 
-        val data = reportDataService.getGroupedBudgetData(userId, reportViewId, interval)
+        val data = reportDataService.getGroupedBudgetReport(userId, reportViewId, interval)
 
         assertThat(data.buckets).hasSize(6)
 
@@ -628,7 +628,7 @@ class ReportDataServiceTest {
 
         val forecastMay = data.buckets[4]
         assertThat(forecastMay.bucketType).isEqualTo(BucketType.FORECAST)
-        val forecastBudgetMay = forecastMay.data
+        val forecastBudgetMay = forecastMay.report
         assertThat(forecastBudgetMay["Need"]).isNotNull
         forecastBudgetMay["Need"]?.let {
             assertThat(it.allocated).isCloseTo(BigDecimal((2500 + 2000 + 1500) * 0.6 / 3.0), acceptedOffset)
@@ -665,21 +665,21 @@ class ReportDataServiceTest {
             )
         )
 
-        val data = reportDataService.getValueData(userId, reportViewId, interval)
+        val data = reportDataService.getValueReport(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.interval).isEqualTo(interval)
-        assertThat(data.buckets[0].data.start)
+        assertThat(data.buckets[0].report.start)
             .isEqualByComparingTo(BigDecimal("100.0"))
-        assertThat(data.buckets[0].data.end)
+        assertThat(data.buckets[0].report.end)
             .isEqualByComparingTo(BigDecimal("160.0"))
-        assertThat(data.buckets[1].data.start)
+        assertThat(data.buckets[1].report.start)
             .isEqualByComparingTo(BigDecimal("160.0"))
-        assertThat(data.buckets[1].data.end)
+        assertThat(data.buckets[1].report.end)
             .isEqualByComparingTo(BigDecimal("514.0"))
-        assertThat(data.buckets[2].data.start)
+        assertThat(data.buckets[2].report.start)
             .isEqualByComparingTo(BigDecimal("514.0"))
-        assertThat(data.buckets[2].data.end)
+        assertThat(data.buckets[2].report.end)
             .isEqualByComparingTo(BigDecimal("514.0"))
     }
 
@@ -715,26 +715,26 @@ class ReportDataServiceTest {
         whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON)))
             .thenAnswer { BigDecimal.ONE }
 
-        val data = reportDataService.getValueData(userId, reportViewId, interval)
+        val data = reportDataService.getValueReport(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.interval).isEqualTo(interval)
         assertThat(data.buckets[0].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2021, 9, 1), LocalDate(2021, 9, 30)))
-        assertThat(data.buckets[0].data.start).isEqualByComparingTo(BigDecimal("197.0"))
-        assertThat(data.buckets[0].data.end).isEqualByComparingTo(
+        assertThat(data.buckets[0].report.start).isEqualByComparingTo(BigDecimal("197.0"))
+        assertThat(data.buckets[0].report.end).isEqualByComparingTo(
             BigDecimal("200.0") + BigDecimal("4.9") * BigDecimal(
                 "40.0"
             )
         )
         assertThat(data.buckets[1].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2021, 10, 1), LocalDate(2021, 10, 31)))
-        assertThat(data.buckets[1].data.start).isEqualByComparingTo(
+        assertThat(data.buckets[1].report.start).isEqualByComparingTo(
             BigDecimal("200.0") + BigDecimal("4.95") * BigDecimal(
                 "40.0"
             )
         )
-        assertThat(data.buckets[1].data.end).isEqualByComparingTo(
+        assertThat(data.buckets[1].report.end).isEqualByComparingTo(
             BigDecimal("200.0") + BigDecimal("5.0") * BigDecimal(
                 "40.0"
             )
@@ -795,7 +795,7 @@ class ReportDataServiceTest {
             }
         }
 
-        val data = reportDataService.getPerformanceData(userId, reportViewId, interval)
+        val data = reportDataService.getPerformanceReport(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.interval).isEqualTo(interval)
@@ -804,32 +804,32 @@ class ReportDataServiceTest {
         assertThat(data.buckets[0].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2022, 5, 1), LocalDate(2022, 5, 31)))
         // 2 * 289 + 6 * 31 = 764
-        assertThat(data.buckets[0].data.totalAssetsValue).isEqualByComparingTo(BigDecimal(764))
+        assertThat(data.buckets[0].report.totalAssetsValue).isEqualByComparingTo(BigDecimal(764))
         // 400 - 300 - 90 + 400 - 290 - 96 = 24
-        assertThat(data.buckets[0].data.totalCurrencyValue).isEqualByComparingTo(BigDecimal(24))
+        assertThat(data.buckets[0].report.totalCurrencyValue).isEqualByComparingTo(BigDecimal(24))
         // 300 + 90 + 290 + 96 = 776
-        assertThat(data.buckets[0].data.totalInvestment).isEqualByComparingTo(BigDecimal(776))
+        assertThat(data.buckets[0].report.totalInvestment).isEqualByComparingTo(BigDecimal(776))
         // 764 - 776 = -12
-        assertThat(data.buckets[0].data.totalProfit).isEqualByComparingTo(BigDecimal(-12))
+        assertThat(data.buckets[0].report.totalProfit).isEqualByComparingTo(BigDecimal(-12))
         // 290 + 96 = 386
-        assertThat(data.buckets[0].data.currentInvestment).isEqualByComparingTo(BigDecimal(386))
+        assertThat(data.buckets[0].report.currentInvestment).isEqualByComparingTo(BigDecimal(386))
         // -12 - (298 + 3 * 29 - 300 - 90) = -7
-        assertThat(data.buckets[0].data.currentProfit).isEqualByComparingTo(BigDecimal(-7))
+        assertThat(data.buckets[0].report.currentProfit).isEqualByComparingTo(BigDecimal(-7))
 
         assertThat(data.buckets[1].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2022, 6, 1), LocalDate(2022, 6, 30)))
         // 24 + 400 - 305 - 102 = 17
-        assertThat(data.buckets[1].data.totalCurrencyValue).isEqualByComparingTo(BigDecimal(17))
+        assertThat(data.buckets[1].report.totalCurrencyValue).isEqualByComparingTo(BigDecimal(17))
         // 3 * 303 + 9 * 33 = 1206
-        assertThat(data.buckets[1].data.totalAssetsValue).isEqualByComparingTo(BigDecimal(1206))
+        assertThat(data.buckets[1].report.totalAssetsValue).isEqualByComparingTo(BigDecimal(1206))
         // 776 + 305 + 102 = 1183
-        assertThat(data.buckets[1].data.totalInvestment).isEqualByComparingTo(BigDecimal(1183))
+        assertThat(data.buckets[1].report.totalInvestment).isEqualByComparingTo(BigDecimal(1183))
         // 1206 - 1183 = 23
-        assertThat(data.buckets[1].data.totalProfit).isEqualByComparingTo(BigDecimal(23))
+        assertThat(data.buckets[1].report.totalProfit).isEqualByComparingTo(BigDecimal(23))
         // 305 + 102 = 407
-        assertThat(data.buckets[1].data.currentInvestment).isEqualByComparingTo(BigDecimal(407))
+        assertThat(data.buckets[1].report.currentInvestment).isEqualByComparingTo(BigDecimal(407))
         // 23 - -12 = 35
-        assertThat(data.buckets[1].data.currentProfit).isEqualByComparingTo(BigDecimal(35))
+        assertThat(data.buckets[1].report.currentProfit).isEqualByComparingTo(BigDecimal(35))
     }
 
     @Test
@@ -845,7 +845,7 @@ class ReportDataServiceTest {
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 11))
 
         assertThatThrownBy {
-            runBlocking { reportDataService.getNetData(userId, reportViewId, interval) }
+            runBlocking { reportDataService.getNetReport(userId, reportViewId, interval) }
         }
             .isInstanceOf(ReportingException.FeatureDisabled::class.java)
     }
@@ -857,7 +857,7 @@ class ReportDataServiceTest {
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 11))
 
         assertThatThrownBy {
-            runBlocking { reportDataService.getNetData(userId, reportViewId, interval) }
+            runBlocking { reportDataService.getNetReport(userId, reportViewId, interval) }
         }
             .isInstanceOf(ReportingException.ReportViewNotFound::class.java)
     }

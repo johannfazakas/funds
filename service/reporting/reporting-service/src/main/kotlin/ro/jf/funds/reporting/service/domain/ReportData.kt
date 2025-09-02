@@ -19,24 +19,14 @@ enum class BucketType {
 data class BucketData<D>(
     val timeBucket: TimeBucket,
     val bucketType: BucketType,
-    val data: D,
-)
-
-// TODO(Johann) aggregate is a bit weird to use. huge object.
-data class ReportDataAggregate(
-    val net: NetReport? = null,
-    val value: ValueReport? = null,
-    val groupedNet: ByGroup<NetReport>? = null,
-    val groupedBudget: ByGroup<Budget>? = null,
-    val performance: PerformanceReport? = null,
-    // TODO(Johann) implement performance by unit. it could also be by group defined on unit
-    val instrumentPerformance: ByUnit<PerformanceReport>? = null,
+    val report: D,
 )
 
 data class NetReport(
     val net: BigDecimal,
 )
 
+// TODO(Johann) implement performance by unit. it could also be by group defined on unit
 data class PerformanceReport(
     val totalAssetsValue: BigDecimal,
     val totalCurrencyValue: BigDecimal,

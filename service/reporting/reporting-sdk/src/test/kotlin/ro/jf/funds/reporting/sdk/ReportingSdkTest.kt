@@ -188,7 +188,7 @@ class ReportingSdkTest {
         )
 
         mockServerClient.mockGetReportData(
-            "/funds-api/reporting/v1/report-views/$viewId/reportdata/net",
+            "/funds-api/reporting/v1/report-views/$viewId/data/net",
             expectedResponse,
             ::buildNetItemJsonObject
         )

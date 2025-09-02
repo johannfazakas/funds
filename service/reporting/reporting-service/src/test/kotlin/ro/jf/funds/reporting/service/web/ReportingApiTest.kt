@@ -20,21 +20,21 @@ import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
-import ro.jf.funds.commons.event.ConsumerProperties
 import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
-import ro.jf.funds.commons.test.utils.*
+import ro.jf.funds.commons.test.utils.configureEnvironment
+import ro.jf.funds.commons.test.utils.createJsonHttpClient
+import ro.jf.funds.commons.test.utils.dbConfig
+import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
-import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
-import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.config.configureReportingErrorHandling
 import ro.jf.funds.reporting.service.config.configureReportingRouting
@@ -52,8 +52,6 @@ import javax.sql.DataSource
 @ExtendWith(KafkaContainerExtension::class)
 @ExtendWith(PostgresContainerExtension::class)
 class ReportingApiTest {
-    private val createReportViewTopic = testTopicSupplier.topic(REPORTING_DOMAIN, REPORT_VIEW_REQUEST)
-    private val consumerProperties = ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer")
     private val reportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)
     private val fundTransactionSdk = mock<FundTransactionSdk>()
     private val conversionRateService = mock<ConversionRateService>()
@@ -171,7 +169,7 @@ class ReportingApiTest {
     }
 
     @Test
-    fun `get report view data`() = testApplication {
+    fun `get net data report`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView = reportViewRepository.save(reportViewCommand)
@@ -203,7 +201,7 @@ class ReportingApiTest {
             )
         )
 
-        val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data") {
+        val response = httpClient.get("/funds-api/reporting/v1/report-views/${reportView.id}/data/net") {
             header(USER_ID_HEADER, userId.toString())
             parameter("granularity", TimeGranularityTO.DAILY.name)
             parameter("fromDate", fromDate.toString())
@@ -211,7 +209,7 @@ class ReportingApiTest {
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-        val reportData = response.body<ReportDataTO<ReportDataAggregateTO>>()
+        val reportData = response.body<ReportDataTO<NetReportTO>>()
         assertThat(reportData.viewId).isEqualTo(reportView.id)
         assertThat(reportData.timeBuckets).hasSize(28)
         assertThat(reportData.timeBuckets[0])
@@ -219,15 +217,7 @@ class ReportingApiTest {
                 BucketDataTO(
                     timeBucket = DateIntervalTO(LocalDate(2021, 1, 1), LocalDate(2021, 1, 1)),
                     bucketType = BucketTypeTO.REAL,
-                    report = ReportDataAggregateTO(
-                        net = NetReportTO(BigDecimal("0.0")),
-                        value = ValueReportItemTO(
-                            BigDecimal("0.0"),
-                            BigDecimal("0.0"),
-                            BigDecimal("0.0"),
-                            BigDecimal("0.0")
-                        ),
-                    )
+                    report = NetReportTO(BigDecimal("0.0")),
                 )
             )
         assertThat(reportData.timeBuckets[1])
@@ -235,15 +225,7 @@ class ReportingApiTest {
                 BucketDataTO(
                     timeBucket = DateIntervalTO(LocalDate(2021, 1, 2), LocalDate(2021, 1, 2)),
                     bucketType = BucketTypeTO.REAL,
-                    report = ReportDataAggregateTO(
-                        net = NetReportTO(BigDecimal("-75.0")),
-                        value = ValueReportItemTO(
-                            BigDecimal("0.0"),
-                            BigDecimal("-75.0"),
-                            BigDecimal("0.0"),
-                            BigDecimal("0.0")
-                        ),
-                    )
+                    report = NetReportTO(BigDecimal("-75.0")),
                 )
             )
     }

@@ -26,53 +26,39 @@ class ReportDataService(
     private val fundTransactionSdk: FundTransactionSdk,
     private val resolverRegistry: ReportDataResolverRegistry,
 ) {
-    // TODO(Johann) might remove this endpoint containing all
-    suspend fun getReportViewData(
-        userId: UUID,
-        reportViewId: UUID,
-        interval: ReportDataInterval,
-    ): ReportData<ReportDataAggregate> = withSuspendingSpan {
-        coroutineScope {
-            val reportView = reportViewRepository.findById(userId, reportViewId)
-                ?: throw ReportingException.ReportViewNotFound(userId, reportViewId)
-            val recordStore = createRecordStore(reportView, interval)
-            getReportData(reportView, interval, recordStore)
-        }
-    }
-
-    suspend fun getNetData(
+    suspend fun getNetReport(
         userId: UUID,
         reportViewId: UUID,
         interval: ReportDataInterval,
     ): ReportData<NetReport> = withSuspendingSpan {
-        getData(userId, reportViewId, interval, { it.net.enabled }, ::getNetData)
+        getData(userId, reportViewId, interval, { it.net.enabled }, ::getNetReport)
     }
 
-    suspend fun getGroupedNetData(
+    suspend fun getGroupedNetReport(
         userId: UUID,
         reportViewId: UUID,
         interval: ReportDataInterval,
     ): ReportData<ByGroup<NetReport>> = withSuspendingSpan {
-        getData(userId, reportViewId, interval, { it.groupedNet.enabled }, ::getGroupedNetData)
+        getData(userId, reportViewId, interval, { it.groupedNet.enabled }, ::getGroupedNetReport)
     }
 
-    suspend fun getValueData(
+    suspend fun getValueReport(
         userId: UUID,
         reportViewId: UUID,
         interval: ReportDataInterval,
     ): ReportData<ValueReport> = withSuspendingSpan {
-        getData(userId, reportViewId, interval, { it.valueReport.enabled }, ::getValueData)
+        getData(userId, reportViewId, interval, { it.valueReport.enabled }, ::getValueReport)
     }
 
-    suspend fun getGroupedBudgetData(
+    suspend fun getGroupedBudgetReport(
         userId: UUID,
         reportViewId: UUID,
         interval: ReportDataInterval,
     ): ReportData<ByGroup<Budget>> = withSuspendingSpan {
-        getData(userId, reportViewId, interval, { it.groupedBudget.enabled }, ::getGroupedBudgetData)
+        getData(userId, reportViewId, interval, { it.groupedBudget.enabled }, ::getGroupedBudgetReport)
     }
 
-    suspend fun getPerformanceData(
+    suspend fun getPerformanceReport(
         userId: UUID,
         reportViewId: UUID,
         interval: ReportDataInterval,
@@ -144,41 +130,7 @@ class ReportDataService(
             }
     }
 
-    private suspend fun getReportData(
-        reportView: ReportView,
-        interval: ReportDataInterval,
-        recordStore: RecordStore,
-    ): ReportData<ReportDataAggregate> = withSuspendingSpan {
-        coroutineScope {
-            val realInput = ReportDataResolverInput(
-                reportView.userId, interval, recordStore, reportView.dataConfiguration
-            )
-
-            val netDataDeferred = async { resolveNetData(realInput) }
-            val groupedNetDataDeferred = async { resolveGroupedNetData(realInput) }
-            val valueReportDataDeferred = async { resolveValueReportData(realInput) }
-            val groupedBudgetDataDeferred = async { resolveGroupedBudgetData(realInput) }
-            val performanceReportDataDeferred = async { resolvePerformanceReportData(realInput) }
-
-            val netData = netDataDeferred.await()
-            val groupedNetData = groupedNetDataDeferred.await()
-            val valueReportData = valueReportDataDeferred.await()
-            val groupedBudgetData = groupedBudgetDataDeferred.await()
-            val performanceReportData = performanceReportDataDeferred.await()
-
-            generateReportData(reportView.id, interval) { timeBucket ->
-                ReportDataAggregate(
-                    net = netData?.get(timeBucket),
-                    groupedNet = groupedNetData?.get(timeBucket),
-                    groupedBudget = groupedBudgetData?.get(timeBucket),
-                    value = valueReportData?.get(timeBucket),
-                    performance = performanceReportData?.get(timeBucket)
-                )
-            }
-        }
-    }
-
-    private suspend fun getNetData(
+    private suspend fun getNetReport(
         reportView: ReportView,
         interval: ReportDataInterval,
         recordStore: RecordStore,
@@ -188,7 +140,7 @@ class ReportDataService(
         generateReportData(reportView.id, interval) { timeBucket -> netData[timeBucket] }
     }
 
-    private suspend fun getGroupedNetData(
+    private suspend fun getGroupedNetReport(
         reportView: ReportView,
         interval: ReportDataInterval,
         recordStore: RecordStore,
@@ -198,7 +150,7 @@ class ReportDataService(
         generateReportData(reportView.id, interval) { timeBucket -> groupedNetData[timeBucket] }
     }
 
-    private suspend fun getValueData(
+    private suspend fun getValueReport(
         reportView: ReportView,
         interval: ReportDataInterval,
         recordStore: RecordStore,
@@ -208,7 +160,7 @@ class ReportDataService(
         generateReportData(reportView.id, interval) { timeBucket -> valueData[timeBucket] }
     }
 
-    private suspend fun getGroupedBudgetData(
+    private suspend fun getGroupedBudgetReport(
         reportView: ReportView,
         interval: ReportDataInterval,
         recordStore: RecordStore,
@@ -245,7 +197,7 @@ class ReportDataService(
                     BucketData<T>(
                         timeBucket = bucket,
                         bucketType = bucketType,
-                        data = bucketDataSupplier(bucket) ?: error("Bucket reportdata could not be found"),
+                        report = bucketDataSupplier(bucket) ?: error("Bucket reportdata could not be found"),
                     )
                 }
                 .toList<BucketData<T>>()
