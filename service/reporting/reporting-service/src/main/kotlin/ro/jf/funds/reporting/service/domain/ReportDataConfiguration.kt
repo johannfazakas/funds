@@ -51,28 +51,32 @@ data class ReportsConfiguration(
     fun withPerformanceReport(enabled: Boolean) = copy(performance = PerformanceReportConfiguration(enabled))
 }
 
+interface ReportConfiguration {
+    val enabled: Boolean
+}
+
 @Serializable
 data class GenericReportConfiguration(
-    val enabled: Boolean,
-)
+    override val enabled: Boolean,
+) : ReportConfiguration
 
 @Serializable
 data class ValueReportConfiguration(
-    val enabled: Boolean,
+    override val enabled: Boolean,
     val filter: RecordFilter? = null,
-)
+) : ReportConfiguration
 
 @Serializable
 data class NetReportConfiguration(
-    val enabled: Boolean,
+    override val enabled: Boolean,
     val filter: RecordFilter? = null,
-)
+) : ReportConfiguration
 
 @Serializable
 data class GroupedBudgetReportConfiguration(
-    val enabled: Boolean,
+    override val enabled: Boolean,
     val distributions: List<BudgetDistribution>,
-) {
+) : ReportConfiguration {
     private val defaultDistribution: BudgetDistribution? = distributions.find { it.default }
 
     @Serializable
@@ -99,8 +103,8 @@ data class GroupedBudgetReportConfiguration(
 
 @Serializable
 data class PerformanceReportConfiguration(
-    val enabled: Boolean,
-)
+    override val enabled: Boolean,
+) : ReportConfiguration
 
 @Serializable
 data class ForecastConfiguration(
