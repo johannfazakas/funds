@@ -60,7 +60,6 @@ data class NetReportTO(
     val net: BigDecimal,
 )
 
-// TODO(Johann) remove all the nullables in these classes
 @Serializable
 data class GroupNetReportTO(
     override val group: String,
@@ -72,11 +71,11 @@ data class GroupNetReportTO(
 data class GroupedBudgetReportTO(
     override val group: String,
     @Serializable(with = BigDecimalSerializer::class)
-    var allocated: BigDecimal?,
+    var allocated: BigDecimal,
     @Serializable(with = BigDecimalSerializer::class)
-    val spent: BigDecimal?,
+    val spent: BigDecimal,
     @Serializable(with = BigDecimalSerializer::class)
-    val left: BigDecimal?,
+    val left: BigDecimal,
 ) : GroupDataTO
 
 @Serializable

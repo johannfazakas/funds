@@ -46,7 +46,7 @@ class ImportSdkTest {
                 request()
                     .withMethod("POST")
                     .withPath("/funds-api/import/v1/imports/tasks")
-                    .withHeader("Content-Type", "multipart/form-reportdata.*")
+                    .withHeader("Content-Type", "multipart/form-data.*")
                     .withHeader(USER_ID_HEADER, userId.toString())
             )
             .respond(
@@ -94,7 +94,7 @@ class ImportSdkTest {
                     request()
                         .withMethod("POST")
                         .withPath("/funds-api/import/v1/imports/tasks")
-                        .withHeader("Content-Type", "multipart/form-reportdata.*")
+                        .withHeader("Content-Type", "multipart/form-data.*")
                         .withHeader(USER_ID_HEADER, userId.toString())
                 )
                 .respond(
@@ -136,7 +136,7 @@ class ImportSdkTest {
                     request()
                         .withMethod("POST")
                         .withPath("/funds-api/import/v1/imports/tasks")
-                        .withHeader("Content-Type", "multipart/form-reportdata.*")
+                        .withHeader("Content-Type", "multipart/form-data.*")
                         .withHeader(USER_ID_HEADER, userId.toString())
                 )
                 .respond(

@@ -21,6 +21,7 @@ import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
 import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
+import ro.jf.funds.reporting.service.service.reportdata.ReportTransactionService
 import ro.jf.funds.reporting.service.service.reportdata.resolver.*
 import javax.sql.DataSource
 
@@ -74,5 +75,6 @@ private val Application.serviceDependencies
         single<NetDataResolver> { NetDataResolver(get()) }
         single<PerformanceReportDataResolver> { PerformanceReportDataResolver(get()) }
         single<ReportDataResolverRegistry> { ReportDataResolverRegistry(get(), get(), get(), get(), get()) }
+        single<ReportTransactionService> { ReportTransactionService(get()) }
         single<ReportDataService> { ReportDataService(get(), get(), get()) }
     }
