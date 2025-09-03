@@ -141,16 +141,6 @@ class FundsClient(
         reportingSdk.createReportView(user.id, request)
     }
 
-    fun getReportViewData(
-        user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
-    ): ReportDataTO<ReportDataAggregateTO> = run {
-        val reportView = reportingSdk.listReportViews(user.id).items
-            .firstOrNull { it.name == reportName }
-            ?: error("Report view with name '$reportName' not found for user ${user.username}")
-
-        reportingSdk.getReportViewData(user.id, reportView.id, reportDataIntervalTO)
-    }
-
     fun getReportNetData(
         user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
     ): ReportDataTO<NetReportTO> = run {
@@ -160,7 +150,6 @@ class FundsClient(
 
     fun getReportGroupedNetData(
         user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
-        // TODO(Johann) should this have a list return type? not sure. some wrapper might be created
     ): ReportDataTO<GroupedTO<GroupNetReportTO>> = run {
         val reportView = getReportViewByName(user, reportName)
         reportingSdk.getGroupedNetData(user.id, reportView.id, reportDataIntervalTO)

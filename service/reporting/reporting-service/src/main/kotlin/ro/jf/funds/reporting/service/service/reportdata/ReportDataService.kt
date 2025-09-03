@@ -103,7 +103,6 @@ class ReportDataService(
         input: ReportDataResolverInput,
     ): ReportData<T> {
         val reportData = resolveRealAndForecastData(resolver, input)
-            ?: error("ReportData could not be found")
         return generateReportData(input) { timeBucket -> reportData[timeBucket] }
     }
 
@@ -129,17 +128,13 @@ class ReportDataService(
                 .toList<BucketData<T>>()
         )
 
-    // TODO(Johann) this shouldn't be nullable I guess
     private suspend fun <T> resolveRealAndForecastData(
         resolver: ReportDataResolver<T>,
         input: ReportDataResolverInput,
-    ): ByBucket<T>? =
+    ): ByBucket<T> =
         resolver.resolve(input)
-            ?.let { realData ->
+            .let { realData ->
                 resolver.forecast(ReportDataForecastInput.from(input, realData))
-                    ?.let { forecastData ->
-                        realData + forecastData
-                    }
-                    ?: realData
+                    .let { forecastData -> realData + forecastData }
             }
 }
