@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Label
 
-// TODO(Johann) whey are all these serializable?
 @Serializable
 data class ReportDataConfiguration(
     val currency: Currency,

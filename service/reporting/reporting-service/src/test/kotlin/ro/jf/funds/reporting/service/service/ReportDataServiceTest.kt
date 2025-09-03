@@ -22,6 +22,7 @@ import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
 import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
+import ro.jf.funds.reporting.service.service.reportdata.ReportTransactionService
 import ro.jf.funds.reporting.service.service.reportdata.resolver.*
 import java.math.BigDecimal
 import java.util.*
@@ -31,6 +32,7 @@ class ReportDataServiceTest {
     private val reportViewRepository = mock<ReportViewRepository>()
     private val conversionRateService = mock<ConversionRateService>()
     private val fundTransactionSdk = mock<FundTransactionSdk>()
+    private val reportTransactionService = ReportTransactionService(fundTransactionSdk)
 
     private val resolverRegistry = ReportDataResolverRegistry(
         NetDataResolver(conversionRateService),
@@ -40,7 +42,7 @@ class ReportDataServiceTest {
         PerformanceReportDataResolver(conversionRateService)
     )
     private val reportDataService =
-        ReportDataService(reportViewRepository, fundTransactionSdk, resolverRegistry)
+        ReportDataService(reportViewRepository, resolverRegistry, reportTransactionService)
 
     private val userId = randomUUID()
     private val reportViewId = randomUUID()

@@ -3,12 +3,8 @@ package ro.jf.funds.reporting.service.service.reportdata
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
-import ro.jf.funds.fund.api.model.FundTransactionFilterTO
-import ro.jf.funds.fund.api.model.FundTransactionTO
-import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.domain.ReportingException.FeatureDisabled
 import ro.jf.funds.reporting.service.domain.ReportingException.ReportViewNotFound
@@ -23,8 +19,8 @@ private val log = logger { }
 
 class ReportDataService(
     private val reportViewRepository: ReportViewRepository,
-    private val fundTransactionSdk: FundTransactionSdk,
     private val resolverRegistry: ReportDataResolverRegistry,
+    private val transactionService: ReportTransactionService,
 ) {
     suspend fun getNetReport(
         userId: UUID,
@@ -88,47 +84,18 @@ class ReportDataService(
         reportView: ReportView,
         interval: ReportDataInterval,
     ): RecordStore = RecordStore(
-        previousRecords = async { getPreviousRecords(reportView, interval) },
+        // TODO(Johann) keep in mind that only grouped budget and net reportdata require previous records.
+        previousRecords = async {
+            transactionService.getPreviousReportRecords(reportView, interval)
+        },
         bucketRecords = interval.getBuckets()
-            .map { bucket -> bucket to async { getBucketRecords(reportView, bucket) } }.toMap(),
-    )
-
-    // TODO(Johann) should these be extracted
-    private suspend fun getBucketRecords(reportView: ReportView, timeBucket: TimeBucket): List<ReportRecord> =
-        getReportRecords(reportView, timeBucket.from, timeBucket.to)
-
-    private suspend fun getPreviousRecords(reportView: ReportView, interval: ReportDataInterval): List<ReportRecord> =
-        getReportRecords(reportView, null, interval.getPreviousLastDay())
-
-    // TODO(Johann) keep in mind that only grouped budget and net reportdata require previous records.
-    private suspend fun getReportRecords(
-        reportView: ReportView,
-        fromDate: LocalDate?,
-        toDate: LocalDate?,
-    ): List<ReportRecord> = withSuspendingSpan {
-        val filter = FundTransactionFilterTO(fromDate, toDate)
-        fundTransactionSdk
-            .listTransactions(reportView.userId, reportView.fundId, filter).items
-            .asSequence()
-            .flatMap { it.toReportRecords(reportView) }
-            .toList()
-    }
-
-    private fun FundTransactionTO.toReportRecords(
-        reportView: ReportView,
-    ): List<ReportRecord> {
-        return this.records
-            .filter { record -> record.fundId == reportView.fundId }
-            .map { record ->
-                ReportRecord(
-                    transactionId = this.id,
-                    date = this.dateTime.date,
-                    unit = record.unit,
-                    amount = record.amount,
-                    labels = record.labels,
-                )
+            .map { bucket ->
+                bucket to async {
+                    transactionService.getBucketReportRecords(reportView, bucket)
+                }
             }
-    }
+            .toMap(),
+    )
 
     private suspend fun getNetReport(
         reportView: ReportView,
