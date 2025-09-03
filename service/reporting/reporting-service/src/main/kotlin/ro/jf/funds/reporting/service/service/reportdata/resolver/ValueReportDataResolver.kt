@@ -14,10 +14,7 @@ class ValueReportDataResolver(
 ) : ReportDataResolver<ValueReport> {
     override suspend fun resolve(
         input: ReportDataResolverInput,
-    ): ByBucket<ValueReport>? = withSuspendingSpan {
-        if (!input.dataConfiguration.reports.valueReport.enabled) {
-            return@withSuspendingSpan null
-        }
+    ): ByBucket<ValueReport> = withSuspendingSpan {
         val filter = getFilter(input.dataConfiguration.reports.valueReport)
         input.interval
             .generateBucketedData(
