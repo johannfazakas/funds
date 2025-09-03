@@ -14,21 +14,16 @@ class GroupedNetDataResolver(
 ) : ReportDataResolver<ByGroup<NetReport>> {
     override suspend fun resolve(
         input: ReportDataResolverInput,
-    ): ByBucket<ByGroup<NetReport>>? = withSuspendingSpan {
-        if (!input.dataConfiguration.reports.groupedNet.enabled || input.dataConfiguration.groups == null) {
-            return@withSuspendingSpan null
-        }
+    ): ByBucket<ByGroup<NetReport>> = withSuspendingSpan {
         input.interval
-            .generateBucketedData(
-                { timeBucket ->
-                    getGroupedNet(
-                        input.userId,
-                        input.recordStore.getBucketRecordsByUnit(timeBucket),
-                        input.dataConfiguration.groups,
-                        input.dataConfiguration.currency
-                    )
-                }
-            )
+            .generateBucketedData { timeBucket ->
+                getGroupedNet(
+                    input.userId,
+                    input.recordStore.getBucketRecordsByUnit(timeBucket),
+                    input.dataConfiguration.groups ?: emptyList(),
+                    input.dataConfiguration.currency
+                )
+            }
             .let(::ByBucket)
     }
 

@@ -18,9 +18,7 @@ import java.util.*
 class PerformanceReportDataResolver(
     private val conversionRateService: ConversionRateService,
 ) : ReportDataResolver<PerformanceReport> {
-    override suspend fun resolve(input: ReportDataResolverInput): ByBucket<PerformanceReport>? = withSuspendingSpan {
-        if (!input.dataConfiguration.reports.performance.enabled) return@withSuspendingSpan null
-
+    override suspend fun resolve(input: ReportDataResolverInput): ByBucket<PerformanceReport> = withSuspendingSpan {
         val previousData = getPreviousData(input)
         input.interval
             .generateBucketedData(previousData) { timeBucket, previous ->
@@ -31,7 +29,7 @@ class PerformanceReportDataResolver(
 
     override suspend fun forecast(
         input: ReportDataForecastInput<PerformanceReport>,
-    ): ByBucket<PerformanceReport>? = withSuspendingSpan {
+    ): ByBucket<PerformanceReport> = withSuspendingSpan {
         input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
             input.realData

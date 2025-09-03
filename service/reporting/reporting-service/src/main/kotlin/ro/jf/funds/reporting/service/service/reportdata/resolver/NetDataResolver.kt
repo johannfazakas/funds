@@ -12,10 +12,7 @@ class NetDataResolver(
 ) : ReportDataResolver<NetReport> {
     override suspend fun resolve(
         input: ReportDataResolverInput,
-    ): ByBucket<NetReport>? = withSuspendingSpan {
-        if (!input.dataConfiguration.reports.net.enabled) {
-            return@withSuspendingSpan null
-        }
+    ): ByBucket<NetReport> = withSuspendingSpan {
         input.interval
             .generateBucketedData { timeBucket: TimeBucket ->
                 getNet(input, input.recordStore.getBucketRecordsByUnit(timeBucket))

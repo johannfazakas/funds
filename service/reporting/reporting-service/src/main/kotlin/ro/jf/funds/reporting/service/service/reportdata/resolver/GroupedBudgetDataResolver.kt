@@ -14,11 +14,7 @@ import java.util.*
 class GroupedBudgetDataResolver(
     private val conversionRateService: ConversionRateService,
 ) : ReportDataResolver<ByGroup<Budget>> {
-    override suspend fun resolve(input: ReportDataResolverInput): ByBucket<ByGroup<Budget>>? = withSuspendingSpan {
-        // TODO(Johann) this input is passed across multiple methods. Could use a context class instead maybe
-        if (!input.dataConfiguration.reports.groupedBudget.enabled || input.dataConfiguration.groups.isNullOrEmpty())
-            return@withSuspendingSpan null
-
+    override suspend fun resolve(input: ReportDataResolverInput): ByBucket<ByGroup<Budget>> = withSuspendingSpan {
         val previousLeftBudgets = getPreviousGroupedBudget(input)
         input.interval
             .generateBucketedData(previousLeftBudgets) { timeBucket, previous ->
@@ -27,7 +23,7 @@ class GroupedBudgetDataResolver(
             .mergeBucketedData(input)
     }
 
-    override suspend fun forecast(input: ReportDataForecastInput<ByGroup<Budget>>): ByBucket<ByGroup<Budget>>? =
+    override suspend fun forecast(input: ReportDataForecastInput<ByGroup<Budget>>): ByBucket<ByGroup<Budget>> =
         withSpan("forecast") {
             input.interval
                 .generateForecastData(
