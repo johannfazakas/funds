@@ -84,15 +84,16 @@ class ReportDataService(
     private fun CoroutineScope.createRecordStore(
         reportView: ReportView,
         interval: ReportDataInterval,
-    ): RecordStore = RecordStore(
+    ): ReportTransactionStore = ReportTransactionStore(
         // TODO(Johann) keep in mind that only grouped budget and net data require previous records.
-        previousRecords = async {
-            transactionService.getPreviousReportRecords(reportView, interval)
+        fundId = reportView.fundId,
+        previousTransactions = async {
+            transactionService.getPreviousReportTransactions(reportView, interval)
         },
-        bucketRecords = interval.getBuckets()
+        bucketTransactions = interval.getBuckets()
             .map { bucket ->
                 bucket to async {
-                    transactionService.getBucketReportRecords(reportView, bucket)
+                    transactionService.getBucketReportTransactions(reportView, bucket)
                 }
             }
             .toMap(),

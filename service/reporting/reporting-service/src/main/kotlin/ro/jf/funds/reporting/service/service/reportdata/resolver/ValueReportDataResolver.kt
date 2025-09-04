@@ -19,14 +19,14 @@ class ValueReportDataResolver(
         input.interval
             .generateBucketedData(
                 ValueReport(
-                    endAmountByUnit = getAmountByUnit(input.recordStore.getPreviousRecordsByUnit(), filter)
+                    endAmountByUnit = getAmountByUnit(input.reportTransactionStore.getPreviousRecordsByUnit(), filter)
                 )
             ) { timeBucket, previous ->
                 getValueReport(
                     input.userId,
                     timeBucket,
                     previous.endAmountByUnit,
-                    input.recordStore.getBucketRecordsByUnit(timeBucket),
+                    input.reportTransactionStore.getBucketRecordsByUnit(timeBucket),
                     input.dataConfiguration,
                     filter
                 )

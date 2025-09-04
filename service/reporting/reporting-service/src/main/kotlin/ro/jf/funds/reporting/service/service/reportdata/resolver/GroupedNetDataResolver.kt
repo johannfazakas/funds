@@ -19,7 +19,7 @@ class GroupedNetDataResolver(
             .generateBucketedData { timeBucket ->
                 getGroupedNet(
                     input.userId,
-                    input.recordStore.getBucketRecordsByUnit(timeBucket),
+                    input.reportTransactionStore.getBucketRecordsByUnit(timeBucket),
                     input.dataConfiguration.groups ?: emptyList(),
                     input.dataConfiguration.currency
                 )

@@ -59,7 +59,7 @@ class PerformanceReportDataResolver(
     }
 
     private suspend fun getPreviousData(input: ReportDataResolverInput): PerformanceReport {
-        val previousRecords = input.recordStore.getPreviousRecords()
+        val previousRecords = input.reportTransactionStore.getPreviousRecords()
         val investmentByCurrency = extractInvestmentByCurrency(previousRecords)
         val valueByCurrency = extractValueByCurrency(previousRecords)
         val assetsBySymbol = extractAssetsBySymbol(previousRecords)
@@ -82,7 +82,7 @@ class PerformanceReportDataResolver(
         timeBucket: TimeBucket,
         previous: PerformanceReport,
     ): PerformanceReport {
-        val bucketRecords = input.recordStore.getBucketRecords(timeBucket)
+        val bucketRecords = input.reportTransactionStore.getBucketRecords(timeBucket)
         val bucketInvestmentByCurrency = extractInvestmentByCurrency(bucketRecords)
         val bucketValueByCurrency = extractValueByCurrency(bucketRecords)
         val bucketAssetsBySymbol = extractAssetsBySymbol(bucketRecords)

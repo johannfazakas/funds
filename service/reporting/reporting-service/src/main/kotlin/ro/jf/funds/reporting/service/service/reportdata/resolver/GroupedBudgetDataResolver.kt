@@ -58,7 +58,7 @@ class GroupedBudgetDataResolver(
     private suspend fun getPreviousGroupedBudget(
         input: ReportDataResolverInput,
     ): ByGroup<ByUnit<Budget>> = withSuspendingSpan {
-        input.recordStore.getPreviousRecords()
+        input.reportTransactionStore.getPreviousRecords()
             // split by year month for monthly normalization
             .groupBy { YearMonth(it.date.year, it.date.month.value) }
             .entries.sortedBy { it.key }
@@ -76,7 +76,7 @@ class GroupedBudgetDataResolver(
         previous: ByGroup<ByUnit<Budget>>,
     ): ByGroup<ByUnit<Budget>> = withSuspendingSpan {
         getGroupedBudget(
-            input, input.recordStore.getBucketRecords(interval), interval.to, previous
+            input, input.reportTransactionStore.getBucketRecords(interval), interval.to, previous
         )
     }
 
