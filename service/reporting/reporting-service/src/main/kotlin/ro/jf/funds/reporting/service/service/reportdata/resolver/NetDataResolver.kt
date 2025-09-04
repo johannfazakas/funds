@@ -15,7 +15,7 @@ class NetDataResolver(
     ): ByBucket<NetReport> = withSuspendingSpan {
         input.interval
             .generateBucketedData { timeBucket: TimeBucket ->
-                getNet(input, input.recordStore.getBucketRecordsByUnit(timeBucket))
+                getNet(input, input.reportTransactionStore.getBucketRecordsByUnit(timeBucket))
             }
             .let { ByBucket(it) }
     }
