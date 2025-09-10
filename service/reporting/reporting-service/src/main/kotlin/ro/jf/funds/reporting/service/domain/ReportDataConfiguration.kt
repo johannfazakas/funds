@@ -37,6 +37,7 @@ data class ReportsConfiguration(
     val groupedNet: GenericReportConfiguration = GenericReportConfiguration(enabled = false),
     val groupedBudget: GroupedBudgetReportConfiguration = GroupedBudgetReportConfiguration(enabled = false, listOf()),
     val performance: PerformanceReportConfiguration = PerformanceReportConfiguration(enabled = false),
+    val unitPerformance: PerformanceReportConfiguration = PerformanceReportConfiguration(enabled = false),
 ) {
     fun withNet(enabled: Boolean, filter: RecordFilter? = null) = copy(net = NetReportConfiguration(enabled, filter))
     fun withGroupedNet(enabled: Boolean) = copy(groupedNet = GenericReportConfiguration(enabled))
@@ -49,6 +50,7 @@ data class ReportsConfiguration(
     ) = copy(groupedBudget = GroupedBudgetReportConfiguration(enabled, distributions))
 
     fun withPerformanceReport(enabled: Boolean) = copy(performance = PerformanceReportConfiguration(enabled))
+    fun withUnitPerformanceReport(enabled: Boolean) = copy(unitPerformance = PerformanceReportConfiguration(enabled))
 }
 
 interface ReportConfiguration {

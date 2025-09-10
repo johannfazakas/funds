@@ -62,6 +62,14 @@ class ReportDataService(
         getData(userId, reportViewId, interval, resolverRegistry.performanceReport, ReportsConfiguration::performance)
     }
 
+    suspend fun getUnitPerformanceReport(
+        userId: UUID,
+        reportViewId: UUID,
+        interval: ReportDataInterval,
+    ): ReportData<BySymbol<UnitPerformanceReport>> = withSuspendingSpan {
+        getData(userId, reportViewId, interval, resolverRegistry.unitPerformanceReport, ReportsConfiguration::unitPerformance)
+    }
+
     private suspend fun <T> getData(
         userId: UUID,
         reportViewId: UUID,
