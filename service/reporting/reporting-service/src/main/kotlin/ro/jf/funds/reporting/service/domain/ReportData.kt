@@ -43,6 +43,23 @@ data class PerformanceReport(
     // TODO(Johann) could also add percentages
 )
 
+data class UnitPerformanceReport(
+    val symbol: Symbol,
+
+    val totalUnits: BigDecimal,
+    val currentUnits: BigDecimal,
+
+    val totalValue: BigDecimal,
+
+    val totalInvestment: BigDecimal,
+    val currentInvestment: BigDecimal,
+
+    val totalProfit: BigDecimal,
+    val currentProfit: BigDecimal,
+
+    val investmentByCurrency: Map<Currency, BigDecimal>,
+)
+
 data class ValueReport(
     val start: BigDecimal = BigDecimal.ZERO,
     val end: BigDecimal = BigDecimal.ZERO,

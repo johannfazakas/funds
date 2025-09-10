@@ -39,7 +39,8 @@ class ReportDataServiceTest {
         ValueReportDataResolver(conversionRateService),
         GroupedNetDataResolver(conversionRateService),
         GroupedBudgetDataResolver(conversionRateService),
-        PerformanceReportDataResolver(conversionRateService)
+        PerformanceReportDataResolver(conversionRateService),
+        UnitPerformanceReportDataResolver(conversionRateService),
     )
     private val reportDataService =
         ReportDataService(reportViewRepository, resolverRegistry, reportTransactionService)
@@ -774,22 +775,22 @@ class ReportDataServiceTest {
             )
         )
         whenever(conversionRateService.getRate(eq(userId), any(), any(), eq(EUR))).thenAnswer {
-            val date: LocalDate = it.getArgument<LocalDate>(1)
+            val date: LocalDate = it.getArgument(1)
             val sourceUnit: FinancialUnit = it.getArgument(2)
             val targetUnit: Currency = it.getArgument(3)
             if (sourceUnit == targetUnit) return@thenAnswer BigDecimal.ONE
             when (sourceUnit) {
-                Symbol("I1") -> when {
-                    date.month == Month.APRIL -> BigDecimal("298")
-                    date.month == Month.MAY -> BigDecimal("289")
-                    date.month == Month.JUNE -> BigDecimal("303")
+                Symbol("I1") -> when (date.month) {
+                    Month.APRIL -> BigDecimal("298")
+                    Month.MAY -> BigDecimal("289")
+                    Month.JUNE -> BigDecimal("303")
                     else -> error("unexpected")
                 }
 
-                Symbol("I2") -> when {
-                    date.month == Month.APRIL -> BigDecimal("29")
-                    date.month == Month.MAY -> BigDecimal("31")
-                    date.month == Month.JUNE -> BigDecimal("33")
+                Symbol("I2") -> when (date.month) {
+                    Month.APRIL -> BigDecimal("29")
+                    Month.MAY -> BigDecimal("31")
+                    Month.JUNE -> BigDecimal("33")
                     else -> error("unexpected")
                 }
 
@@ -832,6 +833,104 @@ class ReportDataServiceTest {
         assertThat(data.buckets[1].report.currentInvestment).isEqualByComparingTo(BigDecimal(407))
         // 23 - -12 = 35
         assertThat(data.buckets[1].report.currentProfit).isEqualByComparingTo(BigDecimal(35))
+    }
+
+    @Test
+    fun `get investment unit performance data`(): Unit = runBlocking {
+        val reportDataConfiguration = ReportDataConfiguration(
+            currency = EUR,
+            groups = null,
+            reports = ReportsConfiguration()
+                .withUnitPerformanceReport(enabled = true),
+            forecast = ForecastConfiguration(2)
+        )
+        whenever(reportViewRepository.findById(userId, reportViewId))
+            .thenReturn(reportView(reportDataConfiguration, investmentFundId))
+        val interval = ReportDataInterval.Monthly(
+            YearMonth(2022, 5),
+            YearMonth(2022, 6),
+            YearMonth(2022, 8)
+        )
+        mockTransactions(
+            interval, investmentFundId, listOf(
+                investmentEurTransfer(LocalDate.parse("2022-04-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-04-18"), 300, Symbol("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-04-18"), 90, Symbol("I2"), 3),
+
+                investmentEurTransfer(LocalDate.parse("2022-05-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-05-18"), 290, Symbol("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-05-18"), 96, Symbol("I2"), 3),
+
+                investmentEurTransfer(LocalDate.parse("2022-06-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-06-18"), 305, Symbol("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-06-18"), 102, Symbol("I2"), 3),
+            )
+        )
+        whenever(conversionRateService.getRate(eq(userId), any(), any(), eq(EUR))).thenAnswer {
+            val date: LocalDate = it.getArgument(1)
+            val sourceUnit: FinancialUnit = it.getArgument(2)
+            val targetUnit: Currency = it.getArgument(3)
+            if (sourceUnit == targetUnit) return@thenAnswer BigDecimal.ONE
+            when (sourceUnit) {
+                Symbol("I1") -> when (date.month) {
+                    Month.APRIL -> BigDecimal("298")
+                    Month.MAY -> BigDecimal("289")
+                    Month.JUNE -> BigDecimal("303")
+                    else -> error("unexpected")
+                }
+
+                Symbol("I2") -> when (date.month) {
+                    Month.APRIL -> BigDecimal("29")
+                    Month.MAY -> BigDecimal("31")
+                    Month.JUNE -> BigDecimal("33")
+                    else -> error("unexpected")
+                }
+
+                else -> error("unexpected")
+            }
+        }
+
+        val data = reportDataService.getUnitPerformanceReport(userId, reportViewId, interval)
+
+        assertThat(data.reportViewId).isEqualTo(reportViewId)
+        assertThat(data.interval).isEqualTo(interval)
+        assertThat(data.buckets).hasSize(4)
+
+        assertThat(data.buckets[0].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate(2022, 5, 1), LocalDate(2022, 5, 31)))
+        assertThat(data.buckets[0].bucketType).isEqualTo(BucketType.REAL)
+        val reportI1Bucket0 = data.buckets[0].report[Symbol("I1")]!!
+        assertThat(reportI1Bucket0.totalValue).isEqualByComparingTo(BigDecimal(578)) // 2 * 289 = 578
+        assertThat(reportI1Bucket0.totalInvestment).isEqualByComparingTo(BigDecimal(590)) // 300 + 290 = 590
+        assertThat(reportI1Bucket0.totalProfit).isEqualByComparingTo(BigDecimal(-12)) // 590 - 578 = -12
+        assertThat(reportI1Bucket0.currentInvestment).isEqualByComparingTo(BigDecimal(290)) // 290
+        assertThat(reportI1Bucket0.currentProfit).isEqualByComparingTo(BigDecimal(-10)) // -12 - (298 - 300) = -10
+
+        val reportI2Bucket0 = data.buckets[0].report[Symbol("I2")]!!
+        assertThat(reportI2Bucket0.totalInvestment).isEqualByComparingTo(BigDecimal(186)) // 90 + 96 = 186
+        assertThat(reportI2Bucket0.totalProfit).isEqualByComparingTo(BigDecimal(0)) // 186 - 186 = 0
+        assertThat(reportI2Bucket0.currentInvestment).isEqualByComparingTo(BigDecimal(96)) // 96
+        assertThat(reportI2Bucket0.currentProfit).isEqualByComparingTo(BigDecimal(3)) // 0 - (3 * 29 - 90) = 3
+
+        assertThat(data.buckets[1].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate(2022, 6, 1), LocalDate(2022, 6, 30)))
+        assertThat(data.buckets[1].bucketType).isEqualTo(BucketType.REAL)
+        val reportI1Bucket1 = data.buckets[1].report[Symbol("I1")]!!
+        assertThat(reportI1Bucket1.totalValue).isEqualByComparingTo(BigDecimal(909)) // 3 * 303 = 909
+        assertThat(reportI1Bucket1.totalInvestment).isEqualByComparingTo(BigDecimal(895)) // 590 + 305 = 883
+        assertThat(reportI1Bucket1.totalProfit).isEqualByComparingTo(BigDecimal(14)) // 909 - 895 = 14
+        assertThat(reportI1Bucket1.currentInvestment).isEqualByComparingTo(BigDecimal(305)) // 305
+        assertThat(reportI1Bucket1.currentProfit).isEqualByComparingTo(BigDecimal(26)) // 14 - -12 = 38
+
+        assertThat(data.buckets[2].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate(2022, 7, 1), LocalDate(2022, 7, 31)))
+        assertThat(data.buckets[2].bucketType).isEqualTo(BucketType.FORECAST)
+        val reportI1Bucket2 = data.buckets[2].report[Symbol("I1")]!!
+        assertThat(reportI1Bucket2.currentProfit).isEqualByComparingTo(BigDecimal(8)) // -10 + 26 / 2 = 8
+        assertThat(reportI1Bucket2.currentInvestment).isEqualByComparingTo(BigDecimal(297.5)) // (290) + 305) / 2 = 297.5
+        assertThat(reportI1Bucket2.totalValue).isEqualByComparingTo(BigDecimal(909 + 8 + 297.5))
+        assertThat(reportI1Bucket2.totalInvestment).isEqualByComparingTo(BigDecimal(895 + 297.5))
+        assertThat(reportI1Bucket2.totalProfit).isEqualByComparingTo(BigDecimal(14 + 8))
     }
 
     @Test
