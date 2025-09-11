@@ -39,7 +39,7 @@ data class PerformanceReport(
 
     val investmentsByCurrency: Map<Currency, BigDecimal>,
     val valueByCurrency: Map<Currency, BigDecimal>,
-    val assetsBySymbol: Map<Symbol, BigDecimal>,
+    val assetsBySymbol: BySymbol<BigDecimal>,
     // TODO(Johann) could also add percentages
 )
 

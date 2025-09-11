@@ -19,7 +19,7 @@ interface ReportingApi {
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<GroupedTO<GroupNetReportTO>>
+    ): ReportDataTO<ByGroupTO<GroupNetReportTO>>
 
     suspend fun getValueData(
         userId: UUID,
@@ -31,7 +31,7 @@ interface ReportingApi {
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<GroupedTO<GroupedBudgetReportTO>>
+    ): ReportDataTO<ByGroupTO<GroupedBudgetReportTO>>
 
     suspend fun getPerformanceData(
         userId: UUID,

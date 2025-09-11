@@ -24,7 +24,6 @@ class PerformanceReportDataResolver(
             .generateBucketedData(previousData) { timeBucket, previous ->
                 getNextPerformanceReport(input, timeBucket, previous)
             }
-            .let(::ByBucket)
     }
 
     override suspend fun forecast(
@@ -55,7 +54,6 @@ class PerformanceReportDataResolver(
                 assetsBySymbol = emptyMap(),
             )
         }
-            .let { ByBucket(it) }
     }
 
     private suspend fun getPreviousData(input: ReportDataResolverInput): PerformanceReport {
