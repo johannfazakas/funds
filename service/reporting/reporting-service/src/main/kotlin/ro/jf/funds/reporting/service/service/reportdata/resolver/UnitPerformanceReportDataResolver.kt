@@ -15,10 +15,10 @@ class UnitPerformanceReportDataResolver(
 ) : ReportDataResolver<BySymbol<UnitPerformanceReport>> {
     // TODO(Johann-UP) review & refactor class
     override suspend fun resolve(input: ReportDataResolverInput): ByBucket<BySymbol<UnitPerformanceReport>> {
-        val previousData = getPreviousData(input)
+        val previousData = getPreviousReport(input)
         return input.interval
             .generateBucketedData(previousData) { timeBucket, previous ->
-                getNextPerformanceReport(input, timeBucket, previous)
+                getNextReport(input, timeBucket, previous)
             }
     }
 
@@ -28,7 +28,6 @@ class UnitPerformanceReportDataResolver(
             input.realData
         ) { inputBuckets: List<BySymbol<UnitPerformanceReport>> ->
             val inputSize = inputBuckets.size.toBigDecimal()
-
             val distinctSymbols = inputBuckets.flatMap { it.keys }.toSet()
 
             distinctSymbols
@@ -47,78 +46,64 @@ class UnitPerformanceReportDataResolver(
                         totalInvestment = lastReport.totalInvestment + currentInvestment,
                         currentInvestment = currentInvestment,
                         totalProfit = lastReport.totalProfit + currentProfit,
-                        currentProfit = inputBuckets.mapNotNull { it[symbol] }.sumOf { it.currentProfit }
-                            .divide(inputSize, MathContext.DECIMAL64),
+                        currentProfit = currentProfit,
                         investmentByCurrency = emptyMap()
                     )
                 }
         }
     }
 
-    private suspend fun getPreviousData(input: ReportDataResolverInput): BySymbol<UnitPerformanceReport> {
+    private suspend fun getPreviousReport(input: ReportDataResolverInput): BySymbol<UnitPerformanceReport> {
         val previousRecords = input.reportTransactionStore.getPreviousTransactions().toInvestmentTransactions()
         val investmentByCurrency = extractInvestmentByCurrency(previousRecords)
-        val unitsBySymbol = extractAssetsBySymbol(previousRecords)
-//        val valueByCurrency = extractValueByCurrency(previousRecords)
+        val unitsBySymbol = extractUnits(previousRecords)
 
         return aggregateUnitPerformanceReport(
             userId = input.userId,
             date = input.interval.getPreviousLastDay(),
             targetCurrency = input.dataConfiguration.currency,
-            previousProfit = emptyMap(),
-//            valueByCurrency = valueByCurrency,
-            previousInvestmentByCurrency = emptyMap(),
             currentInvestmentByCurrency = investmentByCurrency,
-            previousUnits = emptyMap(),
             currentUnits = unitsBySymbol,
+            previous = emptyMap()
         )
     }
 
-    private suspend fun getNextPerformanceReport(
+    private suspend fun getNextReport(
         input: ReportDataResolverInput,
         timeBucket: TimeBucket,
         previous: BySymbol<UnitPerformanceReport>,
     ): BySymbol<UnitPerformanceReport> {
         val bucketRecords = input.reportTransactionStore.getBucketTransactions(timeBucket).toInvestmentTransactions()
-        val investmentByCurrency = extractInvestmentByCurrency(bucketRecords)
-//        val bucketValueByCurrency = extractValueByCurrency(bucketRecords)
-        val assetsBySymbol = extractAssetsBySymbol(bucketRecords)
-
-        val previousInvestmentByCurrency = previous.mapValues { it.value.investmentByCurrency }
-        val previousUnits = previous.mapValues { it.value.totalUnits }
 
         return aggregateUnitPerformanceReport(
             userId = input.userId,
             date = timeBucket.to,
             targetCurrency = input.dataConfiguration.currency,
-            previousProfit = previous.mapValues { it.value.totalProfit },
-//            valueByCurrency = mergeMaps(previous.valueByCurrency, bucketValueByCurrency),
-            previousInvestmentByCurrency = previousInvestmentByCurrency,
-            currentInvestmentByCurrency = investmentByCurrency,
-            previousUnits = previousUnits,
-            currentUnits = assetsBySymbol,
+            currentInvestmentByCurrency = extractInvestmentByCurrency(bucketRecords),
+            currentUnits = extractUnits(bucketRecords),
+            previous = previous
         )
     }
+
+    private fun List<ReportTransaction>.toInvestmentTransactions(): List<InvestmentTransaction> =
+        this.mapNotNull { it.toInvestmentTransaction() }
 
     // TODO(Johann-UP) maybe this could be split by symbol
     private suspend fun aggregateUnitPerformanceReport(
         userId: UUID,
         date: LocalDate,
         targetCurrency: Currency,
-        // TODO(Johann-UP) this should be a Map<Symbol, BigDecimal> casting problems.
-        previousProfit: Map<Symbol, BigDecimal>,
-        previousInvestmentByCurrency: BySymbol<ByCurrency<BigDecimal>>,
         currentInvestmentByCurrency: BySymbol<ByCurrency<BigDecimal>>,
-        previousUnits: Map<Symbol, BigDecimal>,
-        cur(rentUnits: Map<Symbol, BigDecimal>,
+        currentUnits: BySymbol<BigDecimal>,
+        previous: BySymbol<UnitPerformanceReport>,
     ): BySymbol<UnitPerformanceReport> {
         val currentInvestment = calculateInvestment(userId, date, targetCurrency, currentInvestmentByCurrency)
-//        val totalCurrencyValue = calculateCurrenciesValue(userId, date, targetCurrency, valueByCurrency)
-
-        val totalInvestmentByCurrency = mergeMaps1(previousInvestmentByCurrency, currentInvestmentByCurrency)
+        val totalInvestmentByCurrency =
+            mergeMaps1(previous.mapValues { it.value.investmentByCurrency }, currentInvestmentByCurrency)
         val totalInvestment = calculateInvestment(userId, date, targetCurrency, totalInvestmentByCurrency)
 
-        val totalUnitsBySymbol = mergeMaps2(previousUnits, currentUnits)
+        val totalUnitsBySymbol =
+            mergeMaps2(previous.mapValues { it.value.totalUnits }, currentUnits)
         val totalValue = calculateAssetsValue(userId, date, targetCurrency, totalUnitsBySymbol)
 
         return totalUnitsBySymbol.keys.associateWith { key ->
@@ -127,7 +112,7 @@ class UnitPerformanceReportDataResolver(
             val totalValue = totalValue[key] ?: BigDecimal.ZERO
             val totalInvestment = totalInvestment[key] ?: BigDecimal.ZERO
             val currentInvestment = currentInvestment[key] ?: BigDecimal.ZERO
-            val previousProfit = previousProfit[key] ?: BigDecimal.ZERO
+            val previousProfit = previous[key]?.totalProfit ?: BigDecimal.ZERO
             val investmentByCurrency = totalInvestmentByCurrency[key] ?: emptyMap()
 
             UnitPerformanceReport(
@@ -192,9 +177,6 @@ class UnitPerformanceReportDataResolver(
                 value * conversionRateService.getRate(userId, date, unit, targetCurrency)
             }
 
-    private fun List<ReportTransaction>.toInvestmentTransactions(): List<InvestmentTransaction> =
-        this.mapNotNull { it.toInvestmentTransaction() }
-
     private fun ReportTransaction.toInvestmentTransaction(): InvestmentTransaction? {
         val symbolRecord = this.records.singleOrNull { it.unit is Symbol }
         val currencyRecord = this.records.singleOrNull { it.unit is Currency }
@@ -224,7 +206,7 @@ class UnitPerformanceReportDataResolver(
 
     private fun extractInvestmentByCurrency(
         transactions: List<InvestmentTransaction>,
-    ): Map<Symbol, Map<Currency, BigDecimal>> = transactions
+    ): BySymbol<ByCurrency<BigDecimal>> = transactions
         .asSequence()
         .mapNotNull { it as? InvestmentTransaction.OpenPosition }
         .groupBy { it.targetSymbol }
@@ -235,7 +217,7 @@ class UnitPerformanceReportDataResolver(
         }
         .toMap()
 
-    private fun extractAssetsBySymbol(transactions: List<InvestmentTransaction>): Map<Symbol, BigDecimal> = transactions
+    private fun extractUnits(transactions: List<InvestmentTransaction>): BySymbol<BigDecimal> = transactions
         .asSequence()
         .mapNotNull { it as? InvestmentTransaction.OpenPosition }
         .groupBy { it.targetSymbol }
