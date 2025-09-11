@@ -2,7 +2,6 @@ package ro.jf.funds.reporting.service.service.reportdata.resolver
 
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.observability.tracing.withSpan
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.*
@@ -32,7 +31,6 @@ class GroupedBudgetDataResolver(
                 ) { inputBuckets: List<ByGroup<Budget>> ->
                     forecastData(inputBuckets, input.groups)
                 }
-                .let { ByBucket(it) }
         }
 
     private suspend fun Map<TimeBucket, ByGroup<ByUnit<Budget>>>.mergeBucketedData(
@@ -41,7 +39,6 @@ class GroupedBudgetDataResolver(
         mapValues { (timeBucket, budgetByUnitByGroup) ->
             budgetByUnitByGroup.mergeUnits(timeBucket.to, input)
         }
-            .let(::ByBucket)
     }
 
     private suspend fun ByGroup<ByUnit<Budget>>.mergeUnits(
@@ -63,7 +60,7 @@ class GroupedBudgetDataResolver(
             .groupBy { YearMonth(it.date.year, it.date.month.value) }
             .entries.sortedBy { it.key }
             .map { it.key to it.value }
-            .fold(ByGroup()) { acc, (yearMonth, monthRecords) ->
+            .fold(emptyMap()) { acc, (yearMonth, monthRecords) ->
                 getGroupedBudget(
                     input, monthRecords, yearMonth.endDate, acc
                 )
@@ -92,7 +89,7 @@ class GroupedBudgetDataResolver(
                 val spent = groupBudgets.sumOf { it.spent }.divide(inputSize, MathContext.DECIMAL64)
                 val left = groupBudgets.last().left + allocated + spent
                 Budget(allocated, spent, left)
-            }.let { ByGroup(it) }
+            }
     }
 
     private suspend fun getGroupedBudget(
@@ -126,21 +123,21 @@ class GroupedBudgetDataResolver(
         record: ReportRecord,
         distribution: GroupedBudgetReportConfiguration.BudgetDistribution,
     ): ByGroup<ByUnit<Budget>> = withSpan("allocateIncome") {
-        distribution.groups
-            .map { (group, percentage) ->
-                group to ByUnit(
+        val allocatedRecordIncome: ByGroup<ByUnit<Budget>> = distribution.groups
+            .associate { (group, percentage) ->
+                group to mapOf(
                     record.unit to record.amount.percentage(percentage).let { Budget(it, BigDecimal.ZERO, it) })
             }
-            .let { ByGroup(it.toMap()) }
-            .let { it.plus(this) { a, b -> a.plus(b) { x, y -> x + y } } }
+        allocatedRecordIncome.merge(this) { a, b -> a.merge(b) { x, y -> x + y } }
     }
 
     private fun ByGroup<ByUnit<Budget>>.addGroupExpense(
         matchingGroup: String,
         record: ReportRecord,
     ): ByGroup<ByUnit<Budget>> = withSpan("addGroupExpense") {
-        ByGroup(matchingGroup to ByUnit(record.unit to Budget(BigDecimal.ZERO, record.amount, record.amount)))
-            .let { it.plus(this) { a, b -> a.plus(b) { x, y -> x + y } } }
+        val recordGroupExpense =
+            mapOf(matchingGroup to mapOf(record.unit to Budget(BigDecimal.ZERO, record.amount, record.amount)))
+        this.merge(recordGroupExpense) { a, b -> a.merge(b) { x, y -> x + y } }
     }
 
     private suspend fun ByGroup<ByUnit<Budget>>.normalizeGroupCurrencyRatio(
@@ -149,26 +146,26 @@ class GroupedBudgetDataResolver(
         reportCurrency: Currency,
     ): ByGroup<ByUnit<Budget>> = withSuspendingSpan {
         val leftByUnit = this
-            .flatMap { it.value }
-            .map { (unit, budget) -> unit to budget.left }
-            .groupBy(Pair<FinancialUnit, BigDecimal>::first, Pair<FinancialUnit, BigDecimal>::second)
+            .flatMap { it.value.entries }
+            .groupBy({ it.key }) { it.value.left }
             .mapValues { (_, left) -> left.sumOf { it } }
 
-        val mapValues = this.mapValues { (_, budgetByUnit) ->
-            val convertedGroupLeftValue = budgetByUnit
-                .sumOf { (unit, budget) ->
-                    budget.left * conversionRateService.getRate(userId, date, unit, reportCurrency)
+        val mapValues = this
+            .mapValues { (_, budgetByUnit) ->
+                val convertedGroupLeftValue = budgetByUnit.entries
+                    .sumOf { (unit, budget) ->
+                        budget.left * conversionRateService.getRate(userId, date, unit, reportCurrency)
+                    }
+                // X * W1 * R1 + X * W2 * R2 = T => X (W1 * R1 + W2 * R2) = T => X = T / (W1 * R1 + W2 * R2)
+                val multiplicationFactor = budgetByUnit.keys
+                    .sumOf { unit ->
+                        leftByUnit[unit]!! * conversionRateService.getRate(userId, date, unit, reportCurrency)
+                    }
+                    .let { convertedGroupLeftValue.divide(it, MathContext.DECIMAL64) }
+                budgetByUnit.mapValues { (unit, budget) ->
+                    budget.copy(left = multiplicationFactor * leftByUnit[unit]!!)
                 }
-            // X * W1 * R1 + X * W2 * R2 = T => X (W1 * R1 + W2 * R2) = T => X = T / (W1 * R1 + W2 * R2)
-            val multiplicationFactor = budgetByUnit
-                .sumOf { (unit, _) ->
-                    leftByUnit[unit]!! * conversionRateService.getRate(userId, date, unit, reportCurrency)
-                }
-                .let { convertedGroupLeftValue.divide(it, MathContext.DECIMAL64) }
-            budgetByUnit.mapValues { (unit, budget) ->
-                budget.copy(left = multiplicationFactor * leftByUnit[unit]!!)
             }
-        }
         mapValues
     }
 

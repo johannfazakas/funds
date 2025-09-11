@@ -20,7 +20,6 @@ class UnitPerformanceReportDataResolver(
             .generateBucketedData(previousData) { timeBucket, previous ->
                 getNextPerformanceReport(input, timeBucket, previous)
             }
-            .let(::ByBucket)
     }
 
     override suspend fun forecast(input: ReportDataForecastInput<BySymbol<UnitPerformanceReport>>): ByBucket<BySymbol<UnitPerformanceReport>> {
@@ -30,7 +29,7 @@ class UnitPerformanceReportDataResolver(
         ) { inputBuckets: List<BySymbol<UnitPerformanceReport>> ->
             val inputSize = inputBuckets.size.toBigDecimal()
 
-            val distinctSymbols = inputBuckets.flatMap { it.asMap().keys }.toSet()
+            val distinctSymbols = inputBuckets.flatMap { it.keys }.toSet()
 
             distinctSymbols
                 .associateWith { symbol ->
@@ -53,9 +52,7 @@ class UnitPerformanceReportDataResolver(
                         investmentByCurrency = emptyMap()
                     )
                 }
-                .let(::BySymbol)
         }
-            .let(::ByBucket)
     }
 
     private suspend fun getPreviousData(input: ReportDataResolverInput): BySymbol<UnitPerformanceReport> {
@@ -87,14 +84,14 @@ class UnitPerformanceReportDataResolver(
 //        val bucketValueByCurrency = extractValueByCurrency(bucketRecords)
         val assetsBySymbol = extractAssetsBySymbol(bucketRecords)
 
-        val previousInvestmentByCurrency = previous.mapValues { it.second.investmentByCurrency }.asMap()
-        val previousUnits = previous.mapValues { it.second.totalUnits }.asMap()
+        val previousInvestmentByCurrency = previous.mapValues { it.value.investmentByCurrency }
+        val previousUnits = previous.mapValues { it.value.totalUnits }
 
         return aggregateUnitPerformanceReport(
             userId = input.userId,
             date = timeBucket.to,
             targetCurrency = input.dataConfiguration.currency,
-            previousProfit = previous.asMap().mapValues { it.value.totalProfit },
+            previousProfit = previous.mapValues { it.value.totalProfit },
 //            valueByCurrency = mergeMaps(previous.valueByCurrency, bucketValueByCurrency),
             previousInvestmentByCurrency = previousInvestmentByCurrency,
             currentInvestmentByCurrency = investmentByCurrency,
@@ -110,11 +107,10 @@ class UnitPerformanceReportDataResolver(
         targetCurrency: Currency,
         // TODO(Johann-UP) this should be a Map<Symbol, BigDecimal> casting problems.
         previousProfit: Map<Symbol, BigDecimal>,
-//        valueByCurrency: Map<Currency, BigDecimal>,
-        previousInvestmentByCurrency: Map<Symbol, Map<Currency, BigDecimal>>,
-        currentInvestmentByCurrency: Map<Symbol, Map<Currency, BigDecimal>>,
+        previousInvestmentByCurrency: BySymbol<ByCurrency<BigDecimal>>,
+        currentInvestmentByCurrency: BySymbol<ByCurrency<BigDecimal>>,
         previousUnits: Map<Symbol, BigDecimal>,
-        currentUnits: Map<Symbol, BigDecimal>,
+        cur(rentUnits: Map<Symbol, BigDecimal>,
     ): BySymbol<UnitPerformanceReport> {
         val currentInvestment = calculateInvestment(userId, date, targetCurrency, currentInvestmentByCurrency)
 //        val totalCurrencyValue = calculateCurrenciesValue(userId, date, targetCurrency, valueByCurrency)
@@ -146,7 +142,6 @@ class UnitPerformanceReportDataResolver(
                 investmentByCurrency = investmentByCurrency
             )
         }
-            .let(::BySymbol)
     }
 
     private suspend fun calculateInvestment(
@@ -182,7 +177,7 @@ class UnitPerformanceReportDataResolver(
     private fun <T : FinancialUnit> mergeMaps2(one: Map<T, BigDecimal>, two: Map<T, BigDecimal>): Map<T, BigDecimal> {
         return sequenceOf<Map<T, BigDecimal>>(one, two)
             .flatMap<Map<T, BigDecimal>, Pair<T, BigDecimal>> { it.entries.map<Map.Entry<T, BigDecimal>, Pair<T, BigDecimal>> { entry -> entry.key to entry.value } }
-            .groupBy<Pair<T, BigDecimal>, T> { (key, value) -> key }
+            .groupBy<Pair<T, BigDecimal>, T> { (key, _) -> key }
             .mapValues<T, List<Pair<T, BigDecimal>>, BigDecimal> { (_, values) -> values.sumOf<Pair<T, BigDecimal>> { it.second } }
     }
 

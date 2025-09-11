@@ -31,7 +31,6 @@ class ValueReportDataResolver(
                     filter
                 )
             }
-            .let(::ByBucket)
     }
 
     override suspend fun forecast(
@@ -50,9 +49,9 @@ class ValueReportDataResolver(
                 end = last.end + ((last.end - first.end).divide(inputSize, MathContext.DECIMAL64)),
                 min = last.min + ((last.min - first.min).divide(inputSize, MathContext.DECIMAL64)),
                 max = last.max + ((last.max - first.max).divide(inputSize, MathContext.DECIMAL64)),
-                endAmountByUnit = ByUnit(emptyMap())
+                endAmountByUnit = emptyMap()
             )
-        }.let { ByBucket(it) }
+        }
     }
 
     private fun getFilter(
@@ -103,6 +102,5 @@ class ValueReportDataResolver(
             .flatMap { it.asSequence().map { (unit, value) -> unit to value } }
             .groupBy { it.first }
             .mapValues { (_, values) -> values.sumOf { it.second } }
-            .let(::ByUnit)
     }
 }

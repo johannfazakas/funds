@@ -19,10 +19,10 @@ data class ReportTransactionStore(
         getBucketTransactions(bucket).extractFundRecords().toList()
 
     suspend fun getPreviousRecordsByUnit(): ByUnit<List<ReportRecord>> =
-        getPreviousTransactions().extractFundRecords().groupBy { it.unit }.let(::ByUnit)
+        getPreviousTransactions().extractFundRecords().groupBy { it.unit }
 
     suspend fun getBucketRecordsByUnit(bucket: TimeBucket): ByUnit<List<ReportRecord>> =
-        getBucketTransactions(bucket).extractFundRecords().groupBy { it.unit }.let(::ByUnit)
+        getBucketTransactions(bucket).extractFundRecords().groupBy { it.unit }
 
     private fun List<ReportTransaction>.extractFundRecords(): Sequence<ReportRecord> =
         this.asSequence()

@@ -43,9 +43,8 @@ data class BucketDataTO<T>(
     val report: T,
 )
 
-// TODO(Johann-UP) might rename to ByGroupTO, which could also make room for a ByUnitTO for performance
 @Serializable
-data class GroupedTO<T : GroupDataTO>(val groups: List<T>) {
+data class ByGroupTO<T : GroupDataTO>(val groups: List<T>) {
     operator fun get(group: String): T {
         return groups.first { it.group == group }
     }

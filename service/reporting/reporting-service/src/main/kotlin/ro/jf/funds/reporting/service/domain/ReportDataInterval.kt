@@ -66,7 +66,7 @@ sealed class ReportDataInterval() {
         realData: ByBucket<D>,
         forecastResolver: (List<D>) -> D,
     ): Map<TimeBucket, D> {
-        val relevantTailBuckets = realData.itemByBucket.entries
+        val relevantTailBuckets = realData.entries
             .sortedBy { it.key.from }
             .takeLast(inputBuckets)
             .map { it.value }

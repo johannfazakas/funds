@@ -74,7 +74,7 @@ class ReportingSdk(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<GroupedTO<GroupNetReportTO>> = withSuspendingSpan {
+    ): ReportDataTO<ByGroupTO<GroupNetReportTO>> = withSuspendingSpan {
         log.info { "Get grouped net reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
         getData(
             userId,
@@ -100,7 +100,7 @@ class ReportingSdk(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
-    ): ReportDataTO<GroupedTO<GroupedBudgetReportTO>> = withSuspendingSpan {
+    ): ReportDataTO<ByGroupTO<GroupedBudgetReportTO>> = withSuspendingSpan {
         log.info { "Get grouped budget reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
         getData(
             userId,

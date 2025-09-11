@@ -150,7 +150,7 @@ class FundsClient(
 
     fun getReportGroupedNetData(
         user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
-    ): ReportDataTO<GroupedTO<GroupNetReportTO>> = run {
+    ): ReportDataTO<ByGroupTO<GroupNetReportTO>> = run {
         val reportView = getReportViewByName(user, reportName)
         reportingSdk.getGroupedNetData(user.id, reportView.id, reportDataIntervalTO)
     }
@@ -164,7 +164,7 @@ class FundsClient(
 
     fun getReportGroupedBudgetData(
         user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
-    ): ReportDataTO<GroupedTO<GroupedBudgetReportTO>> = run {
+    ): ReportDataTO<ByGroupTO<GroupedBudgetReportTO>> = run {
         val reportView = getReportViewByName(user, reportName)
         reportingSdk.getGroupedBudgetData(user.id, reportView.id, reportDataIntervalTO)
     }

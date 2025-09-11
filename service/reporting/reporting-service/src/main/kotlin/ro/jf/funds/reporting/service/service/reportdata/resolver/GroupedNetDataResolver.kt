@@ -24,7 +24,6 @@ class GroupedNetDataResolver(
                     input.dataConfiguration.currency
                 )
             }
-            .let(::ByBucket)
     }
 
     override suspend fun forecast(
@@ -42,8 +41,7 @@ class GroupedNetDataResolver(
                         .divide(inputBucketsSize, MathContext.DECIMAL64)
                         .let(::NetReport)
                 }
-                .let { ByGroup(it) }
-        }.let { ByBucket(it) }
+        }
     }
 
     private suspend fun getGroupedNet(
@@ -51,11 +49,10 @@ class GroupedNetDataResolver(
         records: ByUnit<List<ReportRecord>>,
         groups: List<ReportGroup>,
         reportCurrency: Currency,
-    ): ByGroup<NetReport> {
-        return groups.associate { group ->
+    ): ByGroup<NetReport> =
+        groups.associate { group ->
             group.name to getFilteredNet(userId, records, reportCurrency, group.filter::test)
-        }.let(::ByGroup)
-    }
+        }
 
     private suspend fun getFilteredNet(
         userId: UUID,

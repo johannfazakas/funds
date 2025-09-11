@@ -38,9 +38,9 @@ fun BucketType.toBucketTypeTO(): BucketTypeTO = when (this) {
 
 fun NetReport.toNetReportTO(): NetReportTO = NetReportTO(this.net)
 
-fun ByGroup<NetReport>.toGroupedNetTO(): GroupedTO<GroupNetReportTO> =
+fun ByGroup<NetReport>.toGroupedNetTO(): ByGroupTO<GroupNetReportTO> =
     this.map { (group, report) -> GroupNetReportTO(group = group, net = report.net) }
-        .let(::GroupedTO)
+        .let(::ByGroupTO)
 
 fun ValueReport.toValueReportTO(): ValueReportTO =
     ValueReportTO(
@@ -50,7 +50,7 @@ fun ValueReport.toValueReportTO(): ValueReportTO =
         max = this.max
     )
 
-fun ByGroup<Budget>.toGroupedBudgetTO(): GroupedTO<GroupedBudgetReportTO> =
+fun ByGroup<Budget>.toGroupedBudgetTO(): ByGroupTO<GroupedBudgetReportTO> =
     this.map { (group, budget) ->
         GroupedBudgetReportTO(
             group = group,
@@ -59,7 +59,7 @@ fun ByGroup<Budget>.toGroupedBudgetTO(): GroupedTO<GroupedBudgetReportTO> =
             left = budget.left
         )
     }
-        .let(::GroupedTO)
+        .let(::ByGroupTO)
 
 fun PerformanceReport.toPerformanceTO(): PerformanceReportTO =
     PerformanceReportTO(

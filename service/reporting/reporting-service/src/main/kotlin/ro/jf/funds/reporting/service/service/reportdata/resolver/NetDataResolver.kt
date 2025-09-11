@@ -17,7 +17,6 @@ class NetDataResolver(
             .generateBucketedData { timeBucket: TimeBucket ->
                 getNet(input, input.reportTransactionStore.getBucketRecordsByUnit(timeBucket))
             }
-            .let { ByBucket(it) }
     }
 
     override suspend fun forecast(
@@ -29,7 +28,7 @@ class NetDataResolver(
         ) { inputBuckets: List<NetReport> ->
             val inputSize = inputBuckets.size.toBigDecimal()
             NetReport(inputBuckets.sumOf { it.net }.divide(inputSize, MathContext.DECIMAL64))
-        }.let { ByBucket(it) }
+        }
     }
 
     private suspend fun getNet(
