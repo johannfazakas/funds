@@ -58,7 +58,21 @@ data class UnitPerformanceReport(
     val currentProfit: BigDecimal,
 
     val investmentByCurrency: Map<Currency, BigDecimal>,
-)
+) {
+    companion object {
+        fun zero(symbol: Symbol) = UnitPerformanceReport(
+            symbol,
+            totalUnits = BigDecimal.ZERO,
+            currentUnits = BigDecimal.ZERO,
+            totalValue = BigDecimal.ZERO,
+            totalInvestment = BigDecimal.ZERO,
+            currentInvestment = BigDecimal.ZERO,
+            totalProfit = BigDecimal.ZERO,
+            currentProfit = BigDecimal.ZERO,
+            investmentByCurrency = emptyMap()
+        )
+    }
+}
 
 data class ValueReport(
     val start: BigDecimal = BigDecimal.ZERO,
