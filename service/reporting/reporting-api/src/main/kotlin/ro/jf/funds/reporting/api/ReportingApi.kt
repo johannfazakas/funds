@@ -38,4 +38,10 @@ interface ReportingApi {
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<PerformanceReportTO>
+
+    suspend fun getUnitPerformanceData(
+        userId: UUID,
+        reportViewId: UUID,
+        reportDataInterval: ReportDataIntervalTO,
+    ): ReportDataTO<InstrumentsPerformanceReportTO>
 }

@@ -1,6 +1,7 @@
 package ro.jf.funds.reporting.api.model
 
 import kotlinx.serialization.Serializable
+import ro.jf.funds.commons.model.Symbol
 import ro.jf.funds.commons.serialization.BigDecimalSerializer
 import ro.jf.funds.commons.serialization.UUIDSerializer
 import java.math.BigDecimal
@@ -52,6 +53,13 @@ data class ByGroupTO<T : GroupDataTO>(val groups: List<T>) {
 
 interface GroupDataTO {
     val group: String
+}
+
+@Serializable
+data class InstrumentsPerformanceReportTO(val reports: List<InstrumentPerformanceReportTO>) {
+    operator fun get(instrument: Symbol): InstrumentPerformanceReportTO {
+        return reports.firstOrNull { it.symbol == instrument } ?: InstrumentPerformanceReportTO.zero(instrument)
+    }
 }
 
 @Serializable
@@ -107,3 +115,31 @@ data class PerformanceReportTO(
     @Serializable(with = BigDecimalSerializer::class)
     val currentProfit: BigDecimal,
 )
+
+// TODO(Johann) rename unit to instrument everywhere
+@Serializable
+data class InstrumentPerformanceReportTO(
+    val symbol: Symbol,
+
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalUnits: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val currentUnits: BigDecimal = BigDecimal.ZERO,
+
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalValue: BigDecimal = BigDecimal.ZERO,
+
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalInvestment: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val currentInvestment: BigDecimal = BigDecimal.ZERO,
+
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalProfit: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val currentProfit: BigDecimal = BigDecimal.ZERO,
+) {
+    companion object {
+        fun zero(symbol: Symbol): InstrumentPerformanceReportTO = InstrumentPerformanceReportTO(symbol = symbol)
+    }
+}
