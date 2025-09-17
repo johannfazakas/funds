@@ -78,7 +78,8 @@ fun Routing.reportingApiRouting(
             val reportViewId = call.reportViewId()
             val interval = call.reportDataInterval()
             log.info { "Get value reportdata request for user $userId and report view $reportViewId in interval $interval." }
-            val reportData = reportDataService.getValueReport(userId, reportViewId, interval).toTO { it.toValueReportTO() }
+            val reportData =
+                reportDataService.getValueReport(userId, reportViewId, interval).toTO { it.toValueReportTO() }
             call.respond(status = HttpStatusCode.OK, message = reportData)
         }
 
@@ -97,7 +98,19 @@ fun Routing.reportingApiRouting(
             val reportViewId = call.reportViewId()
             val interval = call.reportDataInterval()
             log.info { "Get performance reportdata request for user $userId and report view $reportViewId in interval $interval." }
-            val reportData = reportDataService.getPerformanceReport(userId, reportViewId, interval).toTO { it.toPerformanceTO() }
+            val reportData =
+                reportDataService.getPerformanceReport(userId, reportViewId, interval).toTO { it.toPerformanceTO() }
+            call.respond(status = HttpStatusCode.OK, message = reportData)
+        }
+
+        // TODO(Johann) add a test. what will happen if the unit performance report is not enabled?
+        get("/{reportViewId}/data/unit-performance") {
+            val userId = call.userId()
+            val reportViewId = call.reportViewId()
+            val interval = call.reportDataInterval()
+            log.info { "Get unit performance reportdata request for user $userId and report view $reportViewId in interval $interval." }
+            val reportData = reportDataService.getUnitPerformanceReport(userId, reportViewId, interval)
+                .toTO { it.toInstrumentsPerformanceReportTO() }
             call.respond(status = HttpStatusCode.OK, message = reportData)
         }
     }

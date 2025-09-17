@@ -70,3 +70,18 @@ fun PerformanceReport.toPerformanceTO(): PerformanceReportTO =
         totalProfit = this.totalProfit,
         currentProfit = this.currentProfit
     )
+
+fun BySymbol<UnitPerformanceReport>.toInstrumentsPerformanceReportTO(): InstrumentsPerformanceReportTO =
+    this.map { (symbol, performance) ->
+        InstrumentPerformanceReportTO(
+            symbol = symbol,
+            totalUnits = performance.totalUnits,
+            currentUnits = performance.currentUnits,
+            totalValue = performance.totalValue,
+            totalInvestment = performance.totalInvestment,
+            currentInvestment = performance.currentInvestment,
+            totalProfit = performance.totalProfit,
+            currentProfit = performance.currentProfit
+        )
+    }
+        .let(::InstrumentsPerformanceReportTO)

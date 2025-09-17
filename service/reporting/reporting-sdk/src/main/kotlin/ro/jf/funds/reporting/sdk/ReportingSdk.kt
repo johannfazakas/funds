@@ -122,6 +122,19 @@ class ReportingSdk(
         )
     }
 
+    override suspend fun getUnitPerformanceData(
+        userId: UUID,
+        reportViewId: UUID,
+        reportDataInterval: ReportDataIntervalTO,
+    ): ReportDataTO<InstrumentsPerformanceReportTO> = withSuspendingSpan {
+        log.info { "Get unit performance reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        getData(
+            userId,
+            reportDataInterval,
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/unit-performance"
+        )
+    }
+
     private suspend inline fun <reified T> getData(
         userId: UUID,
         reportDataInterval: ReportDataIntervalTO,
