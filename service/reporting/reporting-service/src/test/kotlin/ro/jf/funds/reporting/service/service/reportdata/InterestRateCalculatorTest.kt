@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import ro.jf.funds.reporting.service.domain.InvestmentOpenPosition
 import java.math.BigDecimal
 import java.math.MathContext
 
@@ -30,10 +31,10 @@ class InterestRateCalculatorTest {
     fun `given calculate interest rate`(interestRate: BigDecimal) {
         val growthFactor = interestRate.divide(100.toBigDecimal(), MATH_CONTEXT) + 1.toBigDecimal()
         val positions = listOf(
-            InvestmentPosition(LocalDate.parse("2023-01-01"), BigDecimal(45)),
+            InvestmentOpenPosition(LocalDate.parse("2023-01-01"), BigDecimal(45)),
             // 1 year 162 days
-            InvestmentPosition(LocalDate.parse("2023-07-23"), BigDecimal(50)),
-            InvestmentPosition(LocalDate.parse("2024-01-01"), BigDecimal(55))
+            InvestmentOpenPosition(LocalDate.parse("2023-07-23"), BigDecimal(50)),
+            InvestmentOpenPosition(LocalDate.parse("2024-01-01"), BigDecimal(55))
         )
         val valuation = listOf(
             BigDecimal(45) * growthFactor.pow(BigDecimal(2)),

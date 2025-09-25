@@ -6,20 +6,16 @@ import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Symbol
 import ro.jf.funds.commons.model.UnitType
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
-import ro.jf.funds.reporting.service.domain.ByBucket
-import ro.jf.funds.reporting.service.domain.PerformanceReport
-import ro.jf.funds.reporting.service.domain.ReportRecord
-import ro.jf.funds.reporting.service.domain.TimeBucket
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
-import ro.jf.funds.reporting.service.domain.ReportDataForecastInput
-import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolver
-import ro.jf.funds.reporting.service.domain.ReportDataResolverInput
+import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculator
 import java.math.BigDecimal
 import java.math.MathContext
-import java.util.UUID
+import java.util.*
 
 class PerformanceReportDataResolver(
     private val conversionRateService: ConversionRateService,
+    private val interestRateCalculator: InterestRateCalculator,
 ) : ReportDataResolver<PerformanceReport> {
     override suspend fun resolve(input: ReportDataResolverInput): ByBucket<PerformanceReport> = withSuspendingSpan {
         val previousData = getPreviousData(input)
@@ -40,18 +36,25 @@ class PerformanceReportDataResolver(
 
             val currentInvestment = inputBuckets.sumOf { it.currentInvestment }.divide(inputSize, MathContext.DECIMAL64)
             val currentProfit = inputBuckets.sumOf { it.currentProfit }.divide(inputSize, MathContext.DECIMAL64)
-            val averageCurrencyValue =
+            // TODO(Johann-56) not sure if this is correct
+//            val currentInterest =
+//                inputBuckets.sumOf { it.currentInterest }.divide(inputSize, MathContext.DECIMAL64)
+            val totalCurrencyValue =
                 inputBuckets.sumOf { it.totalAssetsValue }.divide(currentInvestment, MathContext.DECIMAL64)
 
             val lastBucket = inputBuckets.last()
 
             PerformanceReport(
                 totalAssetsValue = lastBucket.totalAssetsValue + currentInvestment + currentProfit,
-                totalCurrencyValue = averageCurrencyValue,
+                totalCurrencyValue = totalCurrencyValue,
                 totalInvestment = lastBucket.totalInvestment + currentInvestment,
                 currentInvestment = currentInvestment,
                 totalProfit = lastBucket.totalProfit + currentProfit,
                 currentProfit = currentProfit,
+// TODO(Johann-performance-interest) review usage
+
+//                totalInterest = lastBucket.totalInterest,
+//                currentInterest = currentInterest,
                 investmentsByCurrency = emptyMap(),
                 valueByCurrency = emptyMap(),
                 assetsBySymbol = emptyMap(),
@@ -119,7 +122,7 @@ class PerformanceReportDataResolver(
         records
             .filter { it.isPositionCost() }
             .groupBy { it.unit as Currency }
-            .mapValues { (unit, records) -> records.sumOf { it.amount } }
+            .mapValues { (_, records) -> records.sumOf { it.amount } }
 
     private suspend fun aggregatePerformanceReport(
         userId: UUID,
@@ -138,6 +141,8 @@ class PerformanceReportDataResolver(
         val totalInvestmentByCurrency = mergeMaps(previousInvestmentByCurrency, currentInvestmentByCurrency)
         val totalInvestment = calculateInvestment(userId, date, targetCurrency, totalInvestmentByCurrency)
 
+//        val totalInterest
+
         val totalAssetsBySymbol = mergeMaps(previousAssetsBySymbol, currentAssetsBySymbol)
         val totalAssetsValue = calculateAssetsValue(userId, date, targetCurrency, totalAssetsBySymbol)
 
@@ -148,6 +153,8 @@ class PerformanceReportDataResolver(
             totalProfit = totalAssetsValue - totalInvestment,
             currentInvestment = currentInvestment,
             currentProfit = totalAssetsValue - totalInvestment - previousProfit,
+// TODO(Johann-performance-interest) review usage
+//            totalInterest = TODO(),
             investmentsByCurrency = totalInvestmentByCurrency,
             valueByCurrency = valueByCurrency,
             assetsBySymbol = totalAssetsBySymbol,
