@@ -11,9 +11,12 @@ import ro.jf.funds.reporting.service.domain.PerformanceReport
 import ro.jf.funds.reporting.service.domain.ReportRecord
 import ro.jf.funds.reporting.service.domain.TimeBucket
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
+import ro.jf.funds.reporting.service.domain.ReportDataForecastInput
+import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolver
+import ro.jf.funds.reporting.service.domain.ReportDataResolverInput
 import java.math.BigDecimal
 import java.math.MathContext
-import java.util.*
+import java.util.UUID
 
 class PerformanceReportDataResolver(
     private val conversionRateService: ConversionRateService,

@@ -1,8 +1,6 @@
-package ro.jf.funds.reporting.service.service.reportdata.resolver
+package ro.jf.funds.reporting.service.domain
 
-import ro.jf.funds.reporting.service.domain.ByBucket
-import ro.jf.funds.reporting.service.domain.ForecastConfiguration
-import ro.jf.funds.reporting.service.domain.ReportDataInterval
+import ro.jf.funds.reporting.service.domain.ReportDataResolverInput
 
 data class ReportDataForecastInput<T>(
     val interval: ReportDataInterval,

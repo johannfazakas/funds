@@ -34,6 +34,10 @@ data class PerformanceReport(
     val totalInvestment: BigDecimal,
     val currentInvestment: BigDecimal,
 
+    // TODO(Johann-55)
+//    val totalInterest: BigDecimal,
+//    val currentInterest: BigDecimal,
+
     val totalProfit: BigDecimal,
     val currentProfit: BigDecimal,
 
