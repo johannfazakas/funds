@@ -9,6 +9,7 @@ dependencies {
     implementation(project(":commons:commons"))
     implementation(project(":fund:fund-sdk"))
     implementation(project(":historical-pricing:historical-pricing-sdk"))
+    implementation(libs.big.math)
     testImplementation(project(":commons:commons-test"))
 }
 

@@ -22,6 +22,7 @@ testcontainers = "1.19.8"
 mockserver-client = "5.15.0"
 jsoup = "1.15.3"
 poi = "5.2.5"
+big-math = "1.3.0"
 
 [libraries]
 
@@ -73,6 +74,7 @@ opentelemetry-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semco
 kotlin-csv = { module = "com.jsoizo:kotlin-csv", version.ref = "kotlin-csv" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 poi = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
+big-math = { module = "ch.obermuhlner:big-math", version.ref = "big-math" }
 
 # test libraries
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

@@ -1,8 +1,4 @@
-package ro.jf.funds.reporting.service.service.reportdata.resolver
-
-import ro.jf.funds.reporting.service.domain.ReportTransactionStore
-import ro.jf.funds.reporting.service.domain.ReportDataInterval
-import ro.jf.funds.reporting.service.domain.ReportView
+package ro.jf.funds.reporting.service.domain
 
 data class ReportDataResolverInput(
     val reportView: ReportView,

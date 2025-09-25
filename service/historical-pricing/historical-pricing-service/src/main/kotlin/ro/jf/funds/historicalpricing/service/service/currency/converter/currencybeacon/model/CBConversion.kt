@@ -8,5 +8,5 @@ import java.math.BigDecimal
 data class CBConversion(
     val date: String,
     val base: String,
-    val rates: Map<String, @Serializable(with = BigDecimalSerializer::class) BigDecimal>
+    val rates: Map<String, @Serializable(with = BigDecimalSerializer::class) BigDecimal>,
 )

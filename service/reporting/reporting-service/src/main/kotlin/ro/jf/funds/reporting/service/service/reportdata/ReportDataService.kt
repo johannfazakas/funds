@@ -9,9 +9,7 @@ import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.domain.ReportingException.FeatureDisabled
 import ro.jf.funds.reporting.service.domain.ReportingException.ReportViewNotFound
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
-import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataForecastInput
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolver
-import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverInput
 import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
 import java.util.*
 

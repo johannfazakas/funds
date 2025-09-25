@@ -21,9 +21,15 @@ import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
+import ro.jf.funds.reporting.service.service.reportdata.resolver.GroupedBudgetDataResolver
+import ro.jf.funds.reporting.service.service.reportdata.resolver.GroupedNetDataResolver
+import ro.jf.funds.reporting.service.service.reportdata.resolver.NetDataResolver
+import ro.jf.funds.reporting.service.service.reportdata.resolver.PerformanceReportDataResolver
+import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
 import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
 import ro.jf.funds.reporting.service.service.reportdata.ReportTransactionService
-import ro.jf.funds.reporting.service.service.reportdata.resolver.*
+import ro.jf.funds.reporting.service.service.reportdata.resolver.UnitPerformanceReportDataResolver
+import ro.jf.funds.reporting.service.service.reportdata.resolver.ValueReportDataResolver
 import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID

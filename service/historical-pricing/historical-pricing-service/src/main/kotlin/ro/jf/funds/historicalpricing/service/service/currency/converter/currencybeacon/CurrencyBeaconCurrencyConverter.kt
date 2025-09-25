@@ -14,7 +14,8 @@ import ro.jf.funds.historicalpricing.service.service.currency.converter.currency
 import java.time.format.DateTimeFormatter
 import java.time.LocalDate as JavaLocalDate
 
-private const val CURRENCY_BEACON_API_KEY = "Tvq2HYD17h6pLceGMPY0iL4VECzVcm3H"
+// TODO(Johann) how could this be injected in a safe way?
+private const val CURRENCY_BEACON_API_KEY = "BEUseQ6C0HKAKXOeA5dZzsxmXV8HuRbL"
 private val QUERY_PARAM_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
 private val log = KotlinLogging.logger {}
