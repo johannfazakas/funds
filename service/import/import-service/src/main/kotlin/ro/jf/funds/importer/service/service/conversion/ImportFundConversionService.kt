@@ -44,7 +44,7 @@ class ImportFundConversionService(
 
         val conversions = transactionsToStrategy
             .flatMap { (transaction, strategy) -> strategy.getRequiredConversions(transaction, accountStore) }
-            .map { it -> ConversionRequest(it.sourceCurrency, it.targetCurrency, it.date) }
+            .map { ConversionRequest(it.sourceCurrency, it.targetCurrency, it.date) }
             .distinct()
             .let { historicalPricingSdk.convert(userId, ConversionsRequest(it)) }
 

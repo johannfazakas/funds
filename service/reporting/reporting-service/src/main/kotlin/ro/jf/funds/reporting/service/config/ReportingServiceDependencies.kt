@@ -20,15 +20,10 @@ import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.ReportViewService
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
-import ro.jf.funds.reporting.service.service.reportdata.resolver.GroupedBudgetDataResolver
-import ro.jf.funds.reporting.service.service.reportdata.resolver.GroupedNetDataResolver
-import ro.jf.funds.reporting.service.service.reportdata.resolver.NetDataResolver
-import ro.jf.funds.reporting.service.service.reportdata.resolver.PerformanceReportDataResolver
-import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
+import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculator
 import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
 import ro.jf.funds.reporting.service.service.reportdata.ReportTransactionService
-import ro.jf.funds.reporting.service.service.reportdata.resolver.UnitPerformanceReportDataResolver
-import ro.jf.funds.reporting.service.service.reportdata.resolver.ValueReportDataResolver
+import ro.jf.funds.reporting.service.service.reportdata.resolver.*
 import javax.sql.DataSource
 
 private const val FUND_SERVICE_BASE_URL_PROPERTY = "integration.fund-service.base-url"
@@ -75,11 +70,12 @@ private val Application.serviceDependencies
     get() = module {
         single<ReportViewService> { ReportViewService(get()) }
         single<ConversionRateService> { ConversionRateService(get()) }
+        single<InterestRateCalculator> { InterestRateCalculator() }
         single<GroupedNetDataResolver> { GroupedNetDataResolver(get()) }
         single<GroupedBudgetDataResolver> { GroupedBudgetDataResolver(get()) }
         single<ValueReportDataResolver> { ValueReportDataResolver(get()) }
         single<NetDataResolver> { NetDataResolver(get()) }
-        single<PerformanceReportDataResolver> { PerformanceReportDataResolver(get()) }
+        single<PerformanceReportDataResolver> { PerformanceReportDataResolver(get(), get()) }
         single<UnitPerformanceReportDataResolver> { UnitPerformanceReportDataResolver(get()) }
         single<ReportDataResolverRegistry> { ReportDataResolverRegistry(get(), get(), get(), get(), get(), get()) }
         single<ReportTransactionService> { ReportTransactionService(get()) }
