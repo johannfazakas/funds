@@ -24,6 +24,7 @@ import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
+import ro.jf.funds.fund.api.model.FundTransactionType
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
@@ -69,6 +70,7 @@ class FundTransactionSdkTest {
                         buildJsonObject {
                             put("id", JsonPrimitive(transactionId.toString()))
                             put("userId", JsonPrimitive(userId.toString()))
+                            put("type", JsonPrimitive("INCOME"))
                             put("externalId", JsonPrimitive(transactionExternalId))
                             put("dateTime", JsonPrimitive(dateTime))
                             put("records", buildJsonArray {
@@ -92,6 +94,7 @@ class FundTransactionSdkTest {
             CreateFundTransactionTO(
                 dateTime = LocalDateTime.parse(dateTime),
                 externalId = transactionExternalId,
+                type = FundTransactionType.INCOME,
                 records = listOf(
                     CreateFundRecordTO(
                         accountId = accountId,
@@ -132,6 +135,7 @@ class FundTransactionSdkTest {
                                 add(buildJsonObject {
                                     put("id", JsonPrimitive(transactionId.toString()))
                                     put("userId", JsonPrimitive(userId.toString()))
+                                    put("type", JsonPrimitive("EXPENSE"))
                                     put(
                                         "dateTime",
                                         JsonPrimitive(dateTime)
@@ -188,6 +192,7 @@ class FundTransactionSdkTest {
                                 add(buildJsonObject {
                                     put("id", JsonPrimitive(transactionId.toString()))
                                     put("userId", JsonPrimitive(userId.toString()))
+                                    put("type", JsonPrimitive("TRANSFER"))
                                     put("externalId", JsonPrimitive(transactionExternalId))
                                     put(
                                         "dateTime",

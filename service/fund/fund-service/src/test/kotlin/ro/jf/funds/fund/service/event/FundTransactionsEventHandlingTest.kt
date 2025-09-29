@@ -12,6 +12,7 @@ import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import ro.jf.funds.account.api.event.ACCOUNT_DOMAIN
 import ro.jf.funds.account.api.event.ACCOUNT_TRANSACTIONS_REQUEST
 import ro.jf.funds.account.api.event.ACCOUNT_TRANSACTIONS_RESPONSE
+import ro.jf.funds.account.api.model.AccountTransactionType
 import ro.jf.funds.account.api.model.CreateAccountRecordTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionTO
 import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
@@ -79,6 +80,7 @@ class FundTransactionsEventHandlingTest {
                 CreateFundTransactionTO(
                     dateTime = dateTime,
                     externalId = externalId,
+                    type = FundTransactionType.EXPENSE,
                     records = listOf(
                         CreateFundRecordTO(
                             fundId = fund.id,
@@ -106,6 +108,7 @@ class FundTransactionsEventHandlingTest {
                         CreateAccountTransactionTO(
                             dateTime = dateTime,
                             externalId = externalId,
+                            type = AccountTransactionType.EXPENSE,
                             records = listOf(
                                 CreateAccountRecordTO(
                                     accountId = accountId,

@@ -25,12 +25,12 @@ class AccountTransactionRepositoryTest {
         val account = accountRepository.save(userId, CreateAccountTO(AccountName("Test"), Currency.EUR))
         val dateTime = LocalDateTime.parse("2020-12-03T10:15:30")
         val transaction1 = CreateAccountTransactionTO(
-            dateTime, "transaction 1", listOf(
+            dateTime, "transaction 1", AccountTransactionType.INCOME, listOf(
                 CreateAccountRecordTO(account.id, BigDecimal(1.0), Currency.EUR)
             )
         )
         val transaction2 = CreateAccountTransactionTO(
-            dateTime, "transaction 2", listOf(
+            dateTime, "transaction 2", AccountTransactionType.EXPENSE, listOf(
                 CreateAccountRecordTO(account.id, BigDecimal(2.0), Currency.EUR)
             )
         )

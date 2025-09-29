@@ -56,6 +56,7 @@ class AccountTransactionApiTest {
         val createTransactionRequest = CreateAccountTransactionTO(
             dateTime = LocalDateTime.parse("2021-09-01T12:00:00"),
             externalId = randomUUID().toString(),
+            type = AccountTransactionType.TRANSFER,
             records = listOf(
                 CreateAccountRecordTO(
                     accountId = account1.id,
@@ -111,6 +112,7 @@ class AccountTransactionApiTest {
             CreateAccountTransactionTO(
                 dateTime = dateTime,
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.INCOME,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,
@@ -138,6 +140,7 @@ class AccountTransactionApiTest {
             CreateAccountTransactionTO(
                 dateTime = dateTime,
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.INCOME,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,
@@ -188,12 +191,12 @@ class AccountTransactionApiTest {
         val fromDate = LocalDate(2024, 7, 22)
         val toDate = LocalDate(2024, 7, 24)
         val account1 = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
-        val account2 = accountRepository.save(userId, CreateAccountTO(AccountName("BT"), Currency.RON))
         transactionRepository.save(
             userId,
             CreateAccountTransactionTO(
                 dateTime = fromDate.minus(1, DateTimeUnit.DAY).atTime(localTime),
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.EXPENSE,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,
@@ -208,6 +211,7 @@ class AccountTransactionApiTest {
             CreateAccountTransactionTO(
                 dateTime = toDate.atTime(localTime),
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.INCOME,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,
@@ -222,6 +226,7 @@ class AccountTransactionApiTest {
             CreateAccountTransactionTO(
                 dateTime = toDate.plus(1, DateTimeUnit.DAY).atTime(localTime),
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.EXPENSE,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,
@@ -260,6 +265,7 @@ class AccountTransactionApiTest {
             CreateAccountTransactionTO(
                 dateTime = dateTime,
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.INCOME,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,
@@ -285,6 +291,7 @@ class AccountTransactionApiTest {
             CreateAccountTransactionTO(
                 dateTime = dateTime,
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.INCOME,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,
@@ -303,6 +310,7 @@ class AccountTransactionApiTest {
             CreateAccountTransactionTO(
                 dateTime = dateTime,
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.INCOME,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,
@@ -362,6 +370,7 @@ class AccountTransactionApiTest {
             CreateAccountTransactionTO(
                 dateTime = dateTime,
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.INCOME,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,
@@ -386,6 +395,7 @@ class AccountTransactionApiTest {
             CreateAccountTransactionTO(
                 dateTime = dateTime,
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.INCOME,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,
@@ -404,6 +414,7 @@ class AccountTransactionApiTest {
             CreateAccountTransactionTO(
                 dateTime = dateTime,
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.INCOME,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,
@@ -455,6 +466,7 @@ class AccountTransactionApiTest {
             CreateAccountTransactionTO(
                 dateTime = dateTime,
                 externalId = randomUUID().toString(),
+                type = AccountTransactionType.INCOME,
                 records = listOf(
                     CreateAccountRecordTO(
                         accountId = account1.id,

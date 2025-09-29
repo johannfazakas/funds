@@ -1,6 +1,7 @@
 package ro.jf.funds.account.service.domain
 
 import kotlinx.datetime.LocalDateTime
+import ro.jf.funds.account.api.model.AccountTransactionType
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Label
 import java.math.BigDecimal
@@ -10,6 +11,7 @@ data class AccountTransaction(
     val id: UUID,
     val userId: UUID,
     val externalId: String,
+    val type: AccountTransactionType,
     val dateTime: LocalDateTime,
     val records: List<AccountRecord> = emptyList(),
     val properties: List<Property> = emptyList(),

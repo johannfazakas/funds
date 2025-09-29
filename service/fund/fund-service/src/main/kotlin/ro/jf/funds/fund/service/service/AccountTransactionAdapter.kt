@@ -8,6 +8,7 @@ import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.api.model.FundTransactionFilterTO
+import ro.jf.funds.fund.api.model.FundTransactionType
 import ro.jf.funds.fund.service.domain.FundRecord
 import ro.jf.funds.fund.service.domain.FundTransaction
 import java.util.*
@@ -63,6 +64,7 @@ class AccountTransactionAdapter(
         CreateAccountTransactionTO(
             dateTime = dateTime,
             externalId = externalId,
+            type = type.toAccountTransactionType(),
             records = records.map { record ->
                 CreateAccountRecordTO(
                     accountId = record.accountId,
@@ -79,6 +81,7 @@ class AccountTransactionAdapter(
         FundTransaction(
             id = this.id,
             userId = userId,
+            type = type.toFundTransactionType(),
             dateTime = this.dateTime,
             records = this.records.map { recordTO ->
                 FundRecord(
@@ -96,4 +99,22 @@ class AccountTransactionAdapter(
         .single { it.key == FUND_ID_PROPERTY }
         .value
         .let(UUID::fromString)
+
+    private fun FundTransactionType.toAccountTransactionType(): AccountTransactionType = when (this) {
+        FundTransactionType.INCOME -> AccountTransactionType.INCOME
+        FundTransactionType.EXPENSE -> AccountTransactionType.EXPENSE
+        FundTransactionType.TRANSFER -> AccountTransactionType.TRANSFER
+        FundTransactionType.EXCHANGE -> AccountTransactionType.EXCHANGE
+        FundTransactionType.OPEN_POSITION -> AccountTransactionType.OPEN_POSITION
+        FundTransactionType.CLOSE_POSITION -> AccountTransactionType.CLOSE_POSITION
+    }
+
+    private fun AccountTransactionType.toFundTransactionType(): FundTransactionType = when (this) {
+        AccountTransactionType.INCOME -> FundTransactionType.INCOME
+        AccountTransactionType.EXPENSE -> FundTransactionType.EXPENSE
+        AccountTransactionType.TRANSFER -> FundTransactionType.TRANSFER
+        AccountTransactionType.EXCHANGE -> FundTransactionType.EXCHANGE
+        AccountTransactionType.OPEN_POSITION -> FundTransactionType.OPEN_POSITION
+        AccountTransactionType.CLOSE_POSITION -> FundTransactionType.CLOSE_POSITION
+    }
 }

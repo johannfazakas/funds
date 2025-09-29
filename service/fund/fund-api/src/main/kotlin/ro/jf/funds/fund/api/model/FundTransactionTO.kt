@@ -11,6 +11,7 @@ data class FundTransactionTO(
     val id: UUID,
     @Serializable(with = UUIDSerializer::class)
     val userId: UUID,
+    val type: FundTransactionType,
     val dateTime: LocalDateTime,
     val records: List<FundRecordTO>,
 )
