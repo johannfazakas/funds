@@ -18,6 +18,7 @@ data class CreateFundTransactionsTO(
 data class CreateFundTransactionTO(
     val dateTime: LocalDateTime,
     val externalId: String,
+    val type: FundTransactionType,
     val records: List<CreateFundRecordTO>,
 )
 

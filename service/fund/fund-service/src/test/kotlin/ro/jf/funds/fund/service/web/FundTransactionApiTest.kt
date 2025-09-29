@@ -77,6 +77,7 @@ class FundTransactionApiTest {
                 userId, CreateAccountTransactionTO(
                     dateTime = transactionTime,
                     externalId = transactionExternalId,
+                    type = AccountTransactionType.INCOME,
                     records = listOf(
                         CreateAccountRecordTO(
                             accountId = companyAccountId,
@@ -100,6 +101,7 @@ class FundTransactionApiTest {
                 id = randomUUID(),
                 dateTime = transactionTime,
                 externalId = transactionExternalId,
+                type = AccountTransactionType.INCOME,
                 records = listOf(
                     AccountRecordTO(
                         id = randomUUID(),
@@ -130,6 +132,7 @@ class FundTransactionApiTest {
                     CreateFundTransactionTO(
                         dateTime = transactionTime,
                         externalId = transactionExternalId,
+                        type = FundTransactionType.INCOME,
                         records = listOf(
                             CreateFundRecordTO(
                                 fundId = workFund.id,
@@ -185,6 +188,7 @@ class FundTransactionApiTest {
                     CreateFundTransactionTO(
                         dateTime = transactionTime,
                         externalId = transactionExternalId,
+                        type = FundTransactionType.INCOME,
                         records = listOf(
                             CreateFundRecordTO(
                                 fundId = workFund.id,
@@ -229,6 +233,7 @@ class FundTransactionApiTest {
                         id = transaction1Id,
                         dateTime = transactionTime,
                         externalId = transactionExternalId,
+                        type = AccountTransactionType.EXPENSE,
                         records = listOf(
                             AccountRecordTO(
                                 id = record1Id,
@@ -298,6 +303,7 @@ class FundTransactionApiTest {
                         id = transaction1Id,
                         dateTime = fromDate.atTime(12, 45),
                         externalId = transactionExternalId,
+                        type = AccountTransactionType.TRANSFER,
                         records = listOf(
                             AccountRecordTO(
                                 id = record1Id,
@@ -356,6 +362,7 @@ class FundTransactionApiTest {
                     AccountTransactionTO(
                         id = transaction1Id,
                         externalId = transactionExternalId,
+                        type = AccountTransactionType.EXCHANGE,
                         dateTime = transactionTime,
                         records = listOf(
                             AccountRecordTO(

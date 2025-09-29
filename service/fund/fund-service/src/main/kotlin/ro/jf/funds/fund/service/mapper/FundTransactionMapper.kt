@@ -8,6 +8,7 @@ import ro.jf.funds.fund.service.domain.FundTransaction
 fun FundTransaction.toTO() = FundTransactionTO(
     id = id,
     userId = userId,
+    type = type,
     dateTime = dateTime,
     records = records.map { it.toTO() }
 )

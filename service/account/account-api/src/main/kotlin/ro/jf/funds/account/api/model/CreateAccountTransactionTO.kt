@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 data class CreateAccountTransactionTO(
     val dateTime: LocalDateTime,
     val externalId: String,
+    val type: AccountTransactionType,
     val records: List<CreateAccountRecordTO>,
     val properties: List<PropertyTO> = emptyList(),
 )

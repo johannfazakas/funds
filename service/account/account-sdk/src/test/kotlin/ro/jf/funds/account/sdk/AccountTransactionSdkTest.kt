@@ -100,6 +100,7 @@ class AccountTransactionSdkTest {
                             put("id", JsonPrimitive(transactionId.toString()))
                             put("userId", JsonPrimitive(userId.toString()))
                             put("externalId", JsonPrimitive(transactionExternalId))
+                            put("type", JsonPrimitive("TRANSFER"))
                             put("dateTime", JsonPrimitive(rawTransactionDateTime))
                             put("records", buildJsonArray {
                                 add(buildJsonObject {
@@ -150,6 +151,7 @@ class AccountTransactionSdkTest {
         val createTransactionRequest = CreateAccountTransactionTO(
             dateTime = transactionDateTime,
             externalId = transactionExternalId,
+            type = AccountTransactionType.TRANSFER,
             records = listOf(
                 CreateAccountRecordTO(
                     randomUUID(), BigDecimal("100.25"), Currency.RON,
@@ -218,6 +220,7 @@ class AccountTransactionSdkTest {
                                         JsonPrimitive(dateTime)
                                     )
                                     put("externalId", JsonPrimitive(transactionExternalId))
+                                    put("type", JsonPrimitive("INCOME"))
                                     put("records", buildJsonArray {
                                         add(buildJsonObject {
                                             put("id", JsonPrimitive(recordId.toString()))

@@ -26,6 +26,7 @@ class AccountTransactionRepository(
     object AccountTransactionTable : UUIDTable("transaction") {
         val userId = uuid("user_id")
         val externalId = varchar("external_id", 100)
+        val type = varchar("type", 50)
         val dateTime = datetime("date_time")
     }
 
@@ -96,6 +97,7 @@ class AccountTransactionRepository(
                 this[AccountTransactionTable.id] = randomUUID()
                 this[AccountTransactionTable.userId] = userId
                 this[AccountTransactionTable.externalId] = command.externalId
+                this[AccountTransactionTable.type] = command.type.name
                 this[AccountTransactionTable.dateTime] = command.dateTime.toJavaLocalDateTime()
             }
         val transactionRequestsByExternalId = requests.transactions.associateBy { it.externalId }
@@ -117,6 +119,7 @@ class AccountTransactionRepository(
                     id = transactionId,
                     userId = it[AccountTransactionTable.userId],
                     externalId = it[AccountTransactionTable.externalId],
+                    type = AccountTransactionType.valueOf(it[AccountTransactionTable.type]),
                     dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
                     records = storedRecordsByTransactionId[transactionId] ?: emptyList(),
                     properties = storedTransactionPropertiesByTransactionId[transactionId] ?: emptyList()
@@ -217,12 +220,14 @@ class AccountTransactionRepository(
         AccountTransactionTable.insert {
             it[AccountTransactionTable.userId] = userId
             it[AccountTransactionTable.externalId] = command.externalId
+            it[AccountTransactionTable.type] = command.type.name
             it[dateTime] = command.dateTime.toJavaLocalDateTime()
         }.let {
             AccountTransaction(
                 id = it[AccountTransactionTable.id].value,
                 userId = it[AccountTransactionTable.userId],
                 externalId = it[AccountTransactionTable.externalId],
+                type = AccountTransactionType.valueOf(it[AccountTransactionTable.type]),
                 dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
             )
         }
@@ -441,6 +446,7 @@ class AccountTransactionRepository(
             id = this.first()[AccountTransactionTable.id].value,
             userId = this.first()[AccountTransactionTable.userId],
             externalId = this.first()[AccountTransactionTable.externalId],
+            type = AccountTransactionType.valueOf(this.first()[AccountTransactionTable.type]),
             dateTime = this.first()[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
             records = toRecords(),
             properties = toTransactionProperties()

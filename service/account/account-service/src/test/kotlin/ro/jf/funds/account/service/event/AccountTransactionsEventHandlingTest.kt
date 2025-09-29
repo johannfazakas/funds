@@ -2,7 +2,6 @@ package ro.jf.funds.account.service.event
 
 import io.ktor.server.application.*
 import io.ktor.server.testing.*
-import io.opentelemetry.api.GlobalOpenTelemetry
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
@@ -21,6 +20,7 @@ import ro.jf.funds.account.service.persistence.AccountTransactionRepository
 import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.GenericResponse
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
@@ -31,7 +31,6 @@ import java.math.BigDecimal
 import java.time.Duration
 import java.util.UUID.randomUUID
 import java.util.concurrent.TimeUnit
-import ro.jf.funds.commons.model.Label
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(KafkaContainerExtension::class)
@@ -102,6 +101,7 @@ class AccountTransactionsEventHandlingTest {
                 CreateAccountTransactionTO(
                     dateTime = LocalDateTime.parse("2021-09-01T12:00:00"),
                     externalId = randomUUID().toString(),
+                    type = AccountTransactionType.INCOME,
                     records = listOf(
                         CreateAccountRecordTO(
                             accountId = account.id,

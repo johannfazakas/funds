@@ -15,6 +15,7 @@ import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
+import ro.jf.funds.fund.api.model.FundTransactionType
 import ro.jf.funds.fund.service.domain.Fund
 import ro.jf.funds.fund.service.persistence.FundRepository
 import java.math.BigDecimal
@@ -52,6 +53,7 @@ class FundTransactionServiceTest {
         val request = CreateFundTransactionTO(
             dateTime = transactionTime,
             externalId = transactionExternalId,
+            type = FundTransactionType.INCOME,
             records = listOf(
                 CreateFundRecordTO(
                     fundId = workFundId,
@@ -71,6 +73,7 @@ class FundTransactionServiceTest {
         val expectedCreateAccountTransactionRequest = CreateAccountTransactionTO(
             dateTime = transactionTime,
             externalId = transactionExternalId,
+            type = AccountTransactionType.INCOME,
             records = listOf(
                 CreateAccountRecordTO(
                     accountId = companyAccountId,
@@ -95,6 +98,7 @@ class FundTransactionServiceTest {
             AccountTransactionTO(
                 id = transactionId,
                 externalId = transactionExternalId,
+                type = AccountTransactionType.INCOME,
                 dateTime = transactionTime,
                 records = listOf(
                     AccountRecordTO(
@@ -145,6 +149,7 @@ class FundTransactionServiceTest {
                         id = transactionId,
                         dateTime = transactionTime,
                         externalId = transactionExternalId,
+                        type = AccountTransactionType.EXPENSE,
                         records = listOf(
                             AccountRecordTO(
                                 id = record1Id,
@@ -201,6 +206,7 @@ class FundTransactionServiceTest {
                         id = transactionId,
                         dateTime = transactionTime,
                         externalId = transactionExternalId,
+                        type = AccountTransactionType.TRANSFER,
                         records = listOf(
                             AccountRecordTO(
                                 id = record1Id,
