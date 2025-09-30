@@ -17,19 +17,15 @@ import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.fund.api.model.FundRecordTO
 import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
+import ro.jf.funds.fund.api.model.FundTransactionType
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
-import ro.jf.funds.reporting.service.service.reportdata.resolver.GroupedBudgetDataResolver
-import ro.jf.funds.reporting.service.service.reportdata.resolver.GroupedNetDataResolver
-import ro.jf.funds.reporting.service.service.reportdata.resolver.NetDataResolver
-import ro.jf.funds.reporting.service.service.reportdata.resolver.PerformanceReportDataResolver
-import ro.jf.funds.reporting.service.service.reportdata.resolver.ReportDataResolverRegistry
+import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculator
 import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
 import ro.jf.funds.reporting.service.service.reportdata.ReportTransactionService
-import ro.jf.funds.reporting.service.service.reportdata.resolver.UnitPerformanceReportDataResolver
-import ro.jf.funds.reporting.service.service.reportdata.resolver.ValueReportDataResolver
+import ro.jf.funds.reporting.service.service.reportdata.resolver.*
 import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID
@@ -45,7 +41,7 @@ class ReportDataServiceTest {
         ValueReportDataResolver(conversionRateService),
         GroupedNetDataResolver(conversionRateService),
         GroupedBudgetDataResolver(conversionRateService),
-        PerformanceReportDataResolver(conversionRateService),
+        PerformanceReportDataResolver(conversionRateService, InterestRateCalculator()),
         UnitPerformanceReportDataResolver(conversionRateService),
     )
     private val reportDataService =
@@ -987,6 +983,7 @@ class ReportDataServiceTest {
             id = randomUUID(),
             userId = userId,
             dateTime = date.atTime(12, 0),
+            type = FundTransactionType.TRANSFER,
             records = listOf(
                 FundRecordTO(
                     id = randomUUID(),
@@ -1012,6 +1009,7 @@ class ReportDataServiceTest {
             id = randomUUID(),
             userId = userId,
             dateTime = date.atTime(12, 0),
+            type = FundTransactionType.OPEN_POSITION,
             records = listOf(
                 FundRecordTO(
                     id = randomUUID(),
@@ -1036,6 +1034,7 @@ class ReportDataServiceTest {
         id = randomUUID(),
         userId = userId,
         dateTime = date.atTime(12, 0),
+        type = FundTransactionType.SINGLE_RECORD,
         records = listOf(
             FundRecordTO(
                 id = randomUUID(),

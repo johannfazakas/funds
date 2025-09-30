@@ -74,10 +74,10 @@ class AccountTransactionServiceTest {
         val recordRequest2 = CreateAccountRecordTO(incomeAccount.id, BigDecimal("-42.50"), Currency.RON)
         val recordRequest3 = CreateAccountRecordTO(cashAccount.id, BigDecimal("12.50"), Currency.RON)
         val transactionRequest1 = CreateAccountTransactionTO(
-            dateTime1, "eid1", AccountTransactionType.INCOME, listOf(recordRequest1, recordRequest2)
+            dateTime1, "eid1", AccountTransactionType.SINGLE_RECORD, listOf(recordRequest1, recordRequest2)
         )
         val transactionRequest2 = CreateAccountTransactionTO(
-            dateTime2, "eid2", AccountTransactionType.EXPENSE, listOf(recordRequest3)
+            dateTime2, "eid2", AccountTransactionType.SINGLE_RECORD, listOf(recordRequest3)
         )
         val batchRequest = CreateAccountTransactionsTO(listOf(transactionRequest1, transactionRequest2))
         val expectedTransaction1 = mock<AccountTransaction>()
@@ -99,10 +99,10 @@ class AccountTransactionServiceTest {
         val recordRequest2 = CreateAccountRecordTO(incomeAccount.id, BigDecimal("-42.50"), Currency.RON)
         val recordRequest3 = CreateAccountRecordTO(cashAccount.id, BigDecimal("12.50"), Currency.RON)
         val transactionRequest1 = CreateAccountTransactionTO(
-            dateTime1, "eid1", AccountTransactionType.INCOME, listOf(recordRequest1, recordRequest2)
+            dateTime1, "eid1", AccountTransactionType.SINGLE_RECORD, listOf(recordRequest1, recordRequest2)
         )
         val transactionRequest2 = CreateAccountTransactionTO(
-            dateTime2, "eid2", AccountTransactionType.EXPENSE, listOf(recordRequest3)
+            dateTime2, "eid2", AccountTransactionType.SINGLE_RECORD, listOf(recordRequest3)
         )
         val batchRequest = CreateAccountTransactionsTO(listOf(transactionRequest1, transactionRequest2))
         val expectedTransaction1 = mock<AccountTransaction>()

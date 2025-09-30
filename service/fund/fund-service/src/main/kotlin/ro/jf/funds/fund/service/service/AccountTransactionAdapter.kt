@@ -101,8 +101,7 @@ class AccountTransactionAdapter(
         .let(UUID::fromString)
 
     private fun FundTransactionType.toAccountTransactionType(): AccountTransactionType = when (this) {
-        FundTransactionType.INCOME -> AccountTransactionType.INCOME
-        FundTransactionType.EXPENSE -> AccountTransactionType.EXPENSE
+        FundTransactionType.SINGLE_RECORD -> AccountTransactionType.SINGLE_RECORD
         FundTransactionType.TRANSFER -> AccountTransactionType.TRANSFER
         FundTransactionType.EXCHANGE -> AccountTransactionType.EXCHANGE
         FundTransactionType.OPEN_POSITION -> AccountTransactionType.OPEN_POSITION
@@ -110,8 +109,7 @@ class AccountTransactionAdapter(
     }
 
     private fun AccountTransactionType.toFundTransactionType(): FundTransactionType = when (this) {
-        AccountTransactionType.INCOME -> FundTransactionType.INCOME
-        AccountTransactionType.EXPENSE -> FundTransactionType.EXPENSE
+        AccountTransactionType.SINGLE_RECORD -> FundTransactionType.SINGLE_RECORD
         AccountTransactionType.TRANSFER -> FundTransactionType.TRANSFER
         AccountTransactionType.EXCHANGE -> FundTransactionType.EXCHANGE
         AccountTransactionType.OPEN_POSITION -> FundTransactionType.OPEN_POSITION

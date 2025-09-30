@@ -6,6 +6,7 @@ import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.fund.api.model.FundTransactionType
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
@@ -33,15 +34,16 @@ class SingleRecordTransactionConverter : ImportTransactionConverter {
         return transaction.getRequiredImportConversions(accountStore)
     }
 
-    override fun mapToFundTransaction(
+    override fun mapToFundTransactions(
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-    ): CreateFundTransactionTO {
-        return CreateFundTransactionTO(
+    ): List<CreateFundTransactionTO> {
+        return listOf(CreateFundTransactionTO(
             dateTime = transaction.dateTime,
             externalId = transaction.transactionExternalId,
+            type = FundTransactionType.SINGLE_RECORD,
             records = transaction.records.map { record ->
                 record.toImportCurrencyFundRecord(
                     transaction.dateTime.date,
@@ -50,6 +52,6 @@ class SingleRecordTransactionConverter : ImportTransactionConverter {
                     conversions,
                 )
             }
-        )
+        ))
     }
 }

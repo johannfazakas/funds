@@ -35,7 +35,7 @@ class WalletCsvImportParser(
         files
             .parse()
             .groupBy { it.transactionId(importConfiguration.exchangeMatchers) }
-            .mapNotNull { (transactionId, csvRows) -> toTransaction(importConfiguration, transactionId, csvRows) }
+            .flatMap { (transactionId, csvRows) -> toTransactions(importConfiguration, transactionId, csvRows) }
     }
 
     private fun List<String>.parse(): List<CsvRow> {
@@ -62,20 +62,18 @@ class WalletCsvImportParser(
 
     private fun LocalDateTime.inWholeMinutes(): Long = this.toInstant(TimeZone.UTC).epochSeconds / 60
 
-    private fun toTransaction(
+    private fun toTransactions(
         importConfiguration: ImportConfigurationTO,
         transactionId: String,
         csvRows: List<CsvRow>,
-    ): ImportParsedTransaction? {
+    ): List<ImportParsedTransaction> {
         val records = toImportRecords(importConfiguration, csvRows)
-        if (records == null) {
-            return null
-        }
+            ?: return emptyList()
         return ImportParsedTransaction(
             transactionExternalId = transactionId,
             dateTime = csvRows.minOf { it.getDateTime(DATE_COLUMN, dateTimeFormat) },
             records = records
-        )
+        ).let(::listOf)
     }
 
     private fun toImportRecords(
@@ -93,7 +91,7 @@ class WalletCsvImportParser(
     private fun toImportRecords(importConfiguration: ImportConfigurationTO, csvRow: CsvRow): List<ImportParsedRecord>? {
         val importAccountName = csvRow.getString(ACCOUNT_NAME_COLUMN)
         val accountName = importConfiguration.accountMatchers.getAccountName(importAccountName)
-        if (accountName == null) return null
+            ?: return null
         val importLabels = csvRow.getString(LABEL_COLUMN).labels()
         val currency = csvRow.getString(CURRENCY_COLUMN)
         val amount = csvRow.getBigDecimal(AMOUNT_COLUMN)
@@ -120,7 +118,13 @@ class WalletCsvImportParser(
                     ImportParsedRecord(
                         accountName, fundMatcher.initialFundName, Currency(currency), amount, emptyList()
                     ),
-                    ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount.negate(), emptyList()),
+                    ImportParsedRecord(
+                        accountName,
+                        fundMatcher.fundName,
+                        Currency(currency),
+                        amount.negate(),
+                        emptyList()
+                    ),
                     ImportParsedRecord(accountName, fundMatcher.fundName, Currency(currency), amount, labels),
                 )
             }

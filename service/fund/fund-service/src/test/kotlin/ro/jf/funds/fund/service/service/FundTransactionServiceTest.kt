@@ -53,7 +53,7 @@ class FundTransactionServiceTest {
         val request = CreateFundTransactionTO(
             dateTime = transactionTime,
             externalId = transactionExternalId,
-            type = FundTransactionType.INCOME,
+            type = FundTransactionType.SINGLE_RECORD,
             records = listOf(
                 CreateFundRecordTO(
                     fundId = workFundId,
@@ -73,7 +73,7 @@ class FundTransactionServiceTest {
         val expectedCreateAccountTransactionRequest = CreateAccountTransactionTO(
             dateTime = transactionTime,
             externalId = transactionExternalId,
-            type = AccountTransactionType.INCOME,
+            type = AccountTransactionType.SINGLE_RECORD,
             records = listOf(
                 CreateAccountRecordTO(
                     accountId = companyAccountId,
@@ -98,7 +98,7 @@ class FundTransactionServiceTest {
             AccountTransactionTO(
                 id = transactionId,
                 externalId = transactionExternalId,
-                type = AccountTransactionType.INCOME,
+                type = AccountTransactionType.SINGLE_RECORD,
                 dateTime = transactionTime,
                 records = listOf(
                     AccountRecordTO(
@@ -149,7 +149,7 @@ class FundTransactionServiceTest {
                         id = transactionId,
                         dateTime = transactionTime,
                         externalId = transactionExternalId,
-                        type = AccountTransactionType.EXPENSE,
+                        type = AccountTransactionType.SINGLE_RECORD,
                         records = listOf(
                             AccountRecordTO(
                                 id = record1Id,

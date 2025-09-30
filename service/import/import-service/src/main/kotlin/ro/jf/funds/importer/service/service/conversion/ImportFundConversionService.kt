@@ -49,8 +49,8 @@ class ImportFundConversionService(
             .let { historicalPricingSdk.convert(userId, ConversionsRequest(it)) }
 
         return transactionsToStrategy
-            .map { (transaction, strategy) ->
-                strategy.mapToFundTransaction(transaction, conversions, fundStore, accountStore)
+            .flatMap { (transaction, strategy) ->
+                strategy.mapToFundTransactions(transaction, conversions, fundStore, accountStore)
             }
     }
 

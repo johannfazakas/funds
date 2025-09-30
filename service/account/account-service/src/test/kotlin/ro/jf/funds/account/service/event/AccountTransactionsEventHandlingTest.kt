@@ -101,7 +101,7 @@ class AccountTransactionsEventHandlingTest {
                 CreateAccountTransactionTO(
                     dateTime = LocalDateTime.parse("2021-09-01T12:00:00"),
                     externalId = randomUUID().toString(),
-                    type = AccountTransactionType.INCOME,
+                    type = AccountTransactionType.SINGLE_RECORD,
                     records = listOf(
                         CreateAccountRecordTO(
                             accountId = account.id,

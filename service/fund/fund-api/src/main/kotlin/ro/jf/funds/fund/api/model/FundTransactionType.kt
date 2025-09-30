@@ -1,8 +1,7 @@
 package ro.jf.funds.fund.api.model
 
 enum class FundTransactionType {
-    INCOME,
-    EXPENSE,
+    SINGLE_RECORD,
     TRANSFER,
     EXCHANGE,
     OPEN_POSITION,

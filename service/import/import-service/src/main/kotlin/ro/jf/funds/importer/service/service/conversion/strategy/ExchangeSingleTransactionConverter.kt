@@ -3,10 +3,7 @@ package ro.jf.funds.importer.service.service.conversion.strategy
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.fund.api.model.CreateFundRecordTO
-import ro.jf.funds.fund.api.model.CreateFundTransactionTO
-import ro.jf.funds.fund.api.model.FundName
-import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
@@ -54,12 +51,12 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
                 Conversion(transaction.dateTime.date, targetCurrency, sourceCurrency)
     }
 
-    override fun mapToFundTransaction(
+    override fun mapToFundTransactions(
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-    ): CreateFundTransactionTO {
+    ): List<CreateFundTransactionTO> {
         val date = transaction.dateTime.date
 
         val creditRecord = transaction.records.single { it.amount > BigDecimal.ZERO }
@@ -104,10 +101,13 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
                 )
             }
 
-        return CreateFundTransactionTO(
-            dateTime = transaction.dateTime,
-            externalId = transaction.transactionExternalId,
-            records = listOfNotNull(creditFundRecord, debitFundRecord, feeFundRecord)
+        return listOf(
+            CreateFundTransactionTO(
+                dateTime = transaction.dateTime,
+                externalId = transaction.transactionExternalId,
+                type = FundTransactionType.EXCHANGE,
+                records = listOfNotNull(creditFundRecord, debitFundRecord, feeFundRecord)
+            )
         )
     }
 }
