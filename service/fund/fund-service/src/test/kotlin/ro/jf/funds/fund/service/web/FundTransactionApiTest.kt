@@ -77,7 +77,7 @@ class FundTransactionApiTest {
                 userId, CreateAccountTransactionTO(
                     dateTime = transactionTime,
                     externalId = transactionExternalId,
-                    type = AccountTransactionType.INCOME,
+                    type = AccountTransactionType.SINGLE_RECORD,
                     records = listOf(
                         CreateAccountRecordTO(
                             accountId = companyAccountId,
@@ -101,7 +101,7 @@ class FundTransactionApiTest {
                 id = randomUUID(),
                 dateTime = transactionTime,
                 externalId = transactionExternalId,
-                type = AccountTransactionType.INCOME,
+                type = AccountTransactionType.SINGLE_RECORD,
                 records = listOf(
                     AccountRecordTO(
                         id = randomUUID(),
@@ -132,7 +132,7 @@ class FundTransactionApiTest {
                     CreateFundTransactionTO(
                         dateTime = transactionTime,
                         externalId = transactionExternalId,
-                        type = FundTransactionType.INCOME,
+                        type = FundTransactionType.SINGLE_RECORD,
                         records = listOf(
                             CreateFundRecordTO(
                                 fundId = workFund.id,
@@ -188,7 +188,7 @@ class FundTransactionApiTest {
                     CreateFundTransactionTO(
                         dateTime = transactionTime,
                         externalId = transactionExternalId,
-                        type = FundTransactionType.INCOME,
+                        type = FundTransactionType.SINGLE_RECORD,
                         records = listOf(
                             CreateFundRecordTO(
                                 fundId = workFund.id,
@@ -233,7 +233,7 @@ class FundTransactionApiTest {
                         id = transaction1Id,
                         dateTime = transactionTime,
                         externalId = transactionExternalId,
-                        type = AccountTransactionType.EXPENSE,
+                        type = AccountTransactionType.SINGLE_RECORD,
                         records = listOf(
                             AccountRecordTO(
                                 id = record1Id,

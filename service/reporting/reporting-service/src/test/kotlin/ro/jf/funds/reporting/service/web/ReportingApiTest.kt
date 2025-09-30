@@ -33,6 +33,7 @@ import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.FundTransactionFilterTO
 import ro.jf.funds.fund.api.model.FundTransactionTO
+import ro.jf.funds.fund.api.model.FundTransactionType
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.reporting.api.model.*
@@ -84,7 +85,7 @@ class ReportingApiTest {
 
         val transaction =
             transaction(
-                userId, dateTime, listOf(
+                userId, dateTime, FundTransactionType.SINGLE_RECORD, listOf(
                     record(expenseFundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need"))
                 )
             )
@@ -183,7 +184,7 @@ class ReportingApiTest {
         mockTransactions(
             interval, reportView.fundId, listOf(
                 transaction(
-                    userId, LocalDate(2021, 1, 2).atTime(12, 0),
+                    userId, LocalDate(2021, 1, 2).atTime(12, 0), FundTransactionType.SINGLE_RECORD,
                     listOf(
                         record(
                             reportView.fundId, cashAccountId, BigDecimal("-25.0"), RON, labelsOf("need")
@@ -191,7 +192,7 @@ class ReportingApiTest {
                     )
                 ),
                 transaction(
-                    userId, LocalDate(2021, 1, 2).atTime(12, 0),
+                    userId, LocalDate(2021, 1, 2).atTime(12, 0), FundTransactionType.SINGLE_RECORD,
                     listOf(
                         record(
                             reportView.fundId, cashAccountId, BigDecimal("-10.0"), EUR, labelsOf("want")

@@ -11,12 +11,11 @@ import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.fund.api.model.CreateFundRecordTO
-import ro.jf.funds.fund.api.model.CreateFundTransactionTO
-import ro.jf.funds.fund.api.model.FundName
-import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
@@ -26,11 +25,7 @@ import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.importer.service.service.conversion.strategy.ExchangeSingleTransactionConverter
-import ro.jf.funds.importer.service.service.conversion.strategy.ImplicitTransferTransactionConverter
-import ro.jf.funds.importer.service.service.conversion.strategy.ImportTransactionConverterRegistry
-import ro.jf.funds.importer.service.service.conversion.strategy.SingleRecordTransactionConverter
-import ro.jf.funds.importer.service.service.conversion.strategy.TransferTransactionConverter
+import ro.jf.funds.importer.service.service.conversion.strategy.*
 import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID
@@ -46,11 +41,17 @@ class ImportFundConversionServiceTest {
             SingleRecordTransactionConverter(),
             TransferTransactionConverter(),
             ImplicitTransferTransactionConverter(),
-            ExchangeSingleTransactionConverter()
+            ExchangeSingleTransactionConverter(),
+            InvestmentTransactionConverter()
         )
     )
     private val importFundConversionService =
-        ImportFundConversionService(accountService, fundService, importTransactionConverterRegistry, historicalPricingSdk)
+        ImportFundConversionService(
+            accountService,
+            fundService,
+            importTransactionConverterRegistry,
+            historicalPricingSdk,
+        )
 
     private val userId: UUID = randomUUID()
 
@@ -86,6 +87,7 @@ class ImportFundConversionServiceTest {
             CreateFundTransactionTO(
                 dateTime = transactionDateTime,
                 externalId = transactionExternalId,
+                type = FundTransactionType.SINGLE_RECORD,
                 records = listOf(
                     CreateFundRecordTO(
                         fundId = expensedFund.id,
@@ -180,6 +182,7 @@ class ImportFundConversionServiceTest {
             CreateFundTransactionTO(
                 dateTime = transactionDateTime,
                 externalId = transactionExternalId,
+                type = FundTransactionType.TRANSFER,
                 records = listOf(
                     CreateFundRecordTO(
                         fundId = incomeFund.id,
@@ -458,11 +461,129 @@ class ImportFundConversionServiceTest {
             .isInstanceOf(ImportDataException::class.java)
     }
 
-    private fun account(name: String, currency: Currency = Currency.RON): AccountTO =
+    @Test
+    fun `should map investment transaction with OPEN_POSITION type`(): Unit = runBlocking {
+        val transactionDateTime = LocalDateTime.parse("2024-07-22T09:17:00")
+        val transactionExternalId = "investment-1"
+        val importParsedTransactions = listOf(
+            ImportParsedTransaction(
+                transactionExternalId = transactionExternalId,
+                dateTime = transactionDateTime,
+                records = listOf(
+                    ImportParsedRecord(
+                        AccountName("Broker USD"),
+                        FundName("Investments"),
+                        Currency.USD,
+                        BigDecimal("-1000.00"),
+                        listOf(Label("stock_purchase"))
+                    ),
+                    ImportParsedRecord(
+                        AccountName("AAPL Stock"),
+                        FundName("Investments"),
+                        Symbol("AAPL"),
+                        BigDecimal("5.0"),
+                        listOf(Label("stock_purchase"))
+                    )
+                )
+            )
+        )
+        val brokerAccount = account("Broker USD", Currency.USD)
+        val stockAccount = account("AAPL Stock", Symbol("AAPL"))
+        val investmentsFund = fund("Investments")
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(brokerAccount, stockAccount))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(investmentsFund))
+        whenever(historicalPricingSdk.convert(userId, ConversionsRequest(emptyList())))
+            .thenReturn(ConversionsResponse.empty())
+
+        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+
+        assertThat(fundTransactions.transactions).hasSize(1)
+        val transaction = fundTransactions.transactions[0]
+        assertThat(transaction.dateTime).isEqualTo(transactionDateTime)
+        assertThat(transaction.externalId).isEqualTo(transactionExternalId)
+        assertThat(transaction.type).isEqualTo(FundTransactionType.OPEN_POSITION)
+        assertThat(transaction.records).hasSize(2)
+
+        val currencyRecord = transaction.records.first { it.unit is Currency }
+        val instrumentRecord = transaction.records.first { it.unit is Symbol }
+
+        assertThat(currencyRecord.amount).isEqualByComparingTo(BigDecimal("-1000.00"))
+        assertThat(currencyRecord.unit).isEqualTo(Currency.USD)
+        assertThat(currencyRecord.accountId).isEqualTo(brokerAccount.id)
+        assertThat(currencyRecord.fundId).isEqualTo(investmentsFund.id)
+        assertThat(currencyRecord.labels).containsExactly(Label("stock_purchase"))
+
+        assertThat(instrumentRecord.amount).isEqualByComparingTo(BigDecimal("5.0"))
+        assertThat(instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
+        assertThat(instrumentRecord.accountId).isEqualTo(stockAccount.id)
+        assertThat(instrumentRecord.fundId).isEqualTo(investmentsFund.id)
+        assertThat(instrumentRecord.labels).containsExactly(Label("stock_purchase"))
+    }
+
+    @Test
+    fun `should map investment transaction with CLOSE_POSITION type`(): Unit = runBlocking {
+        val transactionDateTime = LocalDateTime.parse("2024-07-22T10:30:00")
+        val transactionExternalId = "investment-2"
+        val importParsedTransactions = listOf(
+            ImportParsedTransaction(
+                transactionExternalId = transactionExternalId,
+                dateTime = transactionDateTime,
+                records = listOf(
+                    ImportParsedRecord(
+                        AccountName("Broker USD"),
+                        FundName("Investments"),
+                        Currency.USD,
+                        BigDecimal("1200.00"),
+                        listOf(Label("stock_sale"))
+                    ),
+                    ImportParsedRecord(
+                        AccountName("AAPL Stock"),
+                        FundName("Investments"),
+                        Symbol("AAPL"),
+                        BigDecimal("-5.0"),
+                        listOf(Label("stock_sale"))
+                    )
+                )
+            )
+        )
+        val brokerAccount = account("Broker USD", Currency.USD)
+        val stockAccount = account("AAPL Stock", Symbol("AAPL"))
+        val investmentsFund = fund("Investments")
+        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(brokerAccount, stockAccount))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(investmentsFund))
+        whenever(historicalPricingSdk.convert(userId, ConversionsRequest(emptyList())))
+            .thenReturn(ConversionsResponse.empty())
+
+        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+
+        assertThat(fundTransactions.transactions).hasSize(1)
+        val transaction = fundTransactions.transactions[0]
+        assertThat(transaction.dateTime).isEqualTo(transactionDateTime)
+        assertThat(transaction.externalId).isEqualTo(transactionExternalId)
+        assertThat(transaction.type).isEqualTo(FundTransactionType.CLOSE_POSITION)
+        assertThat(transaction.records).hasSize(2)
+
+        val currencyRecord = transaction.records.first { it.unit is Currency }
+        val instrumentRecord = transaction.records.first { it.unit is Symbol }
+
+        assertThat(currencyRecord.amount).isEqualByComparingTo(BigDecimal("1200.00"))
+        assertThat(currencyRecord.unit).isEqualTo(Currency.USD)
+        assertThat(currencyRecord.accountId).isEqualTo(brokerAccount.id)
+        assertThat(currencyRecord.fundId).isEqualTo(investmentsFund.id)
+        assertThat(currencyRecord.labels).containsExactly(Label("stock_sale"))
+
+        assertThat(instrumentRecord.amount).isEqualByComparingTo(BigDecimal("-5.0"))
+        assertThat(instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
+        assertThat(instrumentRecord.accountId).isEqualTo(stockAccount.id)
+        assertThat(instrumentRecord.fundId).isEqualTo(investmentsFund.id)
+        assertThat(instrumentRecord.labels).containsExactly(Label("stock_sale"))
+    }
+
+    private fun account(name: String, unit: FinancialUnit = Currency.RON): AccountTO =
         AccountTO(
             id = randomUUID(),
             name = AccountName(name),
-            unit = currency
+            unit = unit
         )
 
     private fun fund(name: String): FundTO =

@@ -80,7 +80,7 @@ class FundTransactionsEventHandlingTest {
                 CreateFundTransactionTO(
                     dateTime = dateTime,
                     externalId = externalId,
-                    type = FundTransactionType.EXPENSE,
+                    type = FundTransactionType.SINGLE_RECORD,
                     records = listOf(
                         CreateFundRecordTO(
                             fundId = fund.id,
@@ -108,7 +108,7 @@ class FundTransactionsEventHandlingTest {
                         CreateAccountTransactionTO(
                             dateTime = dateTime,
                             externalId = externalId,
-                            type = AccountTransactionType.EXPENSE,
+                            type = AccountTransactionType.SINGLE_RECORD,
                             records = listOf(
                                 CreateAccountRecordTO(
                                     accountId = accountId,

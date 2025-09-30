@@ -220,7 +220,7 @@ class AccountTransactionSdkTest {
                                         JsonPrimitive(dateTime)
                                     )
                                     put("externalId", JsonPrimitive(transactionExternalId))
-                                    put("type", JsonPrimitive("INCOME"))
+                                    put("type", JsonPrimitive("SINGLE_RECORD"))
                                     put("records", buildJsonArray {
                                         add(buildJsonObject {
                                             put("id", JsonPrimitive(recordId.toString()))
