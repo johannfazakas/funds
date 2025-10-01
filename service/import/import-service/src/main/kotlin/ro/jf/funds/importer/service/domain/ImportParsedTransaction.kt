@@ -25,5 +25,5 @@ data class ImportParsedRecord(
     val fundName: FundName,
     val unit: FinancialUnit,
     val amount: BigDecimal,
-    val labels: List<Label>,
+    val labels: List<Label> = emptyList(),
 )

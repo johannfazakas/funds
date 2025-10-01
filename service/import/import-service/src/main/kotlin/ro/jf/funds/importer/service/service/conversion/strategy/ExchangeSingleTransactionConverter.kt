@@ -77,7 +77,6 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             .sortedByDescending { (_, amount) -> (creditAmount + amount).abs() }
             .first()
         val rate = conversions.getRate(creditRecord.unit, debitRecord.unit, date)
-            ?: error("Rate not found for ${creditRecord.unit} to ${debitRecord.unit} on $date for transaction: $transaction.")
         val debitAmount = creditAmount.negate() * rate
         val debitFundRecord = CreateFundRecordTO(
             fundId = fundStore[debitRecord.fundName].id,

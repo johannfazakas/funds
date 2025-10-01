@@ -1,23 +1,14 @@
 package ro.jf.funds.importer.service.domain
 
-import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.ExchangeMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.LabelMatcherTO
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 
-fun List<AccountMatcherTO>.getAccountName(importAccountName: String): AccountName? {
-    val matcher = firstOrNull { it.importAccountName == importAccountName }
+fun List<AccountMatcherTO>.getAccountMatcher(importAccountName: String): AccountMatcherTO =
+    firstOrNull { it.importAccountName == importAccountName }
         ?: throw ImportDataException("Account name not matched: $importAccountName")
-    return matcher
-        .let { matcher ->
-            when (matcher) {
-                is AccountMatcherTO.ByName -> matcher.accountName
-                is AccountMatcherTO.Skipped -> null
-            }
-        }
-}
 
 fun List<FundMatcherTO>.getFundMatcher(importAccountName: String, importLabels: List<String>): FundMatcherTO =
     firstOrNull { it.matches(importAccountName, importLabels) }

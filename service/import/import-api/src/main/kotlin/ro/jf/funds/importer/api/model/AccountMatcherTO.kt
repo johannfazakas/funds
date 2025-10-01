@@ -12,17 +12,20 @@ import ro.jf.funds.account.api.model.AccountName
 sealed class AccountMatcherTO(
 ) {
     abstract val importAccountName: String
+    abstract val accountName: AccountName?
 
     @Serializable
     @SerialName("by_name")
     data class ByName(
         override val importAccountName: String,
-        val accountName: AccountName,
+        override val accountName: AccountName,
     ) : AccountMatcherTO()
 
     @Serializable
     @SerialName("skipped")
     data class Skipped(
         override val importAccountName: String,
-    ) : AccountMatcherTO()
+    ) : AccountMatcherTO() {
+        override val accountName = null
+    }
 }

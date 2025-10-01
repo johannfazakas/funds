@@ -10,11 +10,8 @@ import org.mockito.kotlin.whenever
 import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.sdk.AccountSdk
+import ro.jf.funds.commons.model.*
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Label
-import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.model.Symbol
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
@@ -40,7 +37,6 @@ class ImportFundConversionServiceTest {
         listOf(
             SingleRecordTransactionConverter(),
             TransferTransactionConverter(),
-            ImplicitTransferTransactionConverter(),
             ExchangeSingleTransactionConverter(),
             InvestmentTransactionConverter()
         )
@@ -259,20 +255,13 @@ class ImportFundConversionServiceTest {
     }
 
     @Test
-    fun `should map transaction with implicit transfer`(): Unit = runBlocking {
+    fun `should map implicit transfer transaction`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:18:00")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = "transaction-id",
                 dateTime = transactionDateTime,
                 records = listOf(
-                    ImportParsedRecord(
-                        AccountName("BT RON"),
-                        FundName("Income"),
-                        Currency.RON,
-                        BigDecimal("50.00"),
-                        listOf(Label("income"))
-                    ),
                     ImportParsedRecord(
                         AccountName("BT RON"), FundName("Income"), Currency.RON, BigDecimal("-50.00"), emptyList()
                     ),
@@ -283,10 +272,10 @@ class ImportFundConversionServiceTest {
             )
         )
         val account = account("BT RON", Currency.RON)
-        val expensedFund = fund("Expenses")
+        val expenseFund = fund("Expenses")
         val incomeFund = fund("Income")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
+        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expenseFund, incomeFund))
         whenever(historicalPricingSdk.convert(userId, ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -294,14 +283,9 @@ class ImportFundConversionServiceTest {
 
         assertThat(fundTransactions.transactions).hasSize(1)
         assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(transactionDateTime)
+        assertThat(fundTransactions.transactions[0].type).isEqualTo(FundTransactionType.TRANSFER)
         val records = fundTransactions.transactions[0].records
-        assertThat(records).hasSize(3)
-
-        val passThroughPositiveRecord =
-            records.first { it.fundId == incomeFund.id && it.amount > BigDecimal.ZERO }
-        assertThat(passThroughPositiveRecord.amount).isEqualByComparingTo(BigDecimal("50.00"))
-        assertThat(passThroughPositiveRecord.unit).isEqualTo(Currency.RON)
-        assertThat(passThroughPositiveRecord.labels).containsExactly(Label("income"))
+        assertThat(records).hasSize(2)
 
         val passThroughNegativeRecord =
             records.first { it.fundId == incomeFund.id && it.amount < BigDecimal.ZERO }
@@ -310,7 +294,7 @@ class ImportFundConversionServiceTest {
         assertThat(passThroughNegativeRecord.labels).isEmpty()
 
         val targetRecord = records
-            .first { it.fundId == expensedFund.id && it.accountId == account.id }
+            .first { it.fundId == expenseFund.id && it.accountId == account.id }
         assertThat(targetRecord.amount).isEqualByComparingTo(BigDecimal("50.00"))
         assertThat(targetRecord.unit).isEqualTo(Currency.RON)
         assertThat(targetRecord.labels).isEmpty()

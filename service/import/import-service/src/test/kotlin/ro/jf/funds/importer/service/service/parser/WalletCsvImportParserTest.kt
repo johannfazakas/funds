@@ -149,25 +149,30 @@ class WalletCsvImportParserTest {
 
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
 
-        assertThat(importTransactions).hasSize(1)
+        assertThat(importTransactions).hasSize(2)
+
+        // Main transaction
         assertThat(importTransactions[0].transactionExternalId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-06T02:00:23")
-        assertThat(importTransactions[0].records).hasSize(3)
-
+        assertThat(importTransactions[0].records).hasSize(1)
         assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Gift income"))
         assertThat(importTransactions[0].records[0].unit).isEqualTo(Currency.RON)
         assertThat(importTransactions[0].records[0].amount).isEqualTo("740.00".toBigDecimal())
 
-        assertThat(importTransactions[0].records[1].accountName).isEqualTo(AccountName("ING"))
-        assertThat(importTransactions[0].records[1].fundName).isEqualTo(FundName("Gift income"))
-        assertThat(importTransactions[0].records[1].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[0].records[1].amount).isEqualTo("-740.00".toBigDecimal())
+        // Transfer transaction
+        assertThat(importTransactions[1].transactionExternalId).endsWith("-fund-transfer")
+        assertThat(importTransactions[1].dateTime.toString()).isEqualTo("2019-01-06T02:00:23")
+        assertThat(importTransactions[1].records).hasSize(2)
+        assertThat(importTransactions[1].records[0].accountName).isEqualTo(AccountName("ING"))
+        assertThat(importTransactions[1].records[0].fundName).isEqualTo(FundName("Gift income"))
+        assertThat(importTransactions[1].records[0].unit).isEqualTo(Currency.RON)
+        assertThat(importTransactions[1].records[0].amount).isEqualTo("-740.00".toBigDecimal())
 
-        assertThat(importTransactions[0].records[2].accountName).isEqualTo(AccountName("ING"))
-        assertThat(importTransactions[0].records[2].fundName).isEqualTo(FundName("Expenses"))
-        assertThat(importTransactions[0].records[2].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[0].records[2].amount).isEqualTo("740.00".toBigDecimal())
+        assertThat(importTransactions[1].records[1].accountName).isEqualTo(AccountName("ING"))
+        assertThat(importTransactions[1].records[1].fundName).isEqualTo(FundName("Expenses"))
+        assertThat(importTransactions[1].records[1].unit).isEqualTo(Currency.RON)
+        assertThat(importTransactions[1].records[1].amount).isEqualTo("740.00".toBigDecimal())
     }
 
     @Test
@@ -194,25 +199,30 @@ class WalletCsvImportParserTest {
 
         val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
 
-        assertThat(importTransactions).hasSize(1)
+        assertThat(importTransactions).hasSize(2)
+
+        // Main transaction
         assertThat(importTransactions[0].transactionExternalId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-06T02:00:23")
-        assertThat(importTransactions[0].records).hasSize(3)
-
+        assertThat(importTransactions[0].records).hasSize(1)
         assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Work"))
         assertThat(importTransactions[0].records[0].unit).isEqualTo(Currency.RON)
         assertThat(importTransactions[0].records[0].amount).isEqualTo("6740.00".toBigDecimal())
 
-        assertThat(importTransactions[0].records[1].accountName).isEqualTo(AccountName("ING"))
-        assertThat(importTransactions[0].records[1].fundName).isEqualTo(FundName("Work"))
-        assertThat(importTransactions[0].records[1].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[0].records[1].amount).isEqualTo("-6740.00".toBigDecimal())
+        // Transfer transaction
+        assertThat(importTransactions[1].transactionExternalId).endsWith("-fund-transfer")
+        assertThat(importTransactions[1].dateTime.toString()).isEqualTo("2019-01-06T02:00:23")
+        assertThat(importTransactions[1].records).hasSize(2)
+        assertThat(importTransactions[1].records[0].accountName).isEqualTo(AccountName("ING"))
+        assertThat(importTransactions[1].records[0].fundName).isEqualTo(FundName("Work"))
+        assertThat(importTransactions[1].records[0].unit).isEqualTo(Currency.RON)
+        assertThat(importTransactions[1].records[0].amount).isEqualTo("-6740.00".toBigDecimal())
 
-        assertThat(importTransactions[0].records[2].accountName).isEqualTo(AccountName("ING"))
-        assertThat(importTransactions[0].records[2].fundName).isEqualTo(FundName("Expenses"))
-        assertThat(importTransactions[0].records[2].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[0].records[2].amount).isEqualTo("6740.00".toBigDecimal())
+        assertThat(importTransactions[1].records[1].accountName).isEqualTo(AccountName("ING"))
+        assertThat(importTransactions[1].records[1].fundName).isEqualTo(FundName("Expenses"))
+        assertThat(importTransactions[1].records[1].unit).isEqualTo(Currency.RON)
+        assertThat(importTransactions[1].records[1].amount).isEqualTo("6740.00".toBigDecimal())
     }
 
     @Test
