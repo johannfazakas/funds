@@ -81,8 +81,8 @@ class FundsFormatImportParser(
     private fun toImportRecords(importConfiguration: ImportConfigurationTO, csvRow: CsvRow): List<ImportParsedRecord>? {
         // TODO(Johann) seems like logic could partially be extracted
         val importAccountName = csvRow.getString(ACCOUNT_COLUMN)
-        val accountName = importConfiguration.accountMatchers.getAccountName(importAccountName)
-        if (accountName == null) return null
+        val accountMatcher = importConfiguration.accountMatchers.getAccountMatcher(importAccountName)
+        val accountName = accountMatcher.accountName ?: return null
         val importLabels = listOfNotNull(csvRow.getString(LABEL_COLUMN).takeIf { it.isNotBlank() })
         val unit = FinancialUnit.of(csvRow.getString(UNIT_TYPE_COLUMN), csvRow.getString(UNIT_COLUMN))
         val amount = csvRow.getBigDecimal(AMOUNT_COLUMN)

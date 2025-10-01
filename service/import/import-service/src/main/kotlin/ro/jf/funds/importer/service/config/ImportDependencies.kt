@@ -92,7 +92,6 @@ private val Application.importServiceDependencies
         single<FundService> { FundService(get()) }
         single<SingleRecordTransactionConverter> { SingleRecordTransactionConverter() } bind ImportTransactionConverter::class
         single<TransferTransactionConverter> { TransferTransactionConverter() } bind ImportTransactionConverter::class
-        single<ImplicitTransferTransactionConverter> { ImplicitTransferTransactionConverter() } bind ImportTransactionConverter::class
         single<ExchangeSingleTransactionConverter> { ExchangeSingleTransactionConverter() } bind ImportTransactionConverter::class
         single<InvestmentTransactionConverter> { InvestmentTransactionConverter() } bind ImportTransactionConverter::class
         single<ImportTransactionConverterRegistry> { ImportTransactionConverterRegistry(getAll()) }
