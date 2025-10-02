@@ -94,6 +94,7 @@ class FundsClient(
                 dateTime = dateTime,
                 externalId = listOf(dateTime, initialBalance.accountName, initialBalance.amount).joinToString()
                     .let { UUID.nameUUIDFromBytes(it.toByteArray()).toString() },
+                type = FundTransactionType.SINGLE_RECORD,
                 records = listOf(
                     CreateFundRecordTO(
                         fundId = fund.id,
