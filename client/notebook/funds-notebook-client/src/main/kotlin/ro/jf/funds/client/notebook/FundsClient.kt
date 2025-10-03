@@ -22,9 +22,9 @@ import org.jetbrains.kotlinx.kandy.letsplot.layers.line
 import org.jetbrains.kotlinx.kandy.letsplot.x
 import org.jetbrains.kotlinx.kandy.util.color.Color
 import org.jetbrains.kotlinx.kandy.util.context.invoke
-import ro.jf.funds.account.api.model.AccountTO
-import ro.jf.funds.account.api.model.CreateAccountTO
-import ro.jf.funds.account.sdk.AccountSdk
+import ro.jf.funds.fund.api.model.AccountTO
+import ro.jf.funds.fund.api.model.CreateAccountTO
+import ro.jf.funds.fund.sdk.FundAccountSdk
 import ro.jf.funds.client.notebook.model.InitialBalances
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.FundSdk
@@ -43,7 +43,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class FundsClient(
     private val userSdk: UserSdk = UserSdk(),
-    private val accountSdk: AccountSdk = AccountSdk(),
+    private val fundAccountSdk: FundAccountSdk = FundAccountSdk(),
     private val fundSdk: FundSdk = FundSdk(),
     private val fundTransactionSdk: FundTransactionSdk = FundTransactionSdk(),
     private val importSdk: ImportSdk = ImportSdk(),
@@ -61,11 +61,11 @@ class FundsClient(
     }
 
     fun provisionAccounts(user: UserTO, accounts: List<CreateAccountTO>): List<AccountTO> = run {
-        val existingAccounts = accountSdk.listAccounts(user.id).items
+        val existingAccounts = fundAccountSdk.listAccounts(user.id).items
         val existingAccountNames = existingAccounts.map { it.name }.toSet()
         val newAccounts = accounts
             .filter { it.name !in existingAccountNames }
-            .map { accountSdk.createAccount(user.id, it) }
+            .map { fundAccountSdk.createAccount(user.id, it) }
         existingAccounts + newAccounts
     }
 
