@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import ro.jf.funds.account.api.model.AccountName
+import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.fund.api.model.FundName

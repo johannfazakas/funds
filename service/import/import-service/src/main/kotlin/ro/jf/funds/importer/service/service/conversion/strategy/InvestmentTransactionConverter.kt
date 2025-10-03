@@ -1,7 +1,7 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
-import ro.jf.funds.account.api.model.AccountName
-import ro.jf.funds.account.api.model.AccountTO
+import ro.jf.funds.fund.api.model.AccountName
+import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Symbol
 import ro.jf.funds.fund.api.model.*

@@ -1,8 +1,8 @@
 package ro.jf.funds.importer.service.service.conversion
 
 import mu.KotlinLogging.logger
-import ro.jf.funds.account.api.model.AccountName
-import ro.jf.funds.account.api.model.AccountTO
+import ro.jf.funds.fund.api.model.AccountName
+import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.CreateFundTransactionTO
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO

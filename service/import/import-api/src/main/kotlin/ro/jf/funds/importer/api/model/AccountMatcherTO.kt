@@ -4,7 +4,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
-import ro.jf.funds.account.api.model.AccountName
+import ro.jf.funds.fund.api.model.AccountName
 
 @OptIn(ExperimentalSerializationApi::class)
 @JsonClassDiscriminator("type")

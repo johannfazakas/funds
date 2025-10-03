@@ -6,7 +6,6 @@ import org.jetbrains.exposed.sql.Database
 import org.koin.core.qualifier.StringQualifier
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.config.getEnvironmentProperty
 import ro.jf.funds.commons.config.getStringProperty
 import ro.jf.funds.commons.event.*
@@ -17,6 +16,7 @@ import ro.jf.funds.fund.api.event.FUND_DOMAIN
 import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_REQUEST
 import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_RESPONSE
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
+import ro.jf.funds.fund.sdk.FundAccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.FundTransactionSdk
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
@@ -34,7 +34,6 @@ import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
 import ro.jf.funds.importer.service.service.parser.WalletCsvImportParser
 import javax.sql.DataSource
 
-private const val ACCOUNT_SERVICE_BASE_URL_PROPERTY = "integration.account-service.base-url"
 private const val FUND_SERVICE_BASE_URL_PROPERTY = "integration.fund-service.base-url"
 private const val HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY = "integration.historical-pricing-service.base-url"
 
@@ -59,8 +58,8 @@ private val Application.importPersistenceDependencies
 private val Application.importIntegrationDependencies
     get() = module {
         single<HttpClient> { createHttpClient() }
-        single<AccountSdk> {
-            AccountSdk(environment.getStringProperty(ACCOUNT_SERVICE_BASE_URL_PROPERTY), get())
+        single<FundAccountSdk> {
+            FundAccountSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
         single<FundSdk> {
             FundSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())

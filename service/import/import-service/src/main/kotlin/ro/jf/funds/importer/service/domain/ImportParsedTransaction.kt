@@ -1,7 +1,7 @@
 package ro.jf.funds.importer.service.domain
 
 import kotlinx.datetime.LocalDateTime
-import ro.jf.funds.account.api.model.AccountName
+import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.fund.api.model.FundName

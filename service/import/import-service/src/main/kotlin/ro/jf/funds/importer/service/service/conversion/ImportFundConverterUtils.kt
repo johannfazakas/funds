@@ -1,8 +1,8 @@
 package ro.jf.funds.importer.service.service.conversion
 
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.account.api.model.AccountName
-import ro.jf.funds.account.api.model.AccountTO
+import ro.jf.funds.fund.api.model.AccountName
+import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.fund.api.model.CreateFundRecordTO
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
