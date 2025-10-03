@@ -22,6 +22,7 @@ import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_REQUEST
 import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_RESPONSE
 import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
 import ro.jf.funds.fund.service.persistence.FundRepository
+import ro.jf.funds.fund.service.service.AccountService
 import ro.jf.funds.fund.service.service.AccountTransactionAdapter
 import ro.jf.funds.fund.service.service.FundService
 import ro.jf.funds.fund.service.service.FundTransactionService
@@ -81,6 +82,7 @@ private val Application.fundEventProducerDependencies
 
 private val Application.fundServiceDependencies
     get() = module {
+        single<AccountService> { AccountService(get()) }
         single<AccountTransactionAdapter> { AccountTransactionAdapter(get(), get()) }
         single<FundService> { FundService(get()) }
         single<FundTransactionService> { FundTransactionService(get(), get()) }

@@ -16,7 +16,14 @@ import org.koin.ktor.ext.get
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
-import ro.jf.funds.account.api.model.*
+import ro.jf.funds.account.api.model.AccountRecordTO
+import ro.jf.funds.account.api.model.AccountTransactionFilterTO
+import ro.jf.funds.account.api.model.AccountTransactionTO
+import ro.jf.funds.account.api.model.AccountTransactionType
+import ro.jf.funds.account.api.model.CreateAccountRecordTO
+import ro.jf.funds.account.api.model.CreateAccountTransactionTO
+import ro.jf.funds.account.api.model.PropertyTO as AccountPropertyTO
+import ro.jf.funds.account.api.model.propertiesOf
 import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.account.sdk.AccountTransactionSdk
 import ro.jf.funds.commons.config.configureContentNegotiation
@@ -354,7 +361,7 @@ class FundTransactionApiTest {
         val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
 
         val filter = AccountTransactionFilterTO(
-            recordProperties = listOf(PropertyTO(FUND_ID_PROPERTY, fundId.toString()))
+            recordProperties = listOf(AccountPropertyTO(FUND_ID_PROPERTY, fundId.toString()))
         )
         whenever(accountTransactionSdk.listTransactions(userId, filter)).thenReturn(
             ListTO(
