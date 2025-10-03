@@ -15,9 +15,9 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import ro.jf.funds.account.api.model.AccountName
-import ro.jf.funds.account.api.model.AccountTO
-import ro.jf.funds.account.sdk.AccountSdk
+import ro.jf.funds.fund.api.model.AccountName
+import ro.jf.funds.fund.api.model.AccountTO
+import ro.jf.funds.fund.sdk.FundAccountSdk
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
@@ -49,7 +49,7 @@ import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
 class ImportApiTest {
-    private val accountSdk: AccountSdk = mock()
+    private val fundAccountSdk: FundAccountSdk = mock()
     private val fundSdk: FundSdk = mock()
     private val historicalPricingSdk: HistoricalPricingSdk = mock()
     private val fundTransactionSdk: FundTransactionSdk = mock()
@@ -83,7 +83,7 @@ class ImportApiTest {
                 LabelMatcherTO("Work Income", Label("Income")),
             )
         )
-        whenever(accountSdk.listAccounts(userId)).thenReturn(
+        whenever(fundAccountSdk.listAccounts(userId)).thenReturn(
             ListTO(
                 listOf(
                     AccountTO(randomUUID(), AccountName("ING"), Currency.RON),
@@ -246,7 +246,7 @@ class ImportApiTest {
 
     private fun Application.testModule() {
         val importAppTestModule = org.koin.dsl.module {
-            single<AccountSdk> { accountSdk }
+            single<FundAccountSdk> { fundAccountSdk }
             single<FundSdk> { fundSdk }
             single<FundTransactionSdk> { fundTransactionSdk }
             single<HistoricalPricingSdk> { historicalPricingSdk }
