@@ -23,7 +23,6 @@ repositories {
 
 dependencies {
     implementation("ro.jf.funds:user-sdk:1.0.0")
-    implementation("ro.jf.funds:account-sdk:1.0.0")
     implementation("ro.jf.funds:fund-sdk:1.0.0")
     implementation("ro.jf.funds:import-sdk:1.0.0")
     implementation("ro.jf.funds:reporting-sdk:1.0.0")
