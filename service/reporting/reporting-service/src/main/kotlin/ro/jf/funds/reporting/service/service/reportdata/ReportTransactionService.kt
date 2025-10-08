@@ -2,14 +2,14 @@ package ro.jf.funds.reporting.service.service.reportdata
 
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
-import ro.jf.funds.fund.api.model.FundTransactionFilterTO
-import ro.jf.funds.fund.api.model.FundTransactionTO
-import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.fund.api.model.TransactionFilterTO
+import ro.jf.funds.fund.api.model.TransactionTO
+import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.service.domain.*
 import java.util.*
 
 class ReportTransactionService(
-    private val fundTransactionSdk: FundTransactionSdk,
+    private val transactionSdk: TransactionSdk,
 ) {
     suspend fun getPreviousReportTransactions(
         reportView: ReportView,
@@ -31,15 +31,15 @@ class ReportTransactionService(
         fromDate: LocalDate?,
         toDate: LocalDate,
     ): List<ReportTransaction> {
-        val filter = FundTransactionFilterTO(fromDate, toDate)
-        return fundTransactionSdk
-            .listTransactions(userId, fundId, filter).items
+        val filter = TransactionFilterTO(fromDate, toDate, fundId)
+        return transactionSdk
+            .listTransactions(userId, filter).items
             .asSequence()
             .map { it.toReportTransaction() }
             .toList()
     }
 
-    private fun FundTransactionTO.toReportTransaction(): ReportTransaction {
+    private fun TransactionTO.toReportTransaction(): ReportTransaction {
         return ReportTransaction(
             date = this.dateTime.date,
             records = this.records.map { record ->

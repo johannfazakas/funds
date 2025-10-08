@@ -19,8 +19,8 @@ import ro.jf.funds.fund.api.model.CreateAccountTO
 import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerContainerExtension::class)
-class FundAccountSdkTest {
-    private val fundAccountSdk = FundAccountSdk(baseUrl = MockServerContainerExtension.baseUrl)
+class AccountSdkTest {
+    private val accountSdk = AccountSdk(baseUrl = MockServerContainerExtension.baseUrl)
 
     @Test
     fun `test list accounts`(mockServerClient: MockServerClient): Unit = runBlocking {
@@ -63,7 +63,7 @@ class FundAccountSdkTest {
                     )
             )
 
-        val accounts = fundAccountSdk.listAccounts(userId)
+        val accounts = accountSdk.listAccounts(userId)
 
         assertThat(accounts.items).hasSize(2)
         assertThat(accounts.items[0].id).isEqualTo(accountId1)
@@ -102,7 +102,7 @@ class FundAccountSdkTest {
                     )
             )
 
-        val account = fundAccountSdk.findAccountById(userId, accountId)
+        val account = accountSdk.findAccountById(userId, accountId)
 
         assertThat(account).isNotNull
         assertThat(account!!.id).isEqualTo(accountId)
@@ -124,7 +124,7 @@ class FundAccountSdkTest {
             )
             .respond(response().withStatusCode(404))
 
-        val account = fundAccountSdk.findAccountById(userId, accountId)
+        val account = accountSdk.findAccountById(userId, accountId)
 
         assertThat(account).isNull()
     }
@@ -157,7 +157,7 @@ class FundAccountSdkTest {
                     )
             )
 
-        val account = fundAccountSdk.createAccount(
+        val account = accountSdk.createAccount(
             userId,
             CreateAccountTO(
                 name = AccountName("New Checking Account"),
@@ -184,7 +184,7 @@ class FundAccountSdkTest {
             )
             .respond(response().withStatusCode(204))
 
-        fundAccountSdk.deleteAccountById(userId, accountId)
+        accountSdk.deleteAccountById(userId, accountId)
 
         mockServerClient
             .verify(

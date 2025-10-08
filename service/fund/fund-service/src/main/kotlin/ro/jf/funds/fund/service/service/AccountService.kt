@@ -1,41 +1,40 @@
 package ro.jf.funds.fund.service.service
 
-import ro.jf.funds.account.sdk.AccountSdk
-import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
-import ro.jf.funds.fund.api.AccountApi
-import ro.jf.funds.fund.api.model.AccountTO
+import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.CreateAccountTO
+import ro.jf.funds.fund.service.domain.Account
+import ro.jf.funds.fund.service.domain.FundServiceException
+import ro.jf.funds.fund.service.persistence.AccountRepository
 import java.util.*
 
 class AccountService(
-    private val accountSdk: AccountSdk,
-) : AccountApi {
-    override suspend fun listAccounts(userId: UUID): ListTO<AccountTO> = withSuspendingSpan {
-        val accountList = accountSdk.listAccounts(userId)
-        ListTO(accountList.items.map { it.toFundAccountTO() })
+    private val accountRepository: AccountRepository
+) {
+    suspend fun listAccounts(userId: UUID): List<Account> {
+        return accountRepository.list(userId)
     }
 
-    override suspend fun findAccountById(userId: UUID, accountId: UUID): AccountTO? = withSuspendingSpan {
-        accountSdk.findAccountById(userId, accountId)?.toFundAccountTO()
+    suspend fun findAccountById(userId: UUID, accountId: UUID): Account {
+        return accountRepository.findById(userId, accountId)
+            ?: throw FundServiceException.AccountNotFound(accountId)
     }
 
-    override suspend fun createAccount(userId: UUID, request: CreateAccountTO): AccountTO = withSuspendingSpan {
-        val createRequest = ro.jf.funds.account.api.model.CreateAccountTO(
-            name = ro.jf.funds.account.api.model.AccountName(request.name.value),
-            unit = request.unit
-        )
-        accountSdk.createAccount(userId, createRequest).toFundAccountTO()
+    suspend fun createAccount(
+        userId: UUID,
+        createAccountCommand: CreateAccountTO
+    ): Account {
+        val existingAccount = findAccountByName(userId, createAccountCommand.name)
+        if (existingAccount != null) {
+            throw FundServiceException.AccountNameAlreadyExists(createAccountCommand.name)
+        }
+        return accountRepository.save(userId, createAccountCommand)
     }
 
-    override suspend fun deleteAccountById(userId: UUID, accountId: UUID) = withSuspendingSpan {
-        accountSdk.deleteAccountById(userId, accountId)
+    suspend fun deleteAccount(userId: UUID, accountId: UUID) {
+        accountRepository.deleteById(userId, accountId)
     }
 
-    private fun ro.jf.funds.account.api.model.AccountTO.toFundAccountTO(): AccountTO =
-        AccountTO(
-            id = this.id,
-            name = ro.jf.funds.fund.api.model.AccountName(this.name.value),
-            unit = this.unit
-        )
+    private suspend fun findAccountByName(userId: UUID, name: AccountName): Account? {
+        return accountRepository.findByName(userId, name)
+    }
 }

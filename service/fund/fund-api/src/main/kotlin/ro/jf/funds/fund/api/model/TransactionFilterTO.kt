@@ -1,12 +1,14 @@
 package ro.jf.funds.fund.api.model
 
 import kotlinx.datetime.LocalDate
+import java.util.*
 
-data class FundTransactionFilterTO(
+data class TransactionFilterTO(
     val fromDate: LocalDate? = null,
     val toDate: LocalDate? = null,
+    val fundId: UUID? = null,
 ) {
     companion object {
-        fun empty() = FundTransactionFilterTO()
+        fun empty() = TransactionFilterTO(null, null, null)
     }
 }

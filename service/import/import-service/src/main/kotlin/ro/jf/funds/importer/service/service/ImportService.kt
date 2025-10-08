@@ -8,7 +8,7 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.commons.event.Event
 import ro.jf.funds.commons.event.Producer
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
-import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
+import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.service.domain.ImportFile
 import ro.jf.funds.importer.service.domain.ImportTask
@@ -25,7 +25,7 @@ class ImportService(
     private val importTaskRepository: ImportTaskRepository,
     private val importParserRegistry: ImportParserRegistry,
     private val importFundConversionService: ImportFundConversionService,
-    private val createFundTransactionsProducer: Producer<CreateFundTransactionsTO>,
+    private val createFundTransactionsProducer: Producer<CreateTransactionsTO>,
 ) {
     suspend fun startImport(userId: UUID, configuration: ImportConfigurationTO, files: List<ImportFile>): ImportTask =
         withSuspendingSpan {

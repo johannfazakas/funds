@@ -4,25 +4,16 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.koin.dsl.module
 import org.koin.ktor.ext.get
-import org.mockito.Mockito.mock
-import org.mockito.kotlin.whenever
-import ro.jf.funds.account.api.model.AccountName
-import ro.jf.funds.account.api.model.AccountTO
-import ro.jf.funds.account.sdk.AccountSdk
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
-import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
-import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
@@ -43,11 +34,10 @@ import javax.sql.DataSource
 @ExtendWith(KafkaContainerExtension::class)
 class FundApiTest {
     private val fundRepository = createFundRepository()
-    private val accountSdk = mock<AccountSdk>()
 
     @Test
     fun `test list funds`() = testApplication {
-        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, appConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
@@ -66,7 +56,7 @@ class FundApiTest {
 
     @Test
     fun `test get fund by id`() = testApplication {
-        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, appConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Savings")))
@@ -84,13 +74,9 @@ class FundApiTest {
 
     @Test
     fun `test create fund`(): Unit = testApplication {
-        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, appConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
-        val accountId = randomUUID()
-
-        whenever(accountSdk.findAccountById(userId, accountId))
-            .thenReturn(AccountTO(accountId, AccountName("Savings Account"), Currency.RON))
 
         val response = createJsonHttpClient().post("/funds-api/fund/v1/funds") {
             contentType(ContentType.Application.Json)
@@ -111,7 +97,7 @@ class FundApiTest {
 
     @Test
     fun `test delete fund by id`() = testApplication {
-        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, appConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val userId = randomUUID()
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Company")))
 
@@ -123,15 +109,8 @@ class FundApiTest {
         assertThat(fundRepository.findById(userId, fund.id)).isNull()
     }
 
-    private val appConfig = MapApplicationConfig(
-        "integration.account-service.base-url" to MockServerContainerExtension.baseUrl
-    )
-
     private fun Application.testModule() {
-        val fundAppTestModule = module {
-            single<AccountSdk> { accountSdk }
-        }
-        configureDependencies(fundDependencies, fundAppTestModule)
+        configureDependencies(fundDependencies)
         configureFundErrorHandling()
         configureContentNegotiation()
         configureDatabaseMigration(get<DataSource>())

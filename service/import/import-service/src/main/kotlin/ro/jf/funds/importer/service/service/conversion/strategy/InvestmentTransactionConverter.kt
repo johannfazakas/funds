@@ -1,7 +1,5 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
-import ro.jf.funds.fund.api.model.AccountName
-import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Symbol
 import ro.jf.funds.fund.api.model.*
@@ -58,23 +56,23 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
         }
     }
 
-    override fun mapToFundTransactions(
+    override fun mapToTransactions(
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-    ): List<CreateFundTransactionTO> {
+    ): List<CreateTransactionTO> {
         val currencyRecord = transaction.records.first { it.unit is Currency }
         val instrumentRecord = transaction.records.first { it.unit is Symbol }
 
         val transactionType = when {
-            currencyRecord.amount < BigDecimal.ZERO && instrumentRecord.amount > BigDecimal.ZERO -> FundTransactionType.OPEN_POSITION
-            currencyRecord.amount > BigDecimal.ZERO && instrumentRecord.amount < BigDecimal.ZERO -> FundTransactionType.CLOSE_POSITION
+            currencyRecord.amount < BigDecimal.ZERO && instrumentRecord.amount > BigDecimal.ZERO -> TransactionType.OPEN_POSITION
+            currencyRecord.amount > BigDecimal.ZERO && instrumentRecord.amount < BigDecimal.ZERO -> TransactionType.CLOSE_POSITION
             else -> throw ImportDataException("Invalid investment transaction: currency and instrument amounts must have opposite signs")
         }
 
         return listOf(
-            CreateFundTransactionTO(
+            CreateTransactionTO(
                 dateTime = transaction.dateTime,
                 externalId = transaction.transactionExternalId,
                 type = transactionType,
@@ -85,7 +83,7 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
                         account = accountStore[currencyRecord.accountName],
                         conversions = conversions,
                     ),
-                    CreateFundRecordTO(
+                    CreateTransactionRecord(
                         fundId = fundStore[instrumentRecord.fundName].id,
                         accountId = accountStore[instrumentRecord.accountName].id,
                         amount = instrumentRecord.amount,

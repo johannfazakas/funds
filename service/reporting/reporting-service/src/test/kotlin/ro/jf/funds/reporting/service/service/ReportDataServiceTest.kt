@@ -14,11 +14,11 @@ import ro.jf.funds.commons.model.*
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
-import ro.jf.funds.fund.api.model.FundRecordTO
-import ro.jf.funds.fund.api.model.FundTransactionFilterTO
-import ro.jf.funds.fund.api.model.FundTransactionTO
-import ro.jf.funds.fund.api.model.FundTransactionType
-import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.fund.api.model.TransactionFilterTO
+import ro.jf.funds.fund.api.model.TransactionRecordTO
+import ro.jf.funds.fund.api.model.TransactionTO
+import ro.jf.funds.fund.api.model.TransactionType
+import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
@@ -33,7 +33,7 @@ import java.util.UUID.randomUUID
 class ReportDataServiceTest {
     private val reportViewRepository = mock<ReportViewRepository>()
     private val conversionRateService = mock<ConversionRateService>()
-    private val fundTransactionSdk = mock<FundTransactionSdk>()
+    private val fundTransactionSdk = mock<TransactionSdk>()
     private val reportTransactionService = ReportTransactionService(fundTransactionSdk)
 
     private val resolverRegistry = ReportDataResolverRegistry(
@@ -979,13 +979,14 @@ class ReportDataServiceTest {
     ) = transaction(date, EUR, BigDecimal(amount), labels)
 
     private fun investmentEurTransfer(date: LocalDate, amountEur: Int) =
-        FundTransactionTO(
+        TransactionTO(
             id = randomUUID(),
             userId = userId,
             dateTime = date.atTime(12, 0),
-            type = FundTransactionType.TRANSFER,
+            type = TransactionType.TRANSFER,
+            externalId = randomUUID().toString(),
             records = listOf(
-                FundRecordTO(
+                TransactionRecordTO(
                     id = randomUUID(),
                     fundId = expensesFundId,
                     accountId = randomUUID(),
@@ -993,7 +994,7 @@ class ReportDataServiceTest {
                     unit = EUR,
                     labels = labelsOf("investment")
                 ),
-                FundRecordTO(
+                TransactionRecordTO(
                     id = randomUUID(),
                     fundId = investmentFundId,
                     accountId = randomUUID(),
@@ -1005,38 +1006,42 @@ class ReportDataServiceTest {
         )
 
     private fun investmentOpenPosition(date: LocalDate, eurAmount: Int, instrument: Symbol, instrumentAmount: Int) =
-        FundTransactionTO(
+        TransactionTO(
             id = randomUUID(),
             userId = userId,
             dateTime = date.atTime(12, 0),
-            type = FundTransactionType.OPEN_POSITION,
+            type = TransactionType.OPEN_POSITION,
+            externalId = randomUUID().toString(),
             records = listOf(
-                FundRecordTO(
+                TransactionRecordTO(
                     id = randomUUID(),
                     fundId = investmentFundId,
                     accountId = randomUUID(),
                     amount = BigDecimal(eurAmount * -1),
                     unit = EUR,
+                    labels = emptyList(),
                 ),
-                FundRecordTO(
+                TransactionRecordTO(
                     id = randomUUID(),
                     fundId = investmentFundId,
                     accountId = randomUUID(),
                     amount = BigDecimal(instrumentAmount),
                     unit = instrument,
+                    labels = emptyList(),
                 )
             )
         )
 
     private fun transaction(
         date: LocalDate, unit: FinancialUnit, amount: BigDecimal, labels: List<Label>,
-    ) = FundTransactionTO(
+    ) = TransactionTO(
         id = randomUUID(),
         userId = userId,
         dateTime = date.atTime(12, 0),
-        type = FundTransactionType.SINGLE_RECORD,
+        type = TransactionType.SINGLE_RECORD,
+        externalId = randomUUID().toString(),
         records = listOf(
-            FundRecordTO(
+            TransactionRecordTO(
                 id = randomUUID(),
                 fundId = expensesFundId,
                 unit = unit,
@@ -1048,21 +1053,19 @@ class ReportDataServiceTest {
     )
 
     private suspend fun mockTransactions(
-        interval: ReportDataInterval, fundId: UUID, transactions: List<FundTransactionTO>,
+        interval: ReportDataInterval, fundId: UUID, transactions: List<TransactionTO>,
     ) {
         whenever(
             fundTransactionSdk.listTransactions(
                 userId,
-                fundId,
-                FundTransactionFilterTO(null, interval.getPreviousLastDay())
+                TransactionFilterTO(null, interval.getPreviousLastDay(), fundId)
             )
         ).thenReturn(ListTO(transactions.filter { it.dateTime.date <= interval.getPreviousLastDay() }))
         interval.getBuckets().forEach { bucket ->
             whenever(
                 fundTransactionSdk.listTransactions(
                     userId,
-                    fundId,
-                    FundTransactionFilterTO(bucket.from, bucket.to)
+                    TransactionFilterTO(bucket.from, bucket.to, fundId)
                 )
             ).thenReturn(ListTO(transactions.filter { it.dateTime.date >= bucket.from && it.dateTime.date <= bucket.to }))
         }

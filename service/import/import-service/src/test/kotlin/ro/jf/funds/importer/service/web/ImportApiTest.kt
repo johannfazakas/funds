@@ -17,7 +17,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.AccountTO
-import ro.jf.funds.fund.sdk.FundAccountSdk
+import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
@@ -34,7 +34,7 @@ import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
@@ -49,10 +49,10 @@ import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
 class ImportApiTest {
-    private val fundAccountSdk: FundAccountSdk = mock()
+    private val accountSdk: AccountSdk = mock()
     private val fundSdk: FundSdk = mock()
     private val historicalPricingSdk: HistoricalPricingSdk = mock()
-    private val fundTransactionSdk: FundTransactionSdk = mock()
+    private val transactionSdk: TransactionSdk = mock()
 
     @Test
     fun `test valid import`() = testApplication {
@@ -83,7 +83,7 @@ class ImportApiTest {
                 LabelMatcherTO("Work Income", Label("Income")),
             )
         )
-        whenever(fundAccountSdk.listAccounts(userId)).thenReturn(
+        whenever(accountSdk.listAccounts(userId)).thenReturn(
             ListTO(
                 listOf(
                     AccountTO(randomUUID(), AccountName("ING"), Currency.RON),
@@ -98,7 +98,7 @@ class ImportApiTest {
                 )
             )
         )
-        whenever(fundTransactionSdk.createTransaction(eq(userId), any())).thenReturn(mock())
+        whenever(transactionSdk.createTransaction(eq(userId), any())).thenReturn(mock())
         whenever(historicalPricingSdk.convert(userId, ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -246,9 +246,9 @@ class ImportApiTest {
 
     private fun Application.testModule() {
         val importAppTestModule = org.koin.dsl.module {
-            single<FundAccountSdk> { fundAccountSdk }
+            single<AccountSdk> { accountSdk }
             single<FundSdk> { fundSdk }
-            single<FundTransactionSdk> { fundTransactionSdk }
+            single<TransactionSdk> { transactionSdk }
             single<HistoricalPricingSdk> { historicalPricingSdk }
         }
         configureDependencies(*importDependencyModules, importAppTestModule)
