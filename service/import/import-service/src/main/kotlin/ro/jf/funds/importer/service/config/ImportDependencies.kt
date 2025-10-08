@@ -15,10 +15,10 @@ import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.fund.api.event.FUND_DOMAIN
 import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_REQUEST
 import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_RESPONSE
-import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
-import ro.jf.funds.fund.sdk.FundAccountSdk
+import ro.jf.funds.fund.api.model.CreateTransactionsTO
+import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
 import ro.jf.funds.importer.service.service.ImportService
@@ -58,14 +58,14 @@ private val Application.importPersistenceDependencies
 private val Application.importIntegrationDependencies
     get() = module {
         single<HttpClient> { createHttpClient() }
-        single<FundAccountSdk> {
-            FundAccountSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
+        single<AccountSdk> {
+            AccountSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
         single<FundSdk> {
             FundSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
-        single<FundTransactionSdk> {
-            FundTransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
+        single<TransactionSdk> {
+            TransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
         single<HistoricalPricingSdk> {
             HistoricalPricingSdk(environment.getStringProperty(HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY))
@@ -76,7 +76,7 @@ private val Application.importEventProducerDependencies
     get() = module {
         single<TopicSupplier> { TopicSupplier(environment.getEnvironmentProperty()) }
         single<ProducerProperties> { ProducerProperties.fromEnv(environment) }
-        single<Producer<CreateFundTransactionsTO>> {
+        single<Producer<CreateTransactionsTO>> {
             createProducer(get(), get<TopicSupplier>().topic(FUND_DOMAIN, FUND_TRANSACTIONS_REQUEST))
         }
     }

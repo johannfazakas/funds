@@ -12,7 +12,7 @@ import ro.jf.funds.commons.event.TopicSupplier
 import ro.jf.funds.commons.event.createProducer
 import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.commons.web.createHttpClient
-import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
@@ -58,8 +58,8 @@ private val Application.eventProducerDependencies
 private val Application.integrationDependencies
     get() = module {
         single<HttpClient> { createHttpClient() }
-        single<FundTransactionSdk> {
-            FundTransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
+        single<TransactionSdk> {
+            TransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
         single<HistoricalPricingSdk> {
             HistoricalPricingSdk(environment.getStringProperty(HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY), get())

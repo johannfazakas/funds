@@ -24,11 +24,11 @@ import org.jetbrains.kotlinx.kandy.util.color.Color
 import org.jetbrains.kotlinx.kandy.util.context.invoke
 import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.fund.api.model.CreateAccountTO
-import ro.jf.funds.fund.sdk.FundAccountSdk
+import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.client.notebook.model.InitialBalances
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.fund.sdk.FundTransactionSdk
+import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
 import ro.jf.funds.importer.sdk.ImportSdk
@@ -43,9 +43,9 @@ import kotlin.time.Duration.Companion.seconds
 
 class FundsClient(
     private val userSdk: UserSdk = UserSdk(),
-    private val fundAccountSdk: FundAccountSdk = FundAccountSdk(),
+    private val accountSdk: AccountSdk = AccountSdk(),
     private val fundSdk: FundSdk = FundSdk(),
-    private val fundTransactionSdk: FundTransactionSdk = FundTransactionSdk(),
+    private val transactionSdk: TransactionSdk = TransactionSdk(),
     private val importSdk: ImportSdk = ImportSdk(),
     private val reportingSdk: ReportingSdk = ReportingSdk(),
 ) {
@@ -61,11 +61,11 @@ class FundsClient(
     }
 
     fun provisionAccounts(user: UserTO, accounts: List<CreateAccountTO>): List<AccountTO> = run {
-        val existingAccounts = fundAccountSdk.listAccounts(user.id).items
+        val existingAccounts = accountSdk.listAccounts(user.id).items
         val existingAccountNames = existingAccounts.map { it.name }.toSet()
         val newAccounts = accounts
             .filter { it.name !in existingAccountNames }
-            .map { fundAccountSdk.createAccount(user.id, it) }
+            .map { accountSdk.createAccount(user.id, it) }
         existingAccounts + newAccounts
     }
 
@@ -106,7 +106,7 @@ class FundsClient(
             )
         }
         val transactions = transactionRequests.map { request ->
-            fundTransactionSdk.createTransaction(user.id, request)
+            transactionSdk.createTransaction(user.id, request)
         }
         transactions
     }

@@ -17,7 +17,7 @@ import java.util.*
 
 private val log = logger { }
 
-class FundAccountSdk(
+class AccountSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : AccountApi {

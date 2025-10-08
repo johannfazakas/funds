@@ -31,11 +31,10 @@ import ro.jf.funds.commons.test.utils.createJsonHttpClient
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.web.USER_ID_HEADER
-import ro.jf.funds.fund.api.model.FundTransactionFilterTO
-import ro.jf.funds.fund.api.model.FundTransactionTO
-import ro.jf.funds.fund.api.model.FundTransactionType
-import ro.jf.funds.fund.sdk.FundTransactionSdk
-import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
+import ro.jf.funds.fund.api.model.TransactionFilterTO
+import ro.jf.funds.fund.api.model.TransactionTO
+import ro.jf.funds.fund.api.model.TransactionType
+import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.config.configureReportingErrorHandling
 import ro.jf.funds.reporting.service.config.configureReportingRouting
@@ -54,7 +53,7 @@ import javax.sql.DataSource
 @ExtendWith(PostgresContainerExtension::class)
 class ReportingApiTest {
     private val reportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)
-    private val fundTransactionSdk = mock<FundTransactionSdk>()
+    private val transactionSdk = mock<TransactionSdk>()
     private val conversionRateService = mock<ConversionRateService>()
 
     private val userId = randomUUID()
@@ -85,11 +84,12 @@ class ReportingApiTest {
 
         val transaction =
             transaction(
-                userId, dateTime, FundTransactionType.SINGLE_RECORD, listOf(
+                userId, dateTime, TransactionType.SINGLE_RECORD, listOf(
                     record(expenseFundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need"))
                 )
             )
-        whenever(fundTransactionSdk.listTransactions(userId, expenseFundId)).thenReturn(ListTO.of(transaction))
+        whenever(transactionSdk.listTransactions(userId, TransactionFilterTO(fundId = expenseFundId)))
+            .thenReturn(ListTO.of(transaction))
 
         val response = httpClient.post("/funds-api/reporting/v1/report-views") {
             header(USER_ID_HEADER, userId.toString())
@@ -174,7 +174,6 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView = reportViewRepository.save(reportViewCommand)
-        val conversions = mock<ConversionsResponse>()
         whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
         whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
 
@@ -184,7 +183,7 @@ class ReportingApiTest {
         mockTransactions(
             interval, reportView.fundId, listOf(
                 transaction(
-                    userId, LocalDate(2021, 1, 2).atTime(12, 0), FundTransactionType.SINGLE_RECORD,
+                    userId, LocalDate(2021, 1, 2).atTime(12, 0), TransactionType.SINGLE_RECORD,
                     listOf(
                         record(
                             reportView.fundId, cashAccountId, BigDecimal("-25.0"), RON, labelsOf("need")
@@ -192,7 +191,7 @@ class ReportingApiTest {
                     )
                 ),
                 transaction(
-                    userId, LocalDate(2021, 1, 2).atTime(12, 0), FundTransactionType.SINGLE_RECORD,
+                    userId, LocalDate(2021, 1, 2).atTime(12, 0), TransactionType.SINGLE_RECORD,
                     listOf(
                         record(
                             reportView.fundId, cashAccountId, BigDecimal("-10.0"), EUR, labelsOf("want")
@@ -234,21 +233,19 @@ class ReportingApiTest {
     private suspend fun mockTransactions(
         interval: ReportDataInterval,
         fundId: UUID,
-        transactions: List<FundTransactionTO>,
+        transactions: List<TransactionTO>,
     ) {
         whenever(
-            fundTransactionSdk.listTransactions(
+            transactionSdk.listTransactions(
                 userId,
-                fundId,
-                FundTransactionFilterTO(null, interval.getPreviousLastDay())
+                TransactionFilterTO(null, interval.getPreviousLastDay(), fundId)
             )
         ).thenReturn(ListTO(transactions.filter { it.dateTime.date <= interval.getPreviousLastDay() }))
         interval.getBuckets().forEach { bucket ->
             whenever(
-                fundTransactionSdk.listTransactions(
+                transactionSdk.listTransactions(
                     userId,
-                    fundId,
-                    FundTransactionFilterTO(bucket.from, bucket.to)
+                    TransactionFilterTO(bucket.from, bucket.to, fundId)
                 )
             ).thenReturn(ListTO(transactions.filter { it.dateTime.date >= bucket.from && it.dateTime.date <= bucket.to }))
         }
@@ -256,7 +253,7 @@ class ReportingApiTest {
 
     private fun Application.testModule() {
         val importAppTestModule = module {
-            single<FundTransactionSdk> { fundTransactionSdk }
+            single<TransactionSdk> { transactionSdk }
             single<ConversionRateService> { conversionRateService }
         }
         configureDependencies(reportingDependencies, importAppTestModule)

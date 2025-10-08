@@ -18,19 +18,16 @@ import org.mockserver.model.Header
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
-import ro.jf.funds.fund.api.model.CreateFundRecordTO
-import ro.jf.funds.fund.api.model.CreateFundTransactionTO
-import ro.jf.funds.fund.api.model.FundTransactionTO
-import ro.jf.funds.fund.api.model.FundTransactionType
+import ro.jf.funds.fund.api.model.*
 import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerContainerExtension::class)
-class FundTransactionSdkTest {
-    private val fundTransactionSdk = FundTransactionSdk(
+class TransactionSdkTest {
+    private val transactionSdk = TransactionSdk(
         baseUrl = MockServerContainerExtension.baseUrl,
         httpClient = HttpClient(CIO) {
             install(ContentNegotiation) {
@@ -83,30 +80,33 @@ class FundTransactionSdkTest {
                                         put("type", JsonPrimitive("currency"))
                                         put("value", JsonPrimitive("RON"))
                                     })
+                                    put("labels", buildJsonArray {})
+                                    put("properties", buildJsonArray {})
                                 })
                             })
+                            put("properties", buildJsonArray {})
                         }.toString()
                     )
             )
 
-        val transaction = fundTransactionSdk.createTransaction(
+        val transaction = transactionSdk.createTransaction(
             userId,
-            CreateFundTransactionTO(
+            CreateTransactionTO(
                 dateTime = LocalDateTime.parse(dateTime),
                 externalId = transactionExternalId,
-                type = FundTransactionType.SINGLE_RECORD,
+                type = TransactionType.SINGLE_RECORD,
                 records = listOf(
-                    CreateFundRecordTO(
+                    CreateTransactionRecord(
                         accountId = accountId,
                         fundId = fundId,
                         amount = BigDecimal(amount),
-                        unit = Currency.RON
+                        unit = FinancialUnit.of("currency", "RON")
                     )
                 )
             )
         )
 
-        assertThat(transaction).isInstanceOf(FundTransactionTO::class.java)
+        assertThat(transaction).isInstanceOf(TransactionTO::class.java)
         assertThat(transaction.id).isEqualTo(transactionId)
         assertThat(transaction.dateTime.toString()).isEqualTo(dateTime)
         assertThat(transaction.records).hasSize(1)
@@ -151,75 +151,21 @@ class FundTransactionSdkTest {
                                                 put("type", JsonPrimitive("currency"))
                                                 put("value", JsonPrimitive("RON"))
                                             })
+                                            put("labels", buildJsonArray {})
+                                            put("properties", buildJsonArray {})
                                         })
                                     })
+                                    put("properties", buildJsonArray {})
                                 })
                             })
                         }.toString()
                     )
             )
 
-        val transactions = fundTransactionSdk.listTransactions(userId)
+        val transactions = transactionSdk.listTransactions(userId)
 
         assertThat(transactions.items).hasSize(1)
-        assertThat(transactions.items.first()).isInstanceOf(FundTransactionTO::class.java)
-        val transaction = transactions.items.first()
-        assertThat(transaction.id).isEqualTo(transactionId)
-        assertThat(transaction.dateTime.toString()).isEqualTo(dateTime)
-        assertThat(transaction.records).hasSize(1)
-        assertThat(transaction.records.first().id).isEqualTo(recordId)
-        assertThat(transaction.records.first().accountId).isEqualTo(accountId)
-        assertThat(transaction.records.first().amount.compareTo(BigDecimal(42.0))).isZero()
-        assertThat(transaction.records.first().fundId).isEqualTo(fundId)
-    }
-
-    @Test
-    fun `given list fund transactions`(mockServerClient: MockServerClient): Unit = runBlocking {
-        mockServerClient
-            .`when`(
-                request()
-                    .withMethod("GET")
-                    .withPath("/funds-api/fund/v1/funds/$fundId/transactions")
-                    .withHeader(Header(USER_ID_HEADER, userId.toString()))
-            )
-            .respond(
-                response()
-                    .withStatusCode(200)
-                    .withContentType(MediaType.APPLICATION_JSON)
-                    .withBody(
-                        buildJsonObject {
-                            put("items", buildJsonArray {
-                                add(buildJsonObject {
-                                    put("id", JsonPrimitive(transactionId.toString()))
-                                    put("userId", JsonPrimitive(userId.toString()))
-                                    put("type", JsonPrimitive("TRANSFER"))
-                                    put("externalId", JsonPrimitive(transactionExternalId))
-                                    put(
-                                        "dateTime",
-                                        JsonPrimitive(dateTime)
-                                    )
-                                    put("records", buildJsonArray {
-                                        add(buildJsonObject {
-                                            put("id", JsonPrimitive(recordId.toString()))
-                                            put("accountId", JsonPrimitive(accountId.toString()))
-                                            put("fundId", JsonPrimitive(fundId.toString()))
-                                            put("amount", JsonPrimitive(42.0))
-                                            put("unit", buildJsonObject {
-                                                put("type", JsonPrimitive("currency"))
-                                                put("value", JsonPrimitive("RON"))
-                                            })
-                                        })
-                                    })
-                                })
-                            })
-                        }.toString()
-                    )
-            )
-
-        val transactions = fundTransactionSdk.listTransactions(userId, fundId)
-
-        assertThat(transactions.items).hasSize(1)
-        assertThat(transactions.items.first()).isInstanceOf(FundTransactionTO::class.java)
+        assertThat(transactions.items.first()).isInstanceOf(TransactionTO::class.java)
         val transaction = transactions.items.first()
         assertThat(transaction.id).isEqualTo(transactionId)
         assertThat(transaction.dateTime.toString()).isEqualTo(dateTime)
@@ -241,7 +187,7 @@ class FundTransactionSdkTest {
             )
             .respond(response().withStatusCode(204))
 
-        fundTransactionSdk.deleteTransaction(userId, transactionId)
+        transactionSdk.deleteTransaction(userId, transactionId)
 
         mockServerClient
             .verify(

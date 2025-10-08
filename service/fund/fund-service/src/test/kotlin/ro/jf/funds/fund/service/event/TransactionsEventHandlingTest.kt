@@ -9,14 +9,6 @@ import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
-import ro.jf.funds.account.api.event.ACCOUNT_DOMAIN
-import ro.jf.funds.account.api.event.ACCOUNT_TRANSACTIONS_REQUEST
-import ro.jf.funds.account.api.event.ACCOUNT_TRANSACTIONS_RESPONSE
-import ro.jf.funds.account.api.model.AccountTransactionType
-import ro.jf.funds.account.api.model.CreateAccountRecordTO
-import ro.jf.funds.account.api.model.CreateAccountTransactionTO
-import ro.jf.funds.account.api.model.CreateAccountTransactionsTO
-import ro.jf.funds.account.api.model.propertiesOf
 import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.GenericResponse
@@ -32,8 +24,9 @@ import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_REQUEST
 import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_RESPONSE
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.module
+import ro.jf.funds.fund.service.persistence.AccountRepository
+import ro.jf.funds.fund.service.persistence.TransactionRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
-import ro.jf.funds.fund.service.service.FUND_ID_PROPERTY
 import java.math.BigDecimal
 import java.time.Duration
 import java.util.UUID.randomUUID
@@ -41,15 +34,13 @@ import java.util.concurrent.TimeUnit
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(KafkaContainerExtension::class)
-class FundTransactionsEventHandlingTest {
+class TransactionsEventHandlingTest {
     private val fundRepository = createFundRepository()
+    private val accountRepository = createAccountRepository()
+    private val accountTransactionRepository = createAccountTransactionRepository()
 
     private val createFundTransactionsRequestTopic =
         testTopicSupplier.topic(FUND_DOMAIN, FUND_TRANSACTIONS_REQUEST)
-    private val createAccountTransactionsRequestTopic =
-        testTopicSupplier.topic(ACCOUNT_DOMAIN, ACCOUNT_TRANSACTIONS_REQUEST)
-    private val createAccountTransactionsResponseTopic =
-        testTopicSupplier.topic(ACCOUNT_DOMAIN, ACCOUNT_TRANSACTIONS_RESPONSE)
     private val createFundTransactionsResponseTopic =
         testTopicSupplier.topic(FUND_DOMAIN, FUND_TRANSACTIONS_RESPONSE)
 
@@ -58,7 +49,6 @@ class FundTransactionsEventHandlingTest {
 
     private val userId = randomUUID()
     private val correlationId = randomUUID()
-    private val accountId = randomUUID()
     private val dateTime = LocalDateTime.parse("2021-01-01T00:00:00")
 
     @Test
@@ -67,24 +57,25 @@ class FundTransactionsEventHandlingTest {
         startApplication()
 
         val fund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
+        val account = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
 
-        val createAccountTransactionsConsumer = createKafkaConsumer(consumerProperties)
-        createAccountTransactionsConsumer.subscribe(listOf(createAccountTransactionsRequestTopic.value))
+        val createFundTransactionsResponseConsumer = createKafkaConsumer(consumerProperties)
+        createFundTransactionsResponseConsumer.subscribe(listOf(createFundTransactionsResponseTopic.value))
 
         val producer =
-            createProducer<CreateFundTransactionsTO>(producerProperties, createFundTransactionsRequestTopic)
+            createProducer<CreateTransactionsTO>(producerProperties, createFundTransactionsRequestTopic)
 
         val externalId = randomUUID().toString()
-        val createFundTransactionsTO = CreateFundTransactionsTO(
+        val createFundTransactionsTO = CreateTransactionsTO(
             transactions = listOf(
-                CreateFundTransactionTO(
+                CreateTransactionTO(
                     dateTime = dateTime,
                     externalId = externalId,
-                    type = FundTransactionType.SINGLE_RECORD,
+                    type = TransactionType.SINGLE_RECORD,
                     records = listOf(
-                        CreateFundRecordTO(
+                        CreateTransactionRecord(
                             fundId = fund.id,
-                            accountId = accountId,
+                            accountId = account.id,
                             amount = BigDecimal("100.0"),
                             unit = Currency.RON
                         )
@@ -96,57 +87,6 @@ class FundTransactionsEventHandlingTest {
         producer.send(Event(userId, createFundTransactionsTO, correlationId, userId.toString()))
 
         await().atMost(10, TimeUnit.SECONDS).untilAsserted {
-            val createAccountTransactionsRequest =
-                createAccountTransactionsConsumer.poll(Duration.ofSeconds(1)).toList()
-                    .map { it.asEvent<CreateAccountTransactionsTO>() }
-                    .firstOrNull { it.correlationId == correlationId }
-            assertThat(createAccountTransactionsRequest).isNotNull
-            assertThat(createAccountTransactionsRequest!!.userId).isEqualTo(userId)
-            assertThat(createAccountTransactionsRequest.payload).isEqualTo(
-                CreateAccountTransactionsTO(
-                    transactions = listOf(
-                        CreateAccountTransactionTO(
-                            dateTime = dateTime,
-                            externalId = externalId,
-                            type = AccountTransactionType.SINGLE_RECORD,
-                            records = listOf(
-                                CreateAccountRecordTO(
-                                    accountId = accountId,
-                                    amount = BigDecimal("100.0"),
-                                    unit = Currency.RON,
-                                    properties = propertiesOf(
-                                        FUND_ID_PROPERTY to fund.id.toString()
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-        }
-    }
-
-    @Test
-    fun `test consumer account transactions response`(): Unit = testApplication {
-        configureEnvironment(Application::module, dbConfig, kafkaConfig, appConfig)
-        startApplication()
-
-        val createFundTransactionsResponseConsumer = createKafkaConsumer(consumerProperties)
-        createFundTransactionsResponseConsumer.subscribe(listOf(createFundTransactionsResponseTopic.value))
-
-        val createAccountTransactionsResponseProducer =
-            createProducer<GenericResponse>(producerProperties, createAccountTransactionsResponseTopic)
-
-        createAccountTransactionsResponseProducer.send(
-            Event(
-                userId,
-                GenericResponse.Success,
-                correlationId,
-                userId.toString()
-            )
-        )
-
-        await().atMost(Duration.ofSeconds(10)).untilAsserted {
             val createFundTransactionsResponse =
                 createFundTransactionsResponseConsumer.poll(Duration.ofSeconds(1)).toList()
                     .map { it.asEvent<GenericResponse>() }
@@ -156,6 +96,15 @@ class FundTransactionsEventHandlingTest {
             assertThat(createFundTransactionsResponse.correlationId).isEqualTo(correlationId)
             assertThat(createFundTransactionsResponse.payload).isEqualTo(GenericResponse.Success)
         }
+
+        // Verify the transaction was actually persisted to the repository
+        val persistedTransactions = accountTransactionRepository.list(userId, TransactionFilterTO.empty())
+        assertThat(persistedTransactions).hasSize(1)
+        assertThat(persistedTransactions[0].externalId).isEqualTo(externalId)
+        assertThat(persistedTransactions[0].records).hasSize(1)
+        assertThat(persistedTransactions[0].records[0].accountId).isEqualTo(account.id)
+        assertThat(persistedTransactions[0].records[0].amount).isEqualByComparingTo(BigDecimal("100.0"))
+        assertThat(persistedTransactions[0].records[0].unit).isEqualTo(Currency.RON)
     }
 
     private val appConfig = MapApplicationConfig(
@@ -163,6 +112,22 @@ class FundTransactionsEventHandlingTest {
     )
 
     private fun createFundRepository() = FundRepository(
+        database = Database.connect(
+            url = PostgresContainerExtension.jdbcUrl,
+            user = PostgresContainerExtension.username,
+            password = PostgresContainerExtension.password
+        )
+    )
+
+    private fun createAccountRepository() = AccountRepository(
+        database = Database.connect(
+            url = PostgresContainerExtension.jdbcUrl,
+            user = PostgresContainerExtension.username,
+            password = PostgresContainerExtension.password
+        )
+    )
+
+    private fun createAccountTransactionRepository() = TransactionRepository(
         database = Database.connect(
             url = PostgresContainerExtension.jdbcUrl,
             user = PostgresContainerExtension.username,

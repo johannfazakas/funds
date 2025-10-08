@@ -4,8 +4,8 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
-import ro.jf.funds.fund.api.model.CreateFundTransactionTO
-import ro.jf.funds.fund.api.model.CreateFundTransactionsTO
+import ro.jf.funds.fund.api.model.CreateTransactionTO
+import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
@@ -28,18 +28,18 @@ class ImportFundConversionService(
     suspend fun mapToFundRequest(
         userId: UUID,
         parsedTransactions: List<ImportParsedTransaction>,
-    ): CreateFundTransactionsTO = withSuspendingSpan {
+    ): CreateTransactionsTO = withSuspendingSpan {
         log.info { "Handling import >> user = $userId items size = ${parsedTransactions.size}." }
         val accountStore = accountService.getAccountStore(userId)
         val fundStore = fundService.getFundStore(userId)
-        parsedTransactions.toFundTransactions(userId, accountStore, fundStore).let(::CreateFundTransactionsTO)
+        parsedTransactions.toFundTransactions(userId, accountStore, fundStore).let(::CreateTransactionsTO)
     }
 
     private suspend fun List<ImportParsedTransaction>.toFundTransactions(
         userId: UUID,
         accountStore: Store<AccountName, AccountTO>,
         fundStore: Store<FundName, FundTO>,
-    ): List<CreateFundTransactionTO> {
+    ): List<CreateTransactionTO> {
         val transactionsToStrategy = map { it to it.getConverterStrategy(accountStore) }
 
         val conversions = transactionsToStrategy
@@ -50,7 +50,7 @@ class ImportFundConversionService(
 
         return transactionsToStrategy
             .flatMap { (transaction, strategy) ->
-                strategy.mapToFundTransactions(transaction, conversions, fundStore, accountStore)
+                strategy.mapToTransactions(transaction, conversions, fundStore, accountStore)
             }
     }
 

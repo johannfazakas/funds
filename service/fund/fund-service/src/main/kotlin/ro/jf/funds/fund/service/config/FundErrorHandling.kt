@@ -35,6 +35,11 @@ fun Application.configureFundErrorHandling() {
 fun FundServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is FundServiceException.FundNotFound -> HttpStatusCode.NotFound
     is FundServiceException.TransactionFundNotFound -> HttpStatusCode.UnprocessableEntity
+    is FundServiceException.AccountNameAlreadyExists -> HttpStatusCode.Conflict
+    is FundServiceException.AccountNotFound -> HttpStatusCode.NotFound
+    is FundServiceException.AccountNameNotFound -> HttpStatusCode.NotFound
+    is FundServiceException.RecordAccountNotFound -> HttpStatusCode.UnprocessableEntity
+    is FundServiceException.AccountRecordCurrencyMismatch -> HttpStatusCode.UnprocessableEntity
 }
 
 fun Throwable.toError(): ErrorTO {
@@ -54,6 +59,31 @@ fun FundServiceException.toError(): ErrorTO {
         is FundServiceException.TransactionFundNotFound -> ErrorTO(
             title = "Transaction fund not found",
             detail = "Transaction fund with id '${fundId}' not found"
+        )
+
+        is FundServiceException.AccountNameAlreadyExists -> ErrorTO(
+            title = "Account name already exists",
+            detail = "Account with name '${accountName.value}' already exists"
+        )
+
+        is FundServiceException.AccountNotFound -> ErrorTO(
+            title = "Account not found",
+            detail = "Account with id '$accountId' not found"
+        )
+
+        is FundServiceException.AccountNameNotFound -> ErrorTO(
+            title = "Account name not found",
+            detail = "Account with name '${accountName.value}' not found"
+        )
+
+        is FundServiceException.RecordAccountNotFound -> ErrorTO(
+            title = "Record account not found",
+            detail = "Account with id '$accountId' not found for record"
+        )
+
+        is FundServiceException.AccountRecordCurrencyMismatch -> ErrorTO(
+            title = "Account record currency mismatch",
+            detail = "Account ${accountName.value} with id $accountId has currency ${accountUnit.value} but record has currency ${recordUnit.value}"
         )
     }
 }

@@ -10,19 +10,19 @@ import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.commons.web.toApiException
-import ro.jf.funds.fund.api.FundTransactionApi
-import ro.jf.funds.fund.api.model.CreateFundTransactionTO
-import ro.jf.funds.fund.api.model.FundTransactionFilterTO
-import ro.jf.funds.fund.api.model.FundTransactionTO
+import ro.jf.funds.fund.api.TransactionApi
+import ro.jf.funds.fund.api.model.CreateTransactionTO
+import ro.jf.funds.fund.api.model.TransactionFilterTO
+import ro.jf.funds.fund.api.model.TransactionTO
 import java.util.*
 
 private val log = logger { }
 
-class FundTransactionSdk(
+class TransactionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
-) : FundTransactionApi {
-    override suspend fun createTransaction(userId: UUID, transaction: CreateFundTransactionTO): FundTransactionTO =
+) : TransactionApi {
+    override suspend fun createTransaction(userId: UUID, transaction: CreateTransactionTO): TransactionTO =
         withSuspendingSpan {
             val response = httpClient.post("$baseUrl$BASE_PATH/transactions") {
                 headers {
@@ -35,36 +35,15 @@ class FundTransactionSdk(
                 log.warn { "Unexpected response on create transaction: $response" }
                 throw response.toApiException()
             }
-            val fundTransaction = response.body<FundTransactionTO>()
+            val fundTransaction = response.body<TransactionTO>()
             log.debug { "Created fund transaction: $fundTransaction" }
             fundTransaction
         }
 
     override suspend fun listTransactions(
         userId: UUID,
-        fundId: UUID,
-        filter: FundTransactionFilterTO,
-    ): ListTO<FundTransactionTO> = withSuspendingSpan {
-        val response = httpClient.get("$baseUrl$BASE_PATH/funds/$fundId/transactions") {
-            filter.fromDate?.let { parameter("fromDate", it.toString()) }
-            filter.toDate?.let { parameter("toDate", it.toString()) }
-            headers {
-                append(USER_ID_HEADER, userId.toString())
-            }
-        }
-        if (response.status != HttpStatusCode.OK) {
-            log.warn { "Unexpected response on list fund transactions: $response" }
-            throw response.toApiException()
-        }
-        val transactions = response.body<ListTO<FundTransactionTO>>()
-        log.debug { "Retrieved fund $fundId transactions: $transactions" }
-        transactions
-    }
-
-    override suspend fun listTransactions(
-        userId: UUID,
-        filter: FundTransactionFilterTO,
-    ): ListTO<FundTransactionTO> = withSuspendingSpan {
+        filter: TransactionFilterTO,
+    ): ListTO<TransactionTO> = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
             filter.fromDate?.let { parameter("fromDate", it.toString()) }
             filter.toDate?.let { parameter("toDate", it.toString()) }
@@ -76,7 +55,7 @@ class FundTransactionSdk(
             log.warn { "Unexpected response on list transactions: $response" }
             throw response.toApiException()
         }
-        val transactions = response.body<ListTO<FundTransactionTO>>()
+        val transactions = response.body<ListTO<TransactionTO>>()
         log.debug { "Retrieved transactions: $transactions" }
         transactions
     }

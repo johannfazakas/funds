@@ -7,27 +7,27 @@ import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.serialization.BigDecimalSerializer
 import ro.jf.funds.commons.serialization.UUIDSerializer
 import java.math.BigDecimal
-import java.util.*
+import java.util.UUID
 
 @Serializable
-data class CreateFundTransactionsTO(
-    val transactions: List<CreateFundTransactionTO>,
+data class CreateTransactionsTO(
+    val transactions: List<CreateTransactionTO>,
 )
 
 @Serializable
-data class CreateFundTransactionTO(
+data class CreateTransactionTO(
     val dateTime: LocalDateTime,
     val externalId: String,
-    val type: FundTransactionType,
-    val records: List<CreateFundRecordTO>,
+    val type: TransactionType,
+    val records: List<CreateTransactionRecord>,
 )
 
 @Serializable
-data class CreateFundRecordTO(
-    @Serializable(with = UUIDSerializer::class)
-    val fundId: UUID,
+data class CreateTransactionRecord(
     @Serializable(with = UUIDSerializer::class)
     val accountId: UUID,
+    @Serializable(with = UUIDSerializer::class)
+    val fundId: UUID,
     @Serializable(with = BigDecimalSerializer::class)
     val amount: BigDecimal,
     val unit: FinancialUnit,

@@ -1,10 +1,6 @@
 package ro.jf.funds.importer.service.service.conversion
 
-import ro.jf.funds.fund.api.model.AccountName
-import ro.jf.funds.fund.api.model.AccountTO
-import ro.jf.funds.fund.api.model.CreateFundTransactionTO
-import ro.jf.funds.fund.api.model.FundName
-import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
@@ -21,10 +17,10 @@ interface ImportTransactionConverter {
         accountStore: Store<AccountName, AccountTO>,
     ): List<Conversion>
 
-    fun mapToFundTransactions(
+    fun mapToTransactions(
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-    ): List<CreateFundTransactionTO>
+    ): List<CreateTransactionTO>
 }
