@@ -3,25 +3,29 @@ package ro.jf.funds.historicalpricing.service.service.currency.converter.currenc
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 import mu.KotlinLogging
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
+import ro.jf.funds.historicalpricing.service.domain.HistoricalPricingExceptions
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyConverter
 import ro.jf.funds.historicalpricing.service.service.currency.converter.currencybeacon.model.CBConversion
 import java.time.format.DateTimeFormatter
 import java.time.LocalDate as JavaLocalDate
 
-// TODO(Johann) how could this be injected in a safe way?
-private const val CURRENCY_BEACON_API_KEY = "BEUseQ6C0HKAKXOeA5dZzsxmXV8HuRbL"
 private val QUERY_PARAM_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+private const val MAX_ATTEMPTS = 5
 
 private val log = KotlinLogging.logger {}
 
 class CurrencyBeaconCurrencyConverter(
     private val httpClient: HttpClient,
+    private val baseUrl: String = "https://api.currencybeacon.com",
+    private val apiKey: String = "d92gJLQX3M8eGjo0ajqj089pImMs42Jm",
 ) : CurrencyConverter {
 
     override suspend fun convert(
@@ -36,15 +40,15 @@ class CurrencyBeaconCurrencyConverter(
         date: LocalDate,
         attempt: Int = 0,
     ): ConversionResponse {
-        try {
-            return convert(sourceCurrency, targetCurrency, date)
-        } catch (exception: Exception) {
-            if (attempt < 3) {
-                return convertSafely(sourceCurrency, targetCurrency, date.minus(1, DateTimeUnit.DAY), attempt + 1)
+        return try {
+            convert(sourceCurrency, targetCurrency, date)
+        } catch (priceNotFound: HistoricalPricingExceptions.HistoricalPriceNotFound) {
+            if (attempt < MAX_ATTEMPTS) {
+                convertSafely(sourceCurrency, targetCurrency, date.minus(1, DateTimeUnit.DAY), attempt + 1)
                     .copy(date = date)
             } else {
-                log.warn { "Could not convert $sourceCurrency to $targetCurrency" }
-                throw exception
+                log.warn(priceNotFound) { "Could not convert $sourceCurrency to $targetCurrency after ${attempt + 1} attempts" }
+                throw priceNotFound
             }
         }
     }
@@ -54,19 +58,47 @@ class CurrencyBeaconCurrencyConverter(
         targetCurrency: Currency,
         date: LocalDate,
     ): ConversionResponse {
-        val price = httpClient.get("https://api.currencybeacon.com/v1/historical") {
+        val httpResponse = httpClient.get("$baseUrl/v1/historical") {
             parameter("base", sourceCurrency.value)
             parameter("symbols", targetCurrency.value)
             parameter("date", date.toQueryParam())
-            parameter("api_key", CURRENCY_BEACON_API_KEY)
+            parameter("api_key", apiKey)
         }
-            .body<CBConversion>()
-            .rates[targetCurrency.value] ?: error("No conversion rate found for $targetCurrency")
+
+        val response = try {
+            httpResponse.body<CBConversion>()
+        } catch (exception: Exception) {
+            val rawResponse = httpResponse.bodyAsText()
+            log.error(exception) { "Failed to deserialize Currency Beacon response. Body: $rawResponse" }
+            throw exception
+        }
+
+        if (!httpResponse.status.isSuccess()) {
+            throwIntegrationException(
+                httpResponse.status.value,
+                response.meta?.errorDetail ?: "body: ${httpResponse.bodyAsText()}"
+            )
+        }
+
+        val price = response.rates[targetCurrency.value]
+            ?: throw HistoricalPricingExceptions.HistoricalPriceNotFound(
+                sourceCurrency,
+                targetCurrency,
+                date
+            )
         return ConversionResponse(
             date = date,
             rate = price,
             sourceUnit = sourceCurrency,
             targetUnit = targetCurrency,
+        )
+    }
+
+    private fun throwIntegrationException(status: Int, errorDetail: String): Nothing {
+        throw HistoricalPricingExceptions.HistoricalPricingIntegrationException(
+            api = "currency_beacon",
+            status = status,
+            errorDetail = errorDetail
         )
     }
 
