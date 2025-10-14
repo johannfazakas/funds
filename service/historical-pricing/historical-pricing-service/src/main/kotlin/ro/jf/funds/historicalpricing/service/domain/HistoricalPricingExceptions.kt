@@ -11,4 +11,10 @@ sealed class HistoricalPricingExceptions : RuntimeException() {
     class ConversionNotPermitted(
         val sourceUnit: FinancialUnit, val targetUnit: FinancialUnit
     ) : HistoricalPricingExceptions()
+
+    class HistoricalPricingIntegrationException(
+        val api: String,
+        val status: Int,
+        val errorDetail: String
+    ) : HistoricalPricingExceptions()
 }

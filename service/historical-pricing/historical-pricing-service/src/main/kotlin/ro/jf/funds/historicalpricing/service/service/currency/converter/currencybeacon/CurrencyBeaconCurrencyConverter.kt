@@ -5,6 +5,9 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
@@ -32,7 +35,11 @@ class CurrencyBeaconCurrencyConverter(
         sourceCurrency: Currency,
         targetCurrency: Currency,
         dates: List<LocalDate>,
-    ): List<ConversionResponse> = dates.map { date -> convertSafely(sourceCurrency, targetCurrency, date) }
+    ): List<ConversionResponse> = coroutineScope {
+        dates.map { date ->
+            async { convertSafely(sourceCurrency, targetCurrency, date) }
+        }.awaitAll()
+    }
 
     private suspend fun convertSafely(
         sourceCurrency: Currency,

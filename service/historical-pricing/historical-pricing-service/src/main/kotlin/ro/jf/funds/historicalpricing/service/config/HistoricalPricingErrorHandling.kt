@@ -32,6 +32,7 @@ fun Application.configureHistoricalPricingErrorHandling() {
 fun HistoricalPricingExceptions.toStatusCode(): HttpStatusCode = when (this) {
     is HistoricalPricingExceptions.ConversionNotPermitted -> HttpStatusCode.BadRequest
     is HistoricalPricingExceptions.HistoricalPriceNotFound -> HttpStatusCode.NotFound
+    is HistoricalPricingExceptions.HistoricalPricingIntegrationException -> HttpStatusCode.BadGateway
 }
 
 fun Throwable.toError(): ErrorTO {
@@ -51,6 +52,11 @@ fun HistoricalPricingExceptions.toError(): ErrorTO {
         is HistoricalPricingExceptions.HistoricalPriceNotFound -> ErrorTO(
             title = "Historical price not found",
             detail = "Historical price for ${this.sourceUnit.value} to ${this.targetUnit.value} on ${this.date} not found"
+        )
+
+        is HistoricalPricingExceptions.HistoricalPricingIntegrationException -> ErrorTO(
+            title = "Integration error",
+            detail = "Error from $api API (status $status): $errorDetail"
         )
     }
 }
