@@ -93,6 +93,24 @@ class CurrencyBeaconCurrencyConverterTest {
     }
 
     @Test
+    fun `should fallback to previous day when rate is null`(mockServerClient: MockServerClient): Unit = runBlocking {
+        val date = LocalDate.parse("2021-02-28")
+        val dates = listOf(date)
+
+        mockServerClient.mockCurrencyBeaconNullRateRequest("EUR", "RON", "2021-02-28")
+        mockServerClient.mockCurrencyBeaconNullRateRequest("EUR", "RON", "2021-02-27")
+        mockServerClient.mockCurrencyBeaconRequest("EUR", "RON", "2021-02-26", BigDecimal("4.87123456"))
+
+        val result = currencyConverter.convert(Currency.EUR, Currency.RON, dates)
+
+        assertThat(result).hasSize(1)
+        assertThat(result[0].date).isEqualTo(date) // Should return original date
+        assertThat(result[0].rate).isEqualTo(BigDecimal("4.87123456")) // Rate from previous day
+        assertThat(result[0].sourceUnit).isEqualTo(Currency.EUR)
+        assertThat(result[0].targetUnit).isEqualTo(Currency.RON)
+    }
+
+    @Test
     fun `should fallback to previous day when rates are empty`(mockServerClient: MockServerClient): Unit = runBlocking {
         val date = LocalDate.parse("2021-02-28")
         val dates = listOf(date)
@@ -115,106 +133,119 @@ class CurrencyBeaconCurrencyConverterTest {
         symbols: String,
         date: String,
         rate: BigDecimal
-    ) {
-        `when`(
-            request()
-                .withMethod("GET")
-                .withPath("/v1/historical")
-                .withQueryStringParameter("base", base)
-                .withQueryStringParameter("symbols", symbols)
-                .withQueryStringParameter("date", date)
-                .withQueryStringParameter("api_key", "d92gJLQX3M8eGjo0ajqj089pImMs42Jm")
-        ).respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody("""
-                    {
-                      "meta": {
-                        "code": 200,
-                        "disclaimer": "Usage subject to terms: https://currencybeacon.com/terms"
-                      },
-                      "response": {
-                        "date": "$date",
-                        "base": "$base",
-                        "rates": {
-                          "$symbols": $rate
-                        }
-                      },
-                      "date": "$date",
-                      "base": "$base",
-                      "rates": {
-                        "$symbols": $rate
-                      }
-                    }
-                """.trimIndent())
-        )
+    ) = mockCurrencyBeaconResponse(base, symbols, date, 200) {
+        """
+        {
+          "meta": {
+            "code": 200,
+            "disclaimer": "Usage subject to terms: https://currencybeacon.com/terms"
+          },
+          "response": {
+            "date": "$date",
+            "base": "$base",
+            "rates": {
+              "$symbols": $rate
+            }
+          },
+          "date": "$date",
+          "base": "$base",
+          "rates": {
+            "$symbols": $rate
+          }
+        }
+        """.trimIndent()
     }
 
     private fun MockServerClient.mockCurrencyBeaconLimitsExceededRequest(
         base: String,
         symbols: String,
         date: String
-    ) {
-        `when`(
-            request()
-                .withMethod("GET")
-                .withPath("/v1/historical")
-                .withQueryStringParameter("base", base)
-                .withQueryStringParameter("symbols", symbols)
-                .withQueryStringParameter("date", date)
-                .withQueryStringParameter("api_key", "d92gJLQX3M8eGjo0ajqj089pImMs42Jm")
-        ).respond(
-            response()
-                .withStatusCode(429)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody("""
-                    {
-                      "meta": {
-                        "code": 429,
-                        "error_type": "auth failed",
-                        "error_detail": "Request limits exceeded. Please upgrade your account. See https://currencybeacon.com/api-documentation for details or email the support team at support@currencybeacon.com"
-                      },
-                      "response": []
-                    }
-                """.trimIndent())
-        )
+    ) = mockCurrencyBeaconResponse(base, symbols, date, 429) {
+        """
+        {
+          "meta": {
+            "code": 429,
+            "error_type": "auth failed",
+            "error_detail": "Request limits exceeded. Please upgrade your account. See https://currencybeacon.com/api-documentation for details or email the support team at support@currencybeacon.com"
+          },
+          "response": []
+        }
+        """.trimIndent()
     }
 
     private fun MockServerClient.mockCurrencyBeaconInvalidApiKeyRequest(
         base: String,
         symbols: String,
         date: String
-    ) {
-        `when`(
-            request()
-                .withMethod("GET")
-                .withPath("/v1/historical")
-                .withQueryStringParameter("base", base)
-                .withQueryStringParameter("symbols", symbols)
-                .withQueryStringParameter("date", date)
-                .withQueryStringParameter("api_key", "d92gJLQX3M8eGjo0ajqj089pImMs42Jm")
-        ).respond(
-            response()
-                .withStatusCode(401)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody("""
-                    {
-                      "meta": {
-                        "code": 401,
-                        "error_type": "auth failed",
-                        "error_detail": "Missing or invalid api credentials. See https://currencybeacon.com/api-documentation for details."
-                      },
-                      "response": []
-                    }
-                """.trimIndent())
-        )
+    ) = mockCurrencyBeaconResponse(base, symbols, date, 401) {
+        """
+        {
+          "meta": {
+            "code": 401,
+            "error_type": "auth failed",
+            "error_detail": "Missing or invalid api credentials. See https://currencybeacon.com/api-documentation for details."
+          },
+          "response": []
+        }
+        """.trimIndent()
+    }
+
+    private fun MockServerClient.mockCurrencyBeaconNullRateRequest(
+        base: String,
+        symbols: String,
+        date: String
+    ) = mockCurrencyBeaconResponse(base, symbols, date, 200) {
+        """
+        {
+          "meta": {
+            "code": 200,
+            "disclaimer": "Usage subject to terms: https://currencybeacon.com/terms"
+          },
+          "response": {
+            "date": "$date",
+            "base": "$base",
+            "rates": {
+              "$symbols": null
+            }
+          },
+          "date": "$date",
+          "base": "$base",
+          "rates": {
+            "$symbols": null
+          }
+        }
+        """.trimIndent()
     }
 
     private fun MockServerClient.mockCurrencyBeaconEmptyRatesRequest(
         base: String,
         symbols: String,
         date: String
+    ) = mockCurrencyBeaconResponse(base, symbols, date, 200) {
+        """
+        {
+          "meta": {
+            "code": 200,
+            "disclaimer": "Usage subject to terms: https://currencybeacon.com/terms"
+          },
+          "response": {
+            "date": "$date",
+            "base": "$base",
+            "rates": []
+          },
+          "date": "$date",
+          "base": "$base",
+          "rates": []
+        }
+        """.trimIndent()
+    }
+
+    private fun MockServerClient.mockCurrencyBeaconResponse(
+        base: String,
+        symbols: String,
+        date: String,
+        statusCode: Int,
+        bodyProvider: () -> String
     ) {
         `when`(
             request()
@@ -226,24 +257,9 @@ class CurrencyBeaconCurrencyConverterTest {
                 .withQueryStringParameter("api_key", "d92gJLQX3M8eGjo0ajqj089pImMs42Jm")
         ).respond(
             response()
-                .withStatusCode(200)
+                .withStatusCode(statusCode)
                 .withContentType(MediaType.APPLICATION_JSON)
-                .withBody("""
-                    {
-                      "meta": {
-                        "code": 200,
-                        "disclaimer": "Usage subject to terms: https://currencybeacon.com/terms"
-                      },
-                      "response": {
-                        "date": "$date",
-                        "base": "$base",
-                        "rates": []
-                      },
-                      "date": "$date",
-                      "base": "$base",
-                      "rates": []
-                    }
-                """.trimIndent())
+                .withBody(bodyProvider())
         )
     }
 }

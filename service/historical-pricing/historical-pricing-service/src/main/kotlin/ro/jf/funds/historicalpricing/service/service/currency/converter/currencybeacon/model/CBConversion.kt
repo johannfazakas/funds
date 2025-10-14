@@ -9,7 +9,7 @@ data class CBConversion(
     val date: String? = null,
     val base: String? = null,
     @Serializable(with = CBRatesSerializer::class)
-    val rates: Map<String, BigDecimal> = emptyMap(),
+    val rates: Map<String, BigDecimal?> = emptyMap(),
     val meta: CBMeta? = null,
 )
 

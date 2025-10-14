@@ -21,7 +21,7 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalDate as JavaLocalDate
 
 private val QUERY_PARAM_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-private const val MAX_ATTEMPTS = 5
+private const val MAX_ATTEMPTS = 7
 
 private val log = KotlinLogging.logger {}
 
