@@ -8,22 +8,22 @@ import kotlinx.serialization.json.*
 import ro.jf.funds.commons.serialization.BigDecimalSerializer
 import java.math.BigDecimal
 
-object CBRatesSerializer : KSerializer<Map<String, BigDecimal>> {
+object CBRatesSerializer : KSerializer<Map<String, BigDecimal?>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PolymorphicRates")
 
-    override fun serialize(encoder: Encoder, value: Map<String, BigDecimal>) {
-        val mapSerializer = MapSerializer(String.serializer(), BigDecimalSerializer())
+    override fun serialize(encoder: Encoder, value: Map<String, BigDecimal?>) {
+        val mapSerializer = MapSerializer(String.serializer(), BigDecimalSerializer().nullable)
         mapSerializer.serialize(encoder, value)
     }
 
-    override fun deserialize(decoder: Decoder): Map<String, BigDecimal> {
+    override fun deserialize(decoder: Decoder): Map<String, BigDecimal?> {
         val jsonDecoder = decoder as JsonDecoder
 
         return when (val element = jsonDecoder.decodeJsonElement()) {
             is JsonArray -> emptyMap() // Empty array case
             is JsonObject -> {
                 // Object case - deserialize as normal map
-                val mapSerializer = MapSerializer(String.serializer(), BigDecimalSerializer())
+                val mapSerializer = MapSerializer(String.serializer(), BigDecimalSerializer().nullable)
                 decoder.json.decodeFromJsonElement(mapSerializer, element)
             }
             else -> emptyMap()
