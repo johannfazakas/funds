@@ -83,20 +83,20 @@ class FundsClient(
         accounts: List<AccountTO>,
         funds: List<FundTO>,
         initialBalances: InitialBalances,
-    ): List<FundTransactionTO> = run {
+    ): List<TransactionTO> = run {
         val dateTime = LocalDateTime(initialBalances.date, LocalTime.parse("00:00"))
         val transactionRequests = initialBalances.balances.map { initialBalance ->
             val fund = funds.firstOrNull { it.name.value == initialBalance.fundName }
                 ?: error("Fund '${initialBalance.fundName}' not found")
             val account = accounts.firstOrNull { it.name.value == initialBalance.accountName }
                 ?: error("Account '${initialBalance.accountName}' not found")
-            CreateFundTransactionTO(
+            CreateTransactionTO(
                 dateTime = dateTime,
                 externalId = listOf(dateTime, initialBalance.accountName, initialBalance.amount).joinToString()
                     .let { UUID.nameUUIDFromBytes(it.toByteArray()).toString() },
-                type = FundTransactionType.SINGLE_RECORD,
+                type = TransactionType.SINGLE_RECORD,
                 records = listOf(
-                    CreateFundRecordTO(
+                    CreateTransactionRecordTO(
                         fundId = fund.id,
                         accountId = account.id,
                         amount = BigDecimal(initialBalance.amount),

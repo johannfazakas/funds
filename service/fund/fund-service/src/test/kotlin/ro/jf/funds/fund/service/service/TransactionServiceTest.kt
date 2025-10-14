@@ -59,14 +59,14 @@ class TransactionServiceTest {
             externalId = transactionExternalId,
             type = TransactionType.SINGLE_RECORD,
             records = listOf(
-                CreateTransactionRecord(
+                CreateTransactionRecordTO(
                     accountId = companyAccountId,
                     fundId = workFundId,
                     amount = BigDecimal("-100.25"),
                     unit = FinancialUnit.of("currency", "RON"),
                     labels = listOf(Label("one"), Label("two"))
                 ),
-                CreateTransactionRecord(
+                CreateTransactionRecordTO(
                     accountId = personalAccountId,
                     fundId = expensesFundId,
                     amount = BigDecimal("100.25"),

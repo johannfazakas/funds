@@ -83,7 +83,7 @@ class ImportFundConversionServiceTest {
                 externalId = transactionExternalId,
                 type = TransactionType.SINGLE_RECORD,
                 records = listOf(
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         fundId = expensedFund.id,
                         accountId = bankAccount.id,
                         amount = BigDecimal("-100.00"),
@@ -178,14 +178,14 @@ class ImportFundConversionServiceTest {
                 externalId = transactionExternalId,
                 type = TransactionType.TRANSFER,
                 records = listOf(
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         fundId = incomeFund.id,
                         accountId = companyAccount.id,
                         amount = BigDecimal("-50.00"),
                         unit = Currency.RON,
                         labels = listOf(Label("Basic"))
                     ),
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         fundId = expensedFund.id,
                         accountId = cashAccount.id,
                         amount = BigDecimal("50.00"),

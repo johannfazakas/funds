@@ -158,7 +158,7 @@ class TransactionRepository(
 
     private fun saveRecords(
         userId: UUID,
-        recordRequestsByTransactionId: Map<UUID, List<CreateTransactionRecord>>,
+        recordRequestsByTransactionId: Map<UUID, List<CreateTransactionRecordTO>>,
     ): Map<UUID, List<TransactionRecord>> {
         val transactionIdsToRecordRequest = recordRequestsByTransactionId
             .flatMap { (transactionId, records) ->
@@ -200,7 +200,7 @@ class TransactionRepository(
     private fun insertRecord(
         userId: UUID,
         transactionId: UUID,
-        record: CreateTransactionRecord,
+        record: CreateTransactionRecordTO,
     ) =
         AccountRecordTable.insert {
             it[AccountRecordTable.userId] = userId
@@ -223,7 +223,7 @@ class TransactionRepository(
                 )
             }
 
-    private fun extractFundId(record: CreateTransactionRecord): UUID {
+    private fun extractFundId(record: CreateTransactionRecordTO): UUID {
         return record.fundId
     }
 

@@ -60,14 +60,14 @@ class TransactionApiTest {
             externalId = randomUUID().toString(),
             type = TransactionType.TRANSFER,
             records = listOf(
-                CreateTransactionRecord(
+                CreateTransactionRecordTO(
                     accountId = companyAccount.id,
                     fundId = workFund.id,
                     amount = BigDecimal("-100.25"),
                     unit = Currency.RON,
                     labels = listOf(Label("one"), Label("two"))
                 ),
-                CreateTransactionRecord(
+                CreateTransactionRecordTO(
                     accountId = personalAccount.id,
                     fundId = expensesFund.id,
                     amount = BigDecimal("100.25"),
@@ -106,14 +106,14 @@ class TransactionApiTest {
                 externalId = "transaction1",
                 type = TransactionType.TRANSFER,
                 records = listOf(
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         accountId = account1.id,
                         fundId = workFund.id,
                         amount = BigDecimal("-100.25"),
                         unit = Currency.RON,
                         labels = listOf(Label("salary"))
                     ),
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         accountId = account2.id,
                         fundId = expensesFund.id,
                         amount = BigDecimal("100.25"),
@@ -130,7 +130,7 @@ class TransactionApiTest {
                 externalId = "transaction2",
                 type = TransactionType.SINGLE_RECORD,
                 records = listOf(
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         accountId = account1.id,
                         fundId = workFund.id,
                         amount = BigDecimal("50.00"),
@@ -187,7 +187,7 @@ class TransactionApiTest {
                 externalId = "before-range",
                 type = TransactionType.SINGLE_RECORD,
                 records = listOf(
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         accountId = account1.id,
                         fundId = workFund.id,
                         amount = BigDecimal("100.00"),
@@ -204,7 +204,7 @@ class TransactionApiTest {
                 externalId = "in-range",
                 type = TransactionType.SINGLE_RECORD,
                 records = listOf(
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         accountId = account1.id,
                         fundId = workFund.id,
                         amount = BigDecimal("200.00"),
@@ -221,7 +221,7 @@ class TransactionApiTest {
                 externalId = "after-range",
                 type = TransactionType.SINGLE_RECORD,
                 records = listOf(
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         accountId = account1.id,
                         fundId = workFund.id,
                         amount = BigDecimal("300.00"),
@@ -260,7 +260,7 @@ class TransactionApiTest {
                 externalId = "work-transaction",
                 type = TransactionType.SINGLE_RECORD,
                 records = listOf(
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         accountId = account1.id,
                         fundId = workFund.id,
                         amount = BigDecimal("100.00"),
@@ -277,7 +277,7 @@ class TransactionApiTest {
                 externalId = "expenses-transaction",
                 type = TransactionType.SINGLE_RECORD,
                 records = listOf(
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         accountId = account1.id,
                         fundId = expensesFund.id,
                         amount = BigDecimal("200.00"),

@@ -73,7 +73,7 @@ class TransactionsEventHandlingTest {
                     externalId = externalId,
                     type = TransactionType.SINGLE_RECORD,
                     records = listOf(
-                        CreateTransactionRecord(
+                        CreateTransactionRecordTO(
                             fundId = fund.id,
                             accountId = account.id,
                             amount = BigDecimal("100.0"),

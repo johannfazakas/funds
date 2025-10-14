@@ -26,12 +26,12 @@ class TransactionRepositoryTest {
         val dateTime = LocalDateTime.parse("2020-12-03T10:15:30")
         val transaction1 = CreateTransactionTO(
             dateTime, "transaction 1", TransactionType.SINGLE_RECORD, listOf(
-                CreateTransactionRecord(account.id, randomUUID(), BigDecimal(1.0), Currency.EUR)
+                CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal(1.0), Currency.EUR)
             )
         )
         val transaction2 = CreateTransactionTO(
             dateTime, "transaction 2", TransactionType.SINGLE_RECORD, listOf(
-                CreateTransactionRecord(account.id, randomUUID(), BigDecimal(2.0), Currency.EUR)
+                CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal(2.0), Currency.EUR)
             )
         )
 
