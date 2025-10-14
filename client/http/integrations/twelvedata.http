@@ -1,0 +1,7 @@
+@api_key=d7324a3952d34c95a7a34bf59f945184
+
+### GET ETFs
+https://api.twelvedata.com/etfs/list?apikey={{api_key}}
+
+### GET ETFs from world
+https://api.twelvedata.com/etfs/world?symbol=IVV&apikey={{api_key}}

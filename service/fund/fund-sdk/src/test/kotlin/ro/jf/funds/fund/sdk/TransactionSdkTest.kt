@@ -96,7 +96,7 @@ class TransactionSdkTest {
                 externalId = transactionExternalId,
                 type = TransactionType.SINGLE_RECORD,
                 records = listOf(
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         accountId = accountId,
                         fundId = fundId,
                         amount = BigDecimal(amount),

@@ -83,7 +83,7 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
                         account = accountStore[currencyRecord.accountName],
                         conversions = conversions,
                     ),
-                    CreateTransactionRecord(
+                    CreateTransactionRecordTO(
                         fundId = fundStore[instrumentRecord.fundName].id,
                         accountId = accountStore[instrumentRecord.accountName].id,
                         amount = instrumentRecord.amount,

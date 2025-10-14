@@ -61,36 +61,44 @@ class CurrencyBeaconCurrencyConverterTest {
     }
 
     @Test
-    fun `should throw HistoricalPricingIntegrationException when API limits are exceeded`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val date = LocalDate.parse("2021-02-28")
-        val dates = listOf(date)
+    fun `should throw exception when API limits are exceeded`(mockServerClient: MockServerClient): Unit =
+        runBlocking {
+            val date = LocalDate.parse("2021-02-28")
+            val dates = listOf(date)
 
-        mockServerClient.mockCurrencyBeaconLimitsExceededRequest("EUR", "RON", "2021-02-28")
+            mockServerClient.mockCurrencyBeaconLimitsExceededRequest("EUR", "RON", "2021-02-28")
 
-        assertThatThrownBy {
-            runBlocking { currencyConverter.convert(Currency.EUR, Currency.RON, dates) }
+            assertThatThrownBy {
+                runBlocking { currencyConverter.convert(Currency.EUR, Currency.RON, dates) }
+            }
+                .isInstanceOf(HistoricalPricingExceptions.HistoricalPricingIntegrationException::class.java)
+                .hasFieldOrPropertyWithValue("api", "currency_beacon")
+                .hasFieldOrPropertyWithValue("status", 429)
+                .hasFieldOrPropertyWithValue(
+                    "errorDetail",
+                    "Request limits exceeded. Please upgrade your account. See https://currencybeacon.com/api-documentation for details or email the support team at support@currencybeacon.com"
+                )
         }
-            .isInstanceOf(HistoricalPricingExceptions.HistoricalPricingIntegrationException::class.java)
-            .hasFieldOrPropertyWithValue("api", "currency_beacon")
-            .hasFieldOrPropertyWithValue("status", 429)
-            .hasFieldOrPropertyWithValue("errorDetail", "Request limits exceeded. Please upgrade your account. See https://currencybeacon.com/api-documentation for details or email the support team at support@currencybeacon.com")
-    }
 
     @Test
-    fun `should throw HistoricalPricingIntegrationException when API key is invalid`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val date = LocalDate.parse("2021-02-28")
-        val dates = listOf(date)
+    fun `should throw exception when API key is invalid`(mockServerClient: MockServerClient): Unit =
+        runBlocking {
+            val date = LocalDate.parse("2021-02-28")
+            val dates = listOf(date)
 
-        mockServerClient.mockCurrencyBeaconInvalidApiKeyRequest("EUR", "RON", "2021-02-28")
+            mockServerClient.mockCurrencyBeaconInvalidApiKeyRequest("EUR", "RON", "2021-02-28")
 
-        assertThatThrownBy {
-            runBlocking { currencyConverter.convert(Currency.EUR, Currency.RON, dates) }
+            assertThatThrownBy {
+                runBlocking { currencyConverter.convert(Currency.EUR, Currency.RON, dates) }
+            }
+                .isInstanceOf(HistoricalPricingExceptions.HistoricalPricingIntegrationException::class.java)
+                .hasFieldOrPropertyWithValue("api", "currency_beacon")
+                .hasFieldOrPropertyWithValue("status", 401)
+                .hasFieldOrPropertyWithValue(
+                    "errorDetail",
+                    "Missing or invalid api credentials. See https://currencybeacon.com/api-documentation for details."
+                )
         }
-            .isInstanceOf(HistoricalPricingExceptions.HistoricalPricingIntegrationException::class.java)
-            .hasFieldOrPropertyWithValue("api", "currency_beacon")
-            .hasFieldOrPropertyWithValue("status", 401)
-            .hasFieldOrPropertyWithValue("errorDetail", "Missing or invalid api credentials. See https://currencybeacon.com/api-documentation for details.")
-    }
 
     @Test
     fun `should fallback to previous day when rate is null`(mockServerClient: MockServerClient): Unit = runBlocking {
@@ -132,7 +140,7 @@ class CurrencyBeaconCurrencyConverterTest {
         base: String,
         symbols: String,
         date: String,
-        rate: BigDecimal
+        rate: BigDecimal,
     ) = mockCurrencyBeaconResponse(base, symbols, date, 200) {
         """
         {
@@ -159,7 +167,7 @@ class CurrencyBeaconCurrencyConverterTest {
     private fun MockServerClient.mockCurrencyBeaconLimitsExceededRequest(
         base: String,
         symbols: String,
-        date: String
+        date: String,
     ) = mockCurrencyBeaconResponse(base, symbols, date, 429) {
         """
         {
@@ -176,7 +184,7 @@ class CurrencyBeaconCurrencyConverterTest {
     private fun MockServerClient.mockCurrencyBeaconInvalidApiKeyRequest(
         base: String,
         symbols: String,
-        date: String
+        date: String,
     ) = mockCurrencyBeaconResponse(base, symbols, date, 401) {
         """
         {
@@ -193,7 +201,7 @@ class CurrencyBeaconCurrencyConverterTest {
     private fun MockServerClient.mockCurrencyBeaconNullRateRequest(
         base: String,
         symbols: String,
-        date: String
+        date: String,
     ) = mockCurrencyBeaconResponse(base, symbols, date, 200) {
         """
         {
@@ -220,7 +228,7 @@ class CurrencyBeaconCurrencyConverterTest {
     private fun MockServerClient.mockCurrencyBeaconEmptyRatesRequest(
         base: String,
         symbols: String,
-        date: String
+        date: String,
     ) = mockCurrencyBeaconResponse(base, symbols, date, 200) {
         """
         {
@@ -245,7 +253,7 @@ class CurrencyBeaconCurrencyConverterTest {
         symbols: String,
         date: String,
         statusCode: Int,
-        bodyProvider: () -> String
+        bodyProvider: () -> String,
     ) {
         `when`(
             request()

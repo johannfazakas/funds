@@ -19,11 +19,11 @@ data class CreateTransactionTO(
     val dateTime: LocalDateTime,
     val externalId: String,
     val type: TransactionType,
-    val records: List<CreateTransactionRecord>,
+    val records: List<CreateTransactionRecordTO>,
 )
 
 @Serializable
-data class CreateTransactionRecord(
+data class CreateTransactionRecordTO(
     @Serializable(with = UUIDSerializer::class)
     val accountId: UUID,
     @Serializable(with = UUIDSerializer::class)
