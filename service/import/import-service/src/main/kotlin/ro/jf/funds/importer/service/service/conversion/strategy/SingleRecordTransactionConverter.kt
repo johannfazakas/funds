@@ -35,19 +35,18 @@ class SingleRecordTransactionConverter : ImportTransactionConverter {
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
     ): List<CreateTransactionTO> {
+        val record = transaction.records.first()
         return listOf(
-            CreateTransactionTO(
-            dateTime = transaction.dateTime,
-            externalId = transaction.transactionExternalId,
-            type = TransactionType.SINGLE_RECORD,
-            records = transaction.records.map { record ->
-                record.toImportCurrencyFundRecord(
+            CreateTransactionTO.SingleRecord(
+                dateTime = transaction.dateTime,
+                externalId = transaction.transactionExternalId,
+                record = record.toImportCurrencyFundRecord(
                     transaction.dateTime.date,
                     fundStore[record.fundName].id,
                     accountStore[record.accountName],
                     conversions,
                 )
-            }
-        ))
+            )
+        )
     }
 }

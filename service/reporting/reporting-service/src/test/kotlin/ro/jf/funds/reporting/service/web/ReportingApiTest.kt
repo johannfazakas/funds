@@ -6,7 +6,6 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -20,8 +19,10 @@ import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
+import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
@@ -32,8 +33,8 @@ import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.TransactionFilterTO
+import ro.jf.funds.fund.api.model.TransactionRecordTO
 import ro.jf.funds.fund.api.model.TransactionTO
-import ro.jf.funds.fund.api.model.TransactionType
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.config.configureReportingErrorHandling
@@ -42,8 +43,6 @@ import ro.jf.funds.reporting.service.config.reportingDependencies
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
-import ro.jf.funds.reporting.service.utils.record
-import ro.jf.funds.reporting.service.utils.transaction
 import java.math.BigDecimal
 import java.util.*
 import java.util.UUID.randomUUID
@@ -60,7 +59,7 @@ class ReportingApiTest {
     private val expenseFundId = randomUUID()
     private val expenseReportName = "Expense Report"
     private val cashAccountId = randomUUID()
-    private val dateTime = LocalDateTime.parse("2021-09-01T12:00:00")
+    private val date = LocalDate(2021, 9, 1)
     private val labels = labelsOf("need", "want")
     private val reportDataConfiguration = ReportDataConfiguration(
         currency = RON,
@@ -83,10 +82,9 @@ class ReportingApiTest {
         val httpClient = createJsonHttpClient()
 
         val transaction =
-            transaction(
-                userId, dateTime, TransactionType.SINGLE_RECORD, listOf(
-                    record(expenseFundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need"))
-                )
+            singleRecordTransaction(
+                userId, date,
+                record(expenseFundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need"))
             )
         whenever(transactionSdk.listTransactions(userId, TransactionFilterTO(fundId = expenseFundId)))
             .thenReturn(ListTO.of(transaction))
@@ -182,20 +180,16 @@ class ReportingApiTest {
         val interval = ReportDataInterval.Daily(fromDate, toDate, null)
         mockTransactions(
             interval, reportView.fundId, listOf(
-                transaction(
-                    userId, LocalDate(2021, 1, 2).atTime(12, 0), TransactionType.SINGLE_RECORD,
-                    listOf(
-                        record(
-                            reportView.fundId, cashAccountId, BigDecimal("-25.0"), RON, labelsOf("need")
-                        )
+                singleRecordTransaction(
+                    userId, LocalDate(2021, 1, 2),
+                    record(
+                        reportView.fundId, cashAccountId, BigDecimal("-25.0"), RON, labelsOf("need")
                     )
                 ),
-                transaction(
-                    userId, LocalDate(2021, 1, 2).atTime(12, 0), TransactionType.SINGLE_RECORD,
-                    listOf(
-                        record(
-                            reportView.fundId, cashAccountId, BigDecimal("-10.0"), EUR, labelsOf("want")
-                        )
+                singleRecordTransaction(
+                    userId, LocalDate(2021, 1, 2),
+                    record(
+                        reportView.fundId, cashAccountId, BigDecimal("-10.0"), EUR, labelsOf("want")
                     )
                 )
             )
@@ -250,6 +244,22 @@ class ReportingApiTest {
             ).thenReturn(ListTO(transactions.filter { it.dateTime.date >= bucket.from && it.dateTime.date <= bucket.to }))
         }
     }
+
+    fun singleRecordTransaction(
+        userId: UUID,
+        date: LocalDate,
+        record: TransactionRecordTO,
+    ): TransactionTO.SingleRecord =
+        TransactionTO.SingleRecord(randomUUID(), userId, randomUUID().toString(), date.atTime(12, 0), record)
+
+    fun record(
+        fundId: UUID,
+        accountId: UUID,
+        amount: BigDecimal,
+        currency: Currency,
+        labels: List<Label>,
+    ): TransactionRecordTO =
+        TransactionRecordTO(randomUUID(), accountId, fundId, amount, currency, labels)
 
     private fun Application.testModule() {
         val importAppTestModule = module {

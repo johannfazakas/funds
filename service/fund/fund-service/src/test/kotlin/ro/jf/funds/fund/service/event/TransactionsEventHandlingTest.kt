@@ -68,17 +68,14 @@ class TransactionsEventHandlingTest {
         val externalId = randomUUID().toString()
         val createFundTransactionsTO = CreateTransactionsTO(
             transactions = listOf(
-                CreateTransactionTO(
+                CreateTransactionTO.SingleRecord(
                     dateTime = dateTime,
                     externalId = externalId,
-                    type = TransactionType.SINGLE_RECORD,
-                    records = listOf(
-                        CreateTransactionRecordTO(
-                            fundId = fund.id,
-                            accountId = account.id,
-                            amount = BigDecimal("100.0"),
-                            unit = Currency.RON
-                        )
+                    record = CreateTransactionRecordTO(
+                        fundId = fund.id,
+                        accountId = account.id,
+                        amount = BigDecimal("100.0"),
+                        unit = Currency.RON
                     )
                 )
             )
@@ -97,14 +94,13 @@ class TransactionsEventHandlingTest {
             assertThat(createFundTransactionsResponse.payload).isEqualTo(GenericResponse.Success)
         }
 
-        // Verify the transaction was actually persisted to the repository
         val persistedTransactions = accountTransactionRepository.list(userId, TransactionFilterTO.empty())
         assertThat(persistedTransactions).hasSize(1)
-        assertThat(persistedTransactions[0].externalId).isEqualTo(externalId)
-        assertThat(persistedTransactions[0].records).hasSize(1)
-        assertThat(persistedTransactions[0].records[0].accountId).isEqualTo(account.id)
-        assertThat(persistedTransactions[0].records[0].amount).isEqualByComparingTo(BigDecimal("100.0"))
-        assertThat(persistedTransactions[0].records[0].unit).isEqualTo(Currency.RON)
+        val transaction = persistedTransactions[0] as ro.jf.funds.fund.service.domain.Transaction.SingleRecord
+        assertThat(transaction.externalId).isEqualTo(externalId)
+        assertThat(transaction.record.accountId).isEqualTo(account.id)
+        assertThat(transaction.record.amount).isEqualByComparingTo(BigDecimal("100.0"))
+        assertThat(transaction.record.unit).isEqualTo(Currency.RON)
     }
 
     private val appConfig = MapApplicationConfig(

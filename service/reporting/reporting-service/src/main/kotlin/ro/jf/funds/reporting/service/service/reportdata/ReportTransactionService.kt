@@ -3,6 +3,7 @@ package ro.jf.funds.reporting.service.service.reportdata
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.TransactionFilterTO
+import ro.jf.funds.fund.api.model.TransactionRecordTO
 import ro.jf.funds.fund.api.model.TransactionTO
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.service.domain.*
@@ -40,17 +41,43 @@ class ReportTransactionService(
     }
 
     private fun TransactionTO.toReportTransaction(): ReportTransaction {
-        return ReportTransaction(
-            date = this.dateTime.date,
-            records = this.records.map { record ->
-                ReportRecord(
-                    date = this.dateTime.date,
-                    fundId = record.fundId,
-                    unit = record.unit,
-                    amount = record.amount,
-                    labels = record.labels,
-                )
-            },
+        val date = this.dateTime.date
+        return when (this) {
+            is TransactionTO.SingleRecord -> ReportTransaction.SingleRecord(
+                date = date,
+                record = this.record.toReportRecord(date),
+            )
+            is TransactionTO.Transfer -> ReportTransaction.Transfer(
+                date = date,
+                sourceRecord = this.sourceRecord.toReportRecord(date),
+                destinationRecord = this.destinationRecord.toReportRecord(date),
+            )
+            is TransactionTO.Exchange -> ReportTransaction.Exchange(
+                date = date,
+                sourceRecord = this.sourceRecord.toReportRecord(date),
+                destinationRecord = this.destinationRecord.toReportRecord(date),
+                feeRecord = this.feeRecord?.toReportRecord(date),
+            )
+            is TransactionTO.OpenPosition -> ReportTransaction.OpenPosition(
+                date = date,
+                currencyRecord = this.currencyRecord.toReportRecord(date),
+                instrumentRecord = this.instrumentRecord.toReportRecord(date),
+            )
+            is TransactionTO.ClosePosition -> ReportTransaction.ClosePosition(
+                date = date,
+                currencyRecord = this.currencyRecord.toReportRecord(date),
+                instrumentRecord = this.instrumentRecord.toReportRecord(date),
+            )
+        }
+    }
+
+    private fun TransactionRecordTO.toReportRecord(date: LocalDate): ReportRecord {
+        return ReportRecord(
+            date = date,
+            fundId = this.fundId,
+            unit = this.unit,
+            amount = this.amount,
+            labels = this.labels,
         )
     }
 }

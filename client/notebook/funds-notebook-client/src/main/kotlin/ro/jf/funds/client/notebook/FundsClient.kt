@@ -90,18 +90,15 @@ class FundsClient(
                 ?: error("Fund '${initialBalance.fundName}' not found")
             val account = accounts.firstOrNull { it.name.value == initialBalance.accountName }
                 ?: error("Account '${initialBalance.accountName}' not found")
-            CreateTransactionTO(
+            CreateTransactionTO.SingleRecord(
                 dateTime = dateTime,
                 externalId = listOf(dateTime, initialBalance.accountName, initialBalance.amount).joinToString()
                     .let { UUID.nameUUIDFromBytes(it.toByteArray()).toString() },
-                type = TransactionType.SINGLE_RECORD,
-                records = listOf(
-                    CreateTransactionRecordTO(
-                        fundId = fund.id,
-                        accountId = account.id,
-                        amount = BigDecimal(initialBalance.amount),
-                        unit = account.unit
-                    )
+                record = CreateTransactionRecordTO(
+                    fundId = fund.id,
+                    accountId = account.id,
+                    amount = BigDecimal(initialBalance.amount),
+                    unit = account.unit
                 )
             )
         }

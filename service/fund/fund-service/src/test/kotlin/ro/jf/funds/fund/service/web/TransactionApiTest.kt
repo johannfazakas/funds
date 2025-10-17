@@ -55,24 +55,21 @@ class TransactionApiTest {
         val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
         val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
 
-        val request = CreateTransactionTO(
+        val request: CreateTransactionTO = CreateTransactionTO.Transfer(
             dateTime = transactionTime,
             externalId = randomUUID().toString(),
-            type = TransactionType.TRANSFER,
-            records = listOf(
-                CreateTransactionRecordTO(
-                    accountId = companyAccount.id,
-                    fundId = workFund.id,
-                    amount = BigDecimal("-100.25"),
-                    unit = Currency.RON,
-                    labels = listOf(Label("one"), Label("two"))
-                ),
-                CreateTransactionRecordTO(
-                    accountId = personalAccount.id,
-                    fundId = expensesFund.id,
-                    amount = BigDecimal("100.25"),
-                    unit = Currency.RON
-                )
+            sourceRecord = CreateTransactionRecordTO(
+                accountId = companyAccount.id,
+                fundId = workFund.id,
+                amount = BigDecimal("-100.25"),
+                unit = Currency.RON,
+                labels = listOf(Label("one"), Label("two"))
+            ),
+            destinationRecord = CreateTransactionRecordTO(
+                accountId = personalAccount.id,
+                fundId = expensesFund.id,
+                amount = BigDecimal("100.25"),
+                unit = Currency.RON
             )
         )
 
@@ -85,8 +82,10 @@ class TransactionApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.Created)
         val fundTransaction = response.body<TransactionTO>()
         assertThat(fundTransaction).isNotNull
-        assertThat(fundTransaction.type).isEqualTo(TransactionType.TRANSFER)
-        assertThat(fundTransaction.records).hasSize(2)
+        assertThat(fundTransaction).isInstanceOf(TransactionTO.Transfer::class.java)
+        val transferTransaction = fundTransaction as TransactionTO.Transfer
+        assertThat(transferTransaction.sourceRecord).isNotNull
+        assertThat(transferTransaction.destinationRecord).isNotNull
     }
 
     @Test
@@ -101,42 +100,36 @@ class TransactionApiTest {
 
         transactionRepository.save(
             userId,
-            CreateTransactionTO(
+            CreateTransactionTO.Transfer(
                 dateTime = LocalDateTime.parse("2021-09-01T12:00:00"),
                 externalId = "transaction1",
-                type = TransactionType.TRANSFER,
-                records = listOf(
-                    CreateTransactionRecordTO(
-                        accountId = account1.id,
-                        fundId = workFund.id,
-                        amount = BigDecimal("-100.25"),
-                        unit = Currency.RON,
-                        labels = listOf(Label("salary"))
-                    ),
-                    CreateTransactionRecordTO(
-                        accountId = account2.id,
-                        fundId = expensesFund.id,
-                        amount = BigDecimal("100.25"),
-                        unit = Currency.RON
-                    )
+                sourceRecord = CreateTransactionRecordTO(
+                    accountId = account1.id,
+                    fundId = workFund.id,
+                    amount = BigDecimal("-100.25"),
+                    unit = Currency.RON,
+                    labels = listOf(Label("salary"))
                 ),
+                destinationRecord = CreateTransactionRecordTO(
+                    accountId = account2.id,
+                    fundId = expensesFund.id,
+                    amount = BigDecimal("100.25"),
+                    unit = Currency.RON
+                )
             )
         )
 
         transactionRepository.save(
             userId,
-            CreateTransactionTO(
+            CreateTransactionTO.SingleRecord(
                 dateTime = LocalDateTime.parse("2021-09-02T15:30:00"),
                 externalId = "transaction2",
-                type = TransactionType.SINGLE_RECORD,
-                records = listOf(
-                    CreateTransactionRecordTO(
-                        accountId = account1.id,
-                        fundId = workFund.id,
-                        amount = BigDecimal("50.00"),
-                        unit = Currency.RON
-                    )
-                ),
+                record = CreateTransactionRecordTO(
+                    accountId = account1.id,
+                    fundId = workFund.id,
+                    amount = BigDecimal("50.00"),
+                    unit = Currency.RON
+                )
             )
         )
 
@@ -148,25 +141,21 @@ class TransactionApiTest {
         val transactions = response.body<ListTO<TransactionTO>>()
         assertThat(transactions.items).hasSize(2)
 
-        val fundTransaction1 = transactions.items.find { it.type == TransactionType.TRANSFER }
+        val fundTransaction1 = transactions.items.find { it.type == TransactionType.TRANSFER } as? TransactionTO.Transfer
         assertThat(fundTransaction1).isNotNull
-        assertThat(fundTransaction1!!.records).hasSize(2)
-        assertThat(fundTransaction1.records[0].amount).isEqualByComparingTo(BigDecimal("-100.25"))
-        assertThat(fundTransaction1.records[0].fundId).isEqualTo(workFund.id)
-        assertThat(fundTransaction1.records[0].accountId).isEqualTo(account1.id)
-        assertThat(fundTransaction1.records[0].labels).contains(Label("salary"))
-        assertThat(fundTransaction1.records[1].amount).isEqualByComparingTo(BigDecimal("100.25"))
-        assertThat(fundTransaction1.records[1].fundId).isEqualTo(expensesFund.id)
-        assertThat(fundTransaction1.records[1].accountId).isEqualTo(account2.id)
+        assertThat(fundTransaction1!!.sourceRecord.amount).isEqualByComparingTo(BigDecimal("-100.25"))
+        assertThat(fundTransaction1.sourceRecord.fundId).isEqualTo(workFund.id)
+        assertThat(fundTransaction1.sourceRecord.accountId).isEqualTo(account1.id)
+        assertThat(fundTransaction1.sourceRecord.labels).contains(Label("salary"))
+        assertThat(fundTransaction1.destinationRecord.amount).isEqualByComparingTo(BigDecimal("100.25"))
+        assertThat(fundTransaction1.destinationRecord.fundId).isEqualTo(expensesFund.id)
+        assertThat(fundTransaction1.destinationRecord.accountId).isEqualTo(account2.id)
 
-        val fundTransaction2 = transactions.items.find {
-            it.type == TransactionType.SINGLE_RECORD && it.records[0].amount.compareTo(BigDecimal("50.00")) == 0
-        }
+        val fundTransaction2 = transactions.items.find { it.type == TransactionType.SINGLE_RECORD } as? TransactionTO.SingleRecord
         assertThat(fundTransaction2).isNotNull
-        assertThat(fundTransaction2!!.records).hasSize(1)
-        assertThat(fundTransaction2.records[0].amount).isEqualByComparingTo(BigDecimal("50.00"))
-        assertThat(fundTransaction2.records[0].fundId).isEqualTo(workFund.id)
-        assertThat(fundTransaction2.records[0].accountId).isEqualTo(account1.id)
+        assertThat(fundTransaction2!!.record.amount).isEqualByComparingTo(BigDecimal("50.00"))
+        assertThat(fundTransaction2.record.fundId).isEqualTo(workFund.id)
+        assertThat(fundTransaction2.record.accountId).isEqualTo(account1.id)
     }
 
     @Test
@@ -182,51 +171,42 @@ class TransactionApiTest {
 
         transactionRepository.save(
             userId,
-            CreateTransactionTO(
+            CreateTransactionTO.SingleRecord(
                 dateTime = fromDate.minus(1, DateTimeUnit.DAY).atTime(12, 0),
                 externalId = "before-range",
-                type = TransactionType.SINGLE_RECORD,
-                records = listOf(
-                    CreateTransactionRecordTO(
-                        accountId = account1.id,
-                        fundId = workFund.id,
-                        amount = BigDecimal("100.00"),
-                        unit = Currency.RON
-                    )
+                record = CreateTransactionRecordTO(
+                    accountId = account1.id,
+                    fundId = workFund.id,
+                    amount = BigDecimal("100.00"),
+                    unit = Currency.RON
                 )
             )
         )
 
         transactionRepository.save(
             userId,
-            CreateTransactionTO(
+            CreateTransactionTO.SingleRecord(
                 dateTime = fromDate.atTime(15, 30),
                 externalId = "in-range",
-                type = TransactionType.SINGLE_RECORD,
-                records = listOf(
-                    CreateTransactionRecordTO(
-                        accountId = account1.id,
-                        fundId = workFund.id,
-                        amount = BigDecimal("200.00"),
-                        unit = Currency.RON
-                    )
+                record = CreateTransactionRecordTO(
+                    accountId = account1.id,
+                    fundId = workFund.id,
+                    amount = BigDecimal("200.00"),
+                    unit = Currency.RON
                 )
             )
         )
 
         transactionRepository.save(
             userId,
-            CreateTransactionTO(
+            CreateTransactionTO.SingleRecord(
                 dateTime = toDate.plus(1, DateTimeUnit.DAY).atTime(12, 0),
                 externalId = "after-range",
-                type = TransactionType.SINGLE_RECORD,
-                records = listOf(
-                    CreateTransactionRecordTO(
-                        accountId = account1.id,
-                        fundId = workFund.id,
-                        amount = BigDecimal("300.00"),
-                        unit = Currency.RON
-                    )
+                record = CreateTransactionRecordTO(
+                    accountId = account1.id,
+                    fundId = workFund.id,
+                    amount = BigDecimal("300.00"),
+                    unit = Currency.RON
                 )
             )
         )
@@ -240,8 +220,9 @@ class TransactionApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val transactions = response.body<ListTO<TransactionTO>>()
         assertThat(transactions.items).hasSize(1)
-        assertThat(transactions.items[0].records[0].amount).isEqualByComparingTo(BigDecimal("200.00"))
-        assertThat(transactions.items[0].dateTime).isEqualTo(fromDate.atTime(15, 30))
+        val transaction = transactions.items[0] as TransactionTO.SingleRecord
+        assertThat(transaction.record.amount).isEqualByComparingTo(BigDecimal("200.00"))
+        assertThat(transaction.dateTime).isEqualTo(fromDate.atTime(15, 30))
     }
 
     @Test
@@ -255,34 +236,28 @@ class TransactionApiTest {
 
         transactionRepository.save(
             userId,
-            CreateTransactionTO(
+            CreateTransactionTO.SingleRecord(
                 dateTime = LocalDateTime.parse("2021-09-01T12:00:00"),
                 externalId = "work-transaction",
-                type = TransactionType.SINGLE_RECORD,
-                records = listOf(
-                    CreateTransactionRecordTO(
-                        accountId = account1.id,
-                        fundId = workFund.id,
-                        amount = BigDecimal("100.00"),
-                        unit = Currency.RON
-                    )
+                record = CreateTransactionRecordTO(
+                    accountId = account1.id,
+                    fundId = workFund.id,
+                    amount = BigDecimal("100.00"),
+                    unit = Currency.RON
                 )
             )
         )
 
         transactionRepository.save(
             userId,
-            CreateTransactionTO(
+            CreateTransactionTO.SingleRecord(
                 dateTime = LocalDateTime.parse("2021-09-02T15:30:00"),
                 externalId = "expenses-transaction",
-                type = TransactionType.SINGLE_RECORD,
-                records = listOf(
-                    CreateTransactionRecordTO(
-                        accountId = account1.id,
-                        fundId = expensesFund.id,
-                        amount = BigDecimal("200.00"),
-                        unit = Currency.RON
-                    )
+                record = CreateTransactionRecordTO(
+                    accountId = account1.id,
+                    fundId = expensesFund.id,
+                    amount = BigDecimal("200.00"),
+                    unit = Currency.RON
                 )
             )
         )
@@ -295,8 +270,9 @@ class TransactionApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val transactions = response.body<ListTO<TransactionTO>>()
         assertThat(transactions.items).hasSize(1)
-        assertThat(transactions.items[0].records[0].amount).isEqualByComparingTo(BigDecimal("100.00"))
-        assertThat(transactions.items[0].records[0].fundId).isEqualTo(workFund.id)
+        val transaction = transactions.items[0] as TransactionTO.SingleRecord
+        assertThat(transaction.record.amount).isEqualByComparingTo(BigDecimal("100.00"))
+        assertThat(transaction.record.fundId).isEqualTo(workFund.id)
     }
 
     private fun Application.testModule() {

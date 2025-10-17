@@ -43,19 +43,21 @@ class TransferTransactionConverter : ImportTransactionConverter {
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
     ): List<CreateTransactionTO> {
+        val records = transaction.records.map { record ->
+            record.toImportCurrencyFundRecord(
+                transaction.dateTime.date,
+                fundStore[record.fundName].id,
+                accountStore[record.accountName],
+                conversions
+            )
+        }
         return listOf(
-            CreateTransactionTO(
-            dateTime = transaction.dateTime,
-            externalId = transaction.transactionExternalId,
-            type = TransactionType.TRANSFER,
-            records = transaction.records.map { record ->
-                record.toImportCurrencyFundRecord(
-                    transaction.dateTime.date,
-                    fundStore[record.fundName].id,
-                    accountStore[record.accountName],
-                    conversions
-                )
-            }
-        ))
+            CreateTransactionTO.Transfer(
+                dateTime = transaction.dateTime,
+                externalId = transaction.transactionExternalId,
+                sourceRecord = records[0],
+                destinationRecord = records[1]
+            )
+        )
     }
 }

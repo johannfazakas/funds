@@ -11,6 +11,7 @@ sealed class FundServiceException : RuntimeException() {
     class AccountNotFound(val accountId: UUID) : FundServiceException()
     class AccountNameNotFound(val accountName: AccountName) : FundServiceException()
     class RecordAccountNotFound(val accountId: UUID) : FundServiceException()
+    class RecordFundNotFound(val fundId: UUID) : FundServiceException()
     class AccountRecordCurrencyMismatch(
         val accountId: UUID,
         val accountName: AccountName,

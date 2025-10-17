@@ -70,50 +70,43 @@ class TransactionSdkTest {
                             put("type", JsonPrimitive("SINGLE_RECORD"))
                             put("externalId", JsonPrimitive(transactionExternalId))
                             put("dateTime", JsonPrimitive(dateTime))
-                            put("records", buildJsonArray {
-                                add(buildJsonObject {
-                                    put("id", JsonPrimitive(recordId.toString()))
-                                    put("accountId", JsonPrimitive(accountId.toString()))
-                                    put("fundId", JsonPrimitive(fundId.toString()))
-                                    put("amount", JsonPrimitive(amount))
-                                    put("unit", buildJsonObject {
-                                        put("type", JsonPrimitive("currency"))
-                                        put("value", JsonPrimitive("RON"))
-                                    })
-                                    put("labels", buildJsonArray {})
-                                    put("properties", buildJsonArray {})
+                            put("record", buildJsonObject {
+                                put("id", JsonPrimitive(recordId.toString()))
+                                put("accountId", JsonPrimitive(accountId.toString()))
+                                put("fundId", JsonPrimitive(fundId.toString()))
+                                put("amount", JsonPrimitive(amount))
+                                put("unit", buildJsonObject {
+                                    put("type", JsonPrimitive("currency"))
+                                    put("value", JsonPrimitive("RON"))
                                 })
+                                put("labels", buildJsonArray {})
                             })
-                            put("properties", buildJsonArray {})
                         }.toString()
                     )
             )
 
         val transaction = transactionSdk.createTransaction(
             userId,
-            CreateTransactionTO(
+            CreateTransactionTO.SingleRecord(
                 dateTime = LocalDateTime.parse(dateTime),
                 externalId = transactionExternalId,
-                type = TransactionType.SINGLE_RECORD,
-                records = listOf(
-                    CreateTransactionRecordTO(
-                        accountId = accountId,
-                        fundId = fundId,
-                        amount = BigDecimal(amount),
-                        unit = FinancialUnit.of("currency", "RON")
-                    )
+                record = CreateTransactionRecordTO(
+                    accountId = accountId,
+                    fundId = fundId,
+                    amount = BigDecimal(amount),
+                    unit = FinancialUnit.of("currency", "RON")
                 )
             )
         )
 
-        assertThat(transaction).isInstanceOf(TransactionTO::class.java)
-        assertThat(transaction.id).isEqualTo(transactionId)
-        assertThat(transaction.dateTime.toString()).isEqualTo(dateTime)
-        assertThat(transaction.records).hasSize(1)
-        assertThat(transaction.records.first().id).isEqualTo(recordId)
-        assertThat(transaction.records.first().accountId).isEqualTo(accountId)
-        assertThat(transaction.records.first().amount.compareTo(BigDecimal(amount))).isZero()
-        assertThat(transaction.records.first().fundId).isEqualTo(fundId)
+        assertThat(transaction).isInstanceOf(TransactionTO.SingleRecord::class.java)
+        val singleRecord = transaction as TransactionTO.SingleRecord
+        assertThat(singleRecord.id).isEqualTo(transactionId)
+        assertThat(singleRecord.dateTime.toString()).isEqualTo(dateTime)
+        assertThat(singleRecord.record.id).isEqualTo(recordId)
+        assertThat(singleRecord.record.accountId).isEqualTo(accountId)
+        assertThat(singleRecord.record.amount.compareTo(BigDecimal(amount))).isZero()
+        assertThat(singleRecord.record.fundId).isEqualTo(fundId)
     }
 
     @Test
@@ -136,26 +129,19 @@ class TransactionSdkTest {
                                     put("id", JsonPrimitive(transactionId.toString()))
                                     put("userId", JsonPrimitive(userId.toString()))
                                     put("type", JsonPrimitive("SINGLE_RECORD"))
-                                    put(
-                                        "dateTime",
-                                        JsonPrimitive(dateTime)
-                                    )
+                                    put("dateTime", JsonPrimitive(dateTime))
                                     put("externalId", JsonPrimitive(transactionExternalId))
-                                    put("records", buildJsonArray {
-                                        add(buildJsonObject {
-                                            put("id", JsonPrimitive(recordId.toString()))
-                                            put("accountId", JsonPrimitive(accountId.toString()))
-                                            put("fundId", JsonPrimitive(fundId.toString()))
-                                            put("amount", JsonPrimitive(42.0))
-                                            put("unit", buildJsonObject {
-                                                put("type", JsonPrimitive("currency"))
-                                                put("value", JsonPrimitive("RON"))
-                                            })
-                                            put("labels", buildJsonArray {})
-                                            put("properties", buildJsonArray {})
+                                    put("record", buildJsonObject {
+                                        put("id", JsonPrimitive(recordId.toString()))
+                                        put("accountId", JsonPrimitive(accountId.toString()))
+                                        put("fundId", JsonPrimitive(fundId.toString()))
+                                        put("amount", JsonPrimitive(42.0))
+                                        put("unit", buildJsonObject {
+                                            put("type", JsonPrimitive("currency"))
+                                            put("value", JsonPrimitive("RON"))
                                         })
+                                        put("labels", buildJsonArray {})
                                     })
-                                    put("properties", buildJsonArray {})
                                 })
                             })
                         }.toString()
@@ -165,15 +151,14 @@ class TransactionSdkTest {
         val transactions = transactionSdk.listTransactions(userId)
 
         assertThat(transactions.items).hasSize(1)
-        assertThat(transactions.items.first()).isInstanceOf(TransactionTO::class.java)
-        val transaction = transactions.items.first()
+        assertThat(transactions.items.first()).isInstanceOf(TransactionTO.SingleRecord::class.java)
+        val transaction = transactions.items.first() as TransactionTO.SingleRecord
         assertThat(transaction.id).isEqualTo(transactionId)
         assertThat(transaction.dateTime.toString()).isEqualTo(dateTime)
-        assertThat(transaction.records).hasSize(1)
-        assertThat(transaction.records.first().id).isEqualTo(recordId)
-        assertThat(transaction.records.first().accountId).isEqualTo(accountId)
-        assertThat(transaction.records.first().amount.compareTo(BigDecimal(42.0))).isZero()
-        assertThat(transaction.records.first().fundId).isEqualTo(fundId)
+        assertThat(transaction.record.id).isEqualTo(recordId)
+        assertThat(transaction.record.accountId).isEqualTo(accountId)
+        assertThat(transaction.record.amount.compareTo(BigDecimal(42.0))).isZero()
+        assertThat(transaction.record.fundId).isEqualTo(fundId)
     }
 
     @Test
