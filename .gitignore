@@ -24,7 +24,13 @@ gradle-app.setting
 .idea/
 
 # Docker local volumes
-infra/local/volumes/*/data/
+infra/local/volumes/**
+!infra/local/volumes/otel-collector/otel-collector-config.yaml
+!infra/local/volumes/postgres/init/*
+!infra/local/volumes/tempo/tempo-config.yaml
 
 # reportdata
 data/
+
+# kotlin errors
+.kotlin/

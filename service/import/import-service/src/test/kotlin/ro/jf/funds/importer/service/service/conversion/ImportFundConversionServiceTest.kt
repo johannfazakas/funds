@@ -78,18 +78,15 @@ class ImportFundConversionServiceTest {
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).containsExactlyInAnyOrder(
-            CreateTransactionTO(
+            CreateTransactionTO.SingleRecord(
                 dateTime = transactionDateTime,
                 externalId = transactionExternalId,
-                type = TransactionType.SINGLE_RECORD,
-                records = listOf(
-                    CreateTransactionRecordTO(
-                        fundId = expensedFund.id,
-                        accountId = bankAccount.id,
-                        amount = BigDecimal("-100.00"),
-                        unit = Currency.RON,
-                        labels = listOf(Label("one"), Label("two"))
-                    )
+                record = CreateTransactionRecordTO(
+                    fundId = expensedFund.id,
+                    accountId = bankAccount.id,
+                    amount = BigDecimal("-100.00"),
+                    unit = Currency.RON,
+                    labels = listOf(Label("one"), Label("two"))
                 )
             )
         )
@@ -126,13 +123,14 @@ class ImportFundConversionServiceTest {
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).hasSize(1)
-        assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(transactionDateTime)
-        assertThat(fundTransactions.transactions[0].records).hasSize(1)
+        val transaction = fundTransactions.transactions[0]
+        assertThat(transaction).isInstanceOf(CreateTransactionTO.SingleRecord::class.java)
+        val singleRecord = transaction as CreateTransactionTO.SingleRecord
+        assertThat(singleRecord.dateTime).isEqualTo(transactionDateTime)
 
-        val record = fundTransactions.transactions[0].records.first()
-        assertThat(record.amount).isEqualByComparingTo(BigDecimal("-20.00"))
-        assertThat(record.unit).isEqualTo(Currency.EUR)
-        assertThat(record.labels).containsExactly(Label("one"), Label("two"))
+        assertThat(singleRecord.record.amount).isEqualByComparingTo(BigDecimal("-20.00"))
+        assertThat(singleRecord.record.unit).isEqualTo(Currency.EUR)
+        assertThat(singleRecord.record.labels).containsExactly(Label("one"), Label("two"))
     }
 
     @Test
@@ -173,25 +171,22 @@ class ImportFundConversionServiceTest {
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).containsExactlyInAnyOrder(
-            CreateTransactionTO(
+            CreateTransactionTO.Transfer(
                 dateTime = transactionDateTime,
                 externalId = transactionExternalId,
-                type = TransactionType.TRANSFER,
-                records = listOf(
-                    CreateTransactionRecordTO(
-                        fundId = incomeFund.id,
-                        accountId = companyAccount.id,
-                        amount = BigDecimal("-50.00"),
-                        unit = Currency.RON,
-                        labels = listOf(Label("Basic"))
-                    ),
-                    CreateTransactionRecordTO(
-                        fundId = expensedFund.id,
-                        accountId = cashAccount.id,
-                        amount = BigDecimal("50.00"),
-                        unit = Currency.RON,
-                        labels = listOf(Label("Basic"))
-                    ),
+                sourceRecord = CreateTransactionRecordTO(
+                    fundId = incomeFund.id,
+                    accountId = companyAccount.id,
+                    amount = BigDecimal("-50.00"),
+                    unit = Currency.RON,
+                    labels = listOf(Label("Basic"))
+                ),
+                destinationRecord = CreateTransactionRecordTO(
+                    fundId = expensedFund.id,
+                    accountId = cashAccount.id,
+                    amount = BigDecimal("50.00"),
+                    unit = Currency.RON,
+                    labels = listOf(Label("Basic"))
                 )
             )
         )
@@ -238,18 +233,20 @@ class ImportFundConversionServiceTest {
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).hasSize(1)
-        assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(transactionDateTime)
-        assertThat(fundTransactions.transactions[0].records).hasSize(2)
+        val transaction = fundTransactions.transactions[0]
+        assertThat(transaction).isInstanceOf(CreateTransactionTO.Transfer::class.java)
+        val transfer = transaction as CreateTransactionTO.Transfer
+        assertThat(transfer.dateTime).isEqualTo(transactionDateTime)
 
-        val companyRecord = fundTransactions.transactions[0].records.first { it.accountId == companyAccount.id }
-        val cashRecord = fundTransactions.transactions[0].records.first { it.accountId == cashAccount.id }
+        assertThat(transfer.sourceRecord.amount).isEqualByComparingTo(BigDecimal("-10.00"))
+        assertThat(transfer.sourceRecord.unit).isEqualTo(Currency.EUR)
+        assertThat(transfer.sourceRecord.labels).containsExactly(Label("work_income"))
+        assertThat(transfer.sourceRecord.accountId).isEqualTo(companyAccount.id)
 
-        assertThat(companyRecord.amount).isEqualByComparingTo(BigDecimal("-10.00"))
-        assertThat(companyRecord.unit).isEqualTo(Currency.EUR)
-        assertThat(companyRecord.labels).containsExactly(Label("work_income"))
-        assertThat(cashRecord.amount).isEqualByComparingTo(BigDecimal("10.00"))
-        assertThat(cashRecord.unit).isEqualTo(Currency.EUR)
-        assertThat(cashRecord.labels).containsExactly(Label("basic"))
+        assertThat(transfer.destinationRecord.amount).isEqualByComparingTo(BigDecimal("10.00"))
+        assertThat(transfer.destinationRecord.unit).isEqualTo(Currency.EUR)
+        assertThat(transfer.destinationRecord.labels).containsExactly(Label("basic"))
+        assertThat(transfer.destinationRecord.accountId).isEqualTo(cashAccount.id)
     }
 
     @Test
@@ -280,22 +277,21 @@ class ImportFundConversionServiceTest {
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).hasSize(1)
-        assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(transactionDateTime)
-        assertThat(fundTransactions.transactions[0].type).isEqualTo(TransactionType.TRANSFER)
-        val records = fundTransactions.transactions[0].records
-        assertThat(records).hasSize(2)
+        val transaction = fundTransactions.transactions[0]
+        assertThat(transaction).isInstanceOf(CreateTransactionTO.Transfer::class.java)
+        val transfer = transaction as CreateTransactionTO.Transfer
+        assertThat(transfer.dateTime).isEqualTo(transactionDateTime)
 
-        val passThroughNegativeRecord =
-            records.first { it.fundId == incomeFund.id && it.amount < BigDecimal.ZERO }
-        assertThat(passThroughNegativeRecord.amount).isEqualByComparingTo(BigDecimal("-50.00"))
-        assertThat(passThroughNegativeRecord.unit).isEqualTo(Currency.RON)
-        assertThat(passThroughNegativeRecord.labels).isEmpty()
+        assertThat(transfer.sourceRecord.fundId).isEqualTo(incomeFund.id)
+        assertThat(transfer.sourceRecord.amount).isEqualByComparingTo(BigDecimal("-50.00"))
+        assertThat(transfer.sourceRecord.unit).isEqualTo(Currency.RON)
+        assertThat(transfer.sourceRecord.labels).isEmpty()
 
-        val targetRecord = records
-            .first { it.fundId == expenseFund.id && it.accountId == account.id }
-        assertThat(targetRecord.amount).isEqualByComparingTo(BigDecimal("50.00"))
-        assertThat(targetRecord.unit).isEqualTo(Currency.RON)
-        assertThat(targetRecord.labels).isEmpty()
+        assertThat(transfer.destinationRecord.fundId).isEqualTo(expenseFund.id)
+        assertThat(transfer.destinationRecord.accountId).isEqualTo(account.id)
+        assertThat(transfer.destinationRecord.amount).isEqualByComparingTo(BigDecimal("50.00"))
+        assertThat(transfer.destinationRecord.unit).isEqualTo(Currency.RON)
+        assertThat(transfer.destinationRecord.labels).isEmpty()
     }
 
     @Test
@@ -354,27 +350,29 @@ class ImportFundConversionServiceTest {
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
         assertThat(fundTransactions.transactions).hasSize(1)
-        assertThat(fundTransactions.transactions[0].dateTime).isEqualTo(dateTime)
-        val records = fundTransactions.transactions[0].records
-        assertThat(records).hasSize(3)
+        val transaction = fundTransactions.transactions[0]
+        assertThat(transaction).isInstanceOf(CreateTransactionTO.Exchange::class.java)
+        val exchange = transaction as CreateTransactionTO.Exchange
+        assertThat(exchange.dateTime).isEqualTo(dateTime)
 
-        assertThat(records[0].amount).isEqualByComparingTo("301.24".toBigDecimal())
-        assertThat(records[0].accountId).isEqualTo(eurAccount.id)
-        assertThat(records[0].fundId).isEqualTo(expenses.id)
-        assertThat(records[0].unit).isEqualTo(Currency.EUR)
-        assertThat(records[0].labels).containsExactlyInAnyOrder(Label("exchange"))
+        assertThat(exchange.destinationRecord.amount).isEqualByComparingTo("301.24".toBigDecimal())
+        assertThat(exchange.destinationRecord.accountId).isEqualTo(eurAccount.id)
+        assertThat(exchange.destinationRecord.fundId).isEqualTo(expenses.id)
+        assertThat(exchange.destinationRecord.unit).isEqualTo(Currency.EUR)
+        assertThat(exchange.destinationRecord.labels).containsExactlyInAnyOrder(Label("exchange"))
 
-        assertThat(records[1].amount).isEqualByComparingTo("-1434.6103140".toBigDecimal())
-        assertThat(records[1].accountId).isEqualTo(ronAccount.id)
-        assertThat(records[1].fundId).isEqualTo(expenses.id)
-        assertThat(records[1].unit).isEqualTo(Currency.RON)
-        assertThat(records[1].labels).containsExactlyInAnyOrder(Label("exchange"))
+        assertThat(exchange.sourceRecord.amount).isEqualByComparingTo("-1434.6103140".toBigDecimal())
+        assertThat(exchange.sourceRecord.accountId).isEqualTo(ronAccount.id)
+        assertThat(exchange.sourceRecord.fundId).isEqualTo(expenses.id)
+        assertThat(exchange.sourceRecord.unit).isEqualTo(Currency.RON)
+        assertThat(exchange.sourceRecord.labels).containsExactlyInAnyOrder(Label("exchange"))
 
-        assertThat(records[2].amount).isEqualByComparingTo("0.6103140".toBigDecimal())
-        assertThat(records[2].accountId).isEqualTo(ronAccount.id)
-        assertThat(records[2].fundId).isEqualTo(expenses.id)
-        assertThat(records[2].unit).isEqualTo(Currency.RON)
-        assertThat(records[2].labels).containsExactlyInAnyOrder(Label("exchange"), Label("finance"))
+        assertThat(exchange.feeRecord).isNotNull
+        assertThat(exchange.feeRecord!!.amount).isEqualByComparingTo("0.6103140".toBigDecimal())
+        assertThat(exchange.feeRecord!!.accountId).isEqualTo(ronAccount.id)
+        assertThat(exchange.feeRecord!!.fundId).isEqualTo(expenses.id)
+        assertThat(exchange.feeRecord!!.unit).isEqualTo(Currency.RON)
+        assertThat(exchange.feeRecord!!.labels).containsExactlyInAnyOrder(Label("exchange"), Label("finance"))
     }
 
     @Test
@@ -481,25 +479,22 @@ class ImportFundConversionServiceTest {
 
         assertThat(fundTransactions.transactions).hasSize(1)
         val transaction = fundTransactions.transactions[0]
-        assertThat(transaction.dateTime).isEqualTo(transactionDateTime)
-        assertThat(transaction.externalId).isEqualTo(transactionExternalId)
-        assertThat(transaction.type).isEqualTo(TransactionType.OPEN_POSITION)
-        assertThat(transaction.records).hasSize(2)
+        assertThat(transaction).isInstanceOf(CreateTransactionTO.OpenPosition::class.java)
+        val openPosition = transaction as CreateTransactionTO.OpenPosition
+        assertThat(openPosition.dateTime).isEqualTo(transactionDateTime)
+        assertThat(openPosition.externalId).isEqualTo(transactionExternalId)
 
-        val currencyRecord = transaction.records.first { it.unit is Currency }
-        val instrumentRecord = transaction.records.first { it.unit is Symbol }
+        assertThat(openPosition.currencyRecord.amount).isEqualByComparingTo(BigDecimal("-1000.00"))
+        assertThat(openPosition.currencyRecord.unit).isEqualTo(Currency.USD)
+        assertThat(openPosition.currencyRecord.accountId).isEqualTo(brokerAccount.id)
+        assertThat(openPosition.currencyRecord.fundId).isEqualTo(investmentsFund.id)
+        assertThat(openPosition.currencyRecord.labels).containsExactly(Label("stock_purchase"))
 
-        assertThat(currencyRecord.amount).isEqualByComparingTo(BigDecimal("-1000.00"))
-        assertThat(currencyRecord.unit).isEqualTo(Currency.USD)
-        assertThat(currencyRecord.accountId).isEqualTo(brokerAccount.id)
-        assertThat(currencyRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(currencyRecord.labels).containsExactly(Label("stock_purchase"))
-
-        assertThat(instrumentRecord.amount).isEqualByComparingTo(BigDecimal("5.0"))
-        assertThat(instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
-        assertThat(instrumentRecord.accountId).isEqualTo(stockAccount.id)
-        assertThat(instrumentRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(instrumentRecord.labels).containsExactly(Label("stock_purchase"))
+        assertThat(openPosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal("5.0"))
+        assertThat(openPosition.instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
+        assertThat(openPosition.instrumentRecord.accountId).isEqualTo(stockAccount.id)
+        assertThat(openPosition.instrumentRecord.fundId).isEqualTo(investmentsFund.id)
+        assertThat(openPosition.instrumentRecord.labels).containsExactly(Label("stock_purchase"))
     }
 
     @Test
@@ -540,25 +535,22 @@ class ImportFundConversionServiceTest {
 
         assertThat(fundTransactions.transactions).hasSize(1)
         val transaction = fundTransactions.transactions[0]
-        assertThat(transaction.dateTime).isEqualTo(transactionDateTime)
-        assertThat(transaction.externalId).isEqualTo(transactionExternalId)
-        assertThat(transaction.type).isEqualTo(TransactionType.CLOSE_POSITION)
-        assertThat(transaction.records).hasSize(2)
+        assertThat(transaction).isInstanceOf(CreateTransactionTO.ClosePosition::class.java)
+        val closePosition = transaction as CreateTransactionTO.ClosePosition
+        assertThat(closePosition.dateTime).isEqualTo(transactionDateTime)
+        assertThat(closePosition.externalId).isEqualTo(transactionExternalId)
 
-        val currencyRecord = transaction.records.first { it.unit is Currency }
-        val instrumentRecord = transaction.records.first { it.unit is Symbol }
+        assertThat(closePosition.currencyRecord.amount).isEqualByComparingTo(BigDecimal("1200.00"))
+        assertThat(closePosition.currencyRecord.unit).isEqualTo(Currency.USD)
+        assertThat(closePosition.currencyRecord.accountId).isEqualTo(brokerAccount.id)
+        assertThat(closePosition.currencyRecord.fundId).isEqualTo(investmentsFund.id)
+        assertThat(closePosition.currencyRecord.labels).containsExactly(Label("stock_sale"))
 
-        assertThat(currencyRecord.amount).isEqualByComparingTo(BigDecimal("1200.00"))
-        assertThat(currencyRecord.unit).isEqualTo(Currency.USD)
-        assertThat(currencyRecord.accountId).isEqualTo(brokerAccount.id)
-        assertThat(currencyRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(currencyRecord.labels).containsExactly(Label("stock_sale"))
-
-        assertThat(instrumentRecord.amount).isEqualByComparingTo(BigDecimal("-5.0"))
-        assertThat(instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
-        assertThat(instrumentRecord.accountId).isEqualTo(stockAccount.id)
-        assertThat(instrumentRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(instrumentRecord.labels).containsExactly(Label("stock_sale"))
+        assertThat(closePosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal("-5.0"))
+        assertThat(closePosition.instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
+        assertThat(closePosition.instrumentRecord.accountId).isEqualTo(stockAccount.id)
+        assertThat(closePosition.instrumentRecord.fundId).isEqualTo(investmentsFund.id)
+        assertThat(closePosition.instrumentRecord.labels).containsExactly(Label("stock_sale"))
     }
 
     private fun account(name: String, unit: FinancialUnit = Currency.RON): AccountTO =

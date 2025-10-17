@@ -17,7 +17,6 @@ import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.fund.api.model.TransactionFilterTO
 import ro.jf.funds.fund.api.model.TransactionRecordTO
 import ro.jf.funds.fund.api.model.TransactionTO
-import ro.jf.funds.fund.api.model.TransactionType
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
@@ -979,76 +978,67 @@ class ReportDataServiceTest {
     ) = transaction(date, EUR, BigDecimal(amount), labels)
 
     private fun investmentEurTransfer(date: LocalDate, amountEur: Int) =
-        TransactionTO(
+        TransactionTO.Transfer(
             id = randomUUID(),
             userId = userId,
             dateTime = date.atTime(12, 0),
-            type = TransactionType.TRANSFER,
             externalId = randomUUID().toString(),
-            records = listOf(
-                TransactionRecordTO(
-                    id = randomUUID(),
-                    fundId = expensesFundId,
-                    accountId = randomUUID(),
-                    amount = BigDecimal(amountEur * -1),
-                    unit = EUR,
-                    labels = labelsOf("investment")
-                ),
-                TransactionRecordTO(
-                    id = randomUUID(),
-                    fundId = investmentFundId,
-                    accountId = randomUUID(),
-                    amount = BigDecimal(amountEur),
-                    unit = EUR,
-                    labels = labelsOf("investment")
-                )
+            sourceRecord = TransactionRecordTO(
+                id = randomUUID(),
+                fundId = expensesFundId,
+                accountId = randomUUID(),
+                amount = BigDecimal(amountEur * -1),
+                unit = EUR,
+                labels = labelsOf("investment")
+            ),
+            destinationRecord = TransactionRecordTO(
+                id = randomUUID(),
+                fundId = investmentFundId,
+                accountId = randomUUID(),
+                amount = BigDecimal(amountEur),
+                unit = EUR,
+                labels = labelsOf("investment")
             )
         )
 
     private fun investmentOpenPosition(date: LocalDate, eurAmount: Int, instrument: Symbol, instrumentAmount: Int) =
-        TransactionTO(
+        TransactionTO.OpenPosition(
             id = randomUUID(),
             userId = userId,
             dateTime = date.atTime(12, 0),
-            type = TransactionType.OPEN_POSITION,
             externalId = randomUUID().toString(),
-            records = listOf(
-                TransactionRecordTO(
-                    id = randomUUID(),
-                    fundId = investmentFundId,
-                    accountId = randomUUID(),
-                    amount = BigDecimal(eurAmount * -1),
-                    unit = EUR,
-                    labels = emptyList(),
-                ),
-                TransactionRecordTO(
-                    id = randomUUID(),
-                    fundId = investmentFundId,
-                    accountId = randomUUID(),
-                    amount = BigDecimal(instrumentAmount),
-                    unit = instrument,
-                    labels = emptyList(),
-                )
+            currencyRecord = TransactionRecordTO(
+                id = randomUUID(),
+                fundId = investmentFundId,
+                accountId = randomUUID(),
+                amount = BigDecimal(eurAmount * -1),
+                unit = EUR,
+                labels = emptyList(),
+            ),
+            instrumentRecord = TransactionRecordTO(
+                id = randomUUID(),
+                fundId = investmentFundId,
+                accountId = randomUUID(),
+                amount = BigDecimal(instrumentAmount),
+                unit = instrument,
+                labels = emptyList(),
             )
         )
 
     private fun transaction(
         date: LocalDate, unit: FinancialUnit, amount: BigDecimal, labels: List<Label>,
-    ) = TransactionTO(
+    ) = TransactionTO.SingleRecord(
         id = randomUUID(),
         userId = userId,
         dateTime = date.atTime(12, 0),
-        type = TransactionType.SINGLE_RECORD,
         externalId = randomUUID().toString(),
-        records = listOf(
-            TransactionRecordTO(
-                id = randomUUID(),
-                fundId = expensesFundId,
-                unit = unit,
-                amount = amount,
-                labels = labels,
-                accountId = randomUUID()
-            )
+        record = TransactionRecordTO(
+            id = randomUUID(),
+            fundId = expensesFundId,
+            unit = unit,
+            amount = amount,
+            labels = labels,
+            accountId = randomUUID()
         )
     )
 

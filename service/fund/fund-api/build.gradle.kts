@@ -5,4 +5,5 @@ plugins {
 
 dependencies {
     implementation(project(":commons:commons"))
+    testImplementation(project(":commons:commons-test"))
 }

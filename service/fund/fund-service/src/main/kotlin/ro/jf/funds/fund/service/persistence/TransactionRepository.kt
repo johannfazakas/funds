@@ -92,19 +92,21 @@ class TransactionRepository(
             .associate { it[AccountTransactionTable.id].value to transactionRequestsByExternalId[it[AccountTransactionTable.externalId]]!! }
 
         val recordRequestsByTransactionId = transactionIdsToTransactionRequests
-            .mapValues { (_, command) -> command.records }
+            .mapValues { (_, request) -> request.records }
         val storedRecordsByTransactionId = saveRecords(userId, recordRequestsByTransactionId)
 
         storedTransactions
             .map {
                 val transactionId = it[AccountTransactionTable.id].value
-                Transaction(
+                val transactionType = TransactionType.valueOf(it[AccountTransactionTable.type])
+                val records = storedRecordsByTransactionId[transactionId] ?: emptyList()
+                toTransaction(
                     id = transactionId,
                     userId = it[AccountTransactionTable.userId],
                     externalId = it[AccountTransactionTable.externalId],
-                    type = TransactionType.valueOf(it[AccountTransactionTable.type]),
+                    type = transactionType,
                     dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
-                    records = storedRecordsByTransactionId[transactionId] ?: emptyList()
+                    records = records
                 )
             }
     }
@@ -128,31 +130,42 @@ class TransactionRepository(
         userId: UUID,
         command: CreateTransactionTO,
     ): Transaction {
-        return insertTransaction(userId, command).let { transaction ->
-            transaction.copy(
-                records = command.records.map { recordRequest ->
-                    insertRecord(userId, transaction.id, recordRequest)
-                }
-            )
+        val transactionMetadata = insertTransaction(userId, command)
+        val records = command.records.map { recordRequest ->
+            insertRecord(userId, transactionMetadata.id, recordRequest)
         }
+        return toTransaction(
+            id = transactionMetadata.id,
+            userId = transactionMetadata.userId,
+            externalId = transactionMetadata.externalId,
+            type = command.type,
+            dateTime = transactionMetadata.dateTime,
+            records = records
+        )
     }
+
+    private data class TransactionMetadata(
+        val id: UUID,
+        val userId: UUID,
+        val externalId: String,
+        val dateTime: kotlinx.datetime.LocalDateTime,
+    )
 
     private fun insertTransaction(
         userId: UUID,
         command: CreateTransactionTO,
-    ) =
+    ): TransactionMetadata =
         AccountTransactionTable.insert {
             it[AccountTransactionTable.userId] = userId
             it[AccountTransactionTable.externalId] = command.externalId
             it[AccountTransactionTable.type] = command.type.name
             it[dateTime] = command.dateTime.toJavaLocalDateTime()
         }.let {
-            Transaction(
+            TransactionMetadata(
                 id = it[AccountTransactionTable.id].value,
                 userId = it[AccountTransactionTable.userId],
                 externalId = it[AccountTransactionTable.externalId],
-                type = TransactionType.valueOf(it[AccountTransactionTable.type]),
-                dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime(),
+                dateTime = it[AccountTransactionTable.dateTime].toKotlinLocalDateTime()
             )
         }
 
@@ -247,7 +260,7 @@ class TransactionRepository(
         .map { (_, rows) -> rows.toTransaction() }
 
     private fun List<ResultRow>.toTransaction(): Transaction {
-        return Transaction(
+        return toTransaction(
             id = this.first()[AccountTransactionTable.id].value,
             userId = this.first()[AccountTransactionTable.userId],
             externalId = this.first()[AccountTransactionTable.externalId],
@@ -270,4 +283,54 @@ class TransactionRepository(
             unit = toFinancialUnit(this.first()[AccountRecordTable.unitType], this.first()[AccountRecordTable.unit]),
             labels = this.first()[AccountRecordTable.labels].asLabels()
         )
+
+    private fun toTransaction(
+        id: UUID,
+        userId: UUID,
+        externalId: String,
+        type: TransactionType,
+        dateTime: kotlinx.datetime.LocalDateTime,
+        records: List<TransactionRecord>
+    ): Transaction = when (type) {
+        TransactionType.SINGLE_RECORD -> Transaction.SingleRecord(
+            id = id,
+            userId = userId,
+            externalId = externalId,
+            dateTime = dateTime,
+            record = records.firstOrNull() ?: throw IllegalStateException("SINGLE_RECORD transaction must have exactly 1 record")
+        )
+        TransactionType.TRANSFER -> Transaction.Transfer(
+            id = id,
+            userId = userId,
+            externalId = externalId,
+            dateTime = dateTime,
+            sourceRecord = records.getOrNull(0) ?: throw IllegalStateException("TRANSFER transaction must have source record"),
+            destinationRecord = records.getOrNull(1) ?: throw IllegalStateException("TRANSFER transaction must have destination record")
+        )
+        TransactionType.EXCHANGE -> Transaction.Exchange(
+            id = id,
+            userId = userId,
+            externalId = externalId,
+            dateTime = dateTime,
+            sourceRecord = records.getOrNull(0) ?: throw IllegalStateException("EXCHANGE transaction must have source record"),
+            destinationRecord = records.getOrNull(1) ?: throw IllegalStateException("EXCHANGE transaction must have destination record"),
+            feeRecord = records.getOrNull(2)
+        )
+        TransactionType.OPEN_POSITION -> Transaction.OpenPosition(
+            id = id,
+            userId = userId,
+            externalId = externalId,
+            dateTime = dateTime,
+            currencyRecord = records.getOrNull(0) ?: throw IllegalStateException("OPEN_POSITION transaction must have currency record"),
+            instrumentRecord = records.getOrNull(1) ?: throw IllegalStateException("OPEN_POSITION transaction must have instrument record")
+        )
+        TransactionType.CLOSE_POSITION -> Transaction.ClosePosition(
+            id = id,
+            userId = userId,
+            externalId = externalId,
+            dateTime = dateTime,
+            currencyRecord = records.getOrNull(0) ?: throw IllegalStateException("CLOSE_POSITION transaction must have currency record"),
+            instrumentRecord = records.getOrNull(1) ?: throw IllegalStateException("CLOSE_POSITION transaction must have instrument record")
+        )
+    }
 }

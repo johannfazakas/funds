@@ -99,11 +99,12 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             }
 
         return listOf(
-            CreateTransactionTO(
+            CreateTransactionTO.Exchange(
                 dateTime = transaction.dateTime,
                 externalId = transaction.transactionExternalId,
-                type = TransactionType.EXCHANGE,
-                records = listOfNotNull(creditFundRecord, debitFundRecord, feeFundRecord)
+                sourceRecord = debitFundRecord,
+                destinationRecord = creditFundRecord,
+                feeRecord = feeFundRecord
             )
         )
     }

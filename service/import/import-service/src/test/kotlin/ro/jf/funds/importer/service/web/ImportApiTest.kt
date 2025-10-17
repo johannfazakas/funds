@@ -15,9 +15,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import ro.jf.funds.fund.api.model.AccountName
-import ro.jf.funds.fund.api.model.AccountTO
-import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
@@ -31,8 +28,8 @@ import ro.jf.funds.commons.test.utils.createJsonHttpClient
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.web.USER_ID_HEADER
-import ro.jf.funds.fund.api.model.FundName
-import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.fund.api.model.*
+import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
@@ -98,7 +95,7 @@ class ImportApiTest {
                 )
             )
         )
-        whenever(transactionSdk.createTransaction(eq(userId), any())).thenReturn(mock())
+        whenever(transactionSdk.createTransaction(eq(userId), any())).thenReturn(mock<TransactionTO.SingleRecord>())
         whenever(historicalPricingSdk.convert(userId, ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -106,16 +103,16 @@ class ImportApiTest {
             header(USER_ID_HEADER, userId.toString())
             setBody(
                 MultiPartFormDataContent(
-                formData {
-                    append("file", csvFile.readBytes(), Headers.build {
-                        append(HttpHeaders.ContentType, ContentType.Text.CSV)
-                        append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
-                    })
-                    append("configuration", Json.encodeToString(importConfiguration), Headers.build {
-                        append(HttpHeaders.ContentType, ContentType.Application.Json)
-                    })
-                }
-            ))
+                    formData {
+                        append("file", csvFile.readBytes(), Headers.build {
+                            append(HttpHeaders.ContentType, ContentType.Text.CSV)
+                            append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
+                        })
+                        append("configuration", Json.encodeToString(importConfiguration), Headers.build {
+                            append(HttpHeaders.ContentType, ContentType.Application.Json)
+                        })
+                    }
+                ))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Accepted)
@@ -136,13 +133,13 @@ class ImportApiTest {
             header(USER_ID_HEADER, userId.toString())
             setBody(
                 MultiPartFormDataContent(
-                formData {
-                    append("file", csvFile.readBytes(), Headers.build {
-                        append(HttpHeaders.ContentType, ContentType.Text.CSV)
-                        append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
-                    })
-                }
-            ))
+                    formData {
+                        append("file", csvFile.readBytes(), Headers.build {
+                            append(HttpHeaders.ContentType, ContentType.Text.CSV)
+                            append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
+                        })
+                    }
+                ))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
@@ -179,16 +176,16 @@ class ImportApiTest {
             header(USER_ID_HEADER, userId.toString())
             setBody(
                 MultiPartFormDataContent(
-                formData {
-                    append("file", csvFile.readBytes(), Headers.build {
-                        append(HttpHeaders.ContentType, ContentType.Text.CSV)
-                        append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
-                    })
-                    append("configuration", Json.encodeToString(importConfiguration), Headers.build {
-                        append(HttpHeaders.ContentType, ContentType.Application.Json)
-                    })
-                }
-            ))
+                    formData {
+                        append("file", csvFile.readBytes(), Headers.build {
+                            append(HttpHeaders.ContentType, ContentType.Text.CSV)
+                            append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
+                        })
+                        append("configuration", Json.encodeToString(importConfiguration), Headers.build {
+                            append(HttpHeaders.ContentType, ContentType.Application.Json)
+                        })
+                    }
+                ))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
@@ -226,16 +223,16 @@ class ImportApiTest {
             header(USER_ID_HEADER, userId.toString())
             setBody(
                 MultiPartFormDataContent(
-                formData {
-                    append("file", csvFile.readBytes(), Headers.build {
-                        append(HttpHeaders.ContentType, ContentType.Text.CSV)
-                        append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
-                    })
-                    append("configuration", Json.encodeToString(importConfiguration), Headers.build {
-                        append(HttpHeaders.ContentType, ContentType.Application.Json)
-                    })
-                }
-            ))
+                    formData {
+                        append("file", csvFile.readBytes(), Headers.build {
+                            append(HttpHeaders.ContentType, ContentType.Text.CSV)
+                            append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
+                        })
+                        append("configuration", Json.encodeToString(importConfiguration), Headers.build {
+                            append(HttpHeaders.ContentType, ContentType.Application.Json)
+                        })
+                    }
+                ))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)

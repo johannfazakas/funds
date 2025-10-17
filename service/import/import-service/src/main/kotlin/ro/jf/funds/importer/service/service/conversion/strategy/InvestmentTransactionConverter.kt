@@ -71,27 +71,37 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
             else -> throw ImportDataException("Invalid investment transaction: currency and instrument amounts must have opposite signs")
         }
 
-        return listOf(
-            CreateTransactionTO(
-                dateTime = transaction.dateTime,
-                externalId = transaction.transactionExternalId,
-                type = transactionType,
-                records = listOf(
-                    currencyRecord.toImportCurrencyFundRecord(
-                        date = transaction.dateTime.date,
-                        fundId = fundStore[currencyRecord.fundName].id,
-                        account = accountStore[currencyRecord.accountName],
-                        conversions = conversions,
-                    ),
-                    CreateTransactionRecordTO(
-                        fundId = fundStore[instrumentRecord.fundName].id,
-                        accountId = accountStore[instrumentRecord.accountName].id,
-                        amount = instrumentRecord.amount,
-                        unit = instrumentRecord.unit,
-                        labels = instrumentRecord.labels,
-                    )
+        val currencyRecordTO = currencyRecord.toImportCurrencyFundRecord(
+            date = transaction.dateTime.date,
+            fundId = fundStore[currencyRecord.fundName].id,
+            account = accountStore[currencyRecord.accountName],
+            conversions = conversions,
+        )
+        val instrumentRecordTO = CreateTransactionRecordTO(
+            fundId = fundStore[instrumentRecord.fundName].id,
+            accountId = accountStore[instrumentRecord.accountName].id,
+            amount = instrumentRecord.amount,
+            unit = instrumentRecord.unit,
+            labels = instrumentRecord.labels,
+        )
+        return when (transactionType) {
+            TransactionType.OPEN_POSITION -> listOf(
+                CreateTransactionTO.OpenPosition(
+                    dateTime = transaction.dateTime,
+                    externalId = transaction.transactionExternalId,
+                    currencyRecord = currencyRecordTO,
+                    instrumentRecord = instrumentRecordTO
                 )
             )
-        )
+            TransactionType.CLOSE_POSITION -> listOf(
+                CreateTransactionTO.ClosePosition(
+                    dateTime = transaction.dateTime,
+                    externalId = transaction.transactionExternalId,
+                    currencyRecord = currencyRecordTO,
+                    instrumentRecord = instrumentRecordTO
+                )
+            )
+            else -> throw ImportDataException("Invalid transaction type for investment: $transactionType")
+        }
     }
 }

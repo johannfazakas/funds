@@ -39,6 +39,7 @@ fun FundServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is FundServiceException.AccountNotFound -> HttpStatusCode.NotFound
     is FundServiceException.AccountNameNotFound -> HttpStatusCode.NotFound
     is FundServiceException.RecordAccountNotFound -> HttpStatusCode.UnprocessableEntity
+    is FundServiceException.RecordFundNotFound -> HttpStatusCode.UnprocessableEntity
     is FundServiceException.AccountRecordCurrencyMismatch -> HttpStatusCode.UnprocessableEntity
 }
 
@@ -79,6 +80,11 @@ fun FundServiceException.toError(): ErrorTO {
         is FundServiceException.RecordAccountNotFound -> ErrorTO(
             title = "Record account not found",
             detail = "Account with id '$accountId' not found for record"
+        )
+
+        is FundServiceException.RecordFundNotFound -> ErrorTO(
+            title = "Record fund not found",
+            detail = "Fund with id '$fundId' not found for record"
         )
 
         is FundServiceException.AccountRecordCurrencyMismatch -> ErrorTO(

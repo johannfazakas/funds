@@ -1,5 +1,6 @@
 package ro.jf.funds.fund.service.service
 
+import mu.KotlinLogging.logger
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
@@ -10,6 +11,8 @@ import ro.jf.funds.fund.service.domain.FundServiceException
 import ro.jf.funds.fund.service.domain.Transaction
 import ro.jf.funds.fund.service.persistence.TransactionRepository
 import java.util.*
+
+private val log = logger { }
 
 class TransactionService(
     private val transactionRepository: TransactionRepository,
@@ -39,37 +42,48 @@ class TransactionService(
     }
 
     private suspend fun validateTransactionRequests(userId: UUID, requests: List<CreateTransactionTO>) {
-        val accountsById = getAccounts(userId, requests).associateBy { it.id }
-        val fundsById = getFunds(userId, requests).associateBy { it.id }
+        validateRecordFunds(userId, requests).associateBy { it.id }
+        val accountsById = validateRecordAccounts(userId, requests).associateBy { it.id }
 
         requests.asSequence()
             .flatMap { it.records }
-            .forEach { record ->
-                val account = accountsById[record.accountId]
-                    ?: throw FundServiceException.RecordAccountNotFound(record.accountId)
+            .mapNotNull { record -> accountsById[record.accountId]?.let { record to it } }
+            .forEach { (record, account) ->
                 if (record.unit != account.unit) {
                     throw FundServiceException.AccountRecordCurrencyMismatch(
                         account.id, account.name, account.unit, record.unit
                     )
                 }
-                fundsById[record.fundId] ?: throw FundServiceException.TransactionFundNotFound(record.fundId)
             }
     }
 
-    // TODO(Johann) get accounts and get funds might be optimized to avoid N calls
-    private suspend fun getAccounts(userId: UUID, requests: List<CreateTransactionTO>): List<Account> =
+    private suspend fun validateRecordAccounts(userId: UUID, requests: List<CreateTransactionTO>): List<Account> =
         requests
             .asSequence()
             .flatMap { it.records }
             .map { it.accountId }
             .toSet()
-            .map { accountService.findAccountById(userId, it) }
+            .map { accountId ->
+                try {
+                    accountService.findAccountById(userId, accountId)
+                } catch (e: FundServiceException.AccountNotFound) {
+                    log.warn(e) { "Account with id $accountId required on transaction record could not be found." }
+                    throw FundServiceException.RecordAccountNotFound(accountId)
+                }
+            }
 
-    private suspend fun getFunds(userId: UUID, requests: List<CreateTransactionTO>): List<Fund> =
+    private suspend fun validateRecordFunds(userId: UUID, requests: List<CreateTransactionTO>): List<Fund> =
         requests
             .asSequence()
             .flatMap { it.records }
             .map { it.fundId }
             .toSet()
-            .mapNotNull { fundService.findById(userId, it) }
+            .mapNotNull { fundId ->
+                try {
+                    fundService.findById(userId, fundId)
+                } catch (e: FundServiceException.FundNotFound) {
+                    log.warn(e) { "Fund with id $fundId required on transaction record could not be found." }
+                    throw FundServiceException.RecordFundNotFound(fundId)
+                }
+            }
 }

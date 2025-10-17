@@ -2,6 +2,7 @@ package ro.jf.funds.importer.service.service.parser
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.atTime
+import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Label
@@ -24,7 +25,7 @@ private const val DATE_FORMAT = "yyyy-MM-dd"
 class FundsFormatImportParser(
     private val csvParser: CsvParser,
 ) : ImportParser {
-    // TODO(Johann) update this, it is a warning
+    @OptIn(FormatStringsInDatetimeFormats::class)
     private val dateFormat = LocalDate.Format { byUnicodePattern(DATE_FORMAT) }
 
     override fun parse(

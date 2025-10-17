@@ -54,24 +54,21 @@ class TransactionServiceTest {
         whenever(accountRepository.findById(userId, personalAccountId)).thenReturn(
             Account(personalAccountId, userId, AccountName("Personal"), FinancialUnit.of("currency", "RON"))
         )
-        val request = CreateTransactionTO(
+        val request = CreateTransactionTO.Transfer(
             dateTime = transactionTime,
             externalId = transactionExternalId,
-            type = TransactionType.SINGLE_RECORD,
-            records = listOf(
-                CreateTransactionRecordTO(
-                    accountId = companyAccountId,
-                    fundId = workFundId,
-                    amount = BigDecimal("-100.25"),
-                    unit = FinancialUnit.of("currency", "RON"),
-                    labels = listOf(Label("one"), Label("two"))
-                ),
-                CreateTransactionRecordTO(
-                    accountId = personalAccountId,
-                    fundId = expensesFundId,
-                    amount = BigDecimal("100.25"),
-                    unit = FinancialUnit.of("currency", "RON")
-                )
+            sourceRecord = CreateTransactionRecordTO(
+                accountId = companyAccountId,
+                fundId = workFundId,
+                amount = BigDecimal("-100.25"),
+                unit = FinancialUnit.of("currency", "RON"),
+                labels = listOf(Label("one"), Label("two"))
+            ),
+            destinationRecord = CreateTransactionRecordTO(
+                accountId = personalAccountId,
+                fundId = expensesFundId,
+                amount = BigDecimal("100.25"),
+                unit = FinancialUnit.of("currency", "RON")
             )
         )
         whenever(fundRepository.findById(userId, workFundId)).thenReturn(
@@ -89,47 +86,43 @@ class TransactionServiceTest {
             )
         )
         whenever(transactionRepository.save(userId, request)).thenReturn(
-            Transaction(
+            Transaction.Transfer(
                 id = transactionId,
                 userId = userId,
                 externalId = transactionExternalId,
-                type = TransactionType.SINGLE_RECORD,
                 dateTime = transactionTime,
-                records = listOf(
-                    TransactionRecord(
-                        id = record1Id,
-                        accountId = companyAccountId,
-                        fundId = workFundId,
-                        amount = BigDecimal("-100.25"),
-                        unit = FinancialUnit.of("currency", "RON"),
-                        labels = listOf(Label("one"), Label("two"))
-                    ),
-                    TransactionRecord(
-                        id = record2Id,
-                        accountId = personalAccountId,
-                        fundId = expensesFundId,
-                        amount = BigDecimal("100.25"),
-                        unit = FinancialUnit.of("currency", "RON"),
-                        labels = emptyList()
-                    )
+                sourceRecord = TransactionRecord(
+                    id = record1Id,
+                    accountId = companyAccountId,
+                    fundId = workFundId,
+                    amount = BigDecimal("-100.25"),
+                    unit = FinancialUnit.of("currency", "RON"),
+                    labels = listOf(Label("one"), Label("two"))
+                ),
+                destinationRecord = TransactionRecord(
+                    id = record2Id,
+                    accountId = personalAccountId,
+                    fundId = expensesFundId,
+                    amount = BigDecimal("100.25"),
+                    unit = FinancialUnit.of("currency", "RON"),
+                    labels = emptyList()
                 )
             )
         )
 
-        val transaction = transactionService.createTransaction(userId, request)
+        val transaction = transactionService.createTransaction(userId, request) as Transaction.Transfer
 
         assertThat(transaction.id).isEqualTo(transactionId)
         assertThat(transaction.userId).isEqualTo(userId)
         assertThat(transaction.dateTime).isEqualTo(transactionTime)
-        assertThat(transaction.records).hasSize(2)
-        assertThat(transaction.records[0].id).isEqualTo(record1Id)
-        assertThat(transaction.records[0].fundId).isEqualTo(workFundId)
-        assertThat(transaction.records[0].accountId).isEqualTo(companyAccountId)
-        assertThat(transaction.records[0].amount).isEqualTo(BigDecimal("-100.25"))
-        assertThat(transaction.records[1].id).isEqualTo(record2Id)
-        assertThat(transaction.records[1].fundId).isEqualTo(expensesFundId)
-        assertThat(transaction.records[1].accountId).isEqualTo(personalAccountId)
-        assertThat(transaction.records[1].amount).isEqualTo(BigDecimal("100.25"))
+        assertThat(transaction.sourceRecord.id).isEqualTo(record1Id)
+        assertThat(transaction.sourceRecord.fundId).isEqualTo(workFundId)
+        assertThat(transaction.sourceRecord.accountId).isEqualTo(companyAccountId)
+        assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal("-100.25"))
+        assertThat(transaction.destinationRecord.id).isEqualTo(record2Id)
+        assertThat(transaction.destinationRecord.fundId).isEqualTo(expensesFundId)
+        assertThat(transaction.destinationRecord.accountId).isEqualTo(personalAccountId)
+        assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal("100.25"))
     }
 
     @Test
@@ -139,29 +132,26 @@ class TransactionServiceTest {
             transactionRepository.list(userId, TransactionFilterTO.empty())
         ).thenReturn(
             listOf(
-                Transaction(
+                Transaction.Transfer(
                     id = transactionId,
                     userId = userId,
                     dateTime = transactionTime,
                     externalId = transactionExternalId,
-                    type = TransactionType.SINGLE_RECORD,
-                    records = listOf(
-                        TransactionRecord(
-                            id = record1Id,
-                            accountId = companyAccountId,
-                            fundId = workFundId,
-                            amount = BigDecimal(100.25),
-                            unit = FinancialUnit.of("currency", "RON"),
-                            labels = listOf(Label("one"), Label("two"))
-                        ),
-                        TransactionRecord(
-                            id = record2Id,
-                            accountId = personalAccountId,
-                            fundId = expensesFundId,
-                            amount = BigDecimal(50.75),
-                            unit = FinancialUnit.of("currency", "RON"),
-                            labels = emptyList()
-                        )
+                    sourceRecord = TransactionRecord(
+                        id = record1Id,
+                        accountId = companyAccountId,
+                        fundId = workFundId,
+                        amount = BigDecimal(100.25),
+                        unit = FinancialUnit.of("currency", "RON"),
+                        labels = listOf(Label("one"), Label("two"))
+                    ),
+                    destinationRecord = TransactionRecord(
+                        id = record2Id,
+                        accountId = personalAccountId,
+                        fundId = expensesFundId,
+                        amount = BigDecimal(50.75),
+                        unit = FinancialUnit.of("currency", "RON"),
+                        labels = emptyList()
                     )
                 )
             )
@@ -170,20 +160,20 @@ class TransactionServiceTest {
         val transactions = transactionService.listTransactions(userId)
 
         assertThat(transactions).hasSize(1)
-        assertThat(transactions.first().id).isEqualTo(transactionId)
-        assertThat(transactions.first().userId).isEqualTo(userId)
-        assertThat(transactions.first().dateTime).isEqualTo(transactionTime)
-        assertThat(transactions.first().records).hasSize(2)
-        assertThat(transactions.first().records[0].id).isEqualTo(record1Id)
-        assertThat(transactions.first().records[0].fundId).isEqualTo(workFundId)
-        assertThat(transactions.first().records[0].accountId).isEqualTo(companyAccountId)
-        assertThat(transactions.first().records[0].amount).isEqualTo(BigDecimal(100.25))
-        assertThat(transactions.first().records[0].labels).containsExactlyInAnyOrder(Label("one"), Label("two"))
-        assertThat(transactions.first().records[1].id).isEqualTo(record2Id)
-        assertThat(transactions.first().records[1].fundId).isEqualTo(expensesFundId)
-        assertThat(transactions.first().records[1].accountId).isEqualTo(personalAccountId)
-        assertThat(transactions.first().records[1].amount).isEqualTo(BigDecimal(50.75))
-        assertThat(transactions.first().records[1].labels).isEmpty()
+        val transaction = transactions.first() as Transaction.Transfer
+        assertThat(transaction.id).isEqualTo(transactionId)
+        assertThat(transaction.userId).isEqualTo(userId)
+        assertThat(transaction.dateTime).isEqualTo(transactionTime)
+        assertThat(transaction.sourceRecord.id).isEqualTo(record1Id)
+        assertThat(transaction.sourceRecord.fundId).isEqualTo(workFundId)
+        assertThat(transaction.sourceRecord.accountId).isEqualTo(companyAccountId)
+        assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal(100.25))
+        assertThat(transaction.sourceRecord.labels).containsExactlyInAnyOrder(Label("one"), Label("two"))
+        assertThat(transaction.destinationRecord.id).isEqualTo(record2Id)
+        assertThat(transaction.destinationRecord.fundId).isEqualTo(expensesFundId)
+        assertThat(transaction.destinationRecord.accountId).isEqualTo(personalAccountId)
+        assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal(50.75))
+        assertThat(transaction.destinationRecord.labels).isEmpty()
     }
 
     @Test
@@ -191,29 +181,26 @@ class TransactionServiceTest {
         val filter = TransactionFilterTO(fromDate = null, toDate = null, fundId = workFundId)
         whenever(transactionRepository.list(userId, filter)).thenReturn(
             listOf(
-                Transaction(
+                Transaction.Transfer(
                     id = transactionId,
                     userId = userId,
                     dateTime = transactionTime,
                     externalId = transactionExternalId,
-                    type = TransactionType.TRANSFER,
-                    records = listOf(
-                        TransactionRecord(
-                            id = record1Id,
-                            accountId = companyAccountId,
-                            fundId = workFundId,
-                            amount = BigDecimal(100.25),
-                            unit = FinancialUnit.of("currency", "RON"),
-                            labels = listOf(Label("one"), Label("two"))
-                        ),
-                        TransactionRecord(
-                            id = record2Id,
-                            accountId = personalAccountId,
-                            fundId = expensesFundId,
-                            amount = BigDecimal(50.75),
-                            unit = FinancialUnit.of("currency", "RON"),
-                            labels = emptyList()
-                        )
+                    sourceRecord = TransactionRecord(
+                        id = record1Id,
+                        accountId = companyAccountId,
+                        fundId = workFundId,
+                        amount = BigDecimal(100.25),
+                        unit = FinancialUnit.of("currency", "RON"),
+                        labels = listOf(Label("one"), Label("two"))
+                    ),
+                    destinationRecord = TransactionRecord(
+                        id = record2Id,
+                        accountId = personalAccountId,
+                        fundId = expensesFundId,
+                        amount = BigDecimal(50.75),
+                        unit = FinancialUnit.of("currency", "RON"),
+                        labels = emptyList()
                     )
                 )
             )
@@ -222,20 +209,20 @@ class TransactionServiceTest {
         val transactions = transactionService.listTransactions(userId, TransactionFilterTO(fundId = workFundId))
 
         assertThat(transactions).hasSize(1)
-        assertThat(transactions.first().id).isEqualTo(transactionId)
-        assertThat(transactions.first().userId).isEqualTo(userId)
-        assertThat(transactions.first().dateTime).isEqualTo(transactionTime)
-        assertThat(transactions.first().records).hasSize(2)
-        assertThat(transactions.first().records[0].id).isEqualTo(record1Id)
-        assertThat(transactions.first().records[0].fundId).isEqualTo(workFundId)
-        assertThat(transactions.first().records[0].accountId).isEqualTo(companyAccountId)
-        assertThat(transactions.first().records[0].amount).isEqualTo(BigDecimal(100.25))
-        assertThat(transactions.first().records[0].labels).containsExactlyInAnyOrder(Label("one"), Label("two"))
-        assertThat(transactions.first().records[1].id).isEqualTo(record2Id)
-        assertThat(transactions.first().records[1].fundId).isEqualTo(expensesFundId)
-        assertThat(transactions.first().records[1].accountId).isEqualTo(personalAccountId)
-        assertThat(transactions.first().records[1].amount).isEqualTo(BigDecimal(50.75))
-        assertThat(transactions.first().records[1].labels).isEmpty()
+        val transaction = transactions.first() as Transaction.Transfer
+        assertThat(transaction.id).isEqualTo(transactionId)
+        assertThat(transaction.userId).isEqualTo(userId)
+        assertThat(transaction.dateTime).isEqualTo(transactionTime)
+        assertThat(transaction.sourceRecord.id).isEqualTo(record1Id)
+        assertThat(transaction.sourceRecord.fundId).isEqualTo(workFundId)
+        assertThat(transaction.sourceRecord.accountId).isEqualTo(companyAccountId)
+        assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal(100.25))
+        assertThat(transaction.sourceRecord.labels).containsExactlyInAnyOrder(Label("one"), Label("two"))
+        assertThat(transaction.destinationRecord.id).isEqualTo(record2Id)
+        assertThat(transaction.destinationRecord.fundId).isEqualTo(expensesFundId)
+        assertThat(transaction.destinationRecord.accountId).isEqualTo(personalAccountId)
+        assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal(50.75))
+        assertThat(transaction.destinationRecord.labels).isEmpty()
     }
 
     @Test
