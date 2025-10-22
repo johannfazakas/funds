@@ -1,7 +1,7 @@
 package ro.jf.funds.reporting.service.domain
 
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import java.math.BigDecimal
 import java.util.*
 
@@ -44,12 +44,12 @@ data class PerformanceReport(
 
     val investmentsByCurrency: Map<Currency, BigDecimal>,
     val valueByCurrency: Map<Currency, BigDecimal>,
-    val assetsBySymbol: BySymbol<BigDecimal>,
+    val assetsByInstrument: ByInstrument<BigDecimal>,
     // TODO(Johann) could also add percentages
 )
 
-data class UnitPerformanceReport(
-    val symbol: Symbol,
+data class InstrumentPerformanceReport(
+    val instrument: Instrument,
 
     val totalUnits: BigDecimal,
     val currentUnits: BigDecimal,
@@ -65,8 +65,8 @@ data class UnitPerformanceReport(
     val investmentByCurrency: Map<Currency, BigDecimal>,
 ) {
     companion object {
-        fun zero(symbol: Symbol) = UnitPerformanceReport(
-            symbol,
+        fun zero(instrument: Instrument) = InstrumentPerformanceReport(
+            instrument,
             totalUnits = BigDecimal.ZERO,
             currentUnits = BigDecimal.ZERO,
             totalValue = BigDecimal.ZERO,

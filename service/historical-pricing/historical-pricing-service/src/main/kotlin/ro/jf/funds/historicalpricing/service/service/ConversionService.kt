@@ -3,7 +3,7 @@ package ro.jf.funds.historicalpricing.service.service
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
@@ -35,13 +35,13 @@ class ConversionService(
             is Currency -> {
                 when (sourceUnit) {
                     is Currency -> currencyService.convert(sourceUnit, targetUnit, dates)
-                    is Symbol -> instrumentService.convert(sourceUnit, targetUnit, dates)
+                    is Instrument -> instrumentService.convert(sourceUnit, targetUnit, dates)
                 }
             }
 
-            is Symbol -> throw HistoricalPricingExceptions.ConversionNotPermitted(sourceUnit, targetUnit)
+            is Instrument -> throw HistoricalPricingExceptions.ConversionNotPermitted(sourceUnit, targetUnit)
         }
     }
 
-    private fun ConversionRequest.isSymbolConversion(): Boolean = sourceUnit is Symbol || targetUnit is Symbol
+    private fun ConversionRequest.isInstrumentConversion(): Boolean = sourceUnit is Instrument || targetUnit is Instrument
 }

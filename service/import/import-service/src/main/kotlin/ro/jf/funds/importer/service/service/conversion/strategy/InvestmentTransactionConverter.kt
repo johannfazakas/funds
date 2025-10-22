@@ -1,7 +1,7 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
@@ -20,7 +20,7 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
         if (transaction.records.size != 2) return false
         val currencyRecords = transaction.records.filter { it.unit is Currency }
         if (currencyRecords.size != 1) return false
-        val instrumentRecords = transaction.records.filter { it.unit is Symbol }
+        val instrumentRecords = transaction.records.filter { it.unit is Instrument }
         if (instrumentRecords.size != 1) return false
 
         val currencyRecord = currencyRecords.first()
@@ -63,7 +63,7 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
         accountStore: Store<AccountName, AccountTO>,
     ): List<CreateTransactionTO> {
         val currencyRecord = transaction.records.first { it.unit is Currency }
-        val instrumentRecord = transaction.records.first { it.unit is Symbol }
+        val instrumentRecord = transaction.records.first { it.unit is Instrument }
 
         val transactionType = when {
             currencyRecord.amount < BigDecimal.ZERO && instrumentRecord.amount > BigDecimal.ZERO -> TransactionType.OPEN_POSITION

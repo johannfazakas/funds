@@ -174,11 +174,11 @@ class FundsClient(
         reportingSdk.getPerformanceData(user.id, reportView.id, reportDataIntervalTO)
     }
 
-    fun getReportUnitPerformanceData(
+    fun getReportInstrumentPerformanceData(
         user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
     ) = run {
         val reportView = getReportViewByName(user, reportName)
-        reportingSdk.getUnitPerformanceData(user.id, reportView.id, reportDataIntervalTO)
+        reportingSdk.getInstrumentPerformanceData(user.id, reportView.id, reportDataIntervalTO)
     }
 
     fun <T> plotReportData(

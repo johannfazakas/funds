@@ -9,7 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Label
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.fund.api.model.TransactionRecordTO
 import ro.jf.funds.fund.api.model.TransactionTO
 import java.math.BigDecimal
@@ -407,7 +407,7 @@ class TransactionTOSerializationTest {
                     "amount": "10",
                     "unit": {
                         "value": "AAPL",
-                        "type": "symbol"
+                        "type": "instrument"
                     },
                     "labels": []
                 }
@@ -429,7 +429,7 @@ class TransactionTOSerializationTest {
         assertThat(openPosition.instrumentRecord.id).isEqualTo(recordId2)
         assertThat(openPosition.instrumentRecord.accountId).isEqualTo(accountId2)
         assertThat(openPosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal("10"))
-        assertThat(openPosition.instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
+        assertThat(openPosition.instrumentRecord.unit).isEqualTo(Instrument("AAPL"))
     }
 
     @Test
@@ -467,7 +467,7 @@ class TransactionTOSerializationTest {
                     "amount": "-10",
                     "unit": {
                         "value": "AAPL",
-                        "type": "symbol"
+                        "type": "instrument"
                     },
                     "labels": []
                 }
@@ -489,6 +489,6 @@ class TransactionTOSerializationTest {
         assertThat(closePosition.instrumentRecord.id).isEqualTo(recordId2)
         assertThat(closePosition.instrumentRecord.accountId).isEqualTo(accountId2)
         assertThat(closePosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal("-10"))
-        assertThat(closePosition.instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
+        assertThat(closePosition.instrumentRecord.unit).isEqualTo(Instrument("AAPL"))
     }
 }

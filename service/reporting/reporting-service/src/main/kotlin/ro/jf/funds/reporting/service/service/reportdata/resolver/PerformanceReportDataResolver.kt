@@ -3,7 +3,7 @@ package ro.jf.funds.reporting.service.service.reportdata.resolver
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.commons.model.UnitType
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.*
@@ -57,16 +57,17 @@ class PerformanceReportDataResolver(
 //                currentInterest = currentInterest,
                 investmentsByCurrency = emptyMap(),
                 valueByCurrency = emptyMap(),
-                assetsBySymbol = emptyMap(),
+                assetsByInstrument = emptyMap(),
             )
         }
     }
 
     private suspend fun getPreviousData(input: ReportDataResolverInput): PerformanceReport {
-        val previousRecords = input.reportTransactionStore.getPreviousRecords()
+        val fundId = input.reportView.fundId
+        val previousRecords = input.reportTransactionStore.getPreviousTransactions()
         val investmentByCurrency = extractInvestmentByCurrency(previousRecords)
-        val valueByCurrency = extractValueByCurrency(previousRecords)
-        val assetsBySymbol = extractAssetsBySymbol(previousRecords)
+        val valueByCurrency = extractValueByCurrency(previousRecords, fundId)
+        val assetsBySymbol = extractAssetsBySymbol(previousRecords, fundId)
 
         return aggregatePerformanceReport(
             userId = input.userId,
@@ -76,8 +77,8 @@ class PerformanceReportDataResolver(
             valueByCurrency = valueByCurrency,
             previousInvestmentByCurrency = emptyMap(),
             currentInvestmentByCurrency = investmentByCurrency,
-            previousAssetsBySymbol = emptyMap(),
-            currentAssetsBySymbol = assetsBySymbol,
+            previousAssetsByInstrument = emptyMap(),
+            currentAssetsByInstrument = assetsBySymbol,
         )
     }
 
@@ -86,10 +87,11 @@ class PerformanceReportDataResolver(
         timeBucket: TimeBucket,
         previous: PerformanceReport,
     ): PerformanceReport {
-        val bucketRecords = input.reportTransactionStore.getBucketRecords(timeBucket)
+        val fundId = input.reportView.fundId
+        val bucketRecords = input.reportTransactionStore.getBucketTransactions(timeBucket)
         val bucketInvestmentByCurrency = extractInvestmentByCurrency(bucketRecords)
-        val bucketValueByCurrency = extractValueByCurrency(bucketRecords)
-        val bucketAssetsBySymbol = extractAssetsBySymbol(bucketRecords)
+        val bucketValueByCurrency = extractValueByCurrency(bucketRecords, fundId)
+        val bucketAssetsBySymbol = extractAssetsBySymbol(bucketRecords, fundId)
 
         return aggregatePerformanceReport(
             userId = input.userId,
@@ -99,30 +101,43 @@ class PerformanceReportDataResolver(
             valueByCurrency = mergeMaps(previous.valueByCurrency, bucketValueByCurrency),
             previousInvestmentByCurrency = previous.investmentsByCurrency,
             currentInvestmentByCurrency = bucketInvestmentByCurrency,
-            previousAssetsBySymbol = previous.assetsBySymbol,
-            currentAssetsBySymbol = bucketAssetsBySymbol,
+            previousAssetsByInstrument = previous.assetsByInstrument,
+            currentAssetsByInstrument = bucketAssetsBySymbol,
         )
     }
 
-    private fun extractValueByCurrency(records: List<ReportRecord>): Map<Currency, BigDecimal> {
-        val groupBy = records
-            .filter { it.unit.type == UnitType.CURRENCY }
+    private fun extractValueByCurrency(transactions: List<ReportTransaction>, fundId: UUID): Map<Currency, BigDecimal> {
+        val groupBy = transactions
+            .flatMap { it.records }
+            .filter { it.unit.type == UnitType.CURRENCY && it.fundId == fundId }
             .groupBy { it.unit as Currency }
             .mapValues { (_, records) -> records.sumOf { it.amount } }
         return groupBy
     }
 
-    private fun extractAssetsBySymbol(records: List<ReportRecord>): Map<Symbol, BigDecimal> =
-        records
-            .filter { it.isPositionBuy() }
-            .groupBy { it.unit as Symbol }
-            .mapValues { (symbol, records) -> records.sumOf { it.amount } }
+    private fun extractAssetsBySymbol(
+        transactions: List<ReportTransaction>,
+        fundId: UUID,
+    ): Map<Instrument, BigDecimal> =
+        transactions
+            .mapNotNull { it as? ReportTransaction.OpenPosition }
+            .groupBy { it.instrumentRecord.unit as Instrument }
+            .mapValues { (_, transactions) ->
+                transactions
+                    .map { it.instrumentRecord }
+                    .filter { it.fundId == fundId }
+                    .sumOf { it.amount }
+            }
 
-    private fun extractInvestmentByCurrency(records: List<ReportRecord>): Map<Currency, BigDecimal> =
+    private fun extractInvestmentByCurrency(records: List<ReportTransaction>): Map<Currency, BigDecimal> =
         records
-            .filter { it.isPositionCost() }
-            .groupBy { it.unit as Currency }
-            .mapValues { (_, records) -> records.sumOf { it.amount } }
+            .mapNotNull { it as? ReportTransaction.OpenPosition }
+            .groupBy { it.currencyRecord.unit as Currency }
+            .mapValues { (_, transactions) ->
+                transactions
+                    .map { it.currencyRecord }
+                    .sumOf { it.amount }
+            }
 
     private suspend fun aggregatePerformanceReport(
         userId: UUID,
@@ -132,8 +147,8 @@ class PerformanceReportDataResolver(
         valueByCurrency: Map<Currency, BigDecimal>,
         previousInvestmentByCurrency: Map<Currency, BigDecimal>,
         currentInvestmentByCurrency: Map<Currency, BigDecimal>,
-        previousAssetsBySymbol: Map<Symbol, BigDecimal>,
-        currentAssetsBySymbol: Map<Symbol, BigDecimal>,
+        previousAssetsByInstrument: Map<Instrument, BigDecimal>,
+        currentAssetsByInstrument: Map<Instrument, BigDecimal>,
     ): PerformanceReport {
         val currentInvestment = calculateInvestment(userId, date, targetCurrency, currentInvestmentByCurrency)
         val totalCurrencyValue = calculateCurrenciesValue(userId, date, targetCurrency, valueByCurrency)
@@ -143,7 +158,7 @@ class PerformanceReportDataResolver(
 
 //        val totalInterest
 
-        val totalAssetsBySymbol = mergeMaps(previousAssetsBySymbol, currentAssetsBySymbol)
+        val totalAssetsBySymbol = mergeMaps(previousAssetsByInstrument, currentAssetsByInstrument)
         val totalAssetsValue = calculateAssetsValue(userId, date, targetCurrency, totalAssetsBySymbol)
 
         return PerformanceReport(
@@ -157,7 +172,7 @@ class PerformanceReportDataResolver(
 //            totalInterest = TODO(),
             investmentsByCurrency = totalInvestmentByCurrency,
             valueByCurrency = valueByCurrency,
-            assetsBySymbol = totalAssetsBySymbol,
+            assetsByInstrument = totalAssetsBySymbol,
         )
     }
 
@@ -179,9 +194,9 @@ class PerformanceReportDataResolver(
         userId: UUID,
         date: LocalDate,
         targetCurrency: Currency,
-        assetsBySymbol: Map<Symbol, BigDecimal>,
+        assetsByInstrument: Map<Instrument, BigDecimal>,
     ): BigDecimal {
-        return assetsBySymbol
+        return assetsByInstrument
             .map { (unit, value) ->
                 value * conversionRateService.getRate(userId, date, unit, targetCurrency)
             }
@@ -204,16 +219,7 @@ class PerformanceReportDataResolver(
     private fun <T : FinancialUnit> mergeMaps(one: Map<T, BigDecimal>, two: Map<T, BigDecimal>): Map<T, BigDecimal> {
         return sequenceOf<Map<T, BigDecimal>>(one, two)
             .flatMap<Map<T, BigDecimal>, Pair<T, BigDecimal>> { it.entries.map<Map.Entry<T, BigDecimal>, Pair<T, BigDecimal>> { entry -> entry.key to entry.value } }
-            .groupBy<Pair<T, BigDecimal>, T> { (key, value) -> key }
+            .groupBy<Pair<T, BigDecimal>, T> { (key, _) -> key }
             .mapValues<T, List<Pair<T, BigDecimal>>, BigDecimal> { (_, values) -> values.sumOf<Pair<T, BigDecimal>> { it.second } }
-    }
-
-    private fun ReportRecord.isPositionCost(): Boolean {
-        // TODO(Johann) not good. this will also match on money withdrawal. hmm, but couldn't I just add up everything by Currency and Symbol?
-        return unit.type == UnitType.CURRENCY && amount < BigDecimal.ZERO
-    }
-
-    private fun ReportRecord.isPositionBuy(): Boolean {
-        return unit.type == UnitType.SYMBOL && amount > BigDecimal.ZERO
     }
 }

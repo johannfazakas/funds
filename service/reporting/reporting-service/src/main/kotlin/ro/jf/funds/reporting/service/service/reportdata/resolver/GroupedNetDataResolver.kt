@@ -51,18 +51,23 @@ class GroupedNetDataResolver(
         reportCurrency: Currency,
     ): ByGroup<NetReport> =
         groups.associate { group ->
-            group.name to getFilteredNet(userId, records, reportCurrency, group.filter::test)
+            group.name to sumNet(userId, reportCurrency, filterGroupRecords(group, records))
         }
 
-    private suspend fun getFilteredNet(
-        userId: UUID,
-        records: ByUnit<List<ReportRecord>>,
-        reportCurrency: Currency,
-        recordFilter: (ReportRecord) -> Boolean,
-    ): NetReport {
+    private fun filterGroupRecords(
+        group: ReportGroup, records: ByUnit<List<ReportRecord>>,
+    ): List<ReportRecord> {
         return records
             .flatMap { it.value }
-            .filter(recordFilter)
+            .filter(group.filter::test)
+    }
+
+    private suspend fun sumNet(
+        userId: UUID,
+        reportCurrency: Currency,
+        records: List<ReportRecord>,
+    ): NetReport {
+        return records
             .sumOf {
                 it.amount * conversionRateService.getRate(userId, it.date, it.unit, reportCurrency)
             }

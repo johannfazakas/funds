@@ -7,7 +7,7 @@ import ro.jf.funds.commons.serialization.SymbolSerializer
 
 enum class UnitType(val value: String) {
     CURRENCY("currency"),
-    SYMBOL("symbol"),
+    INSTRUMENT("instrument"),
     ;
 
     companion object {
@@ -21,7 +21,7 @@ fun toFinancialUnit(unitType: String, unit: String): FinancialUnit =
 
 fun toFinancialUnit(unitType: UnitType, unit: String): FinancialUnit = when (unitType) {
     UnitType.CURRENCY -> Currency(unit)
-    UnitType.SYMBOL -> Symbol(unit)
+    UnitType.INSTRUMENT -> Instrument(unit)
 }
 
 @Serializable(with = FinancialUnitSerializer::class)
@@ -32,7 +32,7 @@ sealed class FinancialUnit {
     companion object {
         fun of(unitType: String, unit: String): FinancialUnit = when (UnitType.fromString(unitType)) {
             UnitType.CURRENCY -> Currency(unit)
-            UnitType.SYMBOL -> Symbol(unit)
+            UnitType.INSTRUMENT -> Instrument(unit)
         }
     }
 }
@@ -48,9 +48,7 @@ data class Currency(override val value: String) : FinancialUnit() {
     }
 }
 
-// TODO(Johann) maybe financial instrument would be better?
 @Serializable(with = SymbolSerializer::class)
-data class Symbol(override val value: String) : FinancialUnit() {
-    override val type = UnitType.SYMBOL
+data class Instrument(override val value: String) : FinancialUnit() {
+    override val type = UnitType.INSTRUMENT
 }
-

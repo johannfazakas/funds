@@ -5,7 +5,7 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.datetime.*
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.api.model.Instrument
+import ro.jf.funds.historicalpricing.api.model.PricingInstrument
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.MonthlyCachedInstrumentConverterProxy
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.yahoo.model.YahooChartResponse
@@ -17,17 +17,17 @@ class YahooInstrumentConverter(
     private val httpClient: HttpClient,
     private val cachedProxy: MonthlyCachedInstrumentConverterProxy = MonthlyCachedInstrumentConverterProxy(),
 ) : InstrumentConverter {
-    override suspend fun convert(instrument: Instrument, dates: List<LocalDate>): List<ConversionResponse> =
+    override suspend fun convert(instrument: PricingInstrument, dates: List<LocalDate>): List<ConversionResponse> =
         dates.map { date -> checkHardcodedValues(instrument, date) ?: convert(instrument, date) }
 
-    private suspend fun convert(instrument: Instrument, date: LocalDate): ConversionResponse {
+    private suspend fun convert(instrument: PricingInstrument, date: LocalDate): ConversionResponse {
         return cachedProxy.getCachedOrConvert(instrument, date) { from, to ->
             convert(instrument, from, to)
         }
     }
 
     private suspend fun convert(
-        instrument: Instrument,
+        instrument: PricingInstrument,
         from: LocalDate,
         to: LocalDate,
     ) = try {
@@ -45,7 +45,7 @@ class YahooInstrumentConverter(
         )
     }
 
-    private fun YahooChartResponse.toConversionResponses(instrument: Instrument): List<ConversionResponse> {
+    private fun YahooChartResponse.toConversionResponses(instrument: PricingInstrument): List<ConversionResponse> {
         val result = this.chart.result.first()
         val prices = result.indicators.quote.first().close
 
@@ -53,7 +53,7 @@ class YahooInstrumentConverter(
             .mapIndexedNotNull { ix, timestamp ->
                 prices[ix]?.let {
                     ConversionResponse(
-                        instrument.symbol,
+                        instrument.instrument,
                         instrument.mainCurrency,
                         timestamp.toLocalDate(),
                         it
@@ -63,8 +63,8 @@ class YahooInstrumentConverter(
     }
 
     // IMAE doesn't have values for 2022 and I couldn't find a library/api that could provide it
-    private fun checkHardcodedValues(instrument: Instrument, date: LocalDate): ConversionResponse? {
-        if (instrument == Instrument.IMAE_NL) {
+    private fun checkHardcodedValues(instrument: PricingInstrument, date: LocalDate): ConversionResponse? {
+        if (instrument == PricingInstrument.IMAE_NL) {
             if (date.year == 2022) {
                 val rate = when (date.month) {
                     Month.MAY -> BigDecimal("63.54")
@@ -78,7 +78,7 @@ class YahooInstrumentConverter(
                     else -> null
                 }
                 if (rate != null) {
-                    return ConversionResponse(instrument.symbol, instrument.mainCurrency, date, rate)
+                    return ConversionResponse(instrument.instrument, instrument.mainCurrency, date, rate)
                 }
             }
         }

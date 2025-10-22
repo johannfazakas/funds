@@ -16,7 +16,7 @@ import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.account.service.module
 import ro.jf.funds.account.service.persistence.AccountRepository
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
@@ -41,7 +41,7 @@ class AccountApiTest {
 
         val userId = randomUUID()
         accountRepository.save(userId, CreateAccountTO(AccountName("Cash"), Currency.RON))
-        accountRepository.save(userId, CreateAccountTO(AccountName("BET"), Symbol("TVBETETF")))
+        accountRepository.save(userId, CreateAccountTO(AccountName("BET"), Instrument("TVBETETF")))
 
         val response = createJsonHttpClient().get("/funds-api/account/v1/accounts") {
             header(USER_ID_HEADER, userId)
@@ -112,19 +112,19 @@ class AccountApiTest {
         val response = createJsonHttpClient().post("/funds-api/account/v1/accounts") {
             contentType(ContentType.Application.Json)
             header(USER_ID_HEADER, userId)
-            setBody(CreateAccountTO(AccountName("S&P500"), Symbol("SXR8_DE")))
+            setBody(CreateAccountTO(AccountName("S&P500"), Instrument("SXR8_DE")))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Created)
         val accountTO = response.body<AccountTO>()
         assertThat(accountTO).isNotNull
         assertThat(accountTO.name).isEqualTo(AccountName("S&P500"))
-        assertThat(accountTO.unit).isEqualTo(Symbol("SXR8_DE"))
+        assertThat(accountTO.unit).isEqualTo(Instrument("SXR8_DE"))
 
         val dbAccount = accountRepository.findById(userId, accountTO.id)
         assertThat(dbAccount).isNotNull
         assertThat(dbAccount?.name).isEqualTo(AccountName("S&P500"))
-        assertThat(dbAccount?.unit).isEqualTo(Symbol("SXR8_DE"))
+        assertThat(dbAccount?.unit).isEqualTo(Instrument("SXR8_DE"))
     }
 
     @Test

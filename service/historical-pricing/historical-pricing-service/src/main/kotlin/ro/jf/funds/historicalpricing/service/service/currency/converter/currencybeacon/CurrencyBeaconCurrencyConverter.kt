@@ -28,7 +28,7 @@ private val log = KotlinLogging.logger {}
 class CurrencyBeaconCurrencyConverter(
     private val httpClient: HttpClient,
     private val baseUrl: String = "https://api.currencybeacon.com",
-    private val apiKey: String = "d92gJLQX3M8eGjo0ajqj089pImMs42Jm",
+    private val apiKey: String = "lD4Xtx1DjrCjfD7ogW49dlqnv778aYWH",
 ) : CurrencyConverter {
 
     override suspend fun convert(
