@@ -8,9 +8,8 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.datetime
-import ro.jf.funds.commons.model.asLabels
-import ro.jf.funds.commons.model.asString
-import ro.jf.funds.commons.model.toFinancialUnit
+import ro.jf.funds.commons.model.*
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.persistence.blockingTransaction
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.domain.Transaction
@@ -290,47 +289,60 @@ class TransactionRepository(
         externalId: String,
         type: TransactionType,
         dateTime: kotlinx.datetime.LocalDateTime,
-        records: List<TransactionRecord>
+        records: List<TransactionRecord>,
     ): Transaction = when (type) {
         TransactionType.SINGLE_RECORD -> Transaction.SingleRecord(
             id = id,
             userId = userId,
             externalId = externalId,
             dateTime = dateTime,
-            record = records.firstOrNull() ?: throw IllegalStateException("SINGLE_RECORD transaction must have exactly 1 record")
+            record = records.firstOrNull()
+                ?: throw IllegalStateException("SINGLE_RECORD transaction must have exactly 1 record")
         )
+
         TransactionType.TRANSFER -> Transaction.Transfer(
             id = id,
             userId = userId,
             externalId = externalId,
             dateTime = dateTime,
-            sourceRecord = records.getOrNull(0) ?: throw IllegalStateException("TRANSFER transaction must have source record"),
-            destinationRecord = records.getOrNull(1) ?: throw IllegalStateException("TRANSFER transaction must have destination record")
+            sourceRecord = records.getOrNull(0)
+                ?: throw IllegalStateException("TRANSFER transaction must have source record"),
+            destinationRecord = records.getOrNull(1)
+                ?: throw IllegalStateException("TRANSFER transaction must have destination record")
         )
+
         TransactionType.EXCHANGE -> Transaction.Exchange(
             id = id,
             userId = userId,
             externalId = externalId,
             dateTime = dateTime,
-            sourceRecord = records.getOrNull(0) ?: throw IllegalStateException("EXCHANGE transaction must have source record"),
-            destinationRecord = records.getOrNull(1) ?: throw IllegalStateException("EXCHANGE transaction must have destination record"),
+            sourceRecord = records.getOrNull(0)
+                ?: throw IllegalStateException("EXCHANGE transaction must have source record"),
+            destinationRecord = records.getOrNull(1)
+                ?: throw IllegalStateException("EXCHANGE transaction must have destination record"),
             feeRecord = records.getOrNull(2)
         )
+
         TransactionType.OPEN_POSITION -> Transaction.OpenPosition(
             id = id,
             userId = userId,
             externalId = externalId,
             dateTime = dateTime,
-            currencyRecord = records.getOrNull(0) ?: throw IllegalStateException("OPEN_POSITION transaction must have currency record"),
-            instrumentRecord = records.getOrNull(1) ?: throw IllegalStateException("OPEN_POSITION transaction must have instrument record")
+            currencyRecord = records.firstOrNull { it.unit is Currency }
+                ?: throw IllegalStateException("OPEN_POSITION transaction must have currency record"),
+            instrumentRecord = records.firstOrNull { it.unit is Instrument }
+                ?: throw IllegalStateException("OPEN_POSITION transaction must have instrument record")
         )
+
         TransactionType.CLOSE_POSITION -> Transaction.ClosePosition(
             id = id,
             userId = userId,
             externalId = externalId,
             dateTime = dateTime,
-            currencyRecord = records.getOrNull(0) ?: throw IllegalStateException("CLOSE_POSITION transaction must have currency record"),
-            instrumentRecord = records.getOrNull(1) ?: throw IllegalStateException("CLOSE_POSITION transaction must have instrument record")
+            currencyRecord = records.firstOrNull { it.unit is Currency }
+                ?: throw IllegalStateException("OPEN_POSITION transaction must have currency record"),
+            instrumentRecord = records.firstOrNull { it.unit is Instrument }
+                ?: throw IllegalStateException("OPEN_POSITION transaction must have instrument record")
         )
     }
 }

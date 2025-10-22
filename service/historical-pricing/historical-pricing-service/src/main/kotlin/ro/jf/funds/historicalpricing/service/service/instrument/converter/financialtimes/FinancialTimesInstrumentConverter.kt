@@ -10,7 +10,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.api.model.Instrument
+import ro.jf.funds.historicalpricing.api.model.PricingInstrument
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.MonthlyCachedInstrumentConverterProxy
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.financialtimes.model.FTCell
@@ -28,16 +28,16 @@ class FinancialTimesInstrumentConverter(
     private val cellFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")
     private val queryParamFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
 
-    private suspend fun convert(instrument: Instrument, date: LocalDate): ConversionResponse {
+    private suspend fun convert(instrument: PricingInstrument, date: LocalDate): ConversionResponse {
         return cachedProxy.getCachedOrConvert(instrument, date) { from, to ->
             convert(instrument, from, to)
         }
     }
 
-    override suspend fun convert(instrument: Instrument, dates: List<LocalDate>): List<ConversionResponse> =
+    override suspend fun convert(instrument: PricingInstrument, dates: List<LocalDate>): List<ConversionResponse> =
         dates.map { date -> convert(instrument, date) }
 
-    private suspend fun convert(instrument: Instrument, from: LocalDate, to: LocalDate): List<ConversionResponse> {
+    private suspend fun convert(instrument: PricingInstrument, from: LocalDate, to: LocalDate): List<ConversionResponse> {
         val response = httpClient
             .get("https://markets.ft.com/data/equities/ajax/get-historical-prices") {
                 parameter("startDate", from.asQueryParam())
@@ -82,10 +82,10 @@ class FinancialTimesInstrumentConverter(
         }
     }
 
-    private fun Sequence<FTCell>.chunkedAsPrices(instrument: Instrument): Sequence<ConversionResponse> {
+    private fun Sequence<FTCell>.chunkedAsPrices(instrument: PricingInstrument): Sequence<ConversionResponse> {
         return chunked(5) { (date, _, _, _, closedPrice) ->
             ConversionResponse(
-                sourceUnit = instrument.symbol,
+                sourceUnit = instrument.instrument,
                 targetUnit = instrument.mainCurrency,
                 date = (date as FTCell.Date).value,
                 rate = (closedPrice as FTCell.Price).value

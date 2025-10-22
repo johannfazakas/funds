@@ -460,7 +460,7 @@ class ImportFundConversionServiceTest {
                     ImportParsedRecord(
                         AccountName("AAPL Stock"),
                         FundName("Investments"),
-                        Symbol("AAPL"),
+                        Instrument("AAPL"),
                         BigDecimal("5.0"),
                         listOf(Label("stock_purchase"))
                     )
@@ -468,7 +468,7 @@ class ImportFundConversionServiceTest {
             )
         )
         val brokerAccount = account("Broker USD", Currency.USD)
-        val stockAccount = account("AAPL Stock", Symbol("AAPL"))
+        val stockAccount = account("AAPL Stock", Instrument("AAPL"))
         val investmentsFund = fund("Investments")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(brokerAccount, stockAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(investmentsFund))
@@ -491,7 +491,7 @@ class ImportFundConversionServiceTest {
         assertThat(openPosition.currencyRecord.labels).containsExactly(Label("stock_purchase"))
 
         assertThat(openPosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal("5.0"))
-        assertThat(openPosition.instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
+        assertThat(openPosition.instrumentRecord.unit).isEqualTo(Instrument("AAPL"))
         assertThat(openPosition.instrumentRecord.accountId).isEqualTo(stockAccount.id)
         assertThat(openPosition.instrumentRecord.fundId).isEqualTo(investmentsFund.id)
         assertThat(openPosition.instrumentRecord.labels).containsExactly(Label("stock_purchase"))
@@ -516,7 +516,7 @@ class ImportFundConversionServiceTest {
                     ImportParsedRecord(
                         AccountName("AAPL Stock"),
                         FundName("Investments"),
-                        Symbol("AAPL"),
+                        Instrument("AAPL"),
                         BigDecimal("-5.0"),
                         listOf(Label("stock_sale"))
                     )
@@ -524,7 +524,7 @@ class ImportFundConversionServiceTest {
             )
         )
         val brokerAccount = account("Broker USD", Currency.USD)
-        val stockAccount = account("AAPL Stock", Symbol("AAPL"))
+        val stockAccount = account("AAPL Stock", Instrument("AAPL"))
         val investmentsFund = fund("Investments")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(brokerAccount, stockAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(investmentsFund))
@@ -547,7 +547,7 @@ class ImportFundConversionServiceTest {
         assertThat(closePosition.currencyRecord.labels).containsExactly(Label("stock_sale"))
 
         assertThat(closePosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal("-5.0"))
-        assertThat(closePosition.instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
+        assertThat(closePosition.instrumentRecord.unit).isEqualTo(Instrument("AAPL"))
         assertThat(closePosition.instrumentRecord.accountId).isEqualTo(stockAccount.id)
         assertThat(closePosition.instrumentRecord.fundId).isEqualTo(investmentsFund.id)
         assertThat(closePosition.instrumentRecord.labels).containsExactly(Label("stock_sale"))

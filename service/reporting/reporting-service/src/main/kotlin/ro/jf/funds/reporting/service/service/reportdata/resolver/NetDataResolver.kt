@@ -34,21 +34,22 @@ class NetDataResolver(
     private suspend fun getNet(
         input: ReportDataResolverInput,
         records: ByUnit<List<ReportRecord>>,
-    ): NetReport {
+    ): NetReport = NetReport(sumValue(input, filterRecords(input, records)))
+
+    private fun filterRecords(input: ReportDataResolverInput, records: ByUnit<List<ReportRecord>>): List<ReportRecord> {
         val filter = input.dataConfiguration.reports.net.filter
             ?.let { filter -> { record: ReportRecord -> filter.test(record) } }
             ?: { true }
-        return NetReport(getFilteredNet(input, records, filter))
-    }
-
-    private suspend fun getFilteredNet(
-        input: ReportDataResolverInput,
-        records: ByUnit<List<ReportRecord>>,
-        recordFilter: (ReportRecord) -> Boolean,
-    ): BigDecimal {
         return records
             .flatMap { it.value }
-            .filter(recordFilter::invoke)
+            .filter(filter)
+    }
+
+    private suspend fun sumValue(
+        input: ReportDataResolverInput,
+        records: List<ReportRecord>,
+    ): BigDecimal {
+        return records
             .sumOf { record: ReportRecord ->
                 val rate =
                     conversionRateService.getRate(

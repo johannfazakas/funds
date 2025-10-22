@@ -32,9 +32,12 @@ class CurrencyBeaconCurrencyConverterTest {
             })
         }
     }
+
+    private val currencyBeaconApiKey = "test_api_key"
     private val currencyConverter = CurrencyBeaconCurrencyConverter(
         httpClient = httpClient,
-        baseUrl = MockServerContainerExtension.baseUrl
+        baseUrl = MockServerContainerExtension.baseUrl,
+        apiKey = currencyBeaconApiKey
     )
 
     @Test
@@ -262,7 +265,7 @@ class CurrencyBeaconCurrencyConverterTest {
                 .withQueryStringParameter("base", base)
                 .withQueryStringParameter("symbols", symbols)
                 .withQueryStringParameter("date", date)
-                .withQueryStringParameter("api_key", "d92gJLQX3M8eGjo0ajqj089pImMs42Jm")
+                .withQueryStringParameter("api_key", currencyBeaconApiKey)
         ).respond(
             response()
                 .withStatusCode(statusCode)

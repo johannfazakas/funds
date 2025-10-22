@@ -122,7 +122,7 @@ class ReportingSdk(
         )
     }
 
-    override suspend fun getUnitPerformanceData(
+    override suspend fun getInstrumentPerformanceData(
         userId: UUID,
         reportViewId: UUID,
         reportDataInterval: ReportDataIntervalTO,

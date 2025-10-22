@@ -6,18 +6,18 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 
-class SymbolSerializer : KSerializer<Symbol> {
+class SymbolSerializer : KSerializer<Instrument> {
     override val descriptor: SerialDescriptor
         get() = PrimitiveSerialDescriptor("Currency", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): Symbol {
+    override fun deserialize(decoder: Decoder): Instrument {
         val value = decoder.decodeString()
-        return Symbol(value)
+        return Instrument(value)
     }
 
-    override fun serialize(encoder: Encoder, value: Symbol) {
+    override fun serialize(encoder: Encoder, value: Instrument) {
         encoder.encodeString(value.value)
     }
 }

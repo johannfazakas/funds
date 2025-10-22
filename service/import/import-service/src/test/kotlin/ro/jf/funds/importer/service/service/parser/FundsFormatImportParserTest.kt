@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Label
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.*
 import java.math.BigDecimal
@@ -27,7 +27,7 @@ class FundsFormatImportParserTest {
                 "2022-04-05", "XTB EUR", "-544.25", "EUR", "currency", "buy 7 x EUNL", ""
             ),
             FundsFormatCsvRowContent(
-                "2022-04-05", "XTB EUNL", "7", "EUNL", "symbol", "buy 7 x EUNL", ""
+                "2022-04-05", "XTB EUNL", "7", "EUNL", "instrument", "buy 7 x EUNL", ""
             ),
         )
         val importConfiguration = ImportConfigurationTO(
@@ -76,7 +76,7 @@ class FundsFormatImportParserTest {
         assertThat(investment.records[0].labels).isEmpty()
         assertThat(investment.records[1].accountName).isEqualTo(AccountName("XTB EUNL"))
         assertThat(investment.records[1].fundName).isEqualTo(FundName("Investments"))
-        assertThat(investment.records[1].unit).isEqualTo(Symbol("EUNL"))
+        assertThat(investment.records[1].unit).isEqualTo(Instrument("EUNL"))
         assertThat(investment.records[1].amount).isEqualByComparingTo(BigDecimal("7.0"))
         assertThat(investment.records[1].labels).isEmpty()
     }

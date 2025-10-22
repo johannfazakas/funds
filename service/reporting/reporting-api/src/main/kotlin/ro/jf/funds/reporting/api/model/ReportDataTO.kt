@@ -1,7 +1,7 @@
 package ro.jf.funds.reporting.api.model
 
 import kotlinx.serialization.Serializable
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.commons.serialization.BigDecimalSerializer
 import ro.jf.funds.commons.serialization.UUIDSerializer
 import java.math.BigDecimal
@@ -57,8 +57,8 @@ interface GroupDataTO {
 
 @Serializable
 data class InstrumentsPerformanceReportTO(val reports: List<InstrumentPerformanceReportTO>) {
-    operator fun get(instrument: Symbol): InstrumentPerformanceReportTO {
-        return reports.firstOrNull { it.symbol == instrument } ?: InstrumentPerformanceReportTO.zero(instrument)
+    operator fun get(instrument: Instrument): InstrumentPerformanceReportTO {
+        return reports.firstOrNull { it.instrument == instrument } ?: InstrumentPerformanceReportTO.zero(instrument)
     }
 }
 
@@ -119,7 +119,7 @@ data class PerformanceReportTO(
 // TODO(Johann) rename unit to instrument everywhere
 @Serializable
 data class InstrumentPerformanceReportTO(
-    val symbol: Symbol,
+    val instrument: Instrument,
 
     @Serializable(with = BigDecimalSerializer::class)
     val totalUnits: BigDecimal = BigDecimal.ZERO,
@@ -140,6 +140,7 @@ data class InstrumentPerformanceReportTO(
     val currentProfit: BigDecimal = BigDecimal.ZERO,
 ) {
     companion object {
-        fun zero(symbol: Symbol): InstrumentPerformanceReportTO = InstrumentPerformanceReportTO(symbol = symbol)
+        fun zero(instrument: Instrument): InstrumentPerformanceReportTO =
+            InstrumentPerformanceReportTO(instrument = instrument)
     }
 }

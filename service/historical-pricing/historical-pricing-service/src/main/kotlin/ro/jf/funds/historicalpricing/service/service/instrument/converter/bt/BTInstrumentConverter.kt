@@ -12,7 +12,7 @@ import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.ss.usermodel.Sheet
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.api.model.Instrument
+import ro.jf.funds.historicalpricing.api.model.PricingInstrument
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -25,19 +25,19 @@ import java.time.LocalDate as JavaLocalDate
 class BTInstrumentConverter(
     private val httpClient: HttpClient,
 ) : InstrumentConverter {
-    private val cache = mutableMapOf<Pair<Instrument, LocalDate>, ConversionResponse>()
+    private val cache = mutableMapOf<Pair<PricingInstrument, LocalDate>, ConversionResponse>()
     private val localDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-    override suspend fun convert(instrument: Instrument, dates: List<LocalDate>): List<ConversionResponse> =
+    override suspend fun convert(instrument: PricingInstrument, dates: List<LocalDate>): List<ConversionResponse> =
         dates.map { date -> convert(instrument, date) }
 
-    private suspend fun convert(instrument: Instrument, date: LocalDate): ConversionResponse {
+    private suspend fun convert(instrument: PricingInstrument, date: LocalDate): ConversionResponse {
         cache[instrument to date]?.let { return it }
         putInCache(instrument, downloadHistoricalPrices(instrument))
         return cache[instrument to date] ?: error("Failed to convert $instrument at $date")
     }
 
-    private fun putInCache(instrument: Instrument, historicalPrices: List<ConversionResponse>) {
+    private fun putInCache(instrument: PricingInstrument, historicalPrices: List<ConversionResponse>) {
         if (historicalPrices.isEmpty()) return
         val firstPrice = historicalPrices.minBy { it.date }
         val pricesByDay = historicalPrices.associateBy { it.date }
@@ -46,7 +46,7 @@ class BTInstrumentConverter(
             .takeWhile { it < today() }
             .map { conversion ->
                 pricesByDay[conversion]?.also { fallbackValue = it } ?: ConversionResponse(
-                    instrument.symbol,
+                    instrument.instrument,
                     instrument.mainCurrency,
                     conversion,
                     fallbackValue.rate
@@ -55,13 +55,13 @@ class BTInstrumentConverter(
             .forEach { cache[instrument to it.date] = it }
     }
 
-    private suspend fun downloadHistoricalPrices(instrument: Instrument): List<ConversionResponse> {
+    private suspend fun downloadHistoricalPrices(instrument: PricingInstrument): List<ConversionResponse> {
         val downloadSessionCookie = initiateDownloadSession(instrument)
         val downloadExcelInputStream = downloadExcelInputStream(downloadSessionCookie)
         return processExcelFile(downloadExcelInputStream, instrument)
     }
 
-    suspend fun initiateDownloadSession(instrument: Instrument): String {
+    suspend fun initiateDownloadSession(instrument: PricingInstrument): String {
         val response = httpClient.post("https://www.btassetmanagement.ro/${instrument.conversionSymbol}") {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(FormDataContent(Parameters.build {
@@ -80,7 +80,7 @@ class BTInstrumentConverter(
         return response.readRawBytes().let(::ByteArrayInputStream)
     }
 
-    private fun processExcelFile(inputStream: InputStream, instrument: Instrument): List<ConversionResponse> {
+    private fun processExcelFile(inputStream: InputStream, instrument: PricingInstrument): List<ConversionResponse> {
         val sheet: Sheet = WorkbookFactory.create(inputStream).getSheetAt(0)
         return sheet.asSequence()
             .drop(1) // header
@@ -89,7 +89,7 @@ class BTInstrumentConverter(
                     ConversionResponse(
                         date = row.getCell(0).toLocalDate(),
                         rate = row.getCell(1).toBigDecimal(),
-                        sourceUnit = instrument.symbol,
+                        sourceUnit = instrument.instrument,
                         targetUnit = instrument.mainCurrency,
                     )
                 } catch (_: Exception) {

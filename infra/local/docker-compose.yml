@@ -1,6 +1,5 @@
 version: "3.9"
 name: funds
-# TODO(Johann) add explicit bridge
 services:
   postgres:
     image: postgres:15
@@ -8,7 +7,7 @@ services:
     ports:
       - '5438:5432'
     volumes:
-      - ./volumes/postgres/reportdata:/var/lib/postgresql/reportdata
+      - ./volumes/postgres/data:/var/lib/postgresql/data
       - ./volumes/postgres/init/:/docker-entrypoint-initdb.d/
     environment:
       - POSTGRES_USER=postgres
@@ -39,7 +38,7 @@ services:
       - KAFKA_CFG_MESSAGE_MAX_BYTES=20971520
       - KAFKA_CFG_SOCKET_REQUEST_MAX_BYTES=20971520
     volumes:
-      - ./volumes/kafka/reportdata:/bitnami/kafka
+      - ./volumes/kafka/data:/bitnami/kafka
 
   user-service:
     image: funds/user-service:latest
@@ -151,7 +150,7 @@ services:
       - '4418:4318'   # OTLP HTTP ingest
     volumes:
       - ./volumes/tempo/tempo-config.yaml:/etc/tempo.yaml
-      - ./volumes/tempo/reportdata:/tmp/tempo
+      - ./volumes/tempo/data:/tmp/tempo
 
   grafana:
     image: grafana/grafana:12.0.1
@@ -164,4 +163,4 @@ services:
     depends_on:
       - tempo
     volumes:
-      - ./volumes/grafana/reportdata:/var/lib/grafana
+      - ./volumes/grafana/data:/var/lib/grafana

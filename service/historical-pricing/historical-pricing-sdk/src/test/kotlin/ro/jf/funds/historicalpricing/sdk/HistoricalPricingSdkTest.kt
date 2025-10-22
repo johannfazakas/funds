@@ -14,7 +14,7 @@ import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
@@ -71,14 +71,14 @@ class HistoricalPricingSdkTest {
                                     put("sourceUnit", buildJsonObject {
                                         put("type", JsonPrimitive(when (conversion.sourceUnit) {
                                             is Currency -> "currency"
-                                            is Symbol -> "symbol"
+                                            is Instrument -> "instrument"
                                         }))
                                         put("value", JsonPrimitive(conversion.sourceUnit.value))
                                     })
                                     put("targetUnit", buildJsonObject {
                                         put("type", JsonPrimitive(when (conversion.targetUnit) {
                                             is Currency -> "currency"
-                                            is Symbol -> "symbol"
+                                            is Instrument -> "instrument"
                                         }))
                                         put("value", JsonPrimitive(conversion.targetUnit.value))
                                     })

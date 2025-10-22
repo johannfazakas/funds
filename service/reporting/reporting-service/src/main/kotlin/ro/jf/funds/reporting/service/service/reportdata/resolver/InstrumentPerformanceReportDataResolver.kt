@@ -2,27 +2,18 @@ package ro.jf.funds.reporting.service.service.reportdata.resolver
 
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Symbol
-import ro.jf.funds.reporting.service.domain.ByBucket
-import ro.jf.funds.reporting.service.domain.ByCurrency
-import ro.jf.funds.reporting.service.domain.BySymbol
-import ro.jf.funds.reporting.service.domain.ReportTransaction
-import ro.jf.funds.reporting.service.domain.TimeBucket
-import ro.jf.funds.reporting.service.domain.UnitPerformanceReport
-import ro.jf.funds.reporting.service.domain.merge
+import ro.jf.funds.commons.model.Instrument
+import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
-import ro.jf.funds.reporting.service.domain.ReportDataForecastInput
-import ro.jf.funds.reporting.service.domain.ReportDataResolverInput
 import java.math.BigDecimal
 import java.math.MathContext
-import java.util.UUID
-import kotlin.collections.plus
+import java.util.*
 
-class UnitPerformanceReportDataResolver(
+class InstrumentPerformanceReportDataResolver(
     private val conversionRateService: ConversionRateService,
-) : ReportDataResolver<BySymbol<UnitPerformanceReport>> {
+) : ReportDataResolver<ByInstrument<InstrumentPerformanceReport>> {
     // TODO(Johann-UP) review & refactor class
-    override suspend fun resolve(input: ReportDataResolverInput): ByBucket<BySymbol<UnitPerformanceReport>> {
+    override suspend fun resolve(input: ReportDataResolverInput): ByBucket<ByInstrument<InstrumentPerformanceReport>> {
         val previousData = getPreviousReport(input)
         return input.interval
             .generateBucketedData(previousData) { timeBucket, previous ->
@@ -30,11 +21,11 @@ class UnitPerformanceReportDataResolver(
             }
     }
 
-    override suspend fun forecast(input: ReportDataForecastInput<BySymbol<UnitPerformanceReport>>): ByBucket<BySymbol<UnitPerformanceReport>> {
+    override suspend fun forecast(input: ReportDataForecastInput<ByInstrument<InstrumentPerformanceReport>>): ByBucket<ByInstrument<InstrumentPerformanceReport>> {
         return input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
             input.realData
-        ) { inputBuckets: List<BySymbol<UnitPerformanceReport>> ->
+        ) { inputBuckets: List<ByInstrument<InstrumentPerformanceReport>> ->
             val inputSize = inputBuckets.size.toBigDecimal()
             val distinctSymbols = inputBuckets.flatMap { it.keys }.toSet()
 
@@ -46,8 +37,8 @@ class UnitPerformanceReportDataResolver(
                     val currentInvestment =
                         unitReports.sumOf { it.currentInvestment }.divide(inputSize, MathContext.DECIMAL64)
                     val currentProfit = unitReports.sumOf { it.currentProfit }.divide(inputSize, MathContext.DECIMAL64)
-                    UnitPerformanceReport(
-                        symbol = symbol,
+                    InstrumentPerformanceReport(
+                        instrument = symbol,
                         totalUnits = lastReport.totalUnits + currentUnits,
                         currentUnits = currentUnits,
                         totalValue = lastReport.totalValue + currentInvestment + currentProfit,
@@ -61,8 +52,8 @@ class UnitPerformanceReportDataResolver(
         }
     }
 
-    private suspend fun getPreviousReport(input: ReportDataResolverInput): BySymbol<UnitPerformanceReport> =
-        aggregateUnitPerformanceReport(
+    private suspend fun getPreviousReport(input: ReportDataResolverInput): ByInstrument<InstrumentPerformanceReport> =
+        aggregateInstrumentPerformanceReport(
             userId = input.userId,
             date = input.interval.getPreviousLastDay(),
             targetCurrency = input.dataConfiguration.currency,
@@ -71,9 +62,9 @@ class UnitPerformanceReportDataResolver(
         )
 
     private suspend fun getNextReport(
-        input: ReportDataResolverInput, timeBucket: TimeBucket, previous: BySymbol<UnitPerformanceReport>,
-    ): BySymbol<UnitPerformanceReport> =
-        aggregateUnitPerformanceReport(
+        input: ReportDataResolverInput, timeBucket: TimeBucket, previous: ByInstrument<InstrumentPerformanceReport>,
+    ): ByInstrument<InstrumentPerformanceReport> =
+        aggregateInstrumentPerformanceReport(
             userId = input.userId,
             date = timeBucket.to,
             targetCurrency = input.dataConfiguration.currency,
@@ -82,66 +73,60 @@ class UnitPerformanceReportDataResolver(
         )
 
     private fun List<ReportTransaction>.toInvestmentTransactions(): List<InvestmentTransaction> =
-        this.mapNotNull { it.toInvestmentTransaction() }
+        this
+            .mapNotNull { it as? ReportTransaction.OpenPosition }
+            .map { it.toInvestmentTransaction() }
 
-    private fun ReportTransaction.toInvestmentTransaction(): InvestmentTransaction? {
-        val symbolRecord = this.records.singleOrNull { it.unit is Symbol }
-        val currencyRecord = this.records.singleOrNull { it.unit is Currency }
-
-        if (symbolRecord != null && currencyRecord != null) {
-            if (symbolRecord.amount > BigDecimal.ZERO && currencyRecord.amount < BigDecimal.ZERO) {
-                return InvestmentTransaction.OpenPosition(
-                    sourceCurrency = currencyRecord.unit as Currency,
-                    sourceAmount = currencyRecord.amount,
-                    targetSymbol = symbolRecord.unit as Symbol,
-                    targetAmount = symbolRecord.amount,
-                )
-            }
-        }
-        return null
+    private fun ReportTransaction.OpenPosition.toInvestmentTransaction(): InvestmentTransaction {
+        return InvestmentTransaction.OpenPosition(
+            sourceCurrency = currencyRecord.unit as Currency,
+            sourceAmount = currencyRecord.amount,
+            targetInstrument = instrumentRecord.unit as Instrument,
+            targetAmount = instrumentRecord.amount,
+        )
     }
 
-    private suspend fun aggregateUnitPerformanceReport(
+    private suspend fun aggregateInstrumentPerformanceReport(
         userId: UUID,
         date: LocalDate,
         targetCurrency: Currency,
         transactions: List<InvestmentTransaction>,
-        previous: BySymbol<UnitPerformanceReport>,
-    ): BySymbol<UnitPerformanceReport> {
+        previous: ByInstrument<InstrumentPerformanceReport>,
+    ): ByInstrument<InstrumentPerformanceReport> {
         val currentCurrencyInvestment = extractCurrencyInvestment(transactions)
         val currentUnits = extractUnits(transactions)
 
         val symbols = currentUnits.keys + previous.keys
         return symbols.associateWith { symbol ->
-            aggregateUnitPerformanceReport(
-                symbol = symbol,
+            aggregateInstrumentPerformanceReport(
+                instrument = symbol,
                 userId = userId,
                 date = date,
                 targetCurrency = targetCurrency,
                 currentUnits = currentUnits[symbol] ?: BigDecimal.ZERO,
                 currentInvestment = currentCurrencyInvestment[symbol] ?: emptyMap(),
-                previous = previous[symbol] ?: UnitPerformanceReport.Companion.zero(symbol),
+                previous = previous[symbol] ?: InstrumentPerformanceReport.Companion.zero(symbol),
             )
         }
     }
 
-    private suspend fun aggregateUnitPerformanceReport(
-        symbol: Symbol,
+    private suspend fun aggregateInstrumentPerformanceReport(
+        instrument: Instrument,
         userId: UUID,
         date: LocalDate,
         targetCurrency: Currency,
         currentUnits: BigDecimal,
         currentInvestment: ByCurrency<BigDecimal>,
-        previous: UnitPerformanceReport,
-    ): UnitPerformanceReport {
+        previous: InstrumentPerformanceReport,
+    ): InstrumentPerformanceReport {
         val totalUnits = previous.totalUnits + currentUnits
-        val totalValue = totalUnits * conversionRateService.getRate(userId, date, symbol, targetCurrency)
+        val totalValue = totalUnits * conversionRateService.getRate(userId, date, instrument, targetCurrency)
         val totalCurrencyInvestment = previous.investmentByCurrency.merge(currentInvestment) { a, b -> a + b }
         val totalInvestment = calculateInvestment(userId, date, targetCurrency, totalCurrencyInvestment)
         val currentInvestment = calculateInvestment(userId, date, targetCurrency, currentInvestment)
 
-        return UnitPerformanceReport(
-            symbol = symbol,
+        return InstrumentPerformanceReport(
+            instrument = instrument,
             totalUnits = totalUnits,
             currentUnits = currentUnits,
             totalValue = totalValue,
@@ -155,10 +140,10 @@ class UnitPerformanceReportDataResolver(
 
     private fun extractCurrencyInvestment(
         transactions: List<InvestmentTransaction>,
-    ): BySymbol<ByCurrency<BigDecimal>> = transactions
+    ): ByInstrument<ByCurrency<BigDecimal>> = transactions
         .asSequence()
         .mapNotNull { it as? InvestmentTransaction.OpenPosition }
-        .groupBy { it.targetSymbol }
+        .groupBy { it.targetInstrument }
         .mapValues { (_, transactions) ->
             transactions
                 .groupBy { it.sourceCurrency }
@@ -166,10 +151,10 @@ class UnitPerformanceReportDataResolver(
         }
         .toMap()
 
-    private fun extractUnits(transactions: List<InvestmentTransaction>): BySymbol<BigDecimal> = transactions
+    private fun extractUnits(transactions: List<InvestmentTransaction>): ByInstrument<BigDecimal> = transactions
         .asSequence()
         .mapNotNull { it as? InvestmentTransaction.OpenPosition }
-        .groupBy { it.targetSymbol }
+        .groupBy { it.targetInstrument }
         .map { (symbol, transactions) ->
             symbol to transactions.sumOf { it.targetAmount }
         }
@@ -193,7 +178,7 @@ class UnitPerformanceReportDataResolver(
         data class OpenPosition(
             val sourceCurrency: Currency,
             val sourceAmount: BigDecimal,
-            val targetSymbol: Symbol,
+            val targetInstrument: Instrument,
             val targetAmount: BigDecimal,
         ) : InvestmentTransaction()
     }

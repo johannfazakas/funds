@@ -41,7 +41,7 @@ class ReportDataServiceTest {
         GroupedNetDataResolver(conversionRateService),
         GroupedBudgetDataResolver(conversionRateService),
         PerformanceReportDataResolver(conversionRateService, InterestRateCalculator()),
-        UnitPerformanceReportDataResolver(conversionRateService),
+        InstrumentPerformanceReportDataResolver(conversionRateService),
     )
     private val reportDataService =
         ReportDataService(reportViewRepository, resolverRegistry, reportTransactionService)
@@ -763,16 +763,16 @@ class ReportDataServiceTest {
         mockTransactions(
             interval, investmentFundId, listOf(
                 investmentEurTransfer(LocalDate.parse("2022-04-15"), 400),
-                investmentOpenPosition(LocalDate.parse("2022-04-18"), 300, Symbol("I1"), 1),
-                investmentOpenPosition(LocalDate.parse("2022-04-18"), 90, Symbol("I2"), 3),
+                investmentOpenPosition(LocalDate.parse("2022-04-18"), 300, Instrument("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-04-18"), 90, Instrument("I2"), 3),
 
                 investmentEurTransfer(LocalDate.parse("2022-05-15"), 400),
-                investmentOpenPosition(LocalDate.parse("2022-05-18"), 290, Symbol("I1"), 1),
-                investmentOpenPosition(LocalDate.parse("2022-05-18"), 96, Symbol("I2"), 3),
+                investmentOpenPosition(LocalDate.parse("2022-05-18"), 290, Instrument("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-05-18"), 96, Instrument("I2"), 3),
 
                 investmentEurTransfer(LocalDate.parse("2022-06-15"), 400),
-                investmentOpenPosition(LocalDate.parse("2022-06-18"), 305, Symbol("I1"), 1),
-                investmentOpenPosition(LocalDate.parse("2022-06-18"), 102, Symbol("I2"), 3),
+                investmentOpenPosition(LocalDate.parse("2022-06-18"), 305, Instrument("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-06-18"), 102, Instrument("I2"), 3),
             )
         )
         whenever(conversionRateService.getRate(eq(userId), any(), any(), eq(EUR))).thenAnswer {
@@ -781,14 +781,14 @@ class ReportDataServiceTest {
             val targetUnit: Currency = it.getArgument(3)
             if (sourceUnit == targetUnit) return@thenAnswer BigDecimal.ONE
             when (sourceUnit) {
-                Symbol("I1") -> when (date.month) {
+                Instrument("I1") -> when (date.month) {
                     Month.APRIL -> BigDecimal("298")
                     Month.MAY -> BigDecimal("289")
                     Month.JUNE -> BigDecimal("303")
                     else -> error("unexpected")
                 }
 
-                Symbol("I2") -> when (date.month) {
+                Instrument("I2") -> when (date.month) {
                     Month.APRIL -> BigDecimal("29")
                     Month.MAY -> BigDecimal("31")
                     Month.JUNE -> BigDecimal("33")
@@ -842,7 +842,7 @@ class ReportDataServiceTest {
             currency = EUR,
             groups = null,
             reports = ReportsConfiguration()
-                .withUnitPerformanceReport(enabled = true),
+                .withInstrumentPerformanceReport(enabled = true),
             forecast = ForecastConfiguration(2)
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
@@ -855,16 +855,16 @@ class ReportDataServiceTest {
         mockTransactions(
             interval, investmentFundId, listOf(
                 investmentEurTransfer(LocalDate.parse("2022-04-15"), 400),
-                investmentOpenPosition(LocalDate.parse("2022-04-18"), 300, Symbol("I1"), 1),
-                investmentOpenPosition(LocalDate.parse("2022-04-18"), 90, Symbol("I2"), 3),
+                investmentOpenPosition(LocalDate.parse("2022-04-18"), 300, Instrument("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-04-18"), 90, Instrument("I2"), 3),
 
                 investmentEurTransfer(LocalDate.parse("2022-05-15"), 400),
-                investmentOpenPosition(LocalDate.parse("2022-05-18"), 290, Symbol("I1"), 1),
-                investmentOpenPosition(LocalDate.parse("2022-05-18"), 96, Symbol("I2"), 3),
+                investmentOpenPosition(LocalDate.parse("2022-05-18"), 290, Instrument("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-05-18"), 96, Instrument("I2"), 3),
 
                 investmentEurTransfer(LocalDate.parse("2022-06-15"), 400),
-                investmentOpenPosition(LocalDate.parse("2022-06-18"), 305, Symbol("I1"), 1),
-                investmentOpenPosition(LocalDate.parse("2022-06-18"), 102, Symbol("I2"), 3),
+                investmentOpenPosition(LocalDate.parse("2022-06-18"), 305, Instrument("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-06-18"), 102, Instrument("I2"), 3),
             )
         )
         whenever(conversionRateService.getRate(eq(userId), any(), any(), eq(EUR))).thenAnswer {
@@ -873,14 +873,14 @@ class ReportDataServiceTest {
             val targetUnit: Currency = it.getArgument(3)
             if (sourceUnit == targetUnit) return@thenAnswer BigDecimal.ONE
             when (sourceUnit) {
-                Symbol("I1") -> when (date.month) {
+                Instrument("I1") -> when (date.month) {
                     Month.APRIL -> BigDecimal("298")
                     Month.MAY -> BigDecimal("289")
                     Month.JUNE -> BigDecimal("303")
                     else -> error("unexpected")
                 }
 
-                Symbol("I2") -> when (date.month) {
+                Instrument("I2") -> when (date.month) {
                     Month.APRIL -> BigDecimal("29")
                     Month.MAY -> BigDecimal("31")
                     Month.JUNE -> BigDecimal("33")
@@ -891,7 +891,7 @@ class ReportDataServiceTest {
             }
         }
 
-        val data = reportDataService.getUnitPerformanceReport(userId, reportViewId, interval)
+        val data = reportDataService.getInstrumentPerformanceReport(userId, reportViewId, interval)
 
         assertThat(data.reportViewId).isEqualTo(reportViewId)
         assertThat(data.interval).isEqualTo(interval)
@@ -900,14 +900,14 @@ class ReportDataServiceTest {
         assertThat(data.buckets[0].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2022, 5, 1), LocalDate(2022, 5, 31)))
         assertThat(data.buckets[0].bucketType).isEqualTo(BucketType.REAL)
-        val reportI1Bucket0 = data.buckets[0].report[Symbol("I1")]!!
+        val reportI1Bucket0 = data.buckets[0].report[Instrument("I1")]!!
         assertThat(reportI1Bucket0.totalValue).isEqualByComparingTo(BigDecimal(578)) // 2 * 289 = 578
         assertThat(reportI1Bucket0.totalInvestment).isEqualByComparingTo(BigDecimal(590)) // 300 + 290 = 590
         assertThat(reportI1Bucket0.totalProfit).isEqualByComparingTo(BigDecimal(-12)) // 590 - 578 = -12
         assertThat(reportI1Bucket0.currentInvestment).isEqualByComparingTo(BigDecimal(290)) // 290
         assertThat(reportI1Bucket0.currentProfit).isEqualByComparingTo(BigDecimal(-10)) // -12 - (298 - 300) = -10
 
-        val reportI2Bucket0 = data.buckets[0].report[Symbol("I2")]!!
+        val reportI2Bucket0 = data.buckets[0].report[Instrument("I2")]!!
         assertThat(reportI2Bucket0.totalInvestment).isEqualByComparingTo(BigDecimal(186)) // 90 + 96 = 186
         assertThat(reportI2Bucket0.totalProfit).isEqualByComparingTo(BigDecimal(0)) // 186 - 186 = 0
         assertThat(reportI2Bucket0.currentInvestment).isEqualByComparingTo(BigDecimal(96)) // 96
@@ -916,7 +916,7 @@ class ReportDataServiceTest {
         assertThat(data.buckets[1].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2022, 6, 1), LocalDate(2022, 6, 30)))
         assertThat(data.buckets[1].bucketType).isEqualTo(BucketType.REAL)
-        val reportI1Bucket1 = data.buckets[1].report[Symbol("I1")]!!
+        val reportI1Bucket1 = data.buckets[1].report[Instrument("I1")]!!
         assertThat(reportI1Bucket1.totalValue).isEqualByComparingTo(BigDecimal(909)) // 3 * 303 = 909
         assertThat(reportI1Bucket1.totalInvestment).isEqualByComparingTo(BigDecimal(895)) // 590 + 305 = 883
         assertThat(reportI1Bucket1.totalProfit).isEqualByComparingTo(BigDecimal(14)) // 909 - 895 = 14
@@ -926,7 +926,7 @@ class ReportDataServiceTest {
         assertThat(data.buckets[2].timeBucket)
             .isEqualTo(TimeBucket(LocalDate(2022, 7, 1), LocalDate(2022, 7, 31)))
         assertThat(data.buckets[2].bucketType).isEqualTo(BucketType.FORECAST)
-        val reportI1Bucket2 = data.buckets[2].report[Symbol("I1")]!!
+        val reportI1Bucket2 = data.buckets[2].report[Instrument("I1")]!!
         assertThat(reportI1Bucket2.currentProfit).isEqualByComparingTo(BigDecimal(8)) // -10 + 26 / 2 = 8
         assertThat(reportI1Bucket2.currentInvestment).isEqualByComparingTo(BigDecimal(297.5)) // (290) + 305) / 2 = 297.5
         assertThat(reportI1Bucket2.totalValue).isEqualByComparingTo(BigDecimal(909 + 8 + 297.5))
@@ -1001,7 +1001,7 @@ class ReportDataServiceTest {
             )
         )
 
-    private fun investmentOpenPosition(date: LocalDate, eurAmount: Int, instrument: Symbol, instrumentAmount: Int) =
+    private fun investmentOpenPosition(date: LocalDate, eurAmount: Int, instrument: Instrument, instrumentAmount: Int) =
         TransactionTO.OpenPosition(
             id = randomUUID(),
             userId = userId,

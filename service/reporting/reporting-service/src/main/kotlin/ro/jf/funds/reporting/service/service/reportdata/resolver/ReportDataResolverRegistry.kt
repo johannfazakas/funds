@@ -6,5 +6,5 @@ class ReportDataResolverRegistry(
     val groupedNet: GroupedNetDataResolver,
     val groupedBudget: GroupedBudgetDataResolver,
     val performanceReport: PerformanceReportDataResolver,
-    val unitPerformanceReport: UnitPerformanceReportDataResolver
+    val instrumentPerformanceReport: InstrumentPerformanceReportDataResolver
 )

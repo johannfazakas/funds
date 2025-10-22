@@ -17,7 +17,7 @@ import ro.jf.funds.account.api.model.AccountName
 import ro.jf.funds.account.api.model.AccountTO
 import ro.jf.funds.account.api.model.CreateAccountTO
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import java.util.UUID.randomUUID
@@ -92,7 +92,7 @@ class AccountSdkTest {
                             put("name", JsonPrimitive(accountName.value))
                             put("type", JsonPrimitive("converter"))
                             put("unit", buildJsonObject {
-                                put("type", JsonPrimitive("symbol"))
+                                put("type", JsonPrimitive("instrument"))
                                 put("value", JsonPrimitive("ICBETNETF"))
                             })
                         }.toString()
@@ -106,7 +106,7 @@ class AccountSdkTest {
         assertThat(account).isNotNull
         assertThat(account.id).isEqualTo(accountId)
         assertThat(account.name).isEqualTo(accountName)
-        assertThat(instrumentAccount.unit).isEqualTo(Symbol("ICBETNETF"))
+        assertThat(instrumentAccount.unit).isEqualTo(Instrument("ICBETNETF"))
     }
 
     @Test

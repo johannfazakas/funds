@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
@@ -119,8 +119,8 @@ class ConversionServiceTest {
     }
 
     @Test
-    fun `should raise an exception when attempting to convert investment symbols`(): Unit = runBlocking {
-        val request = ConversionsRequest(listOf(ConversionRequest(Currency.EUR, Symbol("SXR8_DE"), date1)))
+    fun `should raise an exception when attempting to convert investment instruments`(): Unit = runBlocking {
+        val request = ConversionsRequest(listOf(ConversionRequest(Currency.EUR, Instrument("SXR8_DE"), date1)))
 
         assertThatThrownBy { runBlocking { conversionService.convert(request) } }
             .isInstanceOf(HistoricalPricingExceptions.ConversionNotPermitted::class.java)

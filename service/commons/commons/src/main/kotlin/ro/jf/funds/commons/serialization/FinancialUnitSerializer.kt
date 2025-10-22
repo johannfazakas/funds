@@ -8,7 +8,7 @@ import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.commons.model.UnitType
 
 class FinancialUnitSerializer : KSerializer<FinancialUnit> {
@@ -45,7 +45,7 @@ class FinancialUnitSerializer : KSerializer<FinancialUnit> {
 
             when (type) {
                 UnitType.CURRENCY -> Currency(value)
-                UnitType.SYMBOL -> Symbol(value)
+                UnitType.INSTRUMENT -> Instrument(value)
             }
         }
     }

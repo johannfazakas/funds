@@ -56,10 +56,7 @@ class FundsFormatImportParser(
         transactionId: String,
         csvRows: List<CsvRow>,
     ): ImportParsedTransaction? {
-        val records = toImportRecords(importConfiguration, csvRows)
-        if (records == null) {
-            return null
-        }
+        val records = toImportRecords(importConfiguration, csvRows) ?: return null
         return ImportParsedTransaction(
             transactionExternalId = transactionId,
             dateTime = csvRows.minOf { it.getDate(DATE_COLUMN, dateFormat) }.atTime(0, 0),

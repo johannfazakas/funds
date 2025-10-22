@@ -3,9 +3,9 @@ package ro.jf.funds.historicalpricing.service.service.instrument
 import kotlinx.datetime.LocalDate
 import mu.KotlinLogging
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.api.model.Instrument
+import ro.jf.funds.historicalpricing.api.model.PricingInstrument
 import ro.jf.funds.historicalpricing.service.domain.InstrumentHistoricalPrice
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyService
 
@@ -17,36 +17,36 @@ class InstrumentService(
     private val currencyService: CurrencyService,
 ) {
     suspend fun convert(
-        symbol: Symbol,
+        instrument: Instrument,
         targetCurrency: Currency,
         dates: List<LocalDate>,
     ): List<ConversionResponse> {
-        val storedHistoricalPricesByDate = getStoredHistoricalPricesByDate(symbol, targetCurrency, dates)
+        val storedHistoricalPricesByDate = getStoredHistoricalPricesByDate(instrument, targetCurrency, dates)
         val storedDates = storedHistoricalPricesByDate.map { it.date }.toSet()
         val notStoredDates = dates.filterNot { it in storedDates }
         val newConversionsByDate =
-            getHistoricalPricesByDate(symbol, targetCurrency, notStoredDates)
+            getHistoricalPricesByDate(instrument, targetCurrency, notStoredDates)
 
         return storedHistoricalPricesByDate + newConversionsByDate
     }
 
     private suspend fun getHistoricalPricesByDate(
-        symbol: Symbol,
+        instrument: Instrument,
         currency: Currency,
         dates: List<LocalDate>,
     ): List<ConversionResponse> {
-        val instrument = Instrument.fromSymbol(symbol)
-        val instrumentConverter = instrumentConverterRegistry.getConverter(instrument)
+        val pricingInstrument = PricingInstrument.fromInstrument(instrument)
+        val instrumentConverter = instrumentConverterRegistry.getConverter(pricingInstrument)
 
-        val currencyConversions = if (instrument.mainCurrency == currency) {
+        val currencyConversions = if (pricingInstrument.mainCurrency == currency) {
             emptyMap()
         } else {
-            currencyService.convert(instrument.mainCurrency, currency, dates)
+            currencyService.convert(pricingInstrument.mainCurrency, currency, dates)
                 .associateBy { it.date }
         }
 
         return instrumentConverter
-            .convert(instrument, dates)
+            .convert(pricingInstrument, dates)
             .map { conversionResponse ->
                 val conversionRate = currencyConversions[conversionResponse.date]
                 if (conversionRate == null) {
@@ -59,16 +59,16 @@ class InstrumentService(
             }
             .onEach {
                 instrumentHistoricalPriceRepository.saveHistoricalPrice(
-                    InstrumentHistoricalPrice(instrument.symbol.value, currency.value, it.date, it.rate)
+                    InstrumentHistoricalPrice(pricingInstrument.instrument.value, currency.value, it.date, it.rate)
                 )
             }
     }
 
     private suspend fun getStoredHistoricalPricesByDate(
-        symbol: Symbol,
+        instrument: Instrument,
         currency: Currency,
         dates: List<LocalDate>,
     ): List<ConversionResponse> = instrumentHistoricalPriceRepository
-        .getHistoricalPrices(symbol.value, currency.value, dates)
-        .map { it: InstrumentHistoricalPrice -> ConversionResponse(symbol, Currency(it.currency), it.date, it.price) }
+        .getHistoricalPrices(instrument.value, currency.value, dates)
+        .map { it: InstrumentHistoricalPrice -> ConversionResponse(instrument, Currency(it.currency), it.date, it.price) }
 }

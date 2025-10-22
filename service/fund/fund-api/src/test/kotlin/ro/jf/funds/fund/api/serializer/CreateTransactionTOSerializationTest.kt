@@ -9,11 +9,10 @@ import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Label
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.fund.api.model.CreateTransactionRecordTO
 import ro.jf.funds.fund.api.model.CreateTransactionTO
 import java.math.BigDecimal
-import java.util.UUID
 import java.util.UUID.randomUUID
 
 class CreateTransactionTOSerializationTest {
@@ -323,7 +322,7 @@ class CreateTransactionTOSerializationTest {
                     "amount": "10",
                     "unit": {
                         "value": "AAPL",
-                        "type": "symbol"
+                        "type": "instrument"
                     },
                     "labels": []
                 }
@@ -341,7 +340,7 @@ class CreateTransactionTOSerializationTest {
         Assertions.assertThat(openPosition.currencyRecord.unit).isEqualTo(Currency.USD)
         Assertions.assertThat(openPosition.instrumentRecord.accountId).isEqualTo(accountId2)
         Assertions.assertThat(openPosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal("10"))
-        Assertions.assertThat(openPosition.instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
+        Assertions.assertThat(openPosition.instrumentRecord.unit).isEqualTo(Instrument("AAPL"))
     }
 
     @Test
@@ -371,7 +370,7 @@ class CreateTransactionTOSerializationTest {
                     "amount": "-10",
                     "unit": {
                         "value": "AAPL",
-                        "type": "symbol"
+                        "type": "instrument"
                     },
                     "labels": []
                 }
@@ -389,6 +388,6 @@ class CreateTransactionTOSerializationTest {
         Assertions.assertThat(closePosition.currencyRecord.unit).isEqualTo(Currency.USD)
         Assertions.assertThat(closePosition.instrumentRecord.accountId).isEqualTo(accountId2)
         Assertions.assertThat(closePosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal("-10"))
-        Assertions.assertThat(closePosition.instrumentRecord.unit).isEqualTo(Symbol("AAPL"))
+        Assertions.assertThat(closePosition.instrumentRecord.unit).isEqualTo(Instrument("AAPL"))
     }
 }

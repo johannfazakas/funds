@@ -7,7 +7,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Symbol
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.commons.model.UnitType
 
 class FinancialUnitSerializerTest {
@@ -26,14 +26,14 @@ class FinancialUnitSerializerTest {
 
 
     @Test
-    fun `should serialize symbol`() {
-        val symbol = Symbol("SXR8_DE")
+    fun `should serialize instrument`() {
+        val instrument = Instrument("SXR8_DE")
 
-        val jsonEncoding = Json.encodeToJsonElement(FinancialUnitSerializer(), symbol)
+        val jsonEncoding = Json.encodeToJsonElement(FinancialUnitSerializer(), instrument)
 
         assertThat(jsonEncoding).isEqualTo(buildJsonObject {
-            put("value", JsonPrimitive(symbol.value))
-            put("type", JsonPrimitive(UnitType.SYMBOL.value))
+            put("value", JsonPrimitive(instrument.value))
+            put("type", JsonPrimitive(UnitType.INSTRUMENT.value))
         })
     }
 
@@ -48,10 +48,10 @@ class FinancialUnitSerializerTest {
     }
 
     @Test
-    fun `should deserialize symbol`() {
+    fun `should deserialize instrument`() {
         val json = buildJsonObject {
-            put("value", JsonPrimitive(Symbol("SXR8_DE").value))
-            put("type", JsonPrimitive(UnitType.SYMBOL.value))
+            put("value", JsonPrimitive(Instrument("SXR8_DE").value))
+            put("type", JsonPrimitive(UnitType.INSTRUMENT.value))
         }.toString()
 
         Json.decodeFromString<FinancialUnit>(json)
