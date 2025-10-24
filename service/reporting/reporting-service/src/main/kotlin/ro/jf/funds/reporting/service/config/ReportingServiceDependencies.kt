@@ -77,7 +77,13 @@ private val Application.serviceDependencies
         single<NetDataResolver> { NetDataResolver(get()) }
         single<PerformanceReportDataResolver> { PerformanceReportDataResolver(get(), get()) }
         single<InstrumentPerformanceReportDataResolver> { InstrumentPerformanceReportDataResolver(get()) }
-        single<ReportDataResolverRegistry> { ReportDataResolverRegistry(get(), get(), get(), get(), get(), get()) }
+        single<InterestRateReportResolver> { InterestRateReportResolver(get(), get()) }
+        single<InstrumentInterestRateReportResolver> { InstrumentInterestRateReportResolver(get(), get()) }
+        single<ReportDataResolverRegistry> {
+            ReportDataResolverRegistry(
+                get(), get(), get(), get(), get(), get(), get(), get()
+            )
+        }
         single<ReportTransactionService> { ReportTransactionService(get()) }
         single<ReportDataService> { ReportDataService(get(), get(), get()) }
     }

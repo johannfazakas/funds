@@ -42,6 +42,8 @@ class ReportDataServiceTest {
         GroupedBudgetDataResolver(conversionRateService),
         PerformanceReportDataResolver(conversionRateService, InterestRateCalculator()),
         InstrumentPerformanceReportDataResolver(conversionRateService),
+        InterestRateReportResolver(conversionRateService, InterestRateCalculator()),
+        InstrumentInterestRateReportResolver(conversionRateService, InterestRateCalculator()),
     )
     private val reportDataService =
         ReportDataService(reportViewRepository, resolverRegistry, reportTransactionService)
@@ -962,6 +964,114 @@ class ReportDataServiceTest {
             runBlocking { reportDataService.getNetReport(userId, reportViewId, interval) }
         }
             .isInstanceOf(ReportingException.ReportViewNotFound::class.java)
+    }
+
+    @Test
+    fun `get interest rate report`(): Unit = runBlocking {
+        val reportDataConfiguration = ReportDataConfiguration(
+            currency = EUR,
+            groups = null,
+            reports = ReportsConfiguration()
+                .withInterestRate(enabled = true),
+        )
+        whenever(reportViewRepository.findById(userId, reportViewId))
+            .thenReturn(reportView(reportDataConfiguration, investmentFundId))
+        val interval = ReportDataInterval.Monthly(
+            YearMonth(2022, 5),
+            YearMonth(2022, 6)
+        )
+        mockTransactions(
+            interval, investmentFundId, listOf(
+                investmentEurTransfer(LocalDate.parse("2022-04-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-04-18"), 300, Instrument("I1"), 1),
+
+                investmentEurTransfer(LocalDate.parse("2022-05-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-05-18"), 290, Instrument("I1"), 1),
+
+                investmentEurTransfer(LocalDate.parse("2022-06-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-06-18"), 305, Instrument("I1"), 1),
+            )
+        )
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(EUR))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I1")), eq(EUR))).thenReturn(BigDecimal(300))
+
+        val data = reportDataService.getInterestRateReport(userId, reportViewId, interval)
+
+        assertThat(data.reportViewId).isEqualTo(reportViewId)
+        assertThat(data.interval).isEqualTo(interval)
+        assertThat(data.buckets).hasSize(2)
+
+        assertThat(data.buckets[0].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate(2022, 5, 1), LocalDate(2022, 5, 31)))
+        assertThat(data.buckets[0].report.totalInterestRate).isPositive
+        assertThat(data.buckets[0].report.currentInterestRate).isPositive
+
+        assertThat(data.buckets[1].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate(2022, 6, 1), LocalDate(2022, 6, 30)))
+        assertThat(data.buckets[1].report.totalInterestRate).isPositive
+        assertThat(data.buckets[1].report.currentInterestRate).isNegative
+    }
+
+    @Test
+    fun `get instrument interest rate report`(): Unit = runBlocking {
+        val reportDataConfiguration = ReportDataConfiguration(
+            currency = EUR,
+            groups = null,
+            reports = ReportsConfiguration()
+                .withInstrumentInterestRate(enabled = true),
+        )
+        whenever(reportViewRepository.findById(userId, reportViewId))
+            .thenReturn(reportView(reportDataConfiguration, investmentFundId))
+        val interval = ReportDataInterval.Monthly(
+            YearMonth(2022, 5),
+            YearMonth(2022, 6)
+        )
+        mockTransactions(
+            interval, investmentFundId, listOf(
+                investmentEurTransfer(LocalDate.parse("2022-04-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-04-18"), 300, Instrument("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-04-18"), 90, Instrument("I2"), 3),
+
+                investmentEurTransfer(LocalDate.parse("2022-05-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-05-18"), 290, Instrument("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-05-18"), 96, Instrument("I2"), 3),
+
+                investmentEurTransfer(LocalDate.parse("2022-06-15"), 400),
+                investmentOpenPosition(LocalDate.parse("2022-06-18"), 305, Instrument("I1"), 1),
+                investmentOpenPosition(LocalDate.parse("2022-06-18"), 102, Instrument("I2"), 3),
+            )
+        )
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(EUR))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I1")), eq(EUR))).thenReturn(BigDecimal(306))
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I2")), eq(EUR))).thenReturn(BigDecimal(29))
+
+        val data = reportDataService.getInstrumentInterestRateReport(userId, reportViewId, interval)
+
+        assertThat(data.reportViewId).isEqualTo(reportViewId)
+        assertThat(data.interval).isEqualTo(interval)
+        assertThat(data.buckets).hasSize(2)
+
+        assertThat(data.buckets[0].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate(2022, 5, 1), LocalDate(2022, 5, 31)))
+        val reportI1Bucket0 = data.buckets[0].report[Instrument("I1")]!!
+        assertThat(reportI1Bucket0.instrument).isEqualTo(Instrument("I1"))
+        assertThat(reportI1Bucket0.totalInterestRate).isPositive()
+        assertThat(reportI1Bucket0.currentInterestRate).isPositive()
+
+        val reportI2Bucket0 = data.buckets[0].report[Instrument("I2")]!!
+        assertThat(reportI2Bucket0.instrument).isEqualTo(Instrument("I2"))
+        assertThat(reportI2Bucket0.totalInterestRate).isNegative
+        assertThat(reportI2Bucket0.currentInterestRate).isNegative
+
+        assertThat(data.buckets[1].timeBucket)
+            .isEqualTo(TimeBucket(LocalDate(2022, 6, 1), LocalDate(2022, 6, 30)))
+        val reportI1Bucket1 = data.buckets[1].report[Instrument("I1")]!!
+        assertThat(reportI1Bucket1.totalInterestRate).isPositive
+        assertThat(reportI1Bucket1.currentInterestRate).isPositive
+
+        val reportI2Bucket1 = data.buckets[1].report[Instrument("I2")]!!
+        assertThat(reportI2Bucket1.totalInterestRate).isNegative
+        assertThat(reportI2Bucket1.currentInterestRate).isNegative
     }
 
     private fun reportView(

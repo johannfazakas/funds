@@ -2,18 +2,17 @@
 
 ## Functional Tasks
 
-### Integrate transaction types in Reporting logic
-- [ ] Improve Performance report filtering based on transaction types
-- [ ] Integrate transaction types in other resolvers if helpful
-- [ ] Adjust Performance report namings
-
 ### Integrate interest rate in performance report
 - [ ] Integrate Performance report in Performance Report Resolver
 - [ ] Integrate Performance report in Unit Performance Report Resolver
 
+### Integrate interest rate in performance report forecast
+
 ### Add support for implicit transfers in funds format import
 Fund matchers should be applicable to all import parsers
 Actual case, implicit fund transfer for investment accounts interest transactions.
+
+### Calculate interest rate when positions are closed
 
 ### UI, step 1
 Anything, just have some AI and integrate the backend. Planning to use KMP would be great. 
@@ -23,6 +22,9 @@ Anything, just have some AI and integrate the backend. Planning to use KMP would
 ## Non-Functional Tasks
 
 ### Remove unused account service
+
+### Use sealed class on Records so Currency and Instrument record can be separated.
+look for situations where a cast is used "as Instrument" or "as Currency". those could be replaced
 
 ### Integrate automatic linting
 Integrate ktlint maybe. It could be applied automatically using Claude Code hooks.
