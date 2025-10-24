@@ -1,7 +1,9 @@
 package ro.jf.funds.reporting.service.domain
 
+import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Instrument
+import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculationCommand
 import java.math.BigDecimal
 import java.util.*
 
@@ -26,7 +28,6 @@ data class NetReport(
     val net: BigDecimal,
 )
 
-// TODO(Johann) implement performance by unit. it could also be by group defined on unit
 data class PerformanceReport(
     val totalAssetsValue: BigDecimal,
     val totalCurrencyValue: BigDecimal,
@@ -37,15 +38,9 @@ data class PerformanceReport(
     val totalProfit: BigDecimal,
     val currentProfit: BigDecimal,
 
-// TODO(Johann-performance-interest) review usage
-
-//    val totalInterest: BigDecimal,
-//    val currentInterest: BigDecimal,
-
     val investmentsByCurrency: Map<Currency, BigDecimal>,
     val valueByCurrency: Map<Currency, BigDecimal>,
     val assetsByInstrument: ByInstrument<BigDecimal>,
-    // TODO(Johann) could also add percentages
 )
 
 data class InstrumentPerformanceReport(
@@ -66,7 +61,7 @@ data class InstrumentPerformanceReport(
 ) {
     companion object {
         fun zero(instrument: Instrument) = InstrumentPerformanceReport(
-            instrument,
+            instrument = instrument,
             totalUnits = BigDecimal.ZERO,
             currentUnits = BigDecimal.ZERO,
             totalValue = BigDecimal.ZERO,
@@ -75,6 +70,40 @@ data class InstrumentPerformanceReport(
             totalProfit = BigDecimal.ZERO,
             currentProfit = BigDecimal.ZERO,
             investmentByCurrency = emptyMap()
+        )
+    }
+}
+
+data class InterestRateReport(
+    val totalInterestRate: BigDecimal,
+    val currentInterestRate: BigDecimal,
+
+    val assetsByInstrument: ByInstrument<BigDecimal>,
+    val valuation: BigDecimal,
+    val valuationDate: LocalDate,
+    val positions: List<InterestRateCalculationCommand.Position>,
+)
+
+data class InstrumentInterestRateReport(
+    val instrument: Instrument,
+
+    val totalInterestRate: BigDecimal,
+    val currentInterestRate: BigDecimal,
+
+    val assets: BigDecimal,
+    val valuation: BigDecimal,
+    val valuationDate: LocalDate,
+    val positions: List<InterestRateCalculationCommand.Position>,
+) {
+    companion object {
+        fun zero(instrument: Instrument, valuationDate: LocalDate) = InstrumentInterestRateReport(
+            instrument = instrument,
+            totalInterestRate = BigDecimal.ZERO,
+            currentInterestRate = BigDecimal.ZERO,
+            assets = BigDecimal.ZERO,
+            valuation = BigDecimal.ZERO,
+            valuationDate = valuationDate,
+            positions = emptyList()
         )
     }
 }

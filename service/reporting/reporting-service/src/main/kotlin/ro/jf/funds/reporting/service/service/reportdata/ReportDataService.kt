@@ -74,6 +74,28 @@ class ReportDataService(
         )
     }
 
+    suspend fun getInterestRateReport(
+        userId: UUID,
+        reportViewId: UUID,
+        interval: ReportDataInterval,
+    ): ReportData<InterestRateReport> = withSuspendingSpan {
+        getData(userId, reportViewId, interval, resolverRegistry.interestRateReport, ReportsConfiguration::interestRate)
+    }
+
+    suspend fun getInstrumentInterestRateReport(
+        userId: UUID,
+        reportViewId: UUID,
+        interval: ReportDataInterval,
+    ): ReportData<ByInstrument<InstrumentInterestRateReport>> = withSuspendingSpan {
+        getData(
+            userId,
+            reportViewId,
+            interval,
+            resolverRegistry.instrumentInterestRateReport,
+            ReportsConfiguration::instrumentInterestRate
+        )
+    }
+
     private suspend fun <T> getData(
         userId: UUID,
         reportViewId: UUID,

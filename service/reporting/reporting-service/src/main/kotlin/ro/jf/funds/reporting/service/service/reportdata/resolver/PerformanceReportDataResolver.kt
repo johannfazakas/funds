@@ -8,6 +8,8 @@ import ro.jf.funds.commons.model.UnitType
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
+import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculationCommand
+import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculationCommand.Position
 import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculator
 import java.math.BigDecimal
 import java.math.MathContext
@@ -36,9 +38,6 @@ class PerformanceReportDataResolver(
 
             val currentInvestment = inputBuckets.sumOf { it.currentInvestment }.divide(inputSize, MathContext.DECIMAL64)
             val currentProfit = inputBuckets.sumOf { it.currentProfit }.divide(inputSize, MathContext.DECIMAL64)
-            // TODO(Johann-56) not sure if this is correct
-//            val currentInterest =
-//                inputBuckets.sumOf { it.currentInterest }.divide(inputSize, MathContext.DECIMAL64)
             val totalCurrencyValue =
                 inputBuckets.sumOf { it.totalAssetsValue }.divide(currentInvestment, MathContext.DECIMAL64)
 
@@ -51,10 +50,6 @@ class PerformanceReportDataResolver(
                 currentInvestment = currentInvestment,
                 totalProfit = lastBucket.totalProfit + currentProfit,
                 currentProfit = currentProfit,
-// TODO(Johann-performance-interest) review usage
-
-//                totalInterest = lastBucket.totalInterest,
-//                currentInterest = currentInterest,
                 investmentsByCurrency = emptyMap(),
                 valueByCurrency = emptyMap(),
                 assetsByInstrument = emptyMap(),
@@ -156,8 +151,6 @@ class PerformanceReportDataResolver(
         val totalInvestmentByCurrency = mergeMaps(previousInvestmentByCurrency, currentInvestmentByCurrency)
         val totalInvestment = calculateInvestment(userId, date, targetCurrency, totalInvestmentByCurrency)
 
-//        val totalInterest
-
         val totalAssetsBySymbol = mergeMaps(previousAssetsByInstrument, currentAssetsByInstrument)
         val totalAssetsValue = calculateAssetsValue(userId, date, targetCurrency, totalAssetsBySymbol)
 
@@ -168,8 +161,6 @@ class PerformanceReportDataResolver(
             totalProfit = totalAssetsValue - totalInvestment,
             currentInvestment = currentInvestment,
             currentProfit = totalAssetsValue - totalInvestment - previousProfit,
-// TODO(Johann-performance-interest) review usage
-//            totalInterest = TODO(),
             investmentsByCurrency = totalInvestmentByCurrency,
             valueByCurrency = valueByCurrency,
             assetsByInstrument = totalAssetsBySymbol,

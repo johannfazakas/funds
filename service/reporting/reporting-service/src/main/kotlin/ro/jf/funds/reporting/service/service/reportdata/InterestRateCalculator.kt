@@ -2,7 +2,6 @@ package ro.jf.funds.reporting.service.service.reportdata
 
 import ch.obermuhlner.math.big.BigDecimalMath.pow
 import kotlinx.datetime.*
-import ro.jf.funds.reporting.service.domain.InvestmentOpenPosition
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.MathContext.DECIMAL64
@@ -11,7 +10,7 @@ private val YEARLY_DAYS = BigDecimal("365")
 private val MINIMUM_GROWTH_FACTOR = BigDecimal("0.0001")
 
 data class InterestRateCalculationCommand(
-    val positions: List<InvestmentOpenPosition>,
+    val positions: List<Position>,
     val valuation: BigDecimal,
     val valuationDate: LocalDate,
 ) {
@@ -21,6 +20,11 @@ data class InterestRateCalculationCommand(
         require(positions.any { it.date < valuationDate }) { "No position before valuation date provided." }
         require(valuation > BigDecimal.ZERO) { "Valuation must be positive." }
     }
+
+    data class Position(
+        val date: LocalDate,
+        val amount: BigDecimal,
+    )
 }
 
 private fun convertRateToGrowthFactor(rate: BigDecimal, mathContext: MathContext): BigDecimal =
@@ -55,7 +59,7 @@ class InterestRateCalculator(
         return convertGrowthFactorToRate(growthFactor, mathContext)
     }
 
-    private fun associatePositionsWithRateExponent(command: InterestRateCalculationCommand): List<Pair<InvestmentOpenPosition, BigDecimal>> =
+    private fun associatePositionsWithRateExponent(command: InterestRateCalculationCommand): List<Pair<InterestRateCalculationCommand.Position, BigDecimal>> =
         command.positions.map { position ->
             val years = position.date.yearsUntil(command.valuationDate)
             val remainingDays = (position.date + DatePeriod(years)).daysUntil(command.valuationDate)
@@ -64,7 +68,7 @@ class InterestRateCalculator(
         }
 
     private tailrec fun calculateGrowthFactor(
-        positionsWithRateExponent: List<Pair<InvestmentOpenPosition, BigDecimal>>,
+        positionsWithRateExponent: List<Pair<InterestRateCalculationCommand.Position, BigDecimal>>,
         valuation: BigDecimal,
         prospectFactor: ProspectGrowthFactor =
             ProspectGrowthFactor.withInitialProspectRatio(initialProspectRate, mathContext),
@@ -80,7 +84,7 @@ class InterestRateCalculator(
     }
 
     private fun evaluateFactorOutcome(
-        positionsWithRateExponent: List<Pair<InvestmentOpenPosition, BigDecimal>>,
+        positionsWithRateExponent: List<Pair<InterestRateCalculationCommand.Position, BigDecimal>>,
         growthFactor: BigDecimal,
     ): BigDecimal =
         positionsWithRateExponent
