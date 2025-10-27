@@ -14,6 +14,9 @@ import ro.jf.funds.reporting.api.model.ReportViewTO
 import ro.jf.funds.reporting.api.model.TimeGranularityTO
 import ro.jf.funds.reporting.api.model.YearMonthTO
 import ro.jf.funds.reporting.service.domain.ReportDataInterval
+import ro.jf.funds.reporting.service.domain.ReportDataInterval.Daily
+import ro.jf.funds.reporting.service.domain.ReportDataInterval.Monthly
+import ro.jf.funds.reporting.service.domain.ReportDataInterval.Yearly
 import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.domain.YearMonth
 import ro.jf.funds.reporting.service.service.ReportViewService
@@ -113,6 +116,26 @@ fun Routing.reportingApiRouting(
                 .toTO { it.toInstrumentsPerformanceReportTO() }
             call.respond(status = HttpStatusCode.OK, message = reportData)
         }
+
+        get("/{reportViewId}/data/interest-rate") {
+            val userId = call.userId()
+            val reportViewId = call.reportViewId()
+            val interval = call.reportDataInterval()
+            log.info { "Get interest rate reportdata request for user $userId and report view $reportViewId in interval $interval." }
+            val reportData =
+                reportDataService.getInterestRateReport(userId, reportViewId, interval).toTO { it.toInterestRateTO() }
+            call.respond(status = HttpStatusCode.OK, message = reportData)
+        }
+
+        get("/{reportViewId}/data/unit-interest-rate") {
+            val userId = call.userId()
+            val reportViewId = call.reportViewId()
+            val interval = call.reportDataInterval()
+            log.info { "Get unit interest rate reportdata request for user $userId and report view $reportViewId in interval $interval." }
+            val reportData = reportDataService.getInstrumentInterestRateReport(userId, reportViewId, interval)
+                .toTO { it.toInstrumentsInterestRateTO() }
+            call.respond(status = HttpStatusCode.OK, message = reportData)
+        }
     }
 }
 
@@ -121,39 +144,28 @@ private fun ApplicationCall.reportDataInterval(): ReportDataInterval {
         ?.let { TimeGranularityTO.fromString(it) }
         ?: throw ReportingException.MissingGranularity()
     return when (granularity) {
-        TimeGranularityTO.YEARLY -> yearlyReportDataInterval()
-        TimeGranularityTO.MONTHLY -> monthlyReportDataInterval()
-        TimeGranularityTO.DAILY -> dailyReportDataInterval()
+        TimeGranularityTO.YEARLY -> Yearly(
+            fromYear = parameters["fromYear"]?.toInt()
+                ?: throw ReportingException.MissingIntervalStart(),
+            toYear = parameters["toYear"]?.toInt()
+                ?: throw ReportingException.MissingIntervalEnd(),
+            forecastUntilYear = parameters["forecastUntilYear"]?.toInt()
+        )
+        TimeGranularityTO.MONTHLY -> Monthly(
+            fromYearMonth = parameters["fromYearMonth"]?.parseYearMonth()
+                ?: throw ReportingException.MissingIntervalStart(),
+            toYearMonth = parameters["toYearMonth"]?.parseYearMonth()
+                ?: throw ReportingException.MissingIntervalEnd(),
+            forecastUntilYearMonth = parameters["forecastUntilYearMonth"]?.parseYearMonth()
+        )
+        TimeGranularityTO.DAILY -> Daily(
+            fromDate = parameters["fromDate"]?.let(LocalDate::parse)
+                ?: throw ReportingException.MissingIntervalStart(),
+            toDate = parameters["toDate"]?.let(LocalDate::parse)
+                ?: throw ReportingException.MissingIntervalEnd(),
+            forecastUntilDate = parameters["forecastUntilDate"]?.let(LocalDate::parse)
+        )
     }
-}
-
-private fun ApplicationCall.yearlyReportDataInterval(): ReportDataInterval.Yearly =
-    ReportDataInterval.Yearly(
-        fromYear = parameters["fromYear"]?.toInt()
-            ?: throw ReportingException.MissingIntervalStart(),
-        toYear = parameters["toYear"]?.toInt()
-            ?: throw ReportingException.MissingIntervalEnd(),
-        forecastUntilYear = parameters["forecastUntilYear"]?.toInt()
-    )
-
-private fun ApplicationCall.monthlyReportDataInterval(): ReportDataInterval.Monthly {
-    return ReportDataInterval.Monthly(
-        fromYearMonth = parameters["fromYearMonth"]?.parseYearMonth()
-            ?: throw ReportingException.MissingIntervalStart(),
-        toYearMonth = parameters["toYearMonth"]?.parseYearMonth()
-            ?: throw ReportingException.MissingIntervalEnd(),
-        forecastUntilYearMonth = parameters["forecastUntilYearMonth"]?.parseYearMonth()
-    )
-}
-
-private fun ApplicationCall.dailyReportDataInterval(): ReportDataInterval.Daily {
-    return ReportDataInterval.Daily(
-        fromDate = parameters["fromDate"]?.let(LocalDate::parse)
-            ?: throw ReportingException.MissingIntervalStart(),
-        toDate = parameters["toDate"]?.let(LocalDate::parse)
-            ?: throw ReportingException.MissingIntervalEnd(),
-        forecastUntilDate = parameters["forecastUntilDate"]?.let(LocalDate::parse)
-    )
 }
 
 private fun ApplicationCall.reportViewId(): UUID =

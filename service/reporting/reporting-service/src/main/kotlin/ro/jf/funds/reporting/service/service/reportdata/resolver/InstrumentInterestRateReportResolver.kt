@@ -156,7 +156,7 @@ class InstrumentInterestRateReportResolver(
         valuation: BigDecimal,
         valuationDate: LocalDate,
     ): BigDecimal {
-        if (positions.isEmpty() || valuation <= BigDecimal.ZERO) {
+        if (positions.none { it.date < valuationDate } || valuation <= BigDecimal.ZERO) {
             return BigDecimal.ZERO
         }
 
