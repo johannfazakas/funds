@@ -181,6 +181,20 @@ class FundsClient(
         reportingSdk.getInstrumentPerformanceData(user.id, reportView.id, reportDataIntervalTO)
     }
 
+    fun getReportInterestRateData(
+        user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
+    ): ReportDataTO<InterestRateReportTO> = run {
+        val reportView = getReportViewByName(user, reportName)
+        reportingSdk.getInterestRateData(user.id, reportView.id, reportDataIntervalTO)
+    }
+
+    fun getReportInstrumentInterestRateData(
+        user: UserTO, reportName: String, reportDataIntervalTO: ReportDataIntervalTO,
+    ) = run {
+        val reportView = getReportViewByName(user, reportName)
+        reportingSdk.getInstrumentInterestRateData(user.id, reportView.id, reportDataIntervalTO)
+    }
+
     fun <T> plotReportData(
         title: String,
         reportData: ReportDataTO<T>,
