@@ -85,3 +85,19 @@ fun ByInstrument<InstrumentPerformanceReport>.toInstrumentsPerformanceReportTO()
         )
     }
         .let(::InstrumentsPerformanceReportTO)
+
+fun InterestRateReport.toInterestRateTO(): InterestRateReportTO =
+    InterestRateReportTO(
+        totalInterestRate = this.totalInterestRate,
+        currentInterestRate = this.currentInterestRate
+    )
+
+fun ByInstrument<InstrumentInterestRateReport>.toInstrumentsInterestRateTO(): InstrumentsInterestRateReportTO =
+    this.map { (instrument, interestRate) ->
+        InstrumentInterestRateReportTO(
+            instrument = instrument,
+            totalInterestRate = interestRate.totalInterestRate,
+            currentInterestRate = interestRate.currentInterestRate
+        )
+    }
+        .let(::InstrumentsInterestRateReportTO)

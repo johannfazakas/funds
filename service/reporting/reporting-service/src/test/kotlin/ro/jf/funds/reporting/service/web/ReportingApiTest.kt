@@ -22,6 +22,7 @@ import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Currency.Companion.EUR
 import ro.jf.funds.commons.model.Currency.Companion.RON
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.commons.model.Label
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
@@ -224,6 +225,194 @@ class ReportingApiTest {
             )
     }
 
+    @Test
+    fun `get interest rate data report`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        val httpClient = createJsonHttpClient()
+        val investmentReportView = reportViewRepository.save(
+            reportViewCommand.copy(
+                dataConfiguration = reportDataConfiguration.copy(
+                    reports = ReportsConfiguration().withInterestRate(enabled = true)
+                )
+            )
+        )
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(eq(userId), any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+
+        val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
+        mockTransactions(
+            interval, investmentReportView.fundId, listOf(
+                openPositionTransaction(
+                    userId, LocalDate(2021, 2, 15),
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need")),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("1.0"), Instrument("AAPL"), labelsOf("need"))
+                )
+            )
+        )
+
+        val response = httpClient.get("/funds-api/reporting/v1/report-views/${investmentReportView.id}/data/interest-rate") {
+            header(USER_ID_HEADER, userId.toString())
+            parameter("granularity", TimeGranularityTO.MONTHLY.name)
+            parameter("fromYearMonth", "2021-01")
+            parameter("toYearMonth", "2021-03")
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+        val reportData = response.body<ReportDataTO<InterestRateReportTO>>()
+        assertThat(reportData.viewId).isEqualTo(investmentReportView.id)
+        assertThat(reportData.timeBuckets).hasSize(3)
+        assertThat(reportData.timeBuckets[0].report.totalInterestRate).isNotNull()
+        assertThat(reportData.timeBuckets[0].report.currentInterestRate).isNotNull()
+    }
+
+    @Test
+    fun `get unit interest rate data report`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        val httpClient = createJsonHttpClient()
+        val investmentReportView = reportViewRepository.save(
+            reportViewCommand.copy(
+                dataConfiguration = reportDataConfiguration.copy(
+                    reports = ReportsConfiguration().withInstrumentInterestRate(enabled = true)
+                )
+            )
+        )
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(eq(userId), any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+
+        val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
+        mockTransactions(
+            interval, investmentReportView.fundId, listOf(
+                openPositionTransaction(
+                    userId, LocalDate(2021, 2, 15),
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need")),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("1.0"), Instrument("AAPL"), labelsOf("need"))
+                )
+            )
+        )
+
+        val response = httpClient.get("/funds-api/reporting/v1/report-views/${investmentReportView.id}/data/unit-interest-rate") {
+            header(USER_ID_HEADER, userId.toString())
+            parameter("granularity", TimeGranularityTO.MONTHLY.name)
+            parameter("fromYearMonth", "2021-01")
+            parameter("toYearMonth", "2021-03")
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+        val reportData = response.body<ReportDataTO<InstrumentsInterestRateReportTO>>()
+        assertThat(reportData.viewId).isEqualTo(investmentReportView.id)
+        assertThat(reportData.timeBuckets).hasSize(3)
+        assertThat(reportData.timeBuckets[1].report.reports).isNotEmpty()
+        assertThat(reportData.timeBuckets[1].report.reports[0].instrument).isEqualTo(Instrument("AAPL"))
+        assertThat(reportData.timeBuckets[1].report.reports[0].totalInterestRate).isNotNull()
+        assertThat(reportData.timeBuckets[1].report.reports[0].currentInterestRate).isNotNull()
+    }
+
+    @Test
+    fun `get performance data report`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        val httpClient = createJsonHttpClient()
+        val investmentReportView = reportViewRepository.save(
+            reportViewCommand.copy(
+                dataConfiguration = reportDataConfiguration.copy(
+                    reports = ReportsConfiguration().withPerformanceReport(enabled = true)
+                )
+            )
+        )
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(eq(userId), any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+
+        val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
+        mockTransactions(
+            interval, investmentReportView.fundId, listOf(
+                openPositionTransaction(
+                    userId, LocalDate(2021, 2, 15),
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need")),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("1.0"), Instrument("AAPL"), labelsOf("need"))
+                )
+            )
+        )
+
+        val response = httpClient.get("/funds-api/reporting/v1/report-views/${investmentReportView.id}/data/performance") {
+            header(USER_ID_HEADER, userId.toString())
+            parameter("granularity", TimeGranularityTO.MONTHLY.name)
+            parameter("fromYearMonth", "2021-01")
+            parameter("toYearMonth", "2021-03")
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+        val reportData = response.body<ReportDataTO<PerformanceReportTO>>()
+        assertThat(reportData.viewId).isEqualTo(investmentReportView.id)
+        assertThat(reportData.timeBuckets).hasSize(3)
+        assertThat(reportData.timeBuckets[0].report.totalAssetsValue).isNotNull()
+        assertThat(reportData.timeBuckets[0].report.totalInvestment).isNotNull()
+        assertThat(reportData.timeBuckets[0].report.totalProfit).isNotNull()
+    }
+
+    @Test
+    fun `get unit performance data report`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        val httpClient = createJsonHttpClient()
+        val investmentReportView = reportViewRepository.save(
+            reportViewCommand.copy(
+                dataConfiguration = reportDataConfiguration.copy(
+                    reports = ReportsConfiguration().withInstrumentPerformanceReport(enabled = true)
+                )
+            )
+        )
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(eq(userId), any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+
+        val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
+        mockTransactions(
+            interval, investmentReportView.fundId, listOf(
+                openPositionTransaction(
+                    userId, LocalDate(2021, 2, 15),
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need")),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("1.0"), Instrument("AAPL"), labelsOf("need"))
+                )
+            )
+        )
+
+        val response = httpClient.get("/funds-api/reporting/v1/report-views/${investmentReportView.id}/data/unit-performance") {
+            header(USER_ID_HEADER, userId.toString())
+            parameter("granularity", TimeGranularityTO.MONTHLY.name)
+            parameter("fromYearMonth", "2021-01")
+            parameter("toYearMonth", "2021-03")
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+        val reportData = response.body<ReportDataTO<InstrumentsPerformanceReportTO>>()
+        assertThat(reportData.viewId).isEqualTo(investmentReportView.id)
+        assertThat(reportData.timeBuckets).hasSize(3)
+        assertThat(reportData.timeBuckets[1].report.reports).isNotEmpty()
+        assertThat(reportData.timeBuckets[1].report.reports[0].instrument).isEqualTo(Instrument("AAPL"))
+        assertThat(reportData.timeBuckets[1].report.reports[0].totalUnits).isNotNull()
+        assertThat(reportData.timeBuckets[1].report.reports[0].totalValue).isNotNull()
+        assertThat(reportData.timeBuckets[1].report.reports[0].totalProfit).isNotNull()
+    }
+
+    @Test
+    fun `get unit performance data report when feature is disabled should return error`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        val httpClient = createJsonHttpClient()
+        val investmentReportView = reportViewRepository.save(
+            reportViewCommand.copy(
+                dataConfiguration = reportDataConfiguration.copy(
+                    reports = ReportsConfiguration().withInstrumentPerformanceReport(enabled = false)
+                )
+            )
+        )
+
+        val response = httpClient.get("/funds-api/reporting/v1/report-views/${investmentReportView.id}/data/unit-performance") {
+            header(USER_ID_HEADER, userId.toString())
+            parameter("granularity", TimeGranularityTO.MONTHLY.name)
+            parameter("fromYearMonth", "2021-01")
+            parameter("toYearMonth", "2021-03")
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.BadRequest)
+    }
+
     private suspend fun mockTransactions(
         interval: ReportDataInterval,
         fundId: UUID,
@@ -252,6 +441,14 @@ class ReportingApiTest {
     ): TransactionTO.SingleRecord =
         TransactionTO.SingleRecord(randomUUID(), userId, randomUUID().toString(), date.atTime(12, 0), record)
 
+    fun openPositionTransaction(
+        userId: UUID,
+        date: LocalDate,
+        currencyRecord: TransactionRecordTO,
+        instrumentRecord: TransactionRecordTO,
+    ): TransactionTO.OpenPosition =
+        TransactionTO.OpenPosition(randomUUID(), userId, randomUUID().toString(), date.atTime(12, 0), currencyRecord, instrumentRecord)
+
     fun record(
         fundId: UUID,
         accountId: UUID,
@@ -260,6 +457,15 @@ class ReportingApiTest {
         labels: List<Label>,
     ): TransactionRecordTO =
         TransactionRecordTO(randomUUID(), accountId, fundId, amount, currency, labels)
+
+    fun record(
+        fundId: UUID,
+        accountId: UUID,
+        amount: BigDecimal,
+        instrument: Instrument,
+        labels: List<Label>,
+    ): TransactionRecordTO =
+        TransactionRecordTO(randomUUID(), accountId, fundId, amount, instrument, labels)
 
     private fun Application.testModule() {
         val importAppTestModule = module {

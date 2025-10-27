@@ -36,6 +36,7 @@ fun ReportingException.toStatusCode(): HttpStatusCode = when (this) {
     is ReportingException.MissingIntervalStart -> HttpStatusCode.BadRequest
     is ReportingException.ReportViewNotFound -> HttpStatusCode.NotFound
     is ReportingException.ReportRecordConversionRateNotFound -> HttpStatusCode.UnprocessableEntity
+    is ReportingException.FeatureDisabled -> HttpStatusCode.BadRequest
     else -> {
         logger.error { "Unhandled api error: $this" }
         HttpStatusCode.InternalServerError
@@ -60,6 +61,12 @@ fun ReportingException.toError(): ErrorTO {
             detail = "Report view ${this.reportViewId} not found for user ${this.userId}"
         )
 
+        is ReportingException.FeatureDisabled -> ErrorTO(
+            title = "Feature disabled",
+            detail = "The requested report feature is not enabled for this report view"
+        )
+
+        // TODO(Johann) could be exhaustive on potential errors
         else -> {
             logger.error { "Unhandled api error: $this" }
             ErrorTO.internal(this)

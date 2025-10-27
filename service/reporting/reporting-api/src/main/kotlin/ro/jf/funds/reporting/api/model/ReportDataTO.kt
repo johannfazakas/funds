@@ -56,13 +56,6 @@ interface GroupDataTO {
 }
 
 @Serializable
-data class InstrumentsPerformanceReportTO(val reports: List<InstrumentPerformanceReportTO>) {
-    operator fun get(instrument: Instrument): InstrumentPerformanceReportTO {
-        return reports.firstOrNull { it.instrument == instrument } ?: InstrumentPerformanceReportTO.zero(instrument)
-    }
-}
-
-@Serializable
 data class NetReportTO(
     @Serializable(with = BigDecimalSerializer::class)
     val net: BigDecimal,
@@ -116,7 +109,13 @@ data class PerformanceReportTO(
     val currentProfit: BigDecimal,
 )
 
-// TODO(Johann) rename unit to instrument everywhere
+@Serializable
+data class InstrumentsPerformanceReportTO(val reports: List<InstrumentPerformanceReportTO>) {
+    operator fun get(instrument: Instrument): InstrumentPerformanceReportTO {
+        return reports.firstOrNull { it.instrument == instrument } ?: InstrumentPerformanceReportTO.zero(instrument)
+    }
+}
+
 @Serializable
 data class InstrumentPerformanceReportTO(
     val instrument: Instrument,
@@ -142,5 +141,35 @@ data class InstrumentPerformanceReportTO(
     companion object {
         fun zero(instrument: Instrument): InstrumentPerformanceReportTO =
             InstrumentPerformanceReportTO(instrument = instrument)
+    }
+}
+
+@Serializable
+data class InterestRateReportTO(
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalInterestRate: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
+    val currentInterestRate: BigDecimal,
+)
+
+@Serializable
+data class InstrumentsInterestRateReportTO(val reports: List<InstrumentInterestRateReportTO>) {
+    operator fun get(instrument: Instrument): InstrumentInterestRateReportTO {
+        return reports.firstOrNull { it.instrument == instrument } ?: InstrumentInterestRateReportTO.zero(instrument)
+    }
+}
+
+@Serializable
+data class InstrumentInterestRateReportTO(
+    val instrument: Instrument,
+
+    @Serializable(with = BigDecimalSerializer::class)
+    val totalInterestRate: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val currentInterestRate: BigDecimal = BigDecimal.ZERO,
+) {
+    companion object {
+        fun zero(instrument: Instrument): InstrumentInterestRateReportTO =
+            InstrumentInterestRateReportTO(instrument = instrument)
     }
 }
