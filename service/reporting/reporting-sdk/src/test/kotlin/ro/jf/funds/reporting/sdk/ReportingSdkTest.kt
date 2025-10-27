@@ -13,6 +13,7 @@ import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.JsonSchemaBody.jsonSchema
 import org.mockserver.model.MediaType
 import ro.jf.funds.commons.model.Currency.Companion.RON
+import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.model.labelsOf
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
@@ -195,6 +196,125 @@ class ReportingSdkTest {
 
         val response =
             reportingSdk.getNetData(
+                userId,
+                viewId,
+                ReportDataIntervalTO.Monthly(YearMonthTO(2024, 11), YearMonthTO(2025, 1))
+            )
+
+        assertThat(response).isEqualTo(expectedResponse)
+    }
+
+    @Test
+    fun `get interest rate data`(mockServerClient: MockServerClient): Unit = runBlocking {
+        val expectedResponse = ReportDataTO(
+            viewId = viewId,
+            interval = ReportDataIntervalTO.Monthly(
+                fromYearMonth = YearMonthTO(2024, 11),
+                toYearMonth = YearMonthTO(2025, 1),
+            ),
+            timeBuckets = listOf(
+                BucketDataTO(
+                    timeBucket = DateIntervalTO(YearMonthTO(2024, 11), YearMonthTO(2024, 11)),
+                    bucketType = BucketTypeTO.REAL,
+                    report = InterestRateReportTO(
+                        totalInterestRate = BigDecimal("5.5"),
+                        currentInterestRate = BigDecimal("2.0")
+                    )
+                ),
+                BucketDataTO(
+                    timeBucket = DateIntervalTO(YearMonthTO(2024, 12), YearMonthTO(2024, 12)),
+                    bucketType = BucketTypeTO.REAL,
+                    report = InterestRateReportTO(
+                        totalInterestRate = BigDecimal("6.0"),
+                        currentInterestRate = BigDecimal("2.5")
+                    )
+                ),
+                BucketDataTO(
+                    timeBucket = DateIntervalTO(YearMonthTO(2025, 1), YearMonthTO(2025, 1)),
+                    bucketType = BucketTypeTO.REAL,
+                    report = InterestRateReportTO(
+                        totalInterestRate = BigDecimal("7.0"),
+                        currentInterestRate = BigDecimal("3.0")
+                    )
+                )
+            )
+        )
+
+        mockServerClient.mockGetReportData(
+            "/funds-api/reporting/v1/report-views/$viewId/data/interest-rate",
+            expectedResponse,
+            ::buildInterestRateItemJsonObject
+        )
+
+        val response =
+            reportingSdk.getInterestRateData(
+                userId,
+                viewId,
+                ReportDataIntervalTO.Monthly(YearMonthTO(2024, 11), YearMonthTO(2025, 1))
+            )
+
+        assertThat(response).isEqualTo(expectedResponse)
+    }
+
+    @Test
+    fun `get instrument interest rate data`(mockServerClient: MockServerClient): Unit = runBlocking {
+        val expectedResponse = ReportDataTO(
+            viewId = viewId,
+            interval = ReportDataIntervalTO.Monthly(
+                fromYearMonth = YearMonthTO(2024, 11),
+                toYearMonth = YearMonthTO(2025, 1),
+            ),
+            timeBuckets = listOf(
+                BucketDataTO(
+                    timeBucket = DateIntervalTO(YearMonthTO(2024, 11), YearMonthTO(2024, 11)),
+                    bucketType = BucketTypeTO.REAL,
+                    report = InstrumentsInterestRateReportTO(
+                        reports = listOf(
+                            InstrumentInterestRateReportTO(
+                                instrument = Instrument("AAPL"),
+                                totalInterestRate = BigDecimal("5.5"),
+                                currentInterestRate = BigDecimal("2.0")
+                            )
+                        )
+                    )
+                ),
+                BucketDataTO(
+                    timeBucket = DateIntervalTO(YearMonthTO(2024, 12), YearMonthTO(2024, 12)),
+                    bucketType = BucketTypeTO.REAL,
+                    report = InstrumentsInterestRateReportTO(
+                        reports = listOf(
+                            InstrumentInterestRateReportTO(
+                                instrument = Instrument("AAPL"),
+                                totalInterestRate = BigDecimal("6.0"),
+                                currentInterestRate = BigDecimal("2.5")
+                            )
+                        )
+                    )
+                ),
+                BucketDataTO(
+                    timeBucket = DateIntervalTO(YearMonthTO(2025, 1), YearMonthTO(2025, 1)),
+                    bucketType = BucketTypeTO.REAL,
+                    report = InstrumentsInterestRateReportTO(
+                        reports = listOf(
+                            InstrumentInterestRateReportTO(
+                                instrument = Instrument("AAPL"),
+                                totalInterestRate = BigDecimal("7.0"),
+                                currentInterestRate = BigDecimal("3.0")
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        mockServerClient.mockGetReportData(
+            "/funds-api/reporting/v1/report-views/$viewId/data/unit-interest-rate",
+            expectedResponse,
+            ::buildInstrumentInterestRateItemJsonObject
+        )
+
+        val response =
+            reportingSdk.getInstrumentInterestRateData(
                 userId,
                 viewId,
                 ReportDataIntervalTO.Monthly(YearMonthTO(2024, 11), YearMonthTO(2025, 1))
@@ -473,6 +593,25 @@ class ReportingSdkTest {
     private fun buildNetItemJsonObject(itemData: NetReportTO): JsonObject =
         buildJsonObject {
             put("net", JsonPrimitive(itemData.net.toString()))
+        }
+
+    private fun buildInterestRateItemJsonObject(itemData: InterestRateReportTO): JsonObject =
+        buildJsonObject {
+            put("totalInterestRate", JsonPrimitive(itemData.totalInterestRate.toString()))
+            put("currentInterestRate", JsonPrimitive(itemData.currentInterestRate.toString()))
+        }
+
+    private fun buildInstrumentInterestRateItemJsonObject(itemData: InstrumentsInterestRateReportTO): JsonObject =
+        buildJsonObject {
+            put("reports", buildJsonArray {
+                itemData.reports.forEach { report ->
+                    add(buildJsonObject {
+                        put("instrument", JsonPrimitive(report.instrument.value))
+                        put("totalInterestRate", JsonPrimitive(report.totalInterestRate.toString()))
+                        put("currentInterestRate", JsonPrimitive(report.currentInterestRate.toString()))
+                    })
+                }
+            })
         }
 
     private fun expectedDateIntervalQueryParameters(interval: ReportDataIntervalTO): Map<String, List<String>> {

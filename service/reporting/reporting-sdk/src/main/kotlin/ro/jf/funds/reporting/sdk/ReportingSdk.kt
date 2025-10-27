@@ -135,6 +135,32 @@ class ReportingSdk(
         )
     }
 
+    override suspend fun getInterestRateData(
+        userId: UUID,
+        reportViewId: UUID,
+        reportDataInterval: ReportDataIntervalTO,
+    ): ReportDataTO<InterestRateReportTO> = withSuspendingSpan {
+        log.info { "Get interest rate reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        getData(
+            userId,
+            reportDataInterval,
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/interest-rate"
+        )
+    }
+
+    override suspend fun getInstrumentInterestRateData(
+        userId: UUID,
+        reportViewId: UUID,
+        reportDataInterval: ReportDataIntervalTO,
+    ): ReportDataTO<InstrumentsInterestRateReportTO> = withSuspendingSpan {
+        log.info { "Get unit interest rate reportdata. userId = $userId, reportViewId = $reportViewId, reportDataInterval = $reportDataInterval" }
+        getData(
+            userId,
+            reportDataInterval,
+            "$baseUrl/funds-api/reporting/v1/report-views/$reportViewId/data/unit-interest-rate"
+        )
+    }
+
     private suspend inline fun <reified T> getData(
         userId: UUID,
         reportDataInterval: ReportDataIntervalTO,
