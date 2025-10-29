@@ -232,7 +232,7 @@ class FundsClient(
                 }
                 layout {
                     this.title = title
-                    size = 2400 to 1200
+                    size = 2400 to 800
                 }
             }
     }

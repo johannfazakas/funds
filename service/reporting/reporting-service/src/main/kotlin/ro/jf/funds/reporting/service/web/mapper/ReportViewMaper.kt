@@ -42,12 +42,18 @@ fun ReportView.toTO(): ReportViewTO = ReportViewTO(
                     }
                 )
             },
-            performanceReport = dataConfiguration.reports.performance.let {
-                PerformanceReportConfigurationTO(it.enabled)
+            performance = dataConfiguration.reports.performance.let {
+                GenericReportConfigurationTO(it.enabled)
             },
-            instrumentPerformanceReport = dataConfiguration.reports.instrumentPerformance.let {
-                PerformanceReportConfigurationTO(it.enabled)
-            }
+            instrumentPerformance = dataConfiguration.reports.instrumentPerformance.let {
+                GenericReportConfigurationTO(it.enabled)
+            },
+            interestRate = GenericReportConfigurationTO(
+                enabled = dataConfiguration.reports.interestRate.enabled
+            ),
+            instrumentInterestRate = GenericReportConfigurationTO(
+                enabled = dataConfiguration.reports.instrumentInterestRate.enabled
+            )
         ),
     ),
 )
@@ -71,8 +77,10 @@ fun ReportDataConfigurationTO.toDomain() = ReportDataConfiguration(
             reports.valueReport.filter?.let { RecordFilter(it.labels) }),
         groupedNet = GenericReportConfiguration(reports.groupedNet.enabled),
         groupedBudget = reports.groupedBudget.toDomain(),
-        performance = PerformanceReportConfiguration(reports.performanceReport.enabled),
-        instrumentPerformance = PerformanceReportConfiguration(reports.instrumentPerformanceReport.enabled)
+        performance = GenericReportConfiguration(reports.performance.enabled),
+        instrumentPerformance = GenericReportConfiguration(reports.instrumentPerformance.enabled),
+        interestRate = GenericReportConfiguration(reports.interestRate.enabled),
+        instrumentInterestRate = GenericReportConfiguration(reports.instrumentInterestRate.enabled)
     ),
     forecast = ForecastConfiguration(
         inputBuckets = forecast.inputBuckets,
