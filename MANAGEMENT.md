@@ -19,6 +19,12 @@ Anything, just have some AI and integrate the backend. Planning to use KMP would
 
 ### Integrate Pricing for ICBETNETF
 
+### Decouple Report View from Report Data requests
+The report view could be considered just a template for a dashboard. Its setting would be used to load the report data. 
+But report data generation shouldn't depend on the report view.
+
+### Predictions based on linear regression
+
 ## Non-Functional Tasks
 
 ### Remove unused account service

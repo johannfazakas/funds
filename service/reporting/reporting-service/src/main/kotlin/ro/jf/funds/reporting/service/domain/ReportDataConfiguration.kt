@@ -36,8 +36,8 @@ data class ReportsConfiguration(
     val valueReport: ValueReportConfiguration = ValueReportConfiguration(enabled = false),
     val groupedNet: GenericReportConfiguration = GenericReportConfiguration(enabled = false),
     val groupedBudget: GroupedBudgetReportConfiguration = GroupedBudgetReportConfiguration(enabled = false, listOf()),
-    val performance: PerformanceReportConfiguration = PerformanceReportConfiguration(enabled = false),
-    val instrumentPerformance: PerformanceReportConfiguration = PerformanceReportConfiguration(enabled = false),
+    val performance: GenericReportConfiguration = GenericReportConfiguration(enabled = false),
+    val instrumentPerformance: GenericReportConfiguration = GenericReportConfiguration(enabled = false),
     val interestRate: GenericReportConfiguration = GenericReportConfiguration(enabled = false),
     val instrumentInterestRate: GenericReportConfiguration = GenericReportConfiguration(enabled = false),
 ) {
@@ -51,10 +51,13 @@ data class ReportsConfiguration(
         distributions: List<GroupedBudgetReportConfiguration.BudgetDistribution> = listOf(),
     ) = copy(groupedBudget = GroupedBudgetReportConfiguration(enabled, distributions))
 
-    fun withPerformanceReport(enabled: Boolean) = copy(performance = PerformanceReportConfiguration(enabled))
-    fun withInstrumentPerformanceReport(enabled: Boolean) = copy(instrumentPerformance = PerformanceReportConfiguration(enabled))
+    fun withPerformanceReport(enabled: Boolean) = copy(performance = GenericReportConfiguration(enabled))
+    fun withInstrumentPerformanceReport(enabled: Boolean) =
+        copy(instrumentPerformance = GenericReportConfiguration(enabled))
+
     fun withInterestRate(enabled: Boolean) = copy(interestRate = GenericReportConfiguration(enabled))
-    fun withInstrumentInterestRate(enabled: Boolean) = copy(instrumentInterestRate = GenericReportConfiguration(enabled))
+    fun withInstrumentInterestRate(enabled: Boolean) =
+        copy(instrumentInterestRate = GenericReportConfiguration(enabled))
 }
 
 interface ReportConfiguration {
@@ -106,11 +109,6 @@ data class GroupedBudgetReportConfiguration(
             ?: error("no default distribution")
     }
 }
-
-@Serializable
-data class PerformanceReportConfiguration(
-    override val enabled: Boolean,
-) : ReportConfiguration
 
 @Serializable
 data class ForecastConfiguration(

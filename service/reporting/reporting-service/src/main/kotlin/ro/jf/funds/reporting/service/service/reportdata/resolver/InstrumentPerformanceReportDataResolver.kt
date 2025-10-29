@@ -12,7 +12,7 @@ import java.util.*
 class InstrumentPerformanceReportDataResolver(
     private val conversionRateService: ConversionRateService,
 ) : ReportDataResolver<ByInstrument<InstrumentPerformanceReport>> {
-    // TODO(Johann-UP) review & refactor class
+    // TODO(Johann-Easy) review & refactor class
     override suspend fun resolve(input: ReportDataResolverInput): ByBucket<ByInstrument<InstrumentPerformanceReport>> {
         val previousData = getPreviousReport(input)
         return input.interval
@@ -57,7 +57,7 @@ class InstrumentPerformanceReportDataResolver(
             userId = input.userId,
             date = input.interval.getPreviousLastDay(),
             targetCurrency = input.dataConfiguration.currency,
-            transactions = input.reportTransactionStore.getPreviousTransactions().toInvestmentTransactions(),
+            transactions = input.reportTransactionStore.getPreviousTransactions().toOpenPositions(),
             previous = emptyMap()
         )
 
@@ -68,29 +68,18 @@ class InstrumentPerformanceReportDataResolver(
             userId = input.userId,
             date = timeBucket.to,
             targetCurrency = input.dataConfiguration.currency,
-            transactions = input.reportTransactionStore.getBucketTransactions(timeBucket).toInvestmentTransactions(),
+            transactions = input.reportTransactionStore.getBucketTransactions(timeBucket).toOpenPositions(),
             previous = previous
         )
 
-    private fun List<ReportTransaction>.toInvestmentTransactions(): List<InvestmentTransaction> =
-        this
-            .mapNotNull { it as? ReportTransaction.OpenPosition }
-            .map { it.toInvestmentTransaction() }
-
-    private fun ReportTransaction.OpenPosition.toInvestmentTransaction(): InvestmentTransaction {
-        return InvestmentTransaction.OpenPosition(
-            sourceCurrency = currencyRecord.unit as Currency,
-            sourceAmount = currencyRecord.amount,
-            targetInstrument = instrumentRecord.unit as Instrument,
-            targetAmount = instrumentRecord.amount,
-        )
-    }
+    private fun List<ReportTransaction>.toOpenPositions(): List<ReportTransaction.OpenPosition> =
+        this.mapNotNull { it as? ReportTransaction.OpenPosition }
 
     private suspend fun aggregateInstrumentPerformanceReport(
         userId: UUID,
         date: LocalDate,
         targetCurrency: Currency,
-        transactions: List<InvestmentTransaction>,
+        transactions: List<ReportTransaction.OpenPosition>,
         previous: ByInstrument<InstrumentPerformanceReport>,
     ): ByInstrument<InstrumentPerformanceReport> {
         val currentCurrencyInvestment = extractCurrencyInvestment(transactions)
@@ -139,24 +128,22 @@ class InstrumentPerformanceReportDataResolver(
     }
 
     private fun extractCurrencyInvestment(
-        transactions: List<InvestmentTransaction>,
+        transactions: List<ReportTransaction.OpenPosition>,
     ): ByInstrument<ByCurrency<BigDecimal>> = transactions
         .asSequence()
-        .mapNotNull { it as? InvestmentTransaction.OpenPosition }
-        .groupBy { it.targetInstrument }
+        .groupBy { it.instrumentRecord.unit as Instrument }
         .mapValues { (_, transactions) ->
             transactions
-                .groupBy { it.sourceCurrency }
-                .mapValues { (_, transactions) -> transactions.sumOf { it.sourceAmount } }
+                .groupBy { it.currencyRecord.unit as Currency }
+                .mapValues { (_, transactions) -> transactions.sumOf { it.currencyRecord.amount } }
         }
         .toMap()
 
-    private fun extractUnits(transactions: List<InvestmentTransaction>): ByInstrument<BigDecimal> = transactions
+    private fun extractUnits(transactions: List<ReportTransaction.OpenPosition>): ByInstrument<BigDecimal> = transactions
         .asSequence()
-        .mapNotNull { it as? InvestmentTransaction.OpenPosition }
-        .groupBy { it.targetInstrument }
+        .groupBy { it.instrumentRecord.unit as Instrument }
         .map { (symbol, transactions) ->
-            symbol to transactions.sumOf { it.targetAmount }
+            symbol to transactions.sumOf { it.instrumentRecord.amount }
         }
         .toMap()
 
@@ -171,15 +158,4 @@ class InstrumentPerformanceReportDataResolver(
         }
         .sumOf { it }
         .negate()
-
-
-    // TODO(Johann) shouldn't this way to handle things be also used in the simple PerformanceReportDataResolver?
-    sealed class InvestmentTransaction {
-        data class OpenPosition(
-            val sourceCurrency: Currency,
-            val sourceAmount: BigDecimal,
-            val targetInstrument: Instrument,
-            val targetAmount: BigDecimal,
-        ) : InvestmentTransaction()
-    }
 }
