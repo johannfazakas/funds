@@ -4,11 +4,12 @@ import ro.jf.funds.commons.observability.tracing.withSpan
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
+import ro.jf.funds.reporting.service.service.reportdata.forecast.ForecastStrategy
 import java.math.BigDecimal
-import java.math.MathContext
 
 class NetDataResolver(
     private val conversionRateService: ConversionRateService,
+    private val forecastStrategy: ForecastStrategy,
 ) : ReportDataResolver<NetReport> {
     override suspend fun resolve(
         input: ReportDataResolverInput,
@@ -26,8 +27,7 @@ class NetDataResolver(
             input.forecastConfiguration.inputBuckets,
             input.realData
         ) { inputBuckets: List<NetReport> ->
-            val inputSize = inputBuckets.size.toBigDecimal()
-            NetReport(inputBuckets.sumOf { it.net }.divide(inputSize, MathContext.DECIMAL64))
+            NetReport(forecastStrategy.forecastNext(inputBuckets.map { it.net }))
         }
     }
 

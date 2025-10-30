@@ -5,12 +5,13 @@ import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
+import ro.jf.funds.reporting.service.service.reportdata.forecast.ForecastStrategy
 import java.math.BigDecimal
-import java.math.MathContext
 import java.util.*
 
 class ValueReportDataResolver(
     private val conversionRateService: ConversionRateService,
+    private val forecastStrategy: ForecastStrategy,
 ) : ReportDataResolver<ValueReport> {
     override suspend fun resolve(
         input: ReportDataResolverInput,
@@ -40,15 +41,11 @@ class ValueReportDataResolver(
             input.forecastConfiguration.inputBuckets,
             input.realData
         ) { inputBuckets: List<ValueReport> ->
-            val first = inputBuckets.first()
-            val last = inputBuckets.last()
-            val inputSize = inputBuckets.size.toBigDecimal()
-
             ValueReport(
-                start = last.end,
-                end = last.end + ((last.end - first.end).divide(inputSize, MathContext.DECIMAL64)),
-                min = last.min + ((last.min - first.min).divide(inputSize, MathContext.DECIMAL64)),
-                max = last.max + ((last.max - first.max).divide(inputSize, MathContext.DECIMAL64)),
+                start = inputBuckets.last().end,
+                end = forecastStrategy.forecastNext(inputBuckets.map { it.end }),
+                min = forecastStrategy.forecastNext(inputBuckets.map { it.min }),
+                max = forecastStrategy.forecastNext(inputBuckets.map { it.max }),
                 endAmountByUnit = emptyMap()
             )
         }

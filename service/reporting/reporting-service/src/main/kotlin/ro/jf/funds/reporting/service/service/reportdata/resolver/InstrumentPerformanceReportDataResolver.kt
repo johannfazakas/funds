@@ -5,12 +5,13 @@ import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
+import ro.jf.funds.reporting.service.service.reportdata.forecast.ForecastStrategy
 import java.math.BigDecimal
-import java.math.MathContext
 import java.util.*
 
 class InstrumentPerformanceReportDataResolver(
     private val conversionRateService: ConversionRateService,
+    private val forecastStrategy: ForecastStrategy,
 ) : ReportDataResolver<ByInstrument<InstrumentPerformanceReport>> {
     override suspend fun resolve(input: ReportDataResolverInput): ByBucket<ByInstrument<InstrumentPerformanceReport>> {
         val previousData = getPreviousReport(input)
@@ -25,17 +26,15 @@ class InstrumentPerformanceReportDataResolver(
             input.forecastConfiguration.inputBuckets,
             input.realData
         ) { inputBuckets: List<ByInstrument<InstrumentPerformanceReport>> ->
-            val inputSize = inputBuckets.size.toBigDecimal()
-            val distinctSymbols = inputBuckets.flatMap { it.keys }.toSet()
-
-            distinctSymbols
+            inputBuckets.flatMap { it.keys }.toSet()
                 .associateWith { symbol ->
                     val unitReports = inputBuckets.mapNotNull { it[symbol] }
                     val lastReport = unitReports.last()
-                    val currentUnits = unitReports.sumOf { it.currentUnits }.divide(inputSize, MathContext.DECIMAL32)
-                    val currentInvestment =
-                        unitReports.sumOf { it.currentInvestment }.divide(inputSize, MathContext.DECIMAL64)
-                    val currentProfit = unitReports.sumOf { it.currentProfit }.divide(inputSize, MathContext.DECIMAL64)
+
+                    val currentUnits = forecastStrategy.forecastNext(unitReports.map { it.currentUnits })
+                    val currentInvestment = forecastStrategy.forecastNext(unitReports.map { it.currentInvestment })
+                    val currentProfit = forecastStrategy.forecastNext(unitReports.map { it.currentProfit })
+
                     InstrumentPerformanceReport(
                         instrument = symbol,
                         totalUnits = lastReport.totalUnits + currentUnits,

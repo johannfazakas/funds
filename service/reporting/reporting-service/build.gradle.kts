@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":fund:fund-sdk"))
     implementation(project(":historical-pricing:historical-pricing-sdk"))
     implementation(libs.big.math)
+    implementation(libs.kotlin.statistics)
     testImplementation(project(":commons:commons-test"))
 }
 

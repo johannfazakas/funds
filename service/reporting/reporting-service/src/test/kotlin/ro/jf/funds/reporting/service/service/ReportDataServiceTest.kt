@@ -24,6 +24,7 @@ import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
 import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculator
 import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
 import ro.jf.funds.reporting.service.service.reportdata.ReportTransactionService
+import ro.jf.funds.reporting.service.service.reportdata.forecast.AverageForecastStrategy
 import ro.jf.funds.reporting.service.service.reportdata.resolver.*
 import java.math.BigDecimal
 import java.util.*
@@ -34,14 +35,15 @@ class ReportDataServiceTest {
     private val conversionRateService = mock<ConversionRateService>()
     private val fundTransactionSdk = mock<TransactionSdk>()
     private val reportTransactionService = ReportTransactionService(fundTransactionSdk)
+    private val forecastStrategy = AverageForecastStrategy()
 
     private val resolverRegistry = ReportDataResolverRegistry(
-        NetDataResolver(conversionRateService),
-        ValueReportDataResolver(conversionRateService),
-        GroupedNetDataResolver(conversionRateService),
-        GroupedBudgetDataResolver(conversionRateService),
-        PerformanceReportDataResolver(conversionRateService, InterestRateCalculator()),
-        InstrumentPerformanceReportDataResolver(conversionRateService),
+        NetDataResolver(conversionRateService, forecastStrategy),
+        ValueReportDataResolver(conversionRateService, forecastStrategy),
+        GroupedNetDataResolver(conversionRateService, forecastStrategy),
+        GroupedBudgetDataResolver(conversionRateService, forecastStrategy),
+        PerformanceReportDataResolver(conversionRateService, forecastStrategy),
+        InstrumentPerformanceReportDataResolver(conversionRateService, forecastStrategy),
         InterestRateReportResolver(conversionRateService, InterestRateCalculator()),
         InstrumentInterestRateReportResolver(conversionRateService, InterestRateCalculator()),
     )
@@ -993,7 +995,11 @@ class ReportDataServiceTest {
             )
         )
         whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(EUR))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I1")), eq(EUR))).thenReturn(BigDecimal(300))
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I1")), eq(EUR))).thenReturn(
+            BigDecimal(
+                300
+            )
+        )
 
         val data = reportDataService.getInterestRateReport(userId, reportViewId, interval)
 
@@ -1042,8 +1048,16 @@ class ReportDataServiceTest {
             )
         )
         whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(EUR))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I1")), eq(EUR))).thenReturn(BigDecimal(306))
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I2")), eq(EUR))).thenReturn(BigDecimal(29))
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I1")), eq(EUR))).thenReturn(
+            BigDecimal(
+                306
+            )
+        )
+        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I2")), eq(EUR))).thenReturn(
+            BigDecimal(
+                29
+            )
+        )
 
         val data = reportDataService.getInstrumentInterestRateReport(userId, reportViewId, interval)
 
