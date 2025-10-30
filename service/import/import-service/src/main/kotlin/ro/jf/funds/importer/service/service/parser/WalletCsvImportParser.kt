@@ -73,7 +73,6 @@ class WalletCsvImportParser(
                 this.dateTime.inWholeMinutes(),
             ).joinToString()
 
-            // TODO(Johann) could have the same rule for all. hash the transaction id based on note and date. that's all. get rid of exchange labels.
             null -> listOf(
                 this.note,
                 this.amount.abs(),

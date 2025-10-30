@@ -13,18 +13,15 @@ import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
 import java.math.BigDecimal
 import java.util.*
 
-// TODO(Johann) this logic could be entirely handled by the SDK actually
 class ConversionRateService(
     private val historicalPricingSdk: HistoricalPricingSdk,
 ) {
-    // TODO(Johann) this will grow indefinitely. what other options do I have for an in memory cache? I would like old reportdata to be removed
     private val cache: MutableMap<Pair<UUID, ConversionRequest>, BigDecimal> = mutableMapOf()
     private val cacheWriteMutex = Mutex()
 
     suspend fun getRate(
         userId: UUID,
         date: LocalDate,
-        // TODO(Johann) handle same currency case, maybe it shouldn't send a request
         sourceUnit: FinancialUnit,
         targetUnit: FinancialUnit,
     ): BigDecimal {
@@ -33,7 +30,6 @@ class ConversionRateService(
         if (cachedRate != null) return cachedRate
         retrieveAndCacheMonthlyRates(userId, date.year, date.month, sourceUnit, targetUnit)
         return cache[Pair(userId, conversionRequest)]
-//            TODO(Johann) an api translated error should be used in this case
             ?: error("No conversion rate found for $sourceUnit to $targetUnit on $date")
     }
 

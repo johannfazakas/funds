@@ -64,20 +64,6 @@ services:
       - postgres
       - otel-collector
 
-  account-service:
-    image: funds/account-service:latest
-    container_name: ff_account
-    ports:
-      - '5211:5211'
-    environment:
-      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_account
-      - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
-      - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
-    depends_on:
-      - postgres
-      - kafka
-      - otel-collector
-
   fund-service:
     image: funds/fund-service:latest
     container_name: ff_fund
@@ -85,7 +71,6 @@ services:
       - '5253:5253'
     environment:
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_fund
-      - ACCOUNT_BASE_URL=http://ff_account:5211
       - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
       - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
@@ -99,7 +84,6 @@ services:
     ports:
       - '5207:5207'
     environment:
-      - ACCOUNT_BASE_URL=http://ff_account:5211
       - FUND_BASE_URL=http://ff_fund:5253
       - HISTORICAL_PRICING_BASE_URL=http://ff_historical_pricing:5231
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_import

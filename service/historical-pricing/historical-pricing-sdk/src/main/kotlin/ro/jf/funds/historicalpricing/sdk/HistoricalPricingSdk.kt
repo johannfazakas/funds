@@ -21,7 +21,6 @@ class HistoricalPricingSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) {
-    // TODO(Johann) should this really be user scoped?
     suspend fun convert(userId: UUID, request: ConversionsRequest): ConversionsResponse = withSuspendingSpan {
         if (request.conversions.isEmpty()) {
             return@withSuspendingSpan ConversionsResponse.empty()

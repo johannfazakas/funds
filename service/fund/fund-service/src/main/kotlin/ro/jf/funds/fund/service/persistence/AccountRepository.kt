@@ -43,7 +43,6 @@ class AccountRepository(
             .singleOrNull()
     }
 
-    // TODO(Johann) big no no. the TO shouldn't reach the db
     suspend fun save(userId: UUID, command: CreateAccountTO): Account = blockingTransaction {
         AccountTable.insert {
             it[AccountTable.userId] = userId

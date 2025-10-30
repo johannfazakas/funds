@@ -14,9 +14,7 @@ import ro.jf.funds.reporting.api.model.ReportViewTO
 import ro.jf.funds.reporting.api.model.TimeGranularityTO
 import ro.jf.funds.reporting.api.model.YearMonthTO
 import ro.jf.funds.reporting.service.domain.ReportDataInterval
-import ro.jf.funds.reporting.service.domain.ReportDataInterval.Daily
-import ro.jf.funds.reporting.service.domain.ReportDataInterval.Monthly
-import ro.jf.funds.reporting.service.domain.ReportDataInterval.Yearly
+import ro.jf.funds.reporting.service.domain.ReportDataInterval.*
 import ro.jf.funds.reporting.service.domain.ReportingException
 import ro.jf.funds.reporting.service.domain.YearMonth
 import ro.jf.funds.reporting.service.service.ReportViewService
@@ -106,7 +104,6 @@ fun Routing.reportingApiRouting(
             call.respond(status = HttpStatusCode.OK, message = reportData)
         }
 
-        // TODO(Johann) add a test. what will happen if the unit performance report is not enabled?
         get("/{reportViewId}/data/unit-performance") {
             val userId = call.userId()
             val reportViewId = call.reportViewId()
@@ -151,6 +148,7 @@ private fun ApplicationCall.reportDataInterval(): ReportDataInterval {
                 ?: throw ReportingException.MissingIntervalEnd(),
             forecastUntilYear = parameters["forecastUntilYear"]?.toInt()
         )
+
         TimeGranularityTO.MONTHLY -> Monthly(
             fromYearMonth = parameters["fromYearMonth"]?.parseYearMonth()
                 ?: throw ReportingException.MissingIntervalStart(),
@@ -158,6 +156,7 @@ private fun ApplicationCall.reportDataInterval(): ReportDataInterval {
                 ?: throw ReportingException.MissingIntervalEnd(),
             forecastUntilYearMonth = parameters["forecastUntilYearMonth"]?.parseYearMonth()
         )
+
         TimeGranularityTO.DAILY -> Daily(
             fromDate = parameters["fromDate"]?.let(LocalDate::parse)
                 ?: throw ReportingException.MissingIntervalStart(),

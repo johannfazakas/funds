@@ -14,10 +14,6 @@ include("user:user-api")
 include("user:user-sdk")
 include("user:user-service")
 
-include("account:account-api")
-include("account:account-sdk")
-include("account:account-service")
-
 include("fund:fund-api")
 include("fund:fund-sdk")
 include("fund:fund-service")

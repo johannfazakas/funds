@@ -12,7 +12,6 @@ import java.util.*
 class InstrumentPerformanceReportDataResolver(
     private val conversionRateService: ConversionRateService,
 ) : ReportDataResolver<ByInstrument<InstrumentPerformanceReport>> {
-    // TODO(Johann-Easy) review & refactor class
     override suspend fun resolve(input: ReportDataResolverInput): ByBucket<ByInstrument<InstrumentPerformanceReport>> {
         val previousData = getPreviousReport(input)
         return input.interval
@@ -94,7 +93,7 @@ class InstrumentPerformanceReportDataResolver(
                 targetCurrency = targetCurrency,
                 currentUnits = currentUnits[symbol] ?: BigDecimal.ZERO,
                 currentInvestment = currentCurrencyInvestment[symbol] ?: emptyMap(),
-                previous = previous[symbol] ?: InstrumentPerformanceReport.Companion.zero(symbol),
+                previous = previous[symbol] ?: InstrumentPerformanceReport.zero(symbol),
             )
         }
     }
@@ -130,7 +129,6 @@ class InstrumentPerformanceReportDataResolver(
     private fun extractCurrencyInvestment(
         transactions: List<ReportTransaction.OpenPosition>,
     ): ByInstrument<ByCurrency<BigDecimal>> = transactions
-        .asSequence()
         .groupBy { it.instrumentRecord.unit as Instrument }
         .mapValues { (_, transactions) ->
             transactions
@@ -140,7 +138,6 @@ class InstrumentPerformanceReportDataResolver(
         .toMap()
 
     private fun extractUnits(transactions: List<ReportTransaction.OpenPosition>): ByInstrument<BigDecimal> = transactions
-        .asSequence()
         .groupBy { it.instrumentRecord.unit as Instrument }
         .map { (symbol, transactions) ->
             symbol to transactions.sumOf { it.instrumentRecord.amount }

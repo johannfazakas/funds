@@ -34,8 +34,6 @@ sealed class FundMatcherTO {
         override val fundName: FundName,
     ) : FundMatcherTO()
 
-    // TODO(Johann) verify that bt work taxes are correctly imported (ex. May CASS payment). Also check September 2021 minus.
-
     @Serializable
     @SerialName("by_label_with_post_transfer")
     data class ByLabelWithPostTransfer(
@@ -44,7 +42,6 @@ sealed class FundMatcherTO {
         override val fundName: FundName,
     ) : FundMatcherTO()
 
-    // TODO(Johann) not sure about these implicit fund transfers, what other options do I have?
     @Serializable
     @SerialName("by_account_label_with_post_transfer")
     data class ByAccountLabelWithPostTransfer(

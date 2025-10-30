@@ -6,7 +6,6 @@ import ro.jf.funds.commons.model.Instrument
 
 @Serializable
 enum class PricingInstrument(val instrument: Instrument, val conversionSymbol: String, val mainCurrency: Currency, val source: HistoricalPriceSource) {
-    // TODO(Johann) how should these instruments be managed, the symbol doesn't seem right, 28304712 is not what would be used in funds
     SXR8_DE(Instrument("SXR8"), "SXR8.DE", Currency.EUR, HistoricalPriceSource.YAHOO),
     QDVE_DE(Instrument("QDVE"), "QDVE.DE", Currency.EUR, HistoricalPriceSource.YAHOO),
     EUNL_DE(Instrument("EUNL"), "EUNL.DE", Currency.EUR, HistoricalPriceSource.YAHOO),

@@ -16,7 +16,6 @@ import ro.jf.funds.historicalpricing.service.domain.CurrencyPairHistoricalPrice
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyPairHistoricalPriceRepository
 import java.util.*
 
-// TODO(Johann) why are there 2 repositories?
 class CurrencyPairHistoricalPriceExposedRepository(
     private val database: Database,
 ) : CurrencyPairHistoricalPriceRepository {

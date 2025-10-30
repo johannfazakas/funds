@@ -30,7 +30,6 @@ data class ConversionsResponse(
     fun getRate(sourceUnit: FinancialUnit, targetUnit: FinancialUnit, date: LocalDate): BigDecimal {
         if (sourceUnit == targetUnit) return BigDecimal.ONE
         return conversionsByRequest[ConversionRequest(sourceUnit, targetUnit, date)]
-        // TODO(Johann) this should lead to some domain exception
             ?: error("Conversion not found")
     }
 }
