@@ -7,7 +7,6 @@ plugins {
 dependencies {
     implementation(project(":fund:fund-api"))
     implementation(project(":commons:commons"))
-    implementation(project(":account:account-sdk"))
     testImplementation(project(":commons:commons-test"))
 }
 

@@ -19,7 +19,6 @@ data class CreateTransactionsTO(
     val transactions: List<CreateTransactionTO>,
 )
 
-// TODO(Johann) actually, there's seem to be another option to handle this with SerializersModule: https://www.baeldung.com/kotlin/sealed-class-serialization
 @OptIn(ExperimentalSerializationApi::class)
 @JsonClassDiscriminator("type")
 @Serializable

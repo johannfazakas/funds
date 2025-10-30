@@ -17,9 +17,8 @@ class TransactionRepositoryTest {
     private val accountRepository = AccountRepository(PostgresContainerExtension.connection)
     private val transactionRepository = TransactionRepository(PostgresContainerExtension.connection)
 
-    //    TODO(Johann) investigate this bug. it is interesting. might be a bug in exposed. could debug the library, maybe also raise a ticket.
     @Test
-    @Disabled
+    @Disabled("investigate this bug. it is interesting. might be a bug in exposed. could debug the library, maybe also raise a ticket.")
     fun `subsequent batch save should only save not existing transactions`(): Unit = runBlocking {
         val userId = randomUUID()
         val account = accountRepository.save(userId, CreateAccountTO(AccountName("Test"), Currency.EUR))

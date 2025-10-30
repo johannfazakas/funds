@@ -77,7 +77,6 @@ class FundsFormatImportParser(
     }
 
     private fun toImportRecords(importConfiguration: ImportConfigurationTO, csvRow: CsvRow): List<ImportParsedRecord>? {
-        // TODO(Johann) seems like logic could partially be extracted
         val importAccountName = csvRow.getString(ACCOUNT_COLUMN)
         val accountMatcher = importConfiguration.accountMatchers.getAccountMatcher(importAccountName)
         val accountName = accountMatcher.accountName ?: return null

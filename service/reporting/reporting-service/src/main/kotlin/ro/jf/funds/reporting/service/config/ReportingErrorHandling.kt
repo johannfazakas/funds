@@ -66,7 +66,6 @@ fun ReportingException.toError(): ErrorTO {
             detail = "The requested report feature is not enabled for this report view"
         )
 
-        // TODO(Johann) could be exhaustive on potential errors
         else -> {
             logger.error { "Unhandled api error: $this" }
             ErrorTO.internal(this)

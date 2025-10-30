@@ -119,7 +119,6 @@ class ReportDataService(
         reportView: ReportView,
         interval: ReportDataInterval,
     ): ReportTransactionStore = ReportTransactionStore(
-        // TODO(Johann) keep in mind that only grouped budget and net data require previous records.
         fundId = reportView.fundId,
         previousTransactions = async {
             transactionService.getPreviousReportTransactions(reportView, interval)
