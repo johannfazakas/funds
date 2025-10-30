@@ -2,9 +2,6 @@
 
 ## Functional Tasks
 
-### Predictions based on linear regression
-- [ ] implementation("org.apache.commons:commons-math3:3.6.1") & org.apache.commons.math3.stat.regression.SimpleRegression
-
 ### Integrate interest rate in performance report forecast
 
 ### Improve import matching logic

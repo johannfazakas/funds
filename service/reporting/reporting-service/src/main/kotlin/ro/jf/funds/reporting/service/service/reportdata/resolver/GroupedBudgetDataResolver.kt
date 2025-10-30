@@ -6,12 +6,14 @@ import ro.jf.funds.commons.observability.tracing.withSpan
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
+import ro.jf.funds.reporting.service.service.reportdata.forecast.ForecastStrategy
 import java.math.BigDecimal
 import java.math.MathContext
 import java.util.*
 
 class GroupedBudgetDataResolver(
     private val conversionRateService: ConversionRateService,
+    private val forecastStrategy: ForecastStrategy,
 ) : ReportDataResolver<ByGroup<Budget>> {
     override suspend fun resolve(input: ReportDataResolverInput): ByBucket<ByGroup<Budget>> = withSuspendingSpan {
         val previousLeftBudgets = getPreviousGroupedBudget(input)
@@ -81,14 +83,15 @@ class GroupedBudgetDataResolver(
         inputBuckets: List<ByGroup<Budget>>,
         groups: List<String>,
     ): ByGroup<Budget> {
-        val inputSize = inputBuckets.size.toBigDecimal()
         return groups
             .associateWith { group ->
                 val groupBudgets = inputBuckets.mapNotNull { it[group] }
-                val allocated = groupBudgets.sumOf { it.allocated }.divide(inputSize, MathContext.DECIMAL64)
-                val spent = groupBudgets.sumOf { it.spent }.divide(inputSize, MathContext.DECIMAL64)
-                val left = groupBudgets.last().left + allocated + spent
-                Budget(allocated, spent, left)
+
+                val forecastedAllocated = forecastStrategy.forecastNext(groupBudgets.map { it.allocated })
+                val forecastedSpent = forecastStrategy.forecastNext(groupBudgets.map { it.spent })
+                val left = groupBudgets.last().left + forecastedAllocated + forecastedSpent
+
+                Budget(forecastedAllocated, forecastedSpent, left)
             }
     }
 

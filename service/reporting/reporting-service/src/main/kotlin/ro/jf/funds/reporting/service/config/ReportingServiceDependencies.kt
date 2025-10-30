@@ -23,6 +23,8 @@ import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
 import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculator
 import ro.jf.funds.reporting.service.service.reportdata.ReportDataService
 import ro.jf.funds.reporting.service.service.reportdata.ReportTransactionService
+import ro.jf.funds.reporting.service.service.reportdata.forecast.ForecastStrategy
+import ro.jf.funds.reporting.service.service.reportdata.forecast.LinearRegressionForecastStrategy
 import ro.jf.funds.reporting.service.service.reportdata.resolver.*
 import javax.sql.DataSource
 
@@ -71,12 +73,13 @@ private val Application.serviceDependencies
         single<ReportViewService> { ReportViewService(get()) }
         single<ConversionRateService> { ConversionRateService(get()) }
         single<InterestRateCalculator> { InterestRateCalculator() }
-        single<GroupedNetDataResolver> { GroupedNetDataResolver(get()) }
-        single<GroupedBudgetDataResolver> { GroupedBudgetDataResolver(get()) }
-        single<ValueReportDataResolver> { ValueReportDataResolver(get()) }
-        single<NetDataResolver> { NetDataResolver(get()) }
+        single<ForecastStrategy> { LinearRegressionForecastStrategy() }
+        single<GroupedNetDataResolver> { GroupedNetDataResolver(get(), get()) }
+        single<GroupedBudgetDataResolver> { GroupedBudgetDataResolver(get(), get()) }
+        single<ValueReportDataResolver> { ValueReportDataResolver(get(), get()) }
+        single<NetDataResolver> { NetDataResolver(get(), get()) }
         single<PerformanceReportDataResolver> { PerformanceReportDataResolver(get(), get()) }
-        single<InstrumentPerformanceReportDataResolver> { InstrumentPerformanceReportDataResolver(get()) }
+        single<InstrumentPerformanceReportDataResolver> { InstrumentPerformanceReportDataResolver(get(), get()) }
         single<InterestRateReportResolver> { InterestRateReportResolver(get(), get()) }
         single<InstrumentInterestRateReportResolver> { InstrumentInterestRateReportResolver(get(), get()) }
         single<ReportDataResolverRegistry> {

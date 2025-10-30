@@ -5,12 +5,13 @@ import ro.jf.funds.commons.observability.tracing.withSpan
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
+import ro.jf.funds.reporting.service.service.reportdata.forecast.ForecastStrategy
 import java.math.BigDecimal
-import java.math.MathContext
 import java.util.*
 
 class GroupedNetDataResolver(
     private val conversionRateService: ConversionRateService,
+    private val forecastStrategy: ForecastStrategy,
 ) : ReportDataResolver<ByGroup<NetReport>> {
     override suspend fun resolve(
         input: ReportDataResolverInput,
@@ -33,13 +34,10 @@ class GroupedNetDataResolver(
             input.forecastConfiguration.inputBuckets,
             input.realData
         ) { inputBuckets: List<ByGroup<NetReport>> ->
-            val inputBucketsSize = inputBuckets.size.toBigDecimal()
             input.groups
                 .associateWith { group ->
-                    input.forecastConfiguration.inputBuckets.toBigDecimal()
-                    inputBuckets.sumOf { it[group]?.net ?: BigDecimal.ZERO }
-                        .divide(inputBucketsSize, MathContext.DECIMAL64)
-                        .let(::NetReport)
+                    val netValues = inputBuckets.map { it[group]?.net ?: BigDecimal.ZERO }
+                    forecastStrategy.forecastNext(netValues).let(::NetReport)
                 }
         }
     }

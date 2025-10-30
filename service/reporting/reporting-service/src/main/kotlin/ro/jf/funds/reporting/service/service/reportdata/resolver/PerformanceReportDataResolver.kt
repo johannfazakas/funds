@@ -8,16 +8,13 @@ import ro.jf.funds.commons.model.UnitType
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
-import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculationCommand
-import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculationCommand.Position
-import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculator
+import ro.jf.funds.reporting.service.service.reportdata.forecast.ForecastStrategy
 import java.math.BigDecimal
-import java.math.MathContext
 import java.util.*
 
 class PerformanceReportDataResolver(
     private val conversionRateService: ConversionRateService,
-    private val interestRateCalculator: InterestRateCalculator,
+    private val forecastStrategy: ForecastStrategy,
 ) : ReportDataResolver<PerformanceReport> {
     override suspend fun resolve(input: ReportDataResolverInput): ByBucket<PerformanceReport> = withSuspendingSpan {
         val previousData = getPreviousData(input)
@@ -34,12 +31,9 @@ class PerformanceReportDataResolver(
             input.forecastConfiguration.inputBuckets,
             input.realData
         ) { inputBuckets: List<PerformanceReport> ->
-            val inputSize = inputBuckets.size.toBigDecimal()
-
-            val currentInvestment = inputBuckets.sumOf { it.currentInvestment }.divide(inputSize, MathContext.DECIMAL64)
-            val currentProfit = inputBuckets.sumOf { it.currentProfit }.divide(inputSize, MathContext.DECIMAL64)
-            val totalCurrencyValue =
-                inputBuckets.sumOf { it.totalAssetsValue }.divide(currentInvestment, MathContext.DECIMAL64)
+            val currentInvestment = forecastStrategy.forecastNext(inputBuckets.map { it.currentInvestment })
+            val currentProfit = forecastStrategy.forecastNext(inputBuckets.map { it.currentProfit })
+            val totalCurrencyValue = forecastStrategy.forecastNext(inputBuckets.map { it.totalCurrencyValue })
 
             val lastBucket = inputBuckets.last()
 
