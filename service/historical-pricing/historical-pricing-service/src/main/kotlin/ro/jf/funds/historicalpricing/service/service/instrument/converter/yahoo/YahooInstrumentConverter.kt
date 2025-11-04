@@ -5,7 +5,7 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.datetime.*
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.api.model.PricingInstrument
+import ro.jf.funds.historicalpricing.service.domain.PricingInstrument
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.MonthlyCachedInstrumentConverterProxy
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.yahoo.model.YahooChartResponse
@@ -31,11 +31,11 @@ class YahooInstrumentConverter(
         from: LocalDate,
         to: LocalDate,
     ) = try {
-        httpClient.get("https://query1.finance.yahoo.com/v8/finance/chart/${instrument.conversionSymbol}") {
+        httpClient.get("https://query1.finance.yahoo.com/v8/finance/chart/${instrument.symbol}") {
             parameter("interval", ONE_DAY)
             parameter("period1", from.timestamp().toString())
             parameter("period2", to.timestamp().toString())
-            parameter("symbol", instrument.conversionSymbol)
+            parameter("symbol", instrument.symbol)
         }.body<YahooChartResponse>()
             .toConversionResponses(instrument)
     } catch (e: Exception) {
@@ -64,7 +64,7 @@ class YahooInstrumentConverter(
 
     // IMAE doesn't have values for 2022 and I couldn't find a library/api that could provide it
     private fun checkHardcodedValues(instrument: PricingInstrument, date: LocalDate): ConversionResponse? {
-        if (instrument == PricingInstrument.IMAE_NL) {
+        if (instrument.instrument.value == "IMAE") {
             if (date.year == 2022) {
                 val rate = when (date.month) {
                     Month.MAY -> BigDecimal("63.54")

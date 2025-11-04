@@ -9,7 +9,7 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import ro.jf.funds.commons.persistence.getDataSource
-import ro.jf.funds.historicalpricing.api.model.HistoricalPriceSource
+import ro.jf.funds.historicalpricing.service.domain.HistoricalPriceSource
 import ro.jf.funds.historicalpricing.service.persistence.CurrencyPairHistoricalPriceExposedRepository
 import ro.jf.funds.historicalpricing.service.persistence.InstrumentHistoricalPriceExposedRepository
 import ro.jf.funds.historicalpricing.service.service.ConversionService
@@ -19,6 +19,7 @@ import ro.jf.funds.historicalpricing.service.service.currency.converter.currency
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverterRegistry
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentHistoricalPriceRepository
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentService
+import ro.jf.funds.historicalpricing.service.service.instrument.PricingInstrumentRepository
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.bt.BTInstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.financialtimes.FinancialTimesInstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.yahoo.YahooInstrumentConverter
@@ -41,6 +42,7 @@ val Application.historicalPricingDependencies
         }
         single<CurrencyPairHistoricalPriceRepository> { CurrencyPairHistoricalPriceExposedRepository(get()) }
         single<InstrumentHistoricalPriceRepository> { InstrumentHistoricalPriceExposedRepository(get()) }
+        single { PricingInstrumentRepository() }
         single { YahooInstrumentConverter(get()) }
         single { FinancialTimesInstrumentConverter(get()) }
         single { BTInstrumentConverter(get()) }
@@ -55,6 +57,6 @@ val Application.historicalPricingDependencies
         }
         single { CurrencyBeaconCurrencyConverter(get()) }
         single { CurrencyService(get<CurrencyBeaconCurrencyConverter>(), get()) }
-        single { InstrumentService(get(), get(), get()) }
+        single { InstrumentService(get(), get(), get(), get()) }
         single { ConversionService(get(), get()) }
     }

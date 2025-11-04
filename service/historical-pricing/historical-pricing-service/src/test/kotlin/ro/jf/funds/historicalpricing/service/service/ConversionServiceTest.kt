@@ -20,6 +20,7 @@ import ro.jf.funds.historicalpricing.service.service.currency.CurrencyService
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverterRegistry
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentHistoricalPriceRepository
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentService
+import ro.jf.funds.historicalpricing.service.service.instrument.PricingInstrumentRepository
 import java.math.BigDecimal
 
 class ConversionServiceTest {
@@ -27,10 +28,11 @@ class ConversionServiceTest {
     private val currencyHistoricalPriceRepository = mock<CurrencyPairHistoricalPriceRepository>()
     private val instrumentHistoricalPriceRepository = mock<InstrumentHistoricalPriceRepository>()
     private val instrumentConverterRegistry = mock<InstrumentConverterRegistry>()
+    private val pricingInstrumentRepository = PricingInstrumentRepository()
 
     val currencyService = CurrencyService(currencyConverter, currencyHistoricalPriceRepository)
     val instrumentService =
-        InstrumentService(instrumentConverterRegistry, instrumentHistoricalPriceRepository, currencyService)
+        InstrumentService(pricingInstrumentRepository, instrumentConverterRegistry, instrumentHistoricalPriceRepository, currencyService)
     private val conversionService = ConversionService(currencyService, instrumentService)
 
     private val date1 = LocalDate.parse("2025-02-01")
