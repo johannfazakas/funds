@@ -6,5 +6,4 @@ data class ReportDataResolverInput(
     val reportTransactionStore: ReportTransactionStore,
 ) {
     val dataConfiguration = reportView.dataConfiguration
-    val userId = reportView.userId
 }

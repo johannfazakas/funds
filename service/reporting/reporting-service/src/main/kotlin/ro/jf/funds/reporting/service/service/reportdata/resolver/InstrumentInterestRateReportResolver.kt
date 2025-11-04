@@ -150,19 +150,16 @@ class InstrumentInterestRateReportResolver(
         instrument: Instrument,
         amount: BigDecimal,
     ): BigDecimal {
-        val userId = input.userId
         val targetCurrency = input.dataConfiguration.currency
-        return amount * conversionRateService.getRate(userId, date, instrument, targetCurrency)
+        return amount * conversionRateService.getRate(date, instrument, targetCurrency)
     }
 
     private suspend fun List<ReportTransaction.OpenPosition>.toInterestPositions(
         input: ReportDataResolverInput,
     ): List<InterestRateCalculationCommand.Position> {
-        val userId = input.userId
         val valuationCurrency = input.dataConfiguration.currency
         return map { position ->
             val amount = position.currencyRecord.amount.negate() * conversionRateService.getRate(
-                userId,
                 position.date,
                 position.currencyRecord.unit as Currency,
                 valuationCurrency

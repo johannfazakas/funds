@@ -4,7 +4,6 @@ import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.Instrument
-import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
@@ -42,6 +41,4 @@ class ConversionService(
             is Instrument -> throw HistoricalPricingExceptions.ConversionNotPermitted(sourceUnit, targetUnit)
         }
     }
-
-    private fun ConversionRequest.isInstrumentConversion(): Boolean = sourceUnit is Instrument || targetUnit is Instrument
 }

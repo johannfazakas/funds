@@ -53,7 +53,6 @@ class NetDataResolver(
             .sumOf { record: ReportRecord ->
                 val rate =
                     conversionRateService.getRate(
-                        input.userId,
                         record.date,
                         record.unit,
                         input.dataConfiguration.currency

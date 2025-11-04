@@ -19,7 +19,6 @@ class GroupedNetDataResolver(
         input.interval
             .generateBucketedData { timeBucket ->
                 getGroupedNet(
-                    input.userId,
                     input.reportTransactionStore.getBucketRecordsByUnit(timeBucket),
                     input.dataConfiguration.groups ?: emptyList(),
                     input.dataConfiguration.currency
@@ -43,13 +42,12 @@ class GroupedNetDataResolver(
     }
 
     private suspend fun getGroupedNet(
-        userId: UUID,
         records: ByUnit<List<ReportRecord>>,
         groups: List<ReportGroup>,
         reportCurrency: Currency,
     ): ByGroup<NetReport> =
         groups.associate { group ->
-            group.name to sumNet(userId, reportCurrency, filterGroupRecords(group, records))
+            group.name to sumNet(reportCurrency, filterGroupRecords(group, records))
         }
 
     private fun filterGroupRecords(
@@ -61,13 +59,12 @@ class GroupedNetDataResolver(
     }
 
     private suspend fun sumNet(
-        userId: UUID,
         reportCurrency: Currency,
         records: List<ReportRecord>,
     ): NetReport {
         return records
             .sumOf {
-                it.amount * conversionRateService.getRate(userId, it.date, it.unit, reportCurrency)
+                it.amount * conversionRateService.getRate(it.date, it.unit, reportCurrency)
             }
             .let(::NetReport)
     }

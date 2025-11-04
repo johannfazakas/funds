@@ -173,8 +173,8 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView = reportViewRepository.save(reportViewCommand)
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
 
         val fromDate = LocalDate(2021, 1, 1)
         val toDate = LocalDate(2021, 1, 28)
@@ -236,8 +236,8 @@ class ReportingApiTest {
                 )
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(eq(userId), any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
 
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
         mockTransactions(
@@ -276,8 +276,8 @@ class ReportingApiTest {
                 )
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(eq(userId), any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
 
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
         mockTransactions(
@@ -318,8 +318,8 @@ class ReportingApiTest {
                 )
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(eq(userId), any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
 
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
         mockTransactions(
@@ -359,8 +359,8 @@ class ReportingApiTest {
                 )
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(eq(userId), any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
 
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
         mockTransactions(

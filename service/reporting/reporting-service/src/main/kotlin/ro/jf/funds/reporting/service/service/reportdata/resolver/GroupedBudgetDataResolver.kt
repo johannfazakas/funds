@@ -48,7 +48,6 @@ class GroupedBudgetDataResolver(
         input: ReportDataResolverInput,
     ): ByGroup<Budget> = mapValues { (_, budgetByUnit) ->
         budgetByUnit.convertToSingleCurrency(
-            input.userId,
             until,
             input.dataConfiguration.currency,
         )
@@ -106,7 +105,7 @@ class GroupedBudgetDataResolver(
                 budget.addRecord(input, record)
             }
             .normalizeGroupCurrencyRatio(
-                input.userId, intervalEnd, input.dataConfiguration.currency
+                intervalEnd, input.dataConfiguration.currency
             )
     }
 
@@ -144,7 +143,6 @@ class GroupedBudgetDataResolver(
     }
 
     private suspend fun ByGroup<ByUnit<Budget>>.normalizeGroupCurrencyRatio(
-        userId: UUID,
         date: LocalDate,
         reportCurrency: Currency,
     ): ByGroup<ByUnit<Budget>> = withSuspendingSpan {
@@ -157,12 +155,12 @@ class GroupedBudgetDataResolver(
             .mapValues { (_, budgetByUnit) ->
                 val convertedGroupLeftValue = budgetByUnit.entries
                     .sumOf { (unit, budget) ->
-                        budget.left * conversionRateService.getRate(userId, date, unit, reportCurrency)
+                        budget.left * conversionRateService.getRate(date, unit, reportCurrency)
                     }
                 // X * W1 * R1 + X * W2 * R2 = T => X (W1 * R1 + W2 * R2) = T => X = T / (W1 * R1 + W2 * R2)
                 val multiplicationFactor = budgetByUnit.keys
                     .sumOf { unit ->
-                        leftByUnit[unit]!! * conversionRateService.getRate(userId, date, unit, reportCurrency)
+                        leftByUnit[unit]!! * conversionRateService.getRate(date, unit, reportCurrency)
                     }
                     .let { convertedGroupLeftValue.divide(it, MathContext.DECIMAL64) }
                 budgetByUnit.mapValues { (unit, budget) ->
@@ -173,20 +171,18 @@ class GroupedBudgetDataResolver(
     }
 
     private suspend fun ByUnit<Budget>.convertToSingleCurrency(
-        userId: UUID,
         date: LocalDate,
         reportCurrency: Currency,
     ): Budget =
-        this.mapToSingleCurrencyBudget(userId, reportCurrency, date).mergeBudgets()
+        this.mapToSingleCurrencyBudget(reportCurrency, date).mergeBudgets()
 
     private suspend fun ByUnit<Budget>.mapToSingleCurrencyBudget(
-        userId: UUID,
         reportCurrency: Currency,
         date: LocalDate,
     ): List<Budget> = withSuspendingSpan {
         this
             .map { (unit, budget) ->
-                val rate = conversionRateService.getRate(userId, date, unit, reportCurrency)
+                val rate = conversionRateService.getRate(date, unit, reportCurrency)
                 Budget(budget.allocated * rate, budget.spent * rate, budget.left * rate)
             }
     }
