@@ -30,7 +30,7 @@ class PerformanceReportDataResolver(
         input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
             input.realData
-        ) { inputBuckets: List<PerformanceReport> ->
+        ) { inputBuckets: List<PerformanceReport>, _ ->
             val currentInvestment = forecastStrategy.forecastNext(inputBuckets.map { it.currentInvestment })
             val currentProfit = forecastStrategy.forecastNext(inputBuckets.map { it.currentProfit })
             val totalCurrencyValue = forecastStrategy.forecastNext(inputBuckets.map { it.totalCurrencyValue })

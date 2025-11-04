@@ -40,7 +40,7 @@ class ValueReportDataResolver(
         input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
             input.realData
-        ) { inputBuckets: List<ValueReport> ->
+        ) { inputBuckets: List<ValueReport>, _ ->
             ValueReport(
                 start = inputBuckets.last().end,
                 end = forecastStrategy.forecastNext(inputBuckets.map { it.end }),
