@@ -26,7 +26,7 @@ class NetDataResolver(
         input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
             input.realData
-        ) { inputBuckets: List<NetReport> ->
+        ) { inputBuckets: List<NetReport>, _ ->
             NetReport(forecastStrategy.forecastNext(inputBuckets.map { it.net }))
         }
     }

@@ -33,7 +33,7 @@ class GroupedNetDataResolver(
         input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
             input.realData
-        ) { inputBuckets: List<ByGroup<NetReport>> ->
+        ) { inputBuckets: List<ByGroup<NetReport>>, _ ->
             input.groups
                 .associateWith { group ->
                     val netValues = inputBuckets.map { it[group]?.net ?: BigDecimal.ZERO }

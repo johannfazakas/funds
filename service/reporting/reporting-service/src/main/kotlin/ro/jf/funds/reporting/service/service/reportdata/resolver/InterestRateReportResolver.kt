@@ -8,11 +8,14 @@ import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
 import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculationCommand
 import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculator
+import ro.jf.funds.reporting.service.service.reportdata.ValuationCalculationCommand
+import ro.jf.funds.reporting.service.service.reportdata.forecast.ForecastStrategy
 import java.math.BigDecimal
 
 class InterestRateReportResolver(
     private val conversionRateService: ConversionRateService,
     private val interestRateCalculator: InterestRateCalculator,
+    private val forecastStrategy: ForecastStrategy,
 ) : ReportDataResolver<InterestRateReport> {
 
     override suspend fun resolve(input: ReportDataResolverInput): ByBucket<InterestRateReport> = withSuspendingSpan {
@@ -28,15 +31,39 @@ class InterestRateReportResolver(
         input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
             input.realData
-        ) { inputBuckets: List<InterestRateReport> ->
+        ) { inputBuckets: List<InterestRateReport>, bucket: TimeBucket ->
             val lastBucket = inputBuckets.last()
+            val forecastedTotalInterestRate =
+                forecastStrategy.forecastNext(inputBuckets.map { it.totalInterestRate })
+
+            val forecastedValuation = interestRateCalculator.calculateValuation(
+                ValuationCalculationCommand(
+                    positions = lastBucket.positions,
+                    valuationDate = bucket.to,
+                    interestRate = forecastedTotalInterestRate
+                )
+            )
+
+            val forecastedCurrentInterestRate = interestRateCalculator.calculateInterestRate(
+                InterestRateCalculationCommand(
+                    positions = listOf(
+                        InterestRateCalculationCommand.Position(
+                            date = lastBucket.valuationDate,
+                            amount = lastBucket.valuation
+                        )
+                    ),
+                    valuation = forecastedValuation,
+                    valuationDate = bucket.to
+                )
+            )
+
             InterestRateReport(
-                totalInterestRate = BigDecimal.ZERO,
-                currentInterestRate = BigDecimal.ZERO,
+                totalInterestRate = forecastedTotalInterestRate,
+                currentInterestRate = forecastedCurrentInterestRate,
                 assetsByInstrument = lastBucket.assetsByInstrument,
                 positions = lastBucket.positions,
-                valuation = lastBucket.valuation,
-                valuationDate = lastBucket.valuationDate,
+                valuation = forecastedValuation,
+                valuationDate = bucket.to,
             )
         }
     }

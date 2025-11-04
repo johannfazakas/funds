@@ -27,6 +27,18 @@ data class InterestRateCalculationCommand(
     )
 }
 
+data class ValuationCalculationCommand(
+    val positions: List<InterestRateCalculationCommand.Position>,
+    val valuationDate: LocalDate,
+    val interestRate: BigDecimal,
+) {
+    init {
+        require(positions.isNotEmpty()) { "At least one position must be provided." }
+        require(positions.all { it.date <= valuationDate }) { "Positions after valuation date provided." }
+        require(positions.any { it.date < valuationDate }) { "No position before valuation date provided." }
+    }
+}
+
 private fun convertRateToGrowthFactor(rate: BigDecimal, mathContext: MathContext): BigDecimal =
     rate.divide(100.toBigDecimal(), mathContext) + 1.toBigDecimal()
 
@@ -57,6 +69,17 @@ class InterestRateCalculator(
         val positionsWithRateExponent = associatePositionsWithRateExponent(command)
         val growthFactor = calculateGrowthFactor(positionsWithRateExponent, command.valuation)
         return convertGrowthFactorToRate(growthFactor, mathContext)
+    }
+
+    fun calculateValuation(command: ValuationCalculationCommand): BigDecimal {
+        val growthFactor = convertRateToGrowthFactor(command.interestRate, mathContext)
+        val positionsWithRateExponent = command.positions.map { position ->
+            val years = position.date.yearsUntil(command.valuationDate)
+            val remainingDays = (position.date + DatePeriod(years)).daysUntil(command.valuationDate)
+            val rateExponent = years.toBigDecimal() + remainingDays.toBigDecimal().divide(YEARLY_DAYS, mathContext)
+            position to rateExponent
+        }
+        return evaluateFactorOutcome(positionsWithRateExponent, growthFactor)
     }
 
     private fun associatePositionsWithRateExponent(command: InterestRateCalculationCommand): List<Pair<InterestRateCalculationCommand.Position, BigDecimal>> =

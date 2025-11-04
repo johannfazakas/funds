@@ -30,7 +30,7 @@ class GroupedBudgetDataResolver(
                 .generateForecastData(
                     input.forecastConfiguration.inputBuckets,
                     input.realData
-                ) { inputBuckets: List<ByGroup<Budget>> ->
+                ) { inputBuckets: List<ByGroup<Budget>>, _ ->
                     forecastData(inputBuckets, input.groups)
                 }
         }

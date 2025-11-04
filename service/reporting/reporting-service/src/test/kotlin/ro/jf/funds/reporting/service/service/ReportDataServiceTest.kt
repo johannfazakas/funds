@@ -44,8 +44,8 @@ class ReportDataServiceTest {
         GroupedBudgetDataResolver(conversionRateService, forecastStrategy),
         PerformanceReportDataResolver(conversionRateService, forecastStrategy),
         InstrumentPerformanceReportDataResolver(conversionRateService, forecastStrategy),
-        InterestRateReportResolver(conversionRateService, InterestRateCalculator()),
-        InstrumentInterestRateReportResolver(conversionRateService, InterestRateCalculator()),
+        InterestRateReportResolver(conversionRateService, InterestRateCalculator(), forecastStrategy),
+        InstrumentInterestRateReportResolver(conversionRateService, InterestRateCalculator(), forecastStrategy),
     )
     private val reportDataService =
         ReportDataService(reportViewRepository, resolverRegistry, reportTransactionService)

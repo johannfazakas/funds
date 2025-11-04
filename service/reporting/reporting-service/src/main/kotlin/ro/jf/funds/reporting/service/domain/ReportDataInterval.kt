@@ -64,7 +64,7 @@ sealed class ReportDataInterval() {
     fun <D> generateForecastData(
         inputBuckets: Int,
         realData: ByBucket<D>,
-        forecastResolver: (List<D>) -> D,
+        forecastResolver: (List<D>, TimeBucket) -> D,
     ): Map<TimeBucket, D> {
         val relevantTailBuckets = realData.entries
             .sortedBy { it.key.from }
@@ -76,7 +76,7 @@ sealed class ReportDataInterval() {
         return generateSequence(getNextBucket(getLastBucket())) { getNextBucket(it) }
             .takeWhile { it.from < forecastUntil }
             .fold(relevantTailBuckets to mapOf<TimeBucket, D>()) { (relevantBuckets, forecast), bucket ->
-                val forecastData: D = forecastResolver(relevantBuckets)
+                val forecastData: D = forecastResolver(relevantBuckets, bucket)
                 (relevantBuckets + forecastData).takeLast(inputBuckets) to forecast + (bucket to forecastData)
             }
             .second

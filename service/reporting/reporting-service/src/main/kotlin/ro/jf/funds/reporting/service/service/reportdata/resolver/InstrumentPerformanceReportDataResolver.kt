@@ -25,7 +25,7 @@ class InstrumentPerformanceReportDataResolver(
         return input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
             input.realData
-        ) { inputBuckets: List<ByInstrument<InstrumentPerformanceReport>> ->
+        ) { inputBuckets: List<ByInstrument<InstrumentPerformanceReport>>, _ ->
             inputBuckets.flatMap { it.keys }.toSet()
                 .associateWith { symbol ->
                     val unitReports = inputBuckets.mapNotNull { it[symbol] }

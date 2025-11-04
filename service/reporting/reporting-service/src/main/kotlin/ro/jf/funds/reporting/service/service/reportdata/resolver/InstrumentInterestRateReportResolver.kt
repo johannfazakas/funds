@@ -10,12 +10,14 @@ import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
 import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculationCommand
 import ro.jf.funds.reporting.service.service.reportdata.InterestRateCalculator
+import ro.jf.funds.reporting.service.service.reportdata.ValuationCalculationCommand
+import ro.jf.funds.reporting.service.service.reportdata.forecast.ForecastStrategy
 import java.math.BigDecimal
-import java.math.MathContext
 
 class InstrumentInterestRateReportResolver(
     private val conversionRateService: ConversionRateService,
     private val interestRateCalculator: InterestRateCalculator,
+    private val forecastStrategy: ForecastStrategy,
 ) : ReportDataResolver<ByInstrument<InstrumentInterestRateReport>> {
 
     override suspend fun resolve(input: ReportDataResolverInput): ByBucket<ByInstrument<InstrumentInterestRateReport>> =
@@ -32,24 +34,42 @@ class InstrumentInterestRateReportResolver(
         input.interval.generateForecastData(
             input.forecastConfiguration.inputBuckets,
             input.realData
-        ) { inputBuckets: List<ByInstrument<InstrumentInterestRateReport>> ->
-            val inputSize = inputBuckets.size.toBigDecimal()
-            val distinctInstruments = inputBuckets.flatMap { it.keys }.toSet()
-
-            distinctInstruments.associateWith { instrument ->
+        ) { inputBuckets: List<ByInstrument<InstrumentInterestRateReport>>, bucket: TimeBucket ->
+            inputBuckets.flatMap { it.keys }.toSet().associateWith { instrument ->
                 val instrumentReports = inputBuckets.mapNotNull { it[instrument] }
                 val lastReport = instrumentReports.last()
-                val currentInterestRate =
-                    instrumentReports.sumOf { it.currentInterestRate }.divide(inputSize, MathContext.DECIMAL64)
+                val forecastedTotalInterestRate =
+                    forecastStrategy.forecastNext(instrumentReports.map { it.totalInterestRate })
+
+                val forecastedValuation = interestRateCalculator.calculateValuation(
+                    ValuationCalculationCommand(
+                        positions = lastReport.positions,
+                        valuationDate = bucket.to,
+                        interestRate = forecastedTotalInterestRate
+                    )
+                )
+
+                val forecastedCurrentInterestRate = interestRateCalculator.calculateInterestRate(
+                    InterestRateCalculationCommand(
+                        positions = listOf(
+                            InterestRateCalculationCommand.Position(
+                                date = lastReport.valuationDate,
+                                amount = lastReport.valuation
+                            )
+                        ),
+                        valuation = forecastedValuation,
+                        valuationDate = bucket.to
+                    )
+                )
 
                 InstrumentInterestRateReport(
                     instrument = instrument,
-                    totalInterestRate = lastReport.totalInterestRate,
-                    currentInterestRate = currentInterestRate,
+                    totalInterestRate = forecastedTotalInterestRate,
+                    currentInterestRate = forecastedCurrentInterestRate,
                     assets = lastReport.assets,
                     positions = lastReport.positions,
-                    valuation = lastReport.valuation,
-                    valuationDate = lastReport.valuationDate,
+                    valuation = forecastedValuation,
+                    valuationDate = bucket.to,
                 )
             }
         }
