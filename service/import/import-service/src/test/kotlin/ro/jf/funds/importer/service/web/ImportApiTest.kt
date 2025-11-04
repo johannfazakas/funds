@@ -96,7 +96,7 @@ class ImportApiTest {
             )
         )
         whenever(transactionSdk.createTransaction(eq(userId), any())).thenReturn(mock<TransactionTO.SingleRecord>())
-        whenever(historicalPricingSdk.convert(userId, ConversionsRequest(emptyList())))
+        whenever(historicalPricingSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
         val response = httpClient.post("/funds-api/import/v1/imports/tasks") {

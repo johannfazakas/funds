@@ -32,11 +32,10 @@ class ImportFundConversionService(
         log.info { "Handling import >> user = $userId items size = ${parsedTransactions.size}." }
         val accountStore = accountService.getAccountStore(userId)
         val fundStore = fundService.getFundStore(userId)
-        parsedTransactions.toFundTransactions(userId, accountStore, fundStore).let(::CreateTransactionsTO)
+        parsedTransactions.toFundTransactions(accountStore, fundStore).let(::CreateTransactionsTO)
     }
 
     private suspend fun List<ImportParsedTransaction>.toFundTransactions(
-        userId: UUID,
         accountStore: Store<AccountName, AccountTO>,
         fundStore: Store<FundName, FundTO>,
     ): List<CreateTransactionTO> {
@@ -46,7 +45,7 @@ class ImportFundConversionService(
             .flatMap { (transaction, strategy) -> strategy.getRequiredConversions(transaction, accountStore) }
             .map { ConversionRequest(it.sourceCurrency, it.targetCurrency, it.date) }
             .distinct()
-            .let { historicalPricingSdk.convert(userId, ConversionsRequest(it)) }
+            .let { historicalPricingSdk.convert(ConversionsRequest(it)) }
 
         return transactionsToStrategy
             .flatMap { (transaction, strategy) ->

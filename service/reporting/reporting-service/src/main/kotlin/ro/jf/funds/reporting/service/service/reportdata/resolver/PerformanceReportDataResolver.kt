@@ -59,7 +59,6 @@ class PerformanceReportDataResolver(
         val assetsBySymbol = extractAssetsBySymbol(previousRecords, fundId)
 
         return aggregatePerformanceReport(
-            userId = input.userId,
             date = input.interval.getPreviousLastDay(),
             targetCurrency = input.dataConfiguration.currency,
             previousProfit = BigDecimal.ZERO,
@@ -83,7 +82,6 @@ class PerformanceReportDataResolver(
         val bucketAssetsBySymbol = extractAssetsBySymbol(bucketRecords, fundId)
 
         return aggregatePerformanceReport(
-            userId = input.userId,
             date = timeBucket.to,
             targetCurrency = input.dataConfiguration.currency,
             previousProfit = previous.totalProfit,
@@ -129,7 +127,6 @@ class PerformanceReportDataResolver(
             }
 
     private suspend fun aggregatePerformanceReport(
-        userId: UUID,
         date: LocalDate,
         targetCurrency: Currency,
         previousProfit: BigDecimal,
@@ -139,14 +136,14 @@ class PerformanceReportDataResolver(
         previousAssetsByInstrument: Map<Instrument, BigDecimal>,
         currentAssetsByInstrument: Map<Instrument, BigDecimal>,
     ): PerformanceReport {
-        val currentInvestment = calculateInvestment(userId, date, targetCurrency, currentInvestmentByCurrency)
-        val totalCurrencyValue = calculateCurrenciesValue(userId, date, targetCurrency, valueByCurrency)
+        val currentInvestment = calculateInvestment(date, targetCurrency, currentInvestmentByCurrency)
+        val totalCurrencyValue = calculateCurrenciesValue(date, targetCurrency, valueByCurrency)
 
         val totalInvestmentByCurrency = mergeMaps(previousInvestmentByCurrency, currentInvestmentByCurrency)
-        val totalInvestment = calculateInvestment(userId, date, targetCurrency, totalInvestmentByCurrency)
+        val totalInvestment = calculateInvestment(date, targetCurrency, totalInvestmentByCurrency)
 
         val totalAssetsBySymbol = mergeMaps(previousAssetsByInstrument, currentAssetsByInstrument)
-        val totalAssetsValue = calculateAssetsValue(userId, date, targetCurrency, totalAssetsBySymbol)
+        val totalAssetsValue = calculateAssetsValue(date, targetCurrency, totalAssetsBySymbol)
 
         return PerformanceReport(
             totalAssetsValue = totalAssetsValue,
@@ -162,41 +159,38 @@ class PerformanceReportDataResolver(
     }
 
     private suspend fun calculateInvestment(
-        userId: UUID,
         date: LocalDate,
         targetCurrency: Currency,
         investmentByCurrency: Map<Currency, BigDecimal>,
     ): BigDecimal {
         return investmentByCurrency
             .map { (unit, value) ->
-                value * conversionRateService.getRate(userId, date, unit, targetCurrency)
+                value * conversionRateService.getRate(date, unit, targetCurrency)
             }
             .sumOf { it }
             .negate()
     }
 
     private suspend fun calculateAssetsValue(
-        userId: UUID,
         date: LocalDate,
         targetCurrency: Currency,
         assetsByInstrument: Map<Instrument, BigDecimal>,
     ): BigDecimal {
         return assetsByInstrument
             .map { (unit, value) ->
-                value * conversionRateService.getRate(userId, date, unit, targetCurrency)
+                value * conversionRateService.getRate(date, unit, targetCurrency)
             }
             .sumOf { it }
     }
 
     private suspend fun calculateCurrenciesValue(
-        userId: UUID,
         date: LocalDate,
         targetCurrency: Currency,
         valueByCurrency: Map<Currency, BigDecimal>,
     ): BigDecimal {
         return valueByCurrency
             .map { (unit, value) ->
-                value * conversionRateService.getRate(userId, date, unit, targetCurrency)
+                value * conversionRateService.getRate(date, unit, targetCurrency)
             }
             .sumOf { it }
     }

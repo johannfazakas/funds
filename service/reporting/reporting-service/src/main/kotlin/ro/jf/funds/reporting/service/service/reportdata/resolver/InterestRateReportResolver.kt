@@ -136,11 +136,10 @@ class InterestRateReportResolver(
         date: LocalDate,
         assetsByInstrument: Map<Instrument, BigDecimal>,
     ): BigDecimal {
-        val userId = input.userId
         val targetCurrency = input.dataConfiguration.currency
         return assetsByInstrument
             .map { (instrument, amount) ->
-                amount * conversionRateService.getRate(userId, date, instrument, targetCurrency)
+                amount * conversionRateService.getRate(date, instrument, targetCurrency)
             }
             .sumOf { it }
     }
@@ -148,11 +147,10 @@ class InterestRateReportResolver(
     private suspend fun List<ReportTransaction.OpenPosition>.toInterestPositions(
         input: ReportDataResolverInput,
     ): List<InterestRateCalculationCommand.Position> {
-        val userId = input.userId
         val valuationCurrency = input.dataConfiguration.currency
         return map { position ->
             val rate = conversionRateService.getRate(
-                userId, position.date, position.currencyRecord.unit as Currency, valuationCurrency
+                position.date, position.currencyRecord.unit as Currency, valuationCurrency
             )
             val amount = position.currencyRecord.amount.negate() * rate
             InterestRateCalculationCommand.Position(position.date, amount)

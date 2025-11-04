@@ -22,7 +22,6 @@ import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.test.utils.kafkaConfig
-import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
@@ -32,7 +31,6 @@ import ro.jf.funds.historicalpricing.service.config.historicalPricingDependencie
 import ro.jf.funds.historicalpricing.service.domain.CurrencyPairHistoricalPrice
 import ro.jf.funds.historicalpricing.service.persistence.CurrencyPairHistoricalPriceExposedRepository
 import ro.jf.funds.historicalpricing.service.service.currency.converter.currencybeacon.CurrencyBeaconCurrencyConverter
-import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
@@ -41,7 +39,6 @@ class HistoricalPricingApiTest {
         CurrencyPairHistoricalPriceExposedRepository(PostgresContainerExtension.connection)
     private val currencyConverter = mock<CurrencyBeaconCurrencyConverter>()
 
-    private val userId = randomUUID()
     private val date1 = LocalDate.parse("2025-02-01")
     private val date2 = LocalDate.parse("2025-02-02")
     private val date3 = LocalDate.parse("2025-02-03")
@@ -59,7 +56,6 @@ class HistoricalPricingApiTest {
         ).forEach { currencyPairHistoricalPriceRepository.saveHistoricalPrice(it) }
 
         val response = httpClient.post("/funds-api/historical-pricing/v1/conversions") {
-            header(USER_ID_HEADER, userId.toString())
             contentType(ContentType.Application.Json)
             setBody(
                 ConversionsRequest(

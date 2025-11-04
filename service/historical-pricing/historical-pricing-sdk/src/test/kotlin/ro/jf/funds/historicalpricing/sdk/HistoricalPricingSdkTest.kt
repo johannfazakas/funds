@@ -16,17 +16,13 @@ import org.mockserver.model.MediaType
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
-import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import java.math.BigDecimal
-import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerContainerExtension::class)
 class HistoricalPricingSdkTest {
     private val historicalPricingSdk = HistoricalPricingSdk(baseUrl = MockServerContainerExtension.baseUrl)
-
-    private val userId = randomUUID()
 
     @Test
     fun `should convert currencies`(mockServerClient: MockServerClient): Unit = runBlocking {
@@ -43,7 +39,7 @@ class HistoricalPricingSdkTest {
             request.conversions[2] to BigDecimal("0.2")
         )
 
-        val response = historicalPricingSdk.convert(userId, request)
+        val response = historicalPricingSdk.convert(request)
 
         assertThat(response.getRate(Currency.RON, Currency.EUR, LocalDate.parse("2025-02-01")))
             .isEqualTo(BigDecimal("4.9"))
@@ -58,7 +54,6 @@ class HistoricalPricingSdkTest {
             request()
                 .withMethod("POST")
                 .withPath("/funds-api/historical-pricing/v1/conversions")
-                .withHeader(Header(USER_ID_HEADER, userId.toString()))
         ).respond(
             response()
                 .withStatusCode(200)

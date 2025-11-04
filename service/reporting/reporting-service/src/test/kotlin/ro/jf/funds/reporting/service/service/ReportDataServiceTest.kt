@@ -78,8 +78,8 @@ class ReportDataServiceTest {
             )
         )
 
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
 
         val data = reportDataService.getNetReport(userId, reportViewId, interval)
 
@@ -122,7 +122,7 @@ class ReportDataServiceTest {
                 ronTransaction(LocalDate(2021, 6, 8), -50, labelsOf("want")),
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
 
         val data = reportDataService.getNetReport(userId, reportViewId, interval)
 
@@ -172,8 +172,8 @@ class ReportDataServiceTest {
                 ronTransaction(LocalDate.parse("2021-09-28"), -16, labelsOf("other")),
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
 
         val data = reportDataService.getGroupedNetReport(userId, reportViewId, interval)
 
@@ -212,8 +212,8 @@ class ReportDataServiceTest {
                 expensesFundId
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.00"))
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.00"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
         mockTransactions(
             interval, expensesFundId, listOf(
@@ -294,8 +294,8 @@ class ReportDataServiceTest {
                 expensesFundId
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 2))
         mockTransactions(
             interval, expensesFundId, listOf(
@@ -371,15 +371,15 @@ class ReportDataServiceTest {
                 expensesFundId
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenAnswer {
-            val date = it.getArgument<LocalDate>(1)
+        whenever(conversionRateService.getRate(any(), eq(EUR), eq(RON))).thenAnswer {
+            val date = it.getArgument<LocalDate>(0)
             if (date.month in listOf(Month.JANUARY, Month.FEBRUARY)) {
                 BigDecimal("4.8")
             } else {
                 BigDecimal("4.9")
             }
         }
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON)))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON)))
             .thenReturn(BigDecimal.ONE)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
         mockTransactions(
@@ -490,8 +490,8 @@ class ReportDataServiceTest {
                 expensesFundId
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
         val interval = ReportDataInterval.Monthly(YearMonth(2020, 2), YearMonth(2020, 3))
         mockTransactions(
             interval, expensesFundId, listOf(
@@ -599,7 +599,7 @@ class ReportDataServiceTest {
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration, expensesFundId))
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
 
         val interval = ReportDataInterval.Monthly(
             YearMonth(2020, 1),
@@ -659,7 +659,7 @@ class ReportDataServiceTest {
         )
         whenever(reportViewRepository.findById(userId, reportViewId))
             .thenReturn(reportView(reportDataConfiguration, expensesFundId))
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 11))
         mockTransactions(
             interval, expensesFundId, listOf(
@@ -710,8 +710,8 @@ class ReportDataServiceTest {
                 eurTransaction(LocalDate.parse("2021-09-03"), 20, labelsOf("need")),
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(RON))).thenAnswer {
-            val date = it.getArgument<LocalDate>(1)
+        whenever(conversionRateService.getRate(any(), eq(EUR), eq(RON))).thenAnswer {
+            val date = it.getArgument<LocalDate>(0)
             when (date) {
                 LocalDate(2021, 9, 1) -> BigDecimal("4.85")
                 LocalDate(2021, 9, 30) -> BigDecimal("4.9")
@@ -720,7 +720,7 @@ class ReportDataServiceTest {
                 else -> error("unexpected")
             }
         }
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(RON), eq(RON)))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON)))
             .thenAnswer { BigDecimal.ONE }
 
         val data = reportDataService.getValueReport(userId, reportViewId, interval)
@@ -779,10 +779,10 @@ class ReportDataServiceTest {
                 investmentOpenPosition(LocalDate.parse("2022-06-18"), 102, Instrument("I2"), 3),
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), any(), eq(EUR))).thenAnswer {
-            val date: LocalDate = it.getArgument(1)
-            val sourceUnit: FinancialUnit = it.getArgument(2)
-            val targetUnit: Currency = it.getArgument(3)
+        whenever(conversionRateService.getRate(any(), any(), eq(EUR))).thenAnswer {
+            val date: LocalDate = it.getArgument(0)
+            val sourceUnit: FinancialUnit = it.getArgument(1)
+            val targetUnit: Currency = it.getArgument(2)
             if (sourceUnit == targetUnit) return@thenAnswer BigDecimal.ONE
             when (sourceUnit) {
                 Instrument("I1") -> when (date.month) {
@@ -871,10 +871,10 @@ class ReportDataServiceTest {
                 investmentOpenPosition(LocalDate.parse("2022-06-18"), 102, Instrument("I2"), 3),
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), any(), eq(EUR))).thenAnswer {
-            val date: LocalDate = it.getArgument(1)
-            val sourceUnit: FinancialUnit = it.getArgument(2)
-            val targetUnit: Currency = it.getArgument(3)
+        whenever(conversionRateService.getRate(any(), any(), eq(EUR))).thenAnswer {
+            val date: LocalDate = it.getArgument(0)
+            val sourceUnit: FinancialUnit = it.getArgument(1)
+            val targetUnit: Currency = it.getArgument(2)
             if (sourceUnit == targetUnit) return@thenAnswer BigDecimal.ONE
             when (sourceUnit) {
                 Instrument("I1") -> when (date.month) {
@@ -994,8 +994,8 @@ class ReportDataServiceTest {
                 investmentOpenPosition(LocalDate.parse("2022-06-18"), 305, Instrument("I1"), 1),
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(EUR))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I1")), eq(EUR))).thenReturn(
+        whenever(conversionRateService.getRate(any(), eq(EUR), eq(EUR))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(Instrument("I1")), eq(EUR))).thenReturn(
             BigDecimal(
                 300
             )
@@ -1047,13 +1047,13 @@ class ReportDataServiceTest {
                 investmentOpenPosition(LocalDate.parse("2022-06-18"), 102, Instrument("I2"), 3),
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(EUR), eq(EUR))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I1")), eq(EUR))).thenReturn(
+        whenever(conversionRateService.getRate(any(), eq(EUR), eq(EUR))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(Instrument("I1")), eq(EUR))).thenReturn(
             BigDecimal(
                 306
             )
         )
-        whenever(conversionRateService.getRate(eq(userId), any(), eq(Instrument("I2")), eq(EUR))).thenReturn(
+        whenever(conversionRateService.getRate(any(), eq(Instrument("I2")), eq(EUR))).thenReturn(
             BigDecimal(
                 29
             )

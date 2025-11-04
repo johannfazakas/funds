@@ -7,7 +7,6 @@ import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
 import ro.jf.funds.reporting.service.service.reportdata.forecast.ForecastStrategy
 import java.math.BigDecimal
-import java.util.*
 
 class ValueReportDataResolver(
     private val conversionRateService: ConversionRateService,
@@ -24,7 +23,6 @@ class ValueReportDataResolver(
                 )
             ) { timeBucket, previous ->
                 getValueReport(
-                    input.userId,
                     timeBucket,
                     previous.endAmountByUnit,
                     input.reportTransactionStore.getBucketRecordsByUnit(timeBucket),
@@ -59,7 +57,6 @@ class ValueReportDataResolver(
             ?: { _: ReportRecord -> true }
 
     private suspend fun getValueReport(
-        userId: UUID,
         bucket: TimeBucket,
         startAmountByUnit: ByUnit<BigDecimal>,
         bucketRecords: ByUnit<List<ReportRecord>>,
@@ -69,8 +66,8 @@ class ValueReportDataResolver(
         val amountByUnit = getAmountByUnit(bucketRecords, filter)
         val endAmountByUnit = amountByUnit.add(startAmountByUnit)
 
-        val startValue = startAmountByUnit.valueAt(userId, bucket.from, reportDataConfiguration.currency)
-        val endValue = endAmountByUnit.valueAt(userId, bucket.to, reportDataConfiguration.currency)
+        val startValue = startAmountByUnit.valueAt(bucket.from, reportDataConfiguration.currency)
+        val endValue = endAmountByUnit.valueAt(bucket.to, reportDataConfiguration.currency)
 
         return ValueReport(startValue, endValue, BigDecimal.ZERO, BigDecimal.ZERO, endAmountByUnit)
     }
@@ -82,13 +79,12 @@ class ValueReportDataResolver(
         records.mapValues { (_, items) -> items.filter(filter).sumOf { it.amount } }
 
     private suspend fun ByUnit<BigDecimal>.valueAt(
-        userId: UUID,
         date: LocalDate,
         currency: Currency,
     ): BigDecimal {
         return this
             .map { (unit, amount) ->
-                amount * conversionRateService.getRate(userId, date, unit, currency)
+                amount * conversionRateService.getRate(date, unit, currency)
             }
             .sumOf { it }
     }
