@@ -2,7 +2,7 @@ package ro.jf.funds.historicalpricing.service.service.instrument.converter
 
 import kotlinx.datetime.*
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.api.model.PricingInstrument
+import ro.jf.funds.historicalpricing.service.domain.PricingInstrument
 
 class MonthlyCachedInstrumentConverterProxy {
     private val cache = mutableMapOf<Pair<PricingInstrument, LocalDate>, ConversionResponse>()

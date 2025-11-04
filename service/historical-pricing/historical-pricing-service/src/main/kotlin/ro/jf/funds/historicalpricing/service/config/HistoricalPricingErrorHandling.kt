@@ -33,6 +33,7 @@ fun HistoricalPricingExceptions.toStatusCode(): HttpStatusCode = when (this) {
     is HistoricalPricingExceptions.ConversionNotPermitted -> HttpStatusCode.BadRequest
     is HistoricalPricingExceptions.HistoricalPriceNotFound -> HttpStatusCode.NotFound
     is HistoricalPricingExceptions.HistoricalPricingIntegrationException -> HttpStatusCode.BadGateway
+    is HistoricalPricingExceptions.InstrumentSourceIntegrationNotFound -> HttpStatusCode.UnprocessableEntity
 }
 
 fun Throwable.toError(): ErrorTO {
@@ -57,6 +58,11 @@ fun HistoricalPricingExceptions.toError(): ErrorTO {
         is HistoricalPricingExceptions.HistoricalPricingIntegrationException -> ErrorTO(
             title = "Integration error",
             detail = "Error from $api API (status $status): $errorDetail"
+        )
+
+        is HistoricalPricingExceptions.InstrumentSourceIntegrationNotFound -> ErrorTO(
+            title = "Instrument source integration not found",
+            detail = "No pricing source integration configured for instrument ${this.instrument.value}"
         )
     }
 }

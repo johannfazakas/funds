@@ -29,6 +29,8 @@ But report data generation shouldn't depend on the report view.
 
 ### Add absolute changes in interest rate report
 
+### Find a way to pinpoint unclassified records
+
 ## Infrastructure
 
 ### Improve Docker usage
@@ -43,8 +45,6 @@ Have it deployed with Helm Charts in kubernetes. At least locally in a minikube.
 ### Store CSV files in S3
 
 ## Non-Functional Tasks
-
-### Remove unused account service
 
 ### Use sealed class on Records so Currency and Instrument record can be separated.
 

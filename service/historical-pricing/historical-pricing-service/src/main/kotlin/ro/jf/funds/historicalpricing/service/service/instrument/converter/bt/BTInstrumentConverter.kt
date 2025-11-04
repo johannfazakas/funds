@@ -12,7 +12,7 @@ import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.ss.usermodel.Sheet
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.api.model.PricingInstrument
+import ro.jf.funds.historicalpricing.service.domain.PricingInstrument
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -62,7 +62,7 @@ class BTInstrumentConverter(
     }
 
     suspend fun initiateDownloadSession(instrument: PricingInstrument): String {
-        val response = httpClient.post("https://www.btassetmanagement.ro/${instrument.conversionSymbol}") {
+        val response = httpClient.post("https://www.btassetmanagement.ro/${instrument.symbol}") {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(FormDataContent(Parameters.build {
                 append("tip_titlu", "Valoare titlu")

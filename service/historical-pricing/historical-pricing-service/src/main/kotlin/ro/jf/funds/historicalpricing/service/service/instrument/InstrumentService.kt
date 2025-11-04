@@ -5,13 +5,13 @@ import mu.KotlinLogging
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.api.model.PricingInstrument
 import ro.jf.funds.historicalpricing.service.domain.InstrumentHistoricalPrice
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyService
 
 val log = KotlinLogging.logger {}
 
 class InstrumentService(
+    private val pricingInstrumentRepository: PricingInstrumentRepository,
     private val instrumentConverterRegistry: InstrumentConverterRegistry,
     private val instrumentHistoricalPriceRepository: InstrumentHistoricalPriceRepository,
     private val currencyService: CurrencyService,
@@ -35,7 +35,7 @@ class InstrumentService(
         currency: Currency,
         dates: List<LocalDate>,
     ): List<ConversionResponse> {
-        val pricingInstrument = PricingInstrument.fromInstrument(instrument)
+        val pricingInstrument = pricingInstrumentRepository.findByInstrument(instrument)
         val instrumentConverter = instrumentConverterRegistry.getConverter(pricingInstrument)
 
         val currencyConversions = if (pricingInstrument.mainCurrency == currency) {

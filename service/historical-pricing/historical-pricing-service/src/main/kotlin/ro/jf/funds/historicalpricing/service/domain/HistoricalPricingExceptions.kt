@@ -2,6 +2,7 @@ package ro.jf.funds.historicalpricing.service.domain
 
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.FinancialUnit
+import ro.jf.funds.commons.model.Instrument
 
 sealed class HistoricalPricingExceptions(message: String) : RuntimeException(message) {
     class HistoricalPriceNotFound(
@@ -17,4 +18,8 @@ sealed class HistoricalPricingExceptions(message: String) : RuntimeException(mes
         val status: Int,
         val errorDetail: String,
     ) : HistoricalPricingExceptions("Historical pricing integration exception. api = $api, status = $status, errorDetail = $errorDetail.")
+
+    class InstrumentSourceIntegrationNotFound(
+        val instrument: Instrument,
+    ) : HistoricalPricingExceptions("Instrument source integration not found. instrument = $instrument.")
 }

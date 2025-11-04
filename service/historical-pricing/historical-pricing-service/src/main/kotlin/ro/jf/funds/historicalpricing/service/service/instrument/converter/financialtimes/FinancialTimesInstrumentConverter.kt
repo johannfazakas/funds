@@ -10,7 +10,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.api.model.PricingInstrument
+import ro.jf.funds.historicalpricing.service.domain.PricingInstrument
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.MonthlyCachedInstrumentConverterProxy
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.financialtimes.model.FTCell
@@ -41,7 +41,7 @@ class FinancialTimesInstrumentConverter(
             .get("https://markets.ft.com/data/equities/ajax/get-historical-prices") {
                 parameter("startDate", from.asQueryParam())
                 parameter("endDate", to.asQueryParam())
-                parameter("symbol", instrument.conversionSymbol)
+                parameter("symbol", instrument.symbol)
 
             }
             .body<FTHtmlResponse>()
