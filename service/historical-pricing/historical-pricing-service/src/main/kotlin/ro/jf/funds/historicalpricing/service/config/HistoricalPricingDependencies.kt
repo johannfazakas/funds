@@ -10,14 +10,11 @@ import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.historicalpricing.service.domain.HistoricalPriceSource
-import ro.jf.funds.historicalpricing.service.persistence.CurrencyPairHistoricalPriceExposedRepository
-import ro.jf.funds.historicalpricing.service.persistence.InstrumentHistoricalPriceExposedRepository
+import ro.jf.funds.historicalpricing.service.persistence.HistoricalPriceRepository
 import ro.jf.funds.historicalpricing.service.service.ConversionService
-import ro.jf.funds.historicalpricing.service.service.currency.CurrencyPairHistoricalPriceRepository
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyService
 import ro.jf.funds.historicalpricing.service.service.currency.converter.currencybeacon.CurrencyBeaconCurrencyConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverterRegistry
-import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentHistoricalPriceRepository
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentService
 import ro.jf.funds.historicalpricing.service.service.instrument.PricingInstrumentRepository
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.bt.BTInstrumentConverter
@@ -40,8 +37,7 @@ val Application.historicalPricingDependencies
                 }
             }
         }
-        single<CurrencyPairHistoricalPriceRepository> { CurrencyPairHistoricalPriceExposedRepository(get()) }
-        single<InstrumentHistoricalPriceRepository> { InstrumentHistoricalPriceExposedRepository(get()) }
+        single { HistoricalPriceRepository(get()) }
         single { PricingInstrumentRepository() }
         single { YahooInstrumentConverter(get()) }
         single { FinancialTimesInstrumentConverter(get()) }

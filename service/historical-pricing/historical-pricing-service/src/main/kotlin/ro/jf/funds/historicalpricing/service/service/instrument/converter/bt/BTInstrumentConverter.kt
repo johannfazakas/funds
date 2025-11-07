@@ -7,6 +7,8 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.datetime.*
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format.FormatStringsInDatetimeFormats
+import kotlinx.datetime.format.byUnicodePattern
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.ss.usermodel.Sheet
@@ -18,15 +20,15 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.math.BigDecimal
 import java.text.NumberFormat.getNumberInstance
-import java.time.format.DateTimeFormatter
 import java.util.*
-import java.time.LocalDate as JavaLocalDate
 
 class BTInstrumentConverter(
     private val httpClient: HttpClient,
 ) : InstrumentConverter {
     private val cache = mutableMapOf<Pair<PricingInstrument, LocalDate>, ConversionResponse>()
-    private val localDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+    @OptIn(FormatStringsInDatetimeFormats::class)
+    private val localDateFormatter = LocalDate.Format { byUnicodePattern("yyyy-MM-dd") }
 
     override suspend fun convert(instrument: PricingInstrument, dates: List<LocalDate>): List<ConversionResponse> =
         dates.map { date -> convert(instrument, date) }
@@ -107,11 +109,7 @@ class BTInstrumentConverter(
         }
     }
 
-    private fun Cell.toLocalDate(): LocalDate {
-        return JavaLocalDate.parse(stringCellValue, localDateFormatter).let {
-            LocalDate(it.year, it.monthValue, it.dayOfMonth)
-        }
-    }
+    private fun Cell.toLocalDate(): LocalDate = localDateFormatter.parse(stringCellValue)
 
     private fun today(): LocalDate = Clock.System.now().toLocalDateTime(TimeZone.UTC).date
 }

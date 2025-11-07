@@ -5,7 +5,8 @@ import mu.KotlinLogging
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.service.domain.InstrumentHistoricalPrice
+import ro.jf.funds.historicalpricing.service.domain.HistoricalPrice
+import ro.jf.funds.historicalpricing.service.persistence.HistoricalPriceRepository
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyService
 
 val log = KotlinLogging.logger {}
@@ -13,7 +14,7 @@ val log = KotlinLogging.logger {}
 class InstrumentService(
     private val pricingInstrumentRepository: PricingInstrumentRepository,
     private val instrumentConverterRegistry: InstrumentConverterRegistry,
-    private val instrumentHistoricalPriceRepository: InstrumentHistoricalPriceRepository,
+    private val historicalPriceRepository: HistoricalPriceRepository,
     private val currencyService: CurrencyService,
 ) {
     suspend fun convert(
@@ -58,8 +59,8 @@ class InstrumentService(
                 }
             }
             .onEach {
-                instrumentHistoricalPriceRepository.saveHistoricalPrice(
-                    InstrumentHistoricalPrice(pricingInstrument.instrument.value, currency.value, it.date, it.rate)
+                historicalPriceRepository.saveHistoricalPrice(
+                    HistoricalPrice(pricingInstrument.instrument, currency, it.date, it.rate)
                 )
             }
     }
@@ -68,7 +69,7 @@ class InstrumentService(
         instrument: Instrument,
         currency: Currency,
         dates: List<LocalDate>,
-    ): List<ConversionResponse> = instrumentHistoricalPriceRepository
-        .getHistoricalPrices(instrument.value, currency.value, dates)
-        .map { it: InstrumentHistoricalPrice -> ConversionResponse(instrument, Currency(it.currency), it.date, it.price) }
+    ): List<ConversionResponse> = historicalPriceRepository
+        .getHistoricalPrices(instrument, currency, dates)
+        .map { ConversionResponse(instrument, it.target, it.date, it.price) }
 }
