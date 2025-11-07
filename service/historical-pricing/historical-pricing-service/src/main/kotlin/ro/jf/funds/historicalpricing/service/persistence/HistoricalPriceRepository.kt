@@ -12,16 +12,18 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.selectAll
 import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.historicalpricing.service.domain.CurrencyPairHistoricalPrice
-import ro.jf.funds.historicalpricing.service.service.currency.CurrencyPairHistoricalPriceRepository
+import ro.jf.funds.commons.model.FinancialUnit
+import ro.jf.funds.commons.model.toFinancialUnit
+import ro.jf.funds.historicalpricing.service.domain.HistoricalPrice
 import java.util.*
 
-class CurrencyPairHistoricalPriceExposedRepository(
+class HistoricalPriceRepository(
     private val database: Database,
-) : CurrencyPairHistoricalPriceRepository {
+) {
 
-    object Table : UUIDTable("currency_pair_historical_price") {
-        val sourceCurrency = varchar("source_currency", 50)
+    object Table : UUIDTable("historical_price") {
+        val sourceUnit = varchar("source_unit", 50)
+        val sourceType = varchar("source_type", 50)
         val targetCurrency = varchar("target_currency", 50)
         val date = date("date")
         val price = decimal("price", 20, 8)
@@ -30,59 +32,62 @@ class CurrencyPairHistoricalPriceExposedRepository(
     class DAO(id: EntityID<UUID>) : UUIDEntity(id) {
         companion object : UUIDEntityClass<DAO>(Table)
 
-        var sourceCurrency by Table.sourceCurrency
+        var sourceUnit by Table.sourceUnit
+        var sourceType by Table.sourceType
         var targetCurrency by Table.targetCurrency
         var date by Table.date
         var price by Table.price
     }
 
-    override suspend fun getHistoricalPrice(
-        sourceCurrency: Currency,
-        targetCurrency: Currency,
+    suspend fun getHistoricalPrice(
+        source: FinancialUnit,
+        target: Currency,
         date: LocalDate,
-    ): CurrencyPairHistoricalPrice? = blockingTransaction {
+    ): HistoricalPrice? = blockingTransaction {
         Table
             .selectAll()
             .where {
-                (Table.sourceCurrency eq sourceCurrency.value) and
-                        (Table.targetCurrency eq targetCurrency.value) and
+                (Table.sourceUnit eq source.value) and
+                        (Table.sourceType eq source.type.value) and
+                        (Table.targetCurrency eq target.value) and
                         (Table.date eq date.toJavaLocalDate())
             }
             .mapNotNull { it.toModel() }
             .singleOrNull()
     }
 
-    override suspend fun getHistoricalPrices(
-        sourceCurrency: Currency,
-        targetCurrency: Currency,
+    suspend fun getHistoricalPrices(
+        source: FinancialUnit,
+        target: Currency,
         dates: List<LocalDate>,
-    ): List<CurrencyPairHistoricalPrice> = blockingTransaction {
+    ): List<HistoricalPrice> = blockingTransaction {
         Table
             .selectAll()
             .where {
-                (Table.sourceCurrency eq sourceCurrency.value) and
-                        (Table.targetCurrency eq targetCurrency.value) and
+                (Table.sourceUnit eq source.value) and
+                        (Table.sourceType eq source.type.value) and
+                        (Table.targetCurrency eq target.value) and
                         (Table.date inList dates.map { it.toJavaLocalDate() })
             }
             .map { it.toModel() }
     }
 
-
-    override suspend fun saveHistoricalPrice(
-        currencyPairHistoricalPrice: CurrencyPairHistoricalPrice,
+    suspend fun saveHistoricalPrice(
+        historicalPrice: HistoricalPrice,
     ): Unit = blockingTransaction {
         DAO.new {
-            sourceCurrency = currencyPairHistoricalPrice.sourceCurrency.value
-            targetCurrency = currencyPairHistoricalPrice.targetCurrency.value
-            date = currencyPairHistoricalPrice.date.toJavaLocalDate()
-            price = currencyPairHistoricalPrice.price
+            sourceUnit = historicalPrice.source.value
+            sourceType = historicalPrice.source.type.value
+            targetCurrency = historicalPrice.target.value
+            date = historicalPrice.date.toJavaLocalDate()
+            price = historicalPrice.price
         }
     }
 
     private fun ResultRow.toModel() =
-        CurrencyPairHistoricalPrice(
-            sourceCurrency = Currency(this[Table.sourceCurrency]),
-            targetCurrency = Currency(this[Table.targetCurrency]),
+        HistoricalPrice(
+            source = toFinancialUnit(this[Table.sourceType], this[Table.sourceUnit]),
+            target = Currency(this[Table.targetCurrency]),
             date = this[Table.date].let {
                 LocalDate(it.year, it.monthValue, it.dayOfMonth)
             },

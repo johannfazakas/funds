@@ -10,6 +10,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format.FormatStringsInDatetimeFormats
+import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.minus
 import mu.KotlinLogging
 import ro.jf.funds.commons.model.Currency
@@ -17,10 +19,10 @@ import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.service.domain.HistoricalPricingExceptions
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyConverter
 import ro.jf.funds.historicalpricing.service.service.currency.converter.currencybeacon.model.CBConversion
-import java.time.format.DateTimeFormatter
-import java.time.LocalDate as JavaLocalDate
 
-private val QUERY_PARAM_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+@OptIn(FormatStringsInDatetimeFormats::class)
+private val QUERY_PARAM_FORMATTER = LocalDate.Format { byUnicodePattern("yyyy-MM-dd") }
 private const val MAX_ATTEMPTS = 7
 
 private val log = KotlinLogging.logger {}
@@ -109,6 +111,5 @@ class CurrencyBeaconCurrencyConverter(
         )
     }
 
-    private fun LocalDate.toQueryParam() =
-        QUERY_PARAM_FORMATTER.format(JavaLocalDate.of(this.year, this.monthNumber, this.dayOfMonth))
+    private fun LocalDate.toQueryParam() = QUERY_PARAM_FORMATTER.format(this)
 }

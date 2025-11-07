@@ -13,30 +13,33 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.dsl.module
 import org.koin.ktor.ext.get
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
-import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.Currency.Companion.EUR
+import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
+import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
 import ro.jf.funds.historicalpricing.service.config.configureHistoricalPricingErrorHandling
 import ro.jf.funds.historicalpricing.service.config.configureHistoricalPricingRouting
 import ro.jf.funds.historicalpricing.service.config.historicalPricingDependencies
-import ro.jf.funds.historicalpricing.service.domain.CurrencyPairHistoricalPrice
-import ro.jf.funds.historicalpricing.service.persistence.CurrencyPairHistoricalPriceExposedRepository
+import ro.jf.funds.historicalpricing.service.domain.HistoricalPrice
+import ro.jf.funds.historicalpricing.service.persistence.HistoricalPriceRepository
 import ro.jf.funds.historicalpricing.service.service.currency.converter.currencybeacon.CurrencyBeaconCurrencyConverter
 import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
 class HistoricalPricingApiTest {
-    private val currencyPairHistoricalPriceRepository =
-        CurrencyPairHistoricalPriceExposedRepository(PostgresContainerExtension.connection)
+    private val historicalPriceRepository =
+        HistoricalPriceRepository(PostgresContainerExtension.connection)
     private val currencyConverter = mock<CurrencyBeaconCurrencyConverter>()
 
     private val date1 = LocalDate.parse("2025-02-01")
@@ -50,19 +53,27 @@ class HistoricalPricingApiTest {
         val httpClient = createJsonHttpClient()
 
         listOf(
-            CurrencyPairHistoricalPrice(Currency.RON, Currency.EUR, date1, "0.2".toBigDecimal()),
-            CurrencyPairHistoricalPrice(Currency.RON, Currency.EUR, date2, "0.21".toBigDecimal()),
-            CurrencyPairHistoricalPrice(Currency.EUR, Currency.RON, date3, "4.9".toBigDecimal())
-        ).forEach { currencyPairHistoricalPriceRepository.saveHistoricalPrice(it) }
+            HistoricalPrice(RON, EUR, date1, "0.2".toBigDecimal()),
+            HistoricalPrice(RON, EUR, date2, "0.21".toBigDecimal()),
+            HistoricalPrice(EUR, RON, date3, "4.9".toBigDecimal())
+        ).forEach { historicalPriceRepository.saveHistoricalPrice(it) }
+
+        whenever(currencyConverter.convert(EUR, RON, listOf(date4)))
+            .thenReturn(
+                listOf(
+                    ConversionResponse(EUR, RON, date4, "4.92".toBigDecimal()),
+                )
+            )
 
         val response = httpClient.post("/funds-api/historical-pricing/v1/conversions") {
             contentType(ContentType.Application.Json)
             setBody(
                 ConversionsRequest(
                     conversions = listOf(
-                        ConversionRequest(Currency.RON, Currency.EUR, date1),
-                        ConversionRequest(Currency.RON, Currency.EUR, date2),
-                        ConversionRequest(Currency.EUR, Currency.RON, date3)
+                        ConversionRequest(RON, EUR, date1),
+                        ConversionRequest(RON, EUR, date2),
+                        ConversionRequest(EUR, RON, date3),
+                        ConversionRequest(EUR, RON, date4),
                     )
                 )
             )
@@ -70,12 +81,13 @@ class HistoricalPricingApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val conversionsResponse = response.body<ConversionsResponse>()
-        assertThat(conversionsResponse.conversions).hasSize(3)
-        assertThat(conversionsResponse.getRate(Currency.RON, Currency.EUR, date1)).isEqualTo("0.2".toBigDecimal())
-        assertThat(conversionsResponse.getRate(Currency.RON, Currency.EUR, date2)).isEqualTo("0.21".toBigDecimal())
-        assertThat(conversionsResponse.getRate(Currency.EUR, Currency.RON, date3)).isEqualTo("4.9".toBigDecimal())
+        assertThat(conversionsResponse.conversions).hasSize(4)
+        assertThat(conversionsResponse.getRate(RON, EUR, date1)).isEqualTo("0.2".toBigDecimal())
+        assertThat(conversionsResponse.getRate(RON, EUR, date2)).isEqualTo("0.21".toBigDecimal())
+        assertThat(conversionsResponse.getRate(EUR, RON, date3)).isEqualTo("4.9".toBigDecimal())
+        assertThat(conversionsResponse.getRate(EUR, RON, date4)).isEqualTo("4.92".toBigDecimal())
         assertThatThrownBy {
-            assertThat(conversionsResponse.getRate(Currency.RON, Currency.EUR, date3))
+            assertThat(conversionsResponse.getRate(RON, EUR, date3))
         }
     }
 
