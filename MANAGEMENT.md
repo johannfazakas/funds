@@ -77,10 +77,11 @@ This would eliminate the need to use @OptIn(ExperimentalSerializationApi::class)
 - [x] Check integration test to also hit converter
 - [x] Is it really needed to have separate repositories for currency and instrument prices?
 - [ ] Evaluate the separation of Instrument vs Currency *HistoricalPriceRepository-es
-    - [ ] First, check if ConversionRequest target can be a Currency. would simplify the when in `CurrencyService`
-    - [ ] The 2 services might be inlined or treated as strategies. or kept as now.
-- [ ] use kotlinx.time in FinancialTimesInstrumentConverter
-- [ ] take responsibility of current code in reporting ConversionRateService
+    - [x] First, check if ConversionRequest target can be a Currency. would simplify the when in `CurrencyService`
+    - [x] The 2 services might be inlined or treated as strategies. or kept as now.
+    - [ ] Conflicting terminology HistoricalPrice vs Conversion
+    - [x] Unit tests on ConversionService
+- [x] use kotlinx.time in FinancialTimesInstrumentConverter
 - [ ] Check ConversionsResponse::getRate in historical pricing api model
 
 ### Improve Reporting Service code

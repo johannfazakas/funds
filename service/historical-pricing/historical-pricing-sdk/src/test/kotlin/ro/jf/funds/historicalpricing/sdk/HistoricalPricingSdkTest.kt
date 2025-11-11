@@ -9,7 +9,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockserver.client.MockServerClient
-import org.mockserver.model.Header
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
@@ -64,19 +63,17 @@ class HistoricalPricingSdkTest {
                             conversions.forEach { (conversion, rate) ->
                                 add(buildJsonObject {
                                     put("sourceUnit", buildJsonObject {
-                                        put("type", JsonPrimitive(when (conversion.sourceUnit) {
-                                            is Currency -> "currency"
-                                            is Instrument -> "instrument"
-                                        }))
+                                        put(
+                                            "type", JsonPrimitive(
+                                                when (conversion.sourceUnit) {
+                                                    is Currency -> "currency"
+                                                    is Instrument -> "instrument"
+                                                }
+                                            )
+                                        )
                                         put("value", JsonPrimitive(conversion.sourceUnit.value))
                                     })
-                                    put("targetUnit", buildJsonObject {
-                                        put("type", JsonPrimitive(when (conversion.targetUnit) {
-                                            is Currency -> "currency"
-                                            is Instrument -> "instrument"
-                                        }))
-                                        put("value", JsonPrimitive(conversion.targetUnit.value))
-                                    })
+                                    put("targetCurrency", JsonPrimitive(conversion.targetCurrency.value))
                                     put("date", JsonPrimitive(conversion.date.toString()))
                                     put("rate", JsonPrimitive(rate.toString()))
                                 })

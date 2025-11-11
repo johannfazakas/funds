@@ -13,12 +13,12 @@ import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.service.domain.HistoricalPrice
-import ro.jf.funds.historicalpricing.service.domain.HistoricalPricingExceptions
+import ro.jf.funds.historicalpricing.service.domain.HistoricalPriceSource
+import ro.jf.funds.historicalpricing.service.domain.PricingInstrument
 import ro.jf.funds.historicalpricing.service.persistence.HistoricalPriceRepository
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyConverter
-import ro.jf.funds.historicalpricing.service.service.currency.CurrencyService
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverterRegistry
-import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentService
 import ro.jf.funds.historicalpricing.service.service.instrument.PricingInstrumentRepository
 import java.math.BigDecimal
 
@@ -26,12 +26,14 @@ class ConversionServiceTest {
     private val currencyConverter = mock<CurrencyConverter>()
     private val historicalPriceRepository = mock<HistoricalPriceRepository>()
     private val instrumentConverterRegistry = mock<InstrumentConverterRegistry>()
-    private val pricingInstrumentRepository = PricingInstrumentRepository()
+    private val pricingInstrumentRepository = mock<PricingInstrumentRepository>()
 
-    val currencyService = CurrencyService(currencyConverter, historicalPriceRepository)
-    val instrumentService =
-        InstrumentService(pricingInstrumentRepository, instrumentConverterRegistry, historicalPriceRepository, currencyService)
-    private val conversionService = ConversionService(currencyService, instrumentService)
+    private val conversionService = ConversionService(
+        historicalPriceRepository,
+        currencyConverter,
+        pricingInstrumentRepository,
+        instrumentConverterRegistry
+    )
 
     private val date1 = LocalDate.parse("2025-02-01")
     private val date2 = LocalDate.parse("2025-02-02")
@@ -119,10 +121,93 @@ class ConversionServiceTest {
     }
 
     @Test
-    fun `should raise an exception when attempting to convert investment instruments`(): Unit = runBlocking {
-        val request = ConversionsRequest(listOf(ConversionRequest(Currency.EUR, Instrument("SXR8_DE"), date1)))
+    fun `given instrument to main currency conversion when partially stored then should combine stored and fetched conversions`(): Unit = runBlocking {
+        val instrument = Instrument("VWCE")
+        val pricingInstrument = PricingInstrument(
+            instrument = instrument,
+            source = HistoricalPriceSource.FINANCIAL_TIMES,
+            symbol = "VWCE",
+            mainCurrency = Currency.EUR
+        )
+        val instrumentConverter = mock<InstrumentConverter>()
 
-        assertThatThrownBy { runBlocking { conversionService.convert(request) } }
-            .isInstanceOf(HistoricalPricingExceptions.ConversionNotPermitted::class.java)
+        whenever(pricingInstrumentRepository.findByInstrument(instrument))
+            .thenReturn(pricingInstrument)
+        whenever(historicalPriceRepository.getHistoricalPrices(instrument, Currency.EUR, listOf(date1, date2, date3)))
+            .thenReturn(
+                listOf(
+                    HistoricalPrice(instrument, Currency.EUR, date1, BigDecimal("100.5"))
+                )
+            )
+        whenever(instrumentConverterRegistry.getConverter(pricingInstrument))
+            .thenReturn(instrumentConverter)
+        whenever(instrumentConverter.convert(pricingInstrument, listOf(date2, date3)))
+            .thenReturn(
+                listOf(
+                    ConversionResponse(instrument, Currency.EUR, date2, BigDecimal("101.2")),
+                    ConversionResponse(instrument, Currency.EUR, date3, BigDecimal("102.8"))
+                )
+            )
+
+        val request = ConversionsRequest(
+            listOf(
+                ConversionRequest(instrument, Currency.EUR, date1),
+                ConversionRequest(instrument, Currency.EUR, date2),
+                ConversionRequest(instrument, Currency.EUR, date3)
+            )
+        )
+
+        val response = conversionService.convert(request)
+
+        assertThat(response.conversions).hasSize(3)
+        assertThat(response.getRate(instrument, Currency.EUR, date1)).isEqualTo(BigDecimal("100.5"))
+        assertThat(response.getRate(instrument, Currency.EUR, date2)).isEqualTo(BigDecimal("101.2"))
+        assertThat(response.getRate(instrument, Currency.EUR, date3)).isEqualTo(BigDecimal("102.8"))
+    }
+
+    @Test
+    fun `given instrument to different currency conversion when partially stored then should apply implicit currency conversion`(): Unit = runBlocking {
+        val instrument = Instrument("VWCE")
+        val pricingInstrument = PricingInstrument(
+            instrument = instrument,
+            source = HistoricalPriceSource.FINANCIAL_TIMES,
+            symbol = "VWCE",
+            mainCurrency = Currency.EUR
+        )
+        val instrumentConverter = mock<InstrumentConverter>()
+
+        whenever(pricingInstrumentRepository.findByInstrument(instrument))
+            .thenReturn(pricingInstrument)
+        whenever(historicalPriceRepository.getHistoricalPrices(instrument, Currency.RON, listOf(date1, date2)))
+            .thenReturn(
+                listOf(
+                    HistoricalPrice(instrument, Currency.RON, date1, BigDecimal("502.5"))
+                )
+            )
+        whenever(historicalPriceRepository.getHistoricalPrices(Currency.EUR, Currency.RON, listOf(date2)))
+            .thenReturn(emptyList())
+        whenever(currencyConverter.convert(Currency.EUR, Currency.RON, listOf(date2)))
+            .thenReturn(listOf(ConversionResponse(Currency.EUR, Currency.RON, date2, BigDecimal("5.0"))))
+        whenever(instrumentConverterRegistry.getConverter(pricingInstrument))
+            .thenReturn(instrumentConverter)
+        whenever(instrumentConverter.convert(pricingInstrument, listOf(date2)))
+            .thenReturn(
+                listOf(
+                    ConversionResponse(instrument, Currency.EUR, date2, BigDecimal("101.0"))
+                )
+            )
+
+        val request = ConversionsRequest(
+            listOf(
+                ConversionRequest(instrument, Currency.RON, date1),
+                ConversionRequest(instrument, Currency.RON, date2)
+            )
+        )
+
+        val response = conversionService.convert(request)
+
+        assertThat(response.conversions).hasSize(2)
+        assertThat(response.getRate(instrument, Currency.RON, date1)).isEqualTo(BigDecimal("502.5"))
+        assertThat(response.getRate(instrument, Currency.RON, date2)).isEqualTo(BigDecimal("505.00"))
     }
 }

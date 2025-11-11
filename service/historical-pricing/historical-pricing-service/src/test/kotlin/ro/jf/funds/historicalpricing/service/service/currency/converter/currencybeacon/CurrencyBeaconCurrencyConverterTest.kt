@@ -55,12 +55,12 @@ class CurrencyBeaconCurrencyConverterTest {
         assertThat(result[0].date).isEqualTo(date1)
         assertThat(result[0].rate).isEqualTo(BigDecimal("4.87281309"))
         assertThat(result[0].sourceUnit).isEqualTo(Currency.EUR)
-        assertThat(result[0].targetUnit).isEqualTo(Currency.RON)
+        assertThat(result[0].targetCurrency).isEqualTo(Currency.RON)
 
         assertThat(result[1].date).isEqualTo(date2)
         assertThat(result[1].rate).isEqualTo(BigDecimal("4.88123456"))
         assertThat(result[1].sourceUnit).isEqualTo(Currency.EUR)
-        assertThat(result[1].targetUnit).isEqualTo(Currency.RON)
+        assertThat(result[1].targetCurrency).isEqualTo(Currency.RON)
     }
 
     @Test
@@ -118,7 +118,7 @@ class CurrencyBeaconCurrencyConverterTest {
         assertThat(result[0].date).isEqualTo(date) // Should return original date
         assertThat(result[0].rate).isEqualTo(BigDecimal("4.87123456")) // Rate from previous day
         assertThat(result[0].sourceUnit).isEqualTo(Currency.EUR)
-        assertThat(result[0].targetUnit).isEqualTo(Currency.RON)
+        assertThat(result[0].targetCurrency).isEqualTo(Currency.RON)
     }
 
     @Test
@@ -136,7 +136,7 @@ class CurrencyBeaconCurrencyConverterTest {
         assertThat(result[0].date).isEqualTo(date) // Should return original date
         assertThat(result[0].rate).isEqualTo(BigDecimal("4.87123456")) // Rate from previous day
         assertThat(result[0].sourceUnit).isEqualTo(Currency.EUR)
-        assertThat(result[0].targetUnit).isEqualTo(Currency.RON)
+        assertThat(result[0].targetCurrency).isEqualTo(Currency.RON)
     }
 
     private fun MockServerClient.mockCurrencyBeaconRequest(

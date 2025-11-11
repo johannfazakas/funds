@@ -2,6 +2,7 @@ package ro.jf.funds.historicalpricing.api.model
 
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
+import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.serialization.BigDecimalSerializer
 import java.math.BigDecimal
@@ -9,7 +10,7 @@ import java.math.BigDecimal
 @Serializable
 data class ConversionResponse(
     val sourceUnit: FinancialUnit,
-    val targetUnit: FinancialUnit,
+    val targetCurrency: Currency,
     val date: LocalDate,
     @Serializable(with = BigDecimalSerializer::class)
     val rate: BigDecimal,
@@ -24,12 +25,12 @@ data class ConversionsResponse(
     }
 
     private val conversionsByRequest by lazy {
-        conversions.associateBy({ ConversionRequest(it.sourceUnit, it.targetUnit, it.date) }, { it.rate })
+        conversions.associateBy({ ConversionRequest(it.sourceUnit, it.targetCurrency, it.date) }, { it.rate })
     }
 
-    fun getRate(sourceUnit: FinancialUnit, targetUnit: FinancialUnit, date: LocalDate): BigDecimal {
-        if (sourceUnit == targetUnit) return BigDecimal.ONE
-        return conversionsByRequest[ConversionRequest(sourceUnit, targetUnit, date)]
+    fun getRate(sourceUnit: FinancialUnit, targetCurrency: Currency, date: LocalDate): BigDecimal {
+        if (sourceUnit == targetCurrency) return BigDecimal.ONE
+        return conversionsByRequest[ConversionRequest(sourceUnit, targetCurrency, date)]
             ?: error("Conversion not found")
     }
 }
