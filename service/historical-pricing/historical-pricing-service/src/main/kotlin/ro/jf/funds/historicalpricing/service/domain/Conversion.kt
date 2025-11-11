@@ -5,7 +5,7 @@ import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import java.math.BigDecimal
 
-data class HistoricalPrice(
+data class Conversion(
     val source: FinancialUnit,
     val target: Currency,
     val date: LocalDate,

@@ -44,11 +44,13 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
         val currencyAccount = accountStore[currencyRecord.accountName]
 
         return if (currencyRecord.unit != currencyAccount.unit) {
+            val targetCurrency = currencyAccount.unit as? Currency
+                ?: throw ImportDataException("Unit ${currencyAccount.unit} is not a currency, conversion would not be supported.")
             listOf(
                 Conversion(
                     transaction.dateTime.date,
                     currencyRecord.unit,
-                    currencyAccount.unit
+                    targetCurrency
                 )
             )
         } else {

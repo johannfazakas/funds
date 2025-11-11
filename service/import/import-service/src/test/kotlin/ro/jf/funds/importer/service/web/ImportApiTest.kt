@@ -34,7 +34,7 @@ import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
-import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
+import ro.jf.funds.historicalpricing.sdk.ConversionSdk
 import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.service.config.configureImportErrorHandling
 import ro.jf.funds.importer.service.config.configureImportEventHandling
@@ -48,7 +48,7 @@ import javax.sql.DataSource
 class ImportApiTest {
     private val accountSdk: AccountSdk = mock()
     private val fundSdk: FundSdk = mock()
-    private val historicalPricingSdk: HistoricalPricingSdk = mock()
+    private val conversionSdk: ConversionSdk = mock()
     private val transactionSdk: TransactionSdk = mock()
 
     @Test
@@ -96,7 +96,7 @@ class ImportApiTest {
             )
         )
         whenever(transactionSdk.createTransaction(eq(userId), any())).thenReturn(mock<TransactionTO.SingleRecord>())
-        whenever(historicalPricingSdk.convert(ConversionsRequest(emptyList())))
+        whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
         val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
@@ -246,7 +246,7 @@ class ImportApiTest {
             single<AccountSdk> { accountSdk }
             single<FundSdk> { fundSdk }
             single<TransactionSdk> { transactionSdk }
-            single<HistoricalPricingSdk> { historicalPricingSdk }
+            single<ConversionSdk> { conversionSdk }
         }
         configureDependencies(*importDependencyModules, importAppTestModule)
         configureImportErrorHandling()

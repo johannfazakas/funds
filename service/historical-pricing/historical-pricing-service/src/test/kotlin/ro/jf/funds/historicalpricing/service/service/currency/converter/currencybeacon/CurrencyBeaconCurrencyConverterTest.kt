@@ -17,7 +17,7 @@ import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
-import ro.jf.funds.historicalpricing.service.domain.HistoricalPricingExceptions
+import ro.jf.funds.historicalpricing.service.domain.ConversionExceptions
 import java.math.BigDecimal
 
 @ExtendWith(MockServerContainerExtension::class)
@@ -74,7 +74,7 @@ class CurrencyBeaconCurrencyConverterTest {
             assertThatThrownBy {
                 runBlocking { currencyConverter.convert(Currency.EUR, Currency.RON, dates) }
             }
-                .isInstanceOf(HistoricalPricingExceptions.HistoricalPricingIntegrationException::class.java)
+                .isInstanceOf(ConversionExceptions.ConversionIntegrationException::class.java)
                 .hasFieldOrPropertyWithValue("api", "currency_beacon")
                 .hasFieldOrPropertyWithValue("status", 429)
                 .hasFieldOrPropertyWithValue(
@@ -94,7 +94,7 @@ class CurrencyBeaconCurrencyConverterTest {
             assertThatThrownBy {
                 runBlocking { currencyConverter.convert(Currency.EUR, Currency.RON, dates) }
             }
-                .isInstanceOf(HistoricalPricingExceptions.HistoricalPricingIntegrationException::class.java)
+                .isInstanceOf(ConversionExceptions.ConversionIntegrationException::class.java)
                 .hasFieldOrPropertyWithValue("api", "currency_beacon")
                 .hasFieldOrPropertyWithValue("status", 401)
                 .hasFieldOrPropertyWithValue(

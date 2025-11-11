@@ -93,6 +93,7 @@ This would eliminate the need to use @OptIn(ExperimentalSerializationApi::class)
 ### Caching capabilities for HistoricalPricingSDK
 
 - [ ] SDK should take responsibility over the current code in reporting ConversionRateService
+- [ ] Use the same component in import service
 - [ ] Find a suitable in-memory caching solution
 - [ ] Check error handling
 - [ ] Look for same currency conversion, maybe it shouldn't trigger a request

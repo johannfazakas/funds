@@ -28,18 +28,18 @@ import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
-import ro.jf.funds.historicalpricing.service.config.configureHistoricalPricingErrorHandling
-import ro.jf.funds.historicalpricing.service.config.configureHistoricalPricingRouting
-import ro.jf.funds.historicalpricing.service.config.historicalPricingDependencies
-import ro.jf.funds.historicalpricing.service.domain.HistoricalPrice
-import ro.jf.funds.historicalpricing.service.persistence.HistoricalPriceRepository
+import ro.jf.funds.historicalpricing.service.config.configureConversionErrorHandling
+import ro.jf.funds.historicalpricing.service.config.configureConversionRouting
+import ro.jf.funds.historicalpricing.service.config.conversionDependencies
+import ro.jf.funds.historicalpricing.service.domain.Conversion
+import ro.jf.funds.historicalpricing.service.persistence.ConversionRepository
 import ro.jf.funds.historicalpricing.service.service.currency.converter.currencybeacon.CurrencyBeaconCurrencyConverter
 import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
-class HistoricalPricingApiTest {
-    private val historicalPriceRepository =
-        HistoricalPriceRepository(PostgresContainerExtension.connection)
+class ConversionApiTest {
+    private val conversionRepository =
+        ConversionRepository(PostgresContainerExtension.connection)
     private val currencyConverter = mock<CurrencyBeaconCurrencyConverter>()
 
     private val date1 = LocalDate.parse("2025-02-01")
@@ -53,10 +53,10 @@ class HistoricalPricingApiTest {
         val httpClient = createJsonHttpClient()
 
         listOf(
-            HistoricalPrice(RON, EUR, date1, "0.2".toBigDecimal()),
-            HistoricalPrice(RON, EUR, date2, "0.21".toBigDecimal()),
-            HistoricalPrice(EUR, RON, date3, "4.9".toBigDecimal())
-        ).forEach { historicalPriceRepository.saveHistoricalPrice(it) }
+            Conversion(RON, EUR, date1, "0.2".toBigDecimal()),
+            Conversion(RON, EUR, date2, "0.21".toBigDecimal()),
+            Conversion(EUR, RON, date3, "4.9".toBigDecimal())
+        ).forEach { conversionRepository.saveHistoricalPrice(it) }
 
         whenever(currencyConverter.convert(EUR, RON, listOf(date4)))
             .thenReturn(
@@ -92,13 +92,13 @@ class HistoricalPricingApiTest {
     }
 
     private fun Application.testModule() {
-        val historicalPricingAppTestModule = module {
+        val conversionAppTestModule = module {
             single<CurrencyBeaconCurrencyConverter> { currencyConverter }
         }
-        configureDependencies(historicalPricingDependencies, historicalPricingAppTestModule)
+        configureDependencies(conversionDependencies, conversionAppTestModule)
         configureContentNegotiation()
         configureDatabaseMigration(get<DataSource>())
-        configureHistoricalPricingRouting(get())
-        configureHistoricalPricingErrorHandling()
+        configureConversionRouting(get())
+        configureConversionErrorHandling()
     }
 }

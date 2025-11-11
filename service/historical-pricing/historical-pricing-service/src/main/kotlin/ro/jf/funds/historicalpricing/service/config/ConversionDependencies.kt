@@ -9,18 +9,18 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import ro.jf.funds.commons.persistence.getDataSource
-import ro.jf.funds.historicalpricing.service.domain.HistoricalPriceSource
-import ro.jf.funds.historicalpricing.service.persistence.HistoricalPriceRepository
+import ro.jf.funds.historicalpricing.service.domain.InstrumentConversionSource
+import ro.jf.funds.historicalpricing.service.persistence.ConversionRepository
 import ro.jf.funds.historicalpricing.service.service.ConversionService
 import ro.jf.funds.historicalpricing.service.service.currency.converter.currencybeacon.CurrencyBeaconCurrencyConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverterRegistry
-import ro.jf.funds.historicalpricing.service.service.instrument.PricingInstrumentRepository
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConversionInfoRepository
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.bt.BTInstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.financialtimes.FinancialTimesInstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.yahoo.YahooInstrumentConverter
 import javax.sql.DataSource
 
-val Application.historicalPricingDependencies
+val Application.conversionDependencies
     get() = module {
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
@@ -35,17 +35,17 @@ val Application.historicalPricingDependencies
                 }
             }
         }
-        single { HistoricalPriceRepository(get()) }
-        single { PricingInstrumentRepository() }
+        single { ConversionRepository(get()) }
+        single { InstrumentConversionInfoRepository() }
         single { YahooInstrumentConverter(get()) }
         single { FinancialTimesInstrumentConverter(get()) }
         single { BTInstrumentConverter(get()) }
         single {
             InstrumentConverterRegistry(
                 mapOf(
-                    HistoricalPriceSource.YAHOO to get<YahooInstrumentConverter>(),
-                    HistoricalPriceSource.FINANCIAL_TIMES to get<FinancialTimesInstrumentConverter>(),
-                    HistoricalPriceSource.BT_ASSET_MANAGEMENT to get<BTInstrumentConverter>()
+                    InstrumentConversionSource.YAHOO to get<YahooInstrumentConverter>(),
+                    InstrumentConversionSource.FINANCIAL_TIMES to get<FinancialTimesInstrumentConverter>(),
+                    InstrumentConversionSource.BT_ASSET_MANAGEMENT to get<BTInstrumentConverter>()
                 )
             )
         }

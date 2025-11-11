@@ -2,13 +2,13 @@ package ro.jf.funds.historicalpricing.service.service.instrument.converter
 
 import kotlinx.datetime.*
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.service.domain.PricingInstrument
+import ro.jf.funds.historicalpricing.service.domain.InstrumentConversionInfo
 
 class MonthlyCachedInstrumentConverterProxy {
-    private val cache = mutableMapOf<Pair<PricingInstrument, LocalDate>, ConversionResponse>()
+    private val cache = mutableMapOf<Pair<InstrumentConversionInfo, LocalDate>, ConversionResponse>()
 
     suspend fun getCachedOrConvert(
-        instrument: PricingInstrument,
+        instrument: InstrumentConversionInfo,
         date: LocalDate,
         historicalPricingProvider: suspend (from: LocalDate, to: LocalDate) -> List<ConversionResponse>,
     ): ConversionResponse {
@@ -24,7 +24,7 @@ class MonthlyCachedInstrumentConverterProxy {
     }
 
     private fun List<ConversionResponse>.fillGaps(
-        instrument: PricingInstrument,
+        instrument: InstrumentConversionInfo,
         startOfMonth: LocalDate,
     ): List<ConversionResponse> {
         val prices = sortedBy { it.date }

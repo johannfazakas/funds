@@ -20,8 +20,8 @@ import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import java.math.BigDecimal
 
 @ExtendWith(MockServerContainerExtension::class)
-class HistoricalPricingSdkTest {
-    private val historicalPricingSdk = HistoricalPricingSdk(baseUrl = MockServerContainerExtension.baseUrl)
+class ConversionSdkTest {
+    private val conversionSdk = ConversionSdk(baseUrl = MockServerContainerExtension.baseUrl)
 
     @Test
     fun `should convert currencies`(mockServerClient: MockServerClient): Unit = runBlocking {
@@ -38,7 +38,7 @@ class HistoricalPricingSdkTest {
             request.conversions[2] to BigDecimal("0.2")
         )
 
-        val response = historicalPricingSdk.convert(request)
+        val response = conversionSdk.convert(request)
 
         assertThat(response.getRate(Currency.RON, Currency.EUR, LocalDate.parse("2025-02-01")))
             .isEqualTo(BigDecimal("4.9"))

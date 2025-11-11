@@ -1,16 +1,11 @@
 package ro.jf.funds.importer.service.service.conversion
 
 import mu.KotlinLogging.logger
-import ro.jf.funds.fund.api.model.AccountName
-import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
-import ro.jf.funds.fund.api.model.CreateTransactionTO
-import ro.jf.funds.fund.api.model.CreateTransactionsTO
-import ro.jf.funds.fund.api.model.FundName
-import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
-import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
+import ro.jf.funds.historicalpricing.sdk.ConversionSdk
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
@@ -23,7 +18,7 @@ class ImportFundConversionService(
     private val accountService: AccountService,
     private val fundService: FundService,
     private val converterRegistry: ImportTransactionConverterRegistry,
-    private val historicalPricingSdk: HistoricalPricingSdk,
+    private val conversionSdk: ConversionSdk,
 ) {
     suspend fun mapToFundRequest(
         userId: UUID,
@@ -45,7 +40,7 @@ class ImportFundConversionService(
             .flatMap { (transaction, strategy) -> strategy.getRequiredConversions(transaction, accountStore) }
             .map { ConversionRequest(it.sourceCurrency, it.targetCurrency, it.date) }
             .distinct()
-            .let { historicalPricingSdk.convert(ConversionsRequest(it)) }
+            .let { conversionSdk.convert(ConversionsRequest(it)) }
 
         return transactionsToStrategy
             .flatMap { (transaction, strategy) ->

@@ -74,13 +74,15 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             .map { it to it.toFundRecordAmount(date, accountStore[it.accountName], conversions) }
             .sortedByDescending { (_, amount) -> (creditAmount + amount).abs() }
             .first()
-        val rate = conversions.getRate(creditRecord.unit, debitRecord.unit, date)
+        val targetCurrency = debitRecord.unit as? Currency
+            ?: throw ImportDataException("Unit ${debitRecord.unit} is not a currency, conversion would not be supported.")
+        val rate = conversions.getRate(creditRecord.unit, targetCurrency, date)
         val debitAmount = creditAmount.negate() * rate
         val debitFundRecord = CreateTransactionRecordTO(
             fundId = fundStore[debitRecord.fundName].id,
             accountId = accountStore[debitRecord.accountName].id,
             amount = debitAmount,
-            unit = debitRecord.unit,
+            unit = targetCurrency,
             labels = debitRecord.labels,
         )
 
@@ -93,7 +95,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
                     fundId = fundStore[debitRecord.fundName].id,
                     accountId = accountStore[debitRecord.accountName].id,
                     amount = feeAmount,
-                    unit = debitRecord.unit,
+                    unit = targetCurrency,
                     labels = feeRecord?.labels ?: debitRecord.labels,
                 )
             }

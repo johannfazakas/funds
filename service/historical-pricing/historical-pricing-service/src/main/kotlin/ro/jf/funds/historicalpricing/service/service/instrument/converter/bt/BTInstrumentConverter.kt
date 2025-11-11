@@ -14,7 +14,7 @@ import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.ss.usermodel.Sheet
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.service.domain.PricingInstrument
+import ro.jf.funds.historicalpricing.service.domain.InstrumentConversionInfo
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverter
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -25,21 +25,21 @@ import java.util.*
 class BTInstrumentConverter(
     private val httpClient: HttpClient,
 ) : InstrumentConverter {
-    private val cache = mutableMapOf<Pair<PricingInstrument, LocalDate>, ConversionResponse>()
+    private val cache = mutableMapOf<Pair<InstrumentConversionInfo, LocalDate>, ConversionResponse>()
 
     @OptIn(FormatStringsInDatetimeFormats::class)
     private val localDateFormatter = LocalDate.Format { byUnicodePattern("yyyy-MM-dd") }
 
-    override suspend fun convert(instrument: PricingInstrument, dates: List<LocalDate>): List<ConversionResponse> =
+    override suspend fun convert(instrument: InstrumentConversionInfo, dates: List<LocalDate>): List<ConversionResponse> =
         dates.map { date -> convert(instrument, date) }
 
-    private suspend fun convert(instrument: PricingInstrument, date: LocalDate): ConversionResponse {
+    private suspend fun convert(instrument: InstrumentConversionInfo, date: LocalDate): ConversionResponse {
         cache[instrument to date]?.let { return it }
         putInCache(instrument, downloadHistoricalPrices(instrument))
         return cache[instrument to date] ?: error("Failed to convert $instrument at $date")
     }
 
-    private fun putInCache(instrument: PricingInstrument, historicalPrices: List<ConversionResponse>) {
+    private fun putInCache(instrument: InstrumentConversionInfo, historicalPrices: List<ConversionResponse>) {
         if (historicalPrices.isEmpty()) return
         val firstPrice = historicalPrices.minBy { it.date }
         val pricesByDay = historicalPrices.associateBy { it.date }
@@ -57,13 +57,13 @@ class BTInstrumentConverter(
             .forEach { cache[instrument to it.date] = it }
     }
 
-    private suspend fun downloadHistoricalPrices(instrument: PricingInstrument): List<ConversionResponse> {
+    private suspend fun downloadHistoricalPrices(instrument: InstrumentConversionInfo): List<ConversionResponse> {
         val downloadSessionCookie = initiateDownloadSession(instrument)
         val downloadExcelInputStream = downloadExcelInputStream(downloadSessionCookie)
         return processExcelFile(downloadExcelInputStream, instrument)
     }
 
-    suspend fun initiateDownloadSession(instrument: PricingInstrument): String {
+    suspend fun initiateDownloadSession(instrument: InstrumentConversionInfo): String {
         val response = httpClient.post("https://www.btassetmanagement.ro/${instrument.symbol}") {
             contentType(ContentType.Application.FormUrlEncoded)
             setBody(FormDataContent(Parameters.build {
@@ -82,7 +82,7 @@ class BTInstrumentConverter(
         return response.readRawBytes().let(::ByteArrayInputStream)
     }
 
-    private fun processExcelFile(inputStream: InputStream, instrument: PricingInstrument): List<ConversionResponse> {
+    private fun processExcelFile(inputStream: InputStream, instrument: InstrumentConversionInfo): List<ConversionResponse> {
         val sheet: Sheet = WorkbookFactory.create(inputStream).getSheetAt(0)
         return sheet.asSequence()
             .drop(1) // header

@@ -16,7 +16,7 @@ import kotlinx.datetime.minus
 import mu.KotlinLogging
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.service.domain.HistoricalPricingExceptions
+import ro.jf.funds.historicalpricing.service.domain.ConversionExceptions
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyConverter
 import ro.jf.funds.historicalpricing.service.service.currency.converter.currencybeacon.model.CBConversion
 
@@ -51,7 +51,7 @@ class CurrencyBeaconCurrencyConverter(
     ): ConversionResponse {
         return try {
             convert(sourceCurrency, targetCurrency, date)
-        } catch (priceNotFound: HistoricalPricingExceptions.HistoricalPriceNotFound) {
+        } catch (priceNotFound: ConversionExceptions.ConversionNotFound) {
             if (attempt < MAX_ATTEMPTS) {
                 convertSafely(sourceCurrency, targetCurrency, date.minus(1, DateTimeUnit.DAY), attempt + 1)
                     .copy(date = date)
@@ -90,7 +90,7 @@ class CurrencyBeaconCurrencyConverter(
         }
 
         val price = response.rates[targetCurrency.value]
-            ?: throw HistoricalPricingExceptions.HistoricalPriceNotFound(
+            ?: throw ConversionExceptions.ConversionNotFound(
                 sourceCurrency,
                 targetCurrency,
                 date
@@ -104,7 +104,7 @@ class CurrencyBeaconCurrencyConverter(
     }
 
     private fun throwIntegrationException(status: Int, errorDetail: String): Nothing {
-        throw HistoricalPricingExceptions.HistoricalPricingIntegrationException(
+        throw ConversionExceptions.ConversionIntegrationException(
             api = "currency_beacon",
             status = status,
             errorDetail = errorDetail
