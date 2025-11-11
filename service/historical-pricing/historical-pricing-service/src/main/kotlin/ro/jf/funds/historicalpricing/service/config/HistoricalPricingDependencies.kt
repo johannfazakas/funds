@@ -12,10 +12,8 @@ import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.historicalpricing.service.domain.HistoricalPriceSource
 import ro.jf.funds.historicalpricing.service.persistence.HistoricalPriceRepository
 import ro.jf.funds.historicalpricing.service.service.ConversionService
-import ro.jf.funds.historicalpricing.service.service.currency.CurrencyService
 import ro.jf.funds.historicalpricing.service.service.currency.converter.currencybeacon.CurrencyBeaconCurrencyConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverterRegistry
-import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentService
 import ro.jf.funds.historicalpricing.service.service.instrument.PricingInstrumentRepository
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.bt.BTInstrumentConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.converter.financialtimes.FinancialTimesInstrumentConverter
@@ -52,7 +50,5 @@ val Application.historicalPricingDependencies
             )
         }
         single { CurrencyBeaconCurrencyConverter(get()) }
-        single { CurrencyService(get<CurrencyBeaconCurrencyConverter>(), get()) }
-        single { InstrumentService(get(), get(), get(), get()) }
-        single { ConversionService(get(), get()) }
+        single { ConversionService(get(), get<CurrencyBeaconCurrencyConverter>(), get(), get()) }
     }

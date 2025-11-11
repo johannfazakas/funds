@@ -99,7 +99,7 @@ class CurrencyBeaconCurrencyConverter(
             date = date,
             rate = price,
             sourceUnit = sourceCurrency,
-            targetUnit = targetCurrency,
+            targetCurrency = targetCurrency,
         )
     }
 

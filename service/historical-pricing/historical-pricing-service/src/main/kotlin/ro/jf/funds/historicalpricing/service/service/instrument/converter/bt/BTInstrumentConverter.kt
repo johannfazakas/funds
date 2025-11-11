@@ -92,7 +92,7 @@ class BTInstrumentConverter(
                         date = row.getCell(0).toLocalDate(),
                         rate = row.getCell(1).toBigDecimal(),
                         sourceUnit = instrument.instrument,
-                        targetUnit = instrument.mainCurrency,
+                        targetCurrency = instrument.mainCurrency,
                     )
                 } catch (_: Exception) {
                     null

@@ -86,7 +86,7 @@ class FinancialTimesInstrumentConverter(
         return chunked(5) { (date, _, _, _, closedPrice) ->
             ConversionResponse(
                 sourceUnit = instrument.instrument,
-                targetUnit = instrument.mainCurrency,
+                targetCurrency = instrument.mainCurrency,
                 date = (date as FTCell.Date).value,
                 rate = (closedPrice as FTCell.Price).value
             )
