@@ -10,7 +10,7 @@ import ro.jf.funds.historicalpricing.service.service.ConversionService
 
 private val log = logger { }
 
-fun Routing.historicalPricingApiRouting(
+fun Routing.conversionApiRouting(
     conversionService: ConversionService,
 ) {
     post("/funds-api/historical-pricing/v1/conversions") {

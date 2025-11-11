@@ -10,6 +10,7 @@ import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
+import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import java.math.BigDecimal
 import java.util.*
 
@@ -46,8 +47,9 @@ fun ImportParsedRecord.toFundRecordAmount(
     return if (unit == account.unit) {
         amount
     } else {
-        val rate = conversions.getRate(unit, account.unit, date)
-            ?: error("Rate not found for $unit to ${account.unit} on $date.")
+        val targetCurrency = account.unit as? Currency
+            ?: throw ImportDataException("Unit ${account.unit} is not a currency, conversion would not be supported.")
+        val rate = conversions.getRate(unit, targetCurrency, date)
         amount * rate
     }
 }

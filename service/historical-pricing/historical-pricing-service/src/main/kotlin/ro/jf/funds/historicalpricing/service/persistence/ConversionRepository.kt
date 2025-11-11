@@ -14,14 +14,14 @@ import org.jetbrains.exposed.sql.selectAll
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.commons.model.toFinancialUnit
-import ro.jf.funds.historicalpricing.service.domain.HistoricalPrice
+import ro.jf.funds.historicalpricing.service.domain.Conversion
 import java.util.*
 
-class HistoricalPriceRepository(
+class ConversionRepository(
     private val database: Database,
 ) {
 
-    object Table : UUIDTable("historical_price") {
+    object Table : UUIDTable("conversion") {
         val sourceUnit = varchar("source_unit", 50)
         val sourceType = varchar("source_type", 50)
         val targetCurrency = varchar("target_currency", 50)
@@ -43,7 +43,7 @@ class HistoricalPriceRepository(
         source: FinancialUnit,
         target: Currency,
         date: LocalDate,
-    ): HistoricalPrice? = blockingTransaction {
+    ): Conversion? = blockingTransaction {
         Table
             .selectAll()
             .where {
@@ -60,7 +60,7 @@ class HistoricalPriceRepository(
         source: FinancialUnit,
         target: Currency,
         dates: List<LocalDate>,
-    ): List<HistoricalPrice> = blockingTransaction {
+    ): List<Conversion> = blockingTransaction {
         Table
             .selectAll()
             .where {
@@ -73,7 +73,7 @@ class HistoricalPriceRepository(
     }
 
     suspend fun saveHistoricalPrice(
-        historicalPrice: HistoricalPrice,
+        historicalPrice: Conversion,
     ): Unit = blockingTransaction {
         DAO.new {
             sourceUnit = historicalPrice.source.value
@@ -85,7 +85,7 @@ class HistoricalPriceRepository(
     }
 
     private fun ResultRow.toModel() =
-        HistoricalPrice(
+        Conversion(
             source = toFinancialUnit(this[Table.sourceType], this[Table.sourceUnit]),
             target = Currency(this[Table.targetCurrency]),
             date = this[Table.date].let {

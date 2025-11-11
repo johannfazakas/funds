@@ -7,17 +7,17 @@ import ro.jf.funds.commons.model.Instrument
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
-import ro.jf.funds.historicalpricing.service.domain.HistoricalPrice
-import ro.jf.funds.historicalpricing.service.domain.PricingInstrument
-import ro.jf.funds.historicalpricing.service.persistence.HistoricalPriceRepository
+import ro.jf.funds.historicalpricing.service.domain.Conversion
+import ro.jf.funds.historicalpricing.service.domain.InstrumentConversionInfo
+import ro.jf.funds.historicalpricing.service.persistence.ConversionRepository
 import ro.jf.funds.historicalpricing.service.service.currency.CurrencyConverter
 import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConverterRegistry
-import ro.jf.funds.historicalpricing.service.service.instrument.PricingInstrumentRepository
+import ro.jf.funds.historicalpricing.service.service.instrument.InstrumentConversionInfoRepository
 
 class ConversionService(
-    private val historicalPriceRepository: HistoricalPriceRepository,
+    private val conversionRepository: ConversionRepository,
     private val currencyConverter: CurrencyConverter,
-    private val pricingInstrumentRepository: PricingInstrumentRepository,
+    private val instrumentConversionInfoRepository: InstrumentConversionInfoRepository,
     private val instrumentConverterRegistry: InstrumentConverterRegistry,
 ) {
     suspend fun convert(request: ConversionsRequest): ConversionsResponse {
@@ -70,7 +70,7 @@ class ConversionService(
         currency: Currency,
         dates: List<LocalDate>,
     ): List<ConversionResponse> {
-        val pricingInstrument = pricingInstrumentRepository.findByInstrument(instrument)
+        val pricingInstrument = instrumentConversionInfoRepository.findByInstrument(instrument)
 
         val conversions = if (pricingInstrument.mainCurrency == currency) {
             getInstrumentMainCurrencyConversions(pricingInstrument, dates)
@@ -81,7 +81,7 @@ class ConversionService(
     }
 
     private suspend fun getInstrumentMainCurrencyConversions(
-        pricingInstrument: PricingInstrument,
+        pricingInstrument: InstrumentConversionInfo,
         dates: List<LocalDate>,
     ): List<ConversionResponse> {
         val instrumentConverter = instrumentConverterRegistry.getConverter(pricingInstrument)
@@ -89,7 +89,7 @@ class ConversionService(
     }
 
     private suspend fun getInstrumentConversionsWithImplicitConversion(
-        pricingInstrument: PricingInstrument,
+        pricingInstrument: InstrumentConversionInfo,
         currency: Currency,
         dates: List<LocalDate>,
     ): List<ConversionResponse> {
@@ -114,14 +114,14 @@ class ConversionService(
         sourceUnit: FinancialUnit,
         targetCurrency: Currency,
         dates: List<LocalDate>,
-    ): List<ConversionResponse> = historicalPriceRepository
+    ): List<ConversionResponse> = conversionRepository
         .getHistoricalPrices(sourceUnit, targetCurrency, dates)
         .map { ConversionResponse(sourceUnit, it.target, it.date, it.price) }
 
     private suspend fun List<ConversionResponse>.storeHistoricalPrices() {
         this.forEach {
-            historicalPriceRepository.saveHistoricalPrice(
-                HistoricalPrice(it.sourceUnit, it.targetCurrency, it.date, it.rate)
+            conversionRepository.saveHistoricalPrice(
+                Conversion(it.sourceUnit, it.targetCurrency, it.date, it.rate)
             )
         }
     }

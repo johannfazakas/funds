@@ -15,7 +15,7 @@ private val log = logger { }
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5231"
 
-class HistoricalPricingSdk(
+class ConversionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) {

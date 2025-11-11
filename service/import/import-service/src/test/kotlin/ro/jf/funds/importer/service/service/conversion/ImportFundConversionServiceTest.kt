@@ -16,7 +16,7 @@ import ro.jf.funds.historicalpricing.api.model.ConversionRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionResponse
 import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
 import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
-import ro.jf.funds.historicalpricing.sdk.HistoricalPricingSdk
+import ro.jf.funds.historicalpricing.sdk.ConversionSdk
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
@@ -30,7 +30,7 @@ class ImportFundConversionServiceTest {
     private val accountService = AccountService(accountSdk)
     private val fundSdk = mock<FundSdk>()
     private val fundService = FundService(fundSdk)
-    private val historicalPricingSdk = mock<HistoricalPricingSdk>()
+    private val conversionSdk = mock<ConversionSdk>()
     private val importTransactionConverterRegistry = ImportTransactionConverterRegistry(
         listOf(
             SingleRecordTransactionConverter(),
@@ -44,7 +44,7 @@ class ImportFundConversionServiceTest {
             accountService,
             fundService,
             importTransactionConverterRegistry,
-            historicalPricingSdk,
+            conversionSdk,
         )
 
     private val userId: UUID = randomUUID()
@@ -72,7 +72,7 @@ class ImportFundConversionServiceTest {
         val expensedFund = fund("Expenses")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(bankAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
-        whenever(historicalPricingSdk.convert(ConversionsRequest(emptyList())))
+        whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
@@ -117,7 +117,7 @@ class ImportFundConversionServiceTest {
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
         val conversionRequest = ConversionRequest(Currency.RON, Currency.EUR, transactionDate)
         val conversionResponse = ConversionResponse(Currency.RON, Currency.EUR, transactionDate, BigDecimal("0.2"))
-        whenever(historicalPricingSdk.convert(ConversionsRequest(listOf(conversionRequest))))
+        whenever(conversionSdk.convert(ConversionsRequest(listOf(conversionRequest))))
             .thenReturn(ConversionsResponse(listOf(conversionResponse)))
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
@@ -165,7 +165,7 @@ class ImportFundConversionServiceTest {
         val incomeFund = fund("Income")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, companyAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
-        whenever(historicalPricingSdk.convert(ConversionsRequest(emptyList())))
+        whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
@@ -227,7 +227,7 @@ class ImportFundConversionServiceTest {
 
         val conversionRequest = ConversionRequest(Currency.RON, Currency.EUR, transactionDate)
         val conversionResponse = ConversionResponse(Currency.RON, Currency.EUR, transactionDate, BigDecimal("0.20"))
-        whenever(historicalPricingSdk.convert(ConversionsRequest(listOf(conversionRequest))))
+        whenever(conversionSdk.convert(ConversionsRequest(listOf(conversionRequest))))
             .thenReturn(ConversionsResponse(listOf(conversionResponse)))
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
@@ -271,7 +271,7 @@ class ImportFundConversionServiceTest {
         val incomeFund = fund("Income")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expenseFund, incomeFund))
-        whenever(historicalPricingSdk.convert(ConversionsRequest(emptyList())))
+        whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
@@ -345,7 +345,7 @@ class ImportFundConversionServiceTest {
                 ConversionResponse(Currency.EUR, Currency.RON, dateTime.date, BigDecimal("4.76235")),
             )
         )
-        whenever(historicalPricingSdk.convert(conversionsRequest)).thenReturn(conversionsResponse)
+        whenever(conversionSdk.convert(conversionsRequest)).thenReturn(conversionsResponse)
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
@@ -427,7 +427,7 @@ class ImportFundConversionServiceTest {
         )
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account("Revolut")))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(fund("Investments")))
-        whenever(historicalPricingSdk.convert(ConversionsRequest(emptyList())))
+        whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
         assertThatThrownBy {
@@ -472,7 +472,7 @@ class ImportFundConversionServiceTest {
         val investmentsFund = fund("Investments")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(brokerAccount, stockAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(investmentsFund))
-        whenever(historicalPricingSdk.convert(ConversionsRequest(emptyList())))
+        whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
@@ -528,7 +528,7 @@ class ImportFundConversionServiceTest {
         val investmentsFund = fund("Investments")
         whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(brokerAccount, stockAccount))
         whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(investmentsFund))
-        whenever(historicalPricingSdk.convert(ConversionsRequest(emptyList())))
+        whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
         val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
