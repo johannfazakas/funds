@@ -8,7 +8,7 @@ dependencies {
     implementation(project(":import:import-api"))
     implementation(project(":commons:commons"))
     implementation(project(":fund:fund-sdk"))
-    implementation(project(":historical-pricing:historical-pricing-sdk"))
+    implementation(project(":conversion:conversion-sdk"))
     implementation(libs.kotlin.csv)
     testImplementation(project(":commons:commons-test"))
 }

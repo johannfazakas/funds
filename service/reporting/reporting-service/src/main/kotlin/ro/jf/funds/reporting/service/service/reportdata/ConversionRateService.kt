@@ -8,9 +8,9 @@ import kotlinx.datetime.Month
 import kotlinx.datetime.plus
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.historicalpricing.api.model.ConversionRequest
-import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
-import ro.jf.funds.historicalpricing.sdk.ConversionSdk
+import ro.jf.funds.conversion.api.model.ConversionRequest
+import ro.jf.funds.conversion.api.model.ConversionsRequest
+import ro.jf.funds.conversion.sdk.ConversionSdk
 import java.math.BigDecimal
 
 class ConversionRateService(

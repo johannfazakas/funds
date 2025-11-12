@@ -19,7 +19,7 @@ import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
-import ro.jf.funds.historicalpricing.sdk.ConversionSdk
+import ro.jf.funds.conversion.sdk.ConversionSdk
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
 import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.service.conversion.AccountService
@@ -35,7 +35,7 @@ import ro.jf.funds.importer.service.service.parser.WalletCsvImportParser
 import javax.sql.DataSource
 
 private const val FUND_SERVICE_BASE_URL_PROPERTY = "integration.fund-service.base-url"
-private const val HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY = "integration.historical-pricing-service.base-url"
+private const val CONVERSION_SERVICE_BASE_URL_PROPERTY = "integration.conversion-service.base-url"
 
 val CREATE_FUND_TRANSACTIONS_RESPONSE_CONSUMER = StringQualifier("CreateFundTransactionsResponse")
 
@@ -68,7 +68,7 @@ private val Application.importIntegrationDependencies
             TransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
         single<ConversionSdk> {
-            ConversionSdk(environment.getStringProperty(HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY))
+            ConversionSdk(environment.getStringProperty(CONVERSION_SERVICE_BASE_URL_PROPERTY))
         }
     }
 

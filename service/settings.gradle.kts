@@ -6,9 +6,9 @@ rootProject.name = "funds"
 include("commons:commons")
 include("commons:commons-test")
 
-include("historical-pricing:historical-pricing-api")
-include("historical-pricing:historical-pricing-sdk")
-include("historical-pricing:historical-pricing-service")
+include("conversion:conversion-api")
+include("conversion:conversion-sdk")
+include("conversion:conversion-service")
 
 include("user:user-api")
 include("user:user-sdk")

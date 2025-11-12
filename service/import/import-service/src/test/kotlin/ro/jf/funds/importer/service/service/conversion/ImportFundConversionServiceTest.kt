@@ -12,11 +12,11 @@ import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.historicalpricing.api.model.ConversionRequest
-import ro.jf.funds.historicalpricing.api.model.ConversionResponse
-import ro.jf.funds.historicalpricing.api.model.ConversionsRequest
-import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
-import ro.jf.funds.historicalpricing.sdk.ConversionSdk
+import ro.jf.funds.conversion.api.model.ConversionRequest
+import ro.jf.funds.conversion.api.model.ConversionResponse
+import ro.jf.funds.conversion.api.model.ConversionsRequest
+import ro.jf.funds.conversion.api.model.ConversionsResponse
+import ro.jf.funds.conversion.sdk.ConversionSdk
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException

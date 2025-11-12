@@ -76,10 +76,10 @@ This would eliminate the need to use @OptIn(ExperimentalSerializationApi::class)
 - [x] Remove User scope
 - [x] Check integration test to also hit converter
 - [x] Is it really needed to have separate repositories for currency and instrument prices?
-- [ ] Evaluate the separation of Instrument vs Currency *HistoricalPriceRepository-es
+- [x] Evaluate the separation of Instrument vs Currency *HistoricalPriceRepository-es
     - [x] First, check if ConversionRequest target can be a Currency. would simplify the when in `CurrencyService`
     - [x] The 2 services might be inlined or treated as strategies. or kept as now.
-    - [ ] Conflicting terminology HistoricalPrice vs Conversion
+    - [x] Conflicting terminology HistoricalPrice vs Conversion
     - [x] Unit tests on ConversionService
 - [x] use kotlinx.time in FinancialTimesInstrumentConverter
 - [ ] Check ConversionsResponse::getRate in historical pricing api model
@@ -90,10 +90,18 @@ This would eliminate the need to use @OptIn(ExperimentalSerializationApi::class)
 - [ ] check handling of conversion request errors
 - [ ] previous records should be resolved only for the resolvers needed them
 
-### Caching capabilities for HistoricalPricingSDK
+### Reevaluate monthly caching mechanism in instrument converter proxy
+It caches info without storing them, leading to not persisted data.
+It is applied partially on converters.
+One idea could be to handle generating multiple requests at a higher level, maybe in Conversion Service.
+
+### Caching capabilities for ConversionSDK
 
 - [ ] SDK should take responsibility over the current code in reporting ConversionRateService
 - [ ] Use the same component in import service
 - [ ] Find a suitable in-memory caching solution
 - [ ] Check error handling
 - [ ] Look for same currency conversion, maybe it shouldn't trigger a request
+
+### Use grpc for conversions
+It would make sense to have a bidirectional streamed channel to resolve conversions.

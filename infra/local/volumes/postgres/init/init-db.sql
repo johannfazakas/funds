@@ -1,8 +1,6 @@
-CREATE DATABASE ff_historical_pricing;
+CREATE DATABASE ff_conversion;
 
 CREATE DATABASE ff_user;
-
-CREATE DATABASE ff_account;
 
 CREATE DATABASE ff_fund;
 

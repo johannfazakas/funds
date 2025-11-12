@@ -1,0 +1,9 @@
+plugins {
+    id("funds.kotlin-library-conventions")
+}
+
+dependencies {
+    api(project(":conversion:conversion-api"))
+    implementation(project(":commons:commons"))
+    testImplementation(project(":commons:commons-test"))
+}
