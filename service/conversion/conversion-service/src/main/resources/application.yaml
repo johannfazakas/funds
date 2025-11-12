@@ -1,0 +1,16 @@
+ktor:
+  application:
+    id: "funds::conversion-service"
+    modules:
+      - ro.jf.funds.conversion.service.ConversionApplicationKt.module
+  deployment:
+    port: 5231
+database:
+  url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/bk_conversion"
+  user: postgres
+  password: pass
+  connection-pool-size: "$DATABASE_CONNECTION_POOL_SIZE:10"
+observability:
+  enabled: true
+  otel-collector:
+    grpc-endpoint: "$OTEL_COLLECTOR_GRPC_ENDPOINT:http://localhost:4317/v1/traces"

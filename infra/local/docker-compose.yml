@@ -52,13 +52,13 @@ services:
       - postgres
       - otel-collector
 
-  historical-pricing-service:
-    image: funds/historical-pricing-service:latest
-    container_name: ff_historical_pricing
+  conversion-service:
+    image: funds/conversion-service:latest
+    container_name: ff_conversion
     ports:
       - '5231:5231'
     environment:
-      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_historical_pricing
+      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_conversion
       - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres
@@ -85,7 +85,7 @@ services:
       - '5207:5207'
     environment:
       - FUND_BASE_URL=http://ff_fund:5253
-      - HISTORICAL_PRICING_BASE_URL=http://ff_historical_pricing:5231
+      - CONVERSION_BASE_URL=http://ff_conversion:5231
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_import
       - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
       - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
@@ -101,7 +101,7 @@ services:
       - '5212:5212'
     environment:
       - FUND_BASE_URL=http://ff_fund:5253
-      - HISTORICAL_PRICING_BASE_URL=http://ff_historical_pricing:5231
+      - CONVERSION_BASE_URL=http://ff_conversion:5231
       - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_reporting
       - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces

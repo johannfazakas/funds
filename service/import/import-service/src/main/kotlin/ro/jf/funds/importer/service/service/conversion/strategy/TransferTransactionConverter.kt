@@ -2,7 +2,7 @@ package ro.jf.funds.importer.service.service.conversion.strategy
 
 import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.fund.api.model.*
-import ro.jf.funds.historicalpricing.api.model.ConversionsResponse
+import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store

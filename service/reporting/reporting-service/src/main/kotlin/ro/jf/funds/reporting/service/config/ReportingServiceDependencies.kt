@@ -13,7 +13,7 @@ import ro.jf.funds.commons.event.createProducer
 import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.commons.web.createHttpClient
 import ro.jf.funds.fund.sdk.TransactionSdk
-import ro.jf.funds.historicalpricing.sdk.ConversionSdk
+import ro.jf.funds.conversion.sdk.ConversionSdk
 import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
 import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
 import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
@@ -29,7 +29,7 @@ import ro.jf.funds.reporting.service.service.reportdata.resolver.*
 import javax.sql.DataSource
 
 private const val FUND_SERVICE_BASE_URL_PROPERTY = "integration.fund-service.base-url"
-private const val HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY = "integration.historical-pricing-service.base-url"
+private const val CONVERSION_SERVICE_BASE_URL_PROPERTY = "integration.conversion-service.base-url"
 
 val Application.reportingDependencies
     get() = module {
@@ -64,7 +64,7 @@ private val Application.integrationDependencies
             TransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
         single<ConversionSdk> {
-            ConversionSdk(environment.getStringProperty(HISTORICAL_PRICING_SERVICE_BASE_URL_PROPERTY), get())
+            ConversionSdk(environment.getStringProperty(CONVERSION_SERVICE_BASE_URL_PROPERTY), get())
         }
     }
 
