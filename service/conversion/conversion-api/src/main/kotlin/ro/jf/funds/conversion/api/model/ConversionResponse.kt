@@ -28,9 +28,7 @@ data class ConversionsResponse(
         conversions.associateBy({ ConversionRequest(it.sourceUnit, it.targetCurrency, it.date) }, { it.rate })
     }
 
-    fun getRate(sourceUnit: FinancialUnit, targetCurrency: Currency, date: LocalDate): BigDecimal {
-        if (sourceUnit == targetCurrency) return BigDecimal.ONE
+    fun getRate(sourceUnit: FinancialUnit, targetCurrency: Currency, date: LocalDate): BigDecimal? {
         return conversionsByRequest[ConversionRequest(sourceUnit, targetCurrency, date)]
-            ?: error("Conversion not found")
     }
 }

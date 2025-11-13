@@ -1,6 +1,8 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
+import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.model.FinancialUnit
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
@@ -74,15 +76,14 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             .map { it to it.toFundRecordAmount(date, accountStore[it.accountName], conversions) }
             .sortedByDescending { (_, amount) -> (creditAmount + amount).abs() }
             .first()
-        val targetCurrency = debitRecord.unit as? Currency
-            ?: throw ImportDataException("Unit ${debitRecord.unit} is not a currency, conversion would not be supported.")
-        val rate = conversions.getRate(creditRecord.unit, targetCurrency, date)
+        val rate = conversions.getConversionRate(creditRecord.unit, debitRecord.unit, date)
+
         val debitAmount = creditAmount.negate() * rate
         val debitFundRecord = CreateTransactionRecordTO(
             fundId = fundStore[debitRecord.fundName].id,
             accountId = accountStore[debitRecord.accountName].id,
             amount = debitAmount,
-            unit = targetCurrency,
+            unit = debitRecord.unit,
             labels = debitRecord.labels,
         )
 
@@ -95,7 +96,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
                     fundId = fundStore[debitRecord.fundName].id,
                     accountId = accountStore[debitRecord.accountName].id,
                     amount = feeAmount,
-                    unit = targetCurrency,
+                    unit = debitRecord.unit,
                     labels = feeRecord?.labels ?: debitRecord.labels,
                 )
             }
@@ -109,5 +110,13 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
                 feeRecord = feeFundRecord
             )
         )
+    }
+
+    private fun ConversionsResponse.getConversionRate(sourceUnit: FinancialUnit, targetUnit: FinancialUnit, date: LocalDate): BigDecimal {
+        val targetCurrency = targetUnit as? Currency
+            ?: throw ImportDataException("Unit $targetUnit is not a currency, conversion would not be supported.")
+        if (sourceUnit == targetCurrency) return BigDecimal.ONE
+        return getRate(sourceUnit, targetCurrency, date)
+            ?: throw ImportDataException("Conversions from $sourceUnit to $targetCurrency on $date not available.")
     }
 }
