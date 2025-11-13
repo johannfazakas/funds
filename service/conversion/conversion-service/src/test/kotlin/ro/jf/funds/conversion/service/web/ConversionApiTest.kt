@@ -86,9 +86,7 @@ class ConversionApiTest {
         assertThat(conversionsResponse.getRate(RON, EUR, date2)).isEqualTo("0.21".toBigDecimal())
         assertThat(conversionsResponse.getRate(EUR, RON, date3)).isEqualTo("4.9".toBigDecimal())
         assertThat(conversionsResponse.getRate(EUR, RON, date4)).isEqualTo("4.92".toBigDecimal())
-        assertThatThrownBy {
-            assertThat(conversionsResponse.getRate(RON, EUR, date3))
-        }
+        assertThat(conversionsResponse.getRate(RON, EUR, date3)).isNull()
     }
 
     private fun Application.testModule() {
