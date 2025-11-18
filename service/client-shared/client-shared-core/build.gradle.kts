@@ -8,7 +8,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":import:import-api"))
+//                implementation(project(":import:import-api"))
                 implementation(project(":client-shared:client-shared-api"))
                 implementation(project(":client-shared:client-shared-sdk"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")

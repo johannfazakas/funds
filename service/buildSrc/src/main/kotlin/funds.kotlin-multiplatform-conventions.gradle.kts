@@ -1,6 +1,9 @@
+import gradle.kotlin.dsl.accessors._0ca2999132398b98e46376b5f7cd33f7.publishing
+
 group = rootProject.group
 version = rootProject.version
 
+// TODO(Johann) shouldn't this convention plugin inherit from common conventions?
 repositories {
     mavenCentral()
     mavenLocal()
@@ -79,4 +82,16 @@ tasks.register("installLocal") {
     description = "Build the artifact and publish it to local maven"
 
     dependsOn("build", "publishToMavenLocal")
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenKotlin") {
+            from(components["kotlin"])
+
+            groupId = group.toString()
+            artifactId = project.name
+            version = rootProject.version.toString()
+        }
+    }
 }
