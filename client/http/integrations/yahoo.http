@@ -49,3 +49,16 @@ GET https://query1.finance.yahoo.com/v8/finance/chart/IS3N.DE?
     &userYfid=true
     &lang=en-US
     &region=US
+
+### Get ICBETNETF.RO historical data
+GET https://query1.finance.yahoo.com/v8/finance/chart/ICBETNETF.RO?
+    events=capitalGain%7Cdiv%7Csplit
+    &formatted=true
+    &includeAdjustedClose=true
+    &interval=1d
+    &period1=1757749265
+    &period2=1758354065
+    &symbol=IS3N.DE
+    &userYfid=true
+    &lang=en-US
+    &region=US

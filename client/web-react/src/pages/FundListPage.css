@@ -1,0 +1,90 @@
+.fund-list-container {
+  min-height: 100vh;
+}
+
+.header {
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h1 {
+  margin: 0;
+  color: #333;
+}
+
+.logout-button {
+  padding: 8px 16px;
+  width: auto;
+  background-color: #f44336;
+}
+
+.logout-button:hover {
+  background-color: #d32f2f;
+}
+
+.main-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.loading {
+  text-align: center;
+  color: #666;
+  font-size: 18px;
+  padding: 40px;
+}
+
+.error-container {
+  text-align: center;
+}
+
+.error-container .error {
+  margin-bottom: 16px;
+}
+
+.error-container button {
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+.empty-state {
+  text-align: center;
+  color: #666;
+  font-size: 18px;
+  padding: 40px;
+}
+
+.fund-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.fund-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  transition: box-shadow 0.2s;
+}
+
+.fund-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.fund-card h3 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.fund-id {
+  margin: 0;
+  color: #888;
+  font-size: 14px;
+}
