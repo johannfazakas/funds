@@ -25,3 +25,10 @@ include("import:import-service")
 include("reporting:reporting-api")
 include("reporting:reporting-sdk")
 include("reporting:reporting-service")
+
+include("client-shared:client-shared-api")
+include("client-shared:client-shared-sdk")
+include("client-shared:client-shared-core")
+
+include("client-android")
+include("client-web")

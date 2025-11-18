@@ -2,8 +2,6 @@
 
 ## Functional Tasks
 
-### Integrate interest rate in performance report forecast
-
 ### Improve import matching logic
 
 - [ ] Fund matchers should be applicable to all import parsers. Actual case, implicit fund transfer for investment
@@ -19,6 +17,10 @@
 ### UI, step 1
 
 Anything, just have some AI and integrate the backend. Planning to use KMP would be great.
+
+- [ ] Working Web app with React and Ktor Client
+- [ ] Working Mobile app
+- [ ] Understand the changes and adjust where needed
 
 ### Integrate Pricing for ICBETNETF
 
@@ -68,21 +70,6 @@ Check AccountTransactionRepositoryTest
 There seem to be another option to handle it with
 SerializersModule: https://www.baeldung.com/kotlin/sealed-class-serialization
 This would eliminate the need to use @OptIn(ExperimentalSerializationApi::class)
-
-### Improve Historical Pricing Service code
-
-- [x] Evaluate Instrument management
-- [x] Evaluate HistoricalPriceSource enum
-- [x] Remove User scope
-- [x] Check integration test to also hit converter
-- [x] Is it really needed to have separate repositories for currency and instrument prices?
-- [x] Evaluate the separation of Instrument vs Currency *HistoricalPriceRepository-es
-    - [x] First, check if ConversionRequest target can be a Currency. would simplify the when in `CurrencyService`
-    - [x] The 2 services might be inlined or treated as strategies. or kept as now.
-    - [x] Conflicting terminology HistoricalPrice vs Conversion
-    - [x] Unit tests on ConversionService
-- [x] use kotlinx.time in FinancialTimesInstrumentConverter
-- [ ] Check ConversionsResponse::getRate in historical pricing api model
 
 ### Improve Reporting Service code
 

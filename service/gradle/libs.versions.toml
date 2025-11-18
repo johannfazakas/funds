@@ -11,6 +11,7 @@ flyway = "11.9.0"
 exposed = "0.61.0"
 kotlin-csv = "1.10.0"
 kotlin-logging = "3.0.5"
+uuid = "0.8.4"
 logback = "1.4.14"
 opentelemetry = "1.48.0"
 opentelemetry-semconv = "1.32.0"
@@ -72,6 +73,7 @@ opentelemetry-extension-kotlin = { module = "io.opentelemetry:opentelemetry-exte
 opentelemetry-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version.ref = "opentelemetry-semconv" }
 
 # other libraries
+uuid  = { module = "com.benasher44:uuid", version.ref = "uuid" }
 kotlin-csv = { module = "com.jsoizo:kotlin-csv", version.ref = "kotlin-csv" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 poi = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
