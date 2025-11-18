@@ -6,12 +6,19 @@ repositories {
     mavenLocal()
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("org.apache.commons:commons-compress:1.26.0")
+    }
+}
+
 plugins {
     id("org.jetbrains.kotlin.jvm")
     `maven-publish`
 }
 
 tasks.named<Test>("test") {
+    // TODO(Johann) is JUnit multiplatform? should this be here?
     useJUnitPlatform()
 }
 
