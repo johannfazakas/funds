@@ -1,4 +1,5 @@
 plugins {
+    // TODO(Johann) library? jvm?
     id("funds.kotlin-library-conventions")
 }
 

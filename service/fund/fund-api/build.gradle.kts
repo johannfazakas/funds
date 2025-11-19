@@ -1,9 +1,14 @@
 plugins {
-    id("funds.kotlin-library-conventions")
+    id("funds.kotlin-multiplatform-conventions")
     alias(libs.plugins.kotlin.serialization)
 }
 
-dependencies {
-    implementation(project(":commons:commons-jvm"))
-    testImplementation(project(":commons:commons-test"))
+kotlin {
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api(project(":commons:commons-api"))
+            }
+        }
+    }
 }
