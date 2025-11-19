@@ -1,4 +1,4 @@
-package ro.jf.funds.client.api.serialization
+package ro.jf.funds.commons.api.serialization
 
 import com.benasher44.uuid.Uuid
 import com.benasher44.uuid.uuidFrom

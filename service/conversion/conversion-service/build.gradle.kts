@@ -6,7 +6,7 @@ plugins {
 
 dependencies {
     implementation(project(":conversion:conversion-api"))
-    implementation(project(":commons:commons"))
+    implementation(project(":commons:commons-jvm"))
 
     implementation(libs.jsoup)
     implementation(libs.poi)

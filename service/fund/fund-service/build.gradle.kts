@@ -6,7 +6,7 @@ plugins {
 
 dependencies {
     implementation(project(":fund:fund-api"))
-    implementation(project(":commons:commons"))
+    implementation(project(":commons:commons-jvm"))
     testImplementation(project(":commons:commons-test"))
 }
 

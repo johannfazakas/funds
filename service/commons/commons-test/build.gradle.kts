@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":commons:commons"))
+    implementation(project(":commons:commons-jvm"))
 
     api(libs.kotlin.test.junit)
     api(libs.junit.jupiter)

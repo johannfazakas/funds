@@ -7,7 +7,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("com.benasher44:uuid:0.8.4")
+                api(project(":commons:commons-api"))
             }
         }
     }

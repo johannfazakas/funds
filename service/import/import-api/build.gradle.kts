@@ -4,6 +4,6 @@ plugins {
 }
 
 dependencies {
-    api(project(":commons:commons"))
+    api(project(":commons:commons-jvm"))
     api(project(":fund:fund-api"))
 }

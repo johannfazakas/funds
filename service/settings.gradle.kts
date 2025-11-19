@@ -3,7 +3,8 @@ plugins {
 }
 rootProject.name = "funds"
 
-include("commons:commons")
+include("commons:commons-api")
+include("commons:commons-jvm")
 include("commons:commons-test")
 
 include("conversion:conversion-api")

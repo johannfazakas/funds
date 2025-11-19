@@ -6,7 +6,7 @@ plugins {
 
 dependencies {
     implementation(project(":reporting:reporting-api"))
-    implementation(project(":commons:commons"))
+    implementation(project(":commons:commons-jvm"))
     implementation(project(":fund:fund-sdk"))
     implementation(project(":conversion:conversion-sdk"))
     implementation(libs.big.math)
