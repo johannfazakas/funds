@@ -17,7 +17,7 @@ plugins {
 }
 
 android {
-    namespace = "ro.jf.funds.client.shared"
+    namespace = "ro.jf.funds"
     compileSdk = 35
 
     defaultConfig {
