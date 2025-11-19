@@ -10,6 +10,7 @@ import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.ktor.ext.get
+import ro.jf.funds.commons.api.model.ListTO
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
@@ -48,7 +49,7 @@ class FundApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
 
-        val funds = response.body<ro.jf.funds.commons.model.ListTO<FundTO>>()
+        val funds = response.body<ListTO<FundTO>>()
         assertThat(funds.items).hasSize(1)
         assertThat(funds.items.first().name).isEqualTo(FundName("Expenses"))
         assertThat(funds.items.first().id).isEqualTo(fund.id)

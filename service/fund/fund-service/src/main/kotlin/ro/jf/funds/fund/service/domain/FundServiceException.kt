@@ -1,7 +1,7 @@
 package ro.jf.funds.fund.service.domain
 
+import ro.jf.funds.commons.api.model.FinancialUnit
 import ro.jf.funds.fund.api.model.AccountName
-import ro.jf.funds.commons.model.FinancialUnit
 import java.util.*
 
 sealed class FundServiceException : RuntimeException() {

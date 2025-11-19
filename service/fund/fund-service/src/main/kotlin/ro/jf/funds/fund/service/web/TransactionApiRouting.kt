@@ -6,7 +6,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.model.toListTO
+import ro.jf.funds.commons.api.model.toListTO
 import ro.jf.funds.commons.web.userId
 import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.fund.api.model.TransactionFilterTO
