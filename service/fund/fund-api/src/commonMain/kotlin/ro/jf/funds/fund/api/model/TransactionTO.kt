@@ -127,6 +127,7 @@ data class TransactionRecordTO(
     val accountId: Uuid,
     @Serializable(with = UuidSerializer::class)
     val fundId: Uuid,
+    // TODO(Johann) use a KMP-compatible BigDecimal type
     val amount: Double,
     val unit: FinancialUnit,
     val labels: List<Label>,

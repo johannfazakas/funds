@@ -6,7 +6,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.api.model.Currency
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.fund.api.model.*
 import java.math.BigDecimal
@@ -26,12 +26,12 @@ class TransactionRepositoryTest {
         val transaction1 = CreateTransactionTO.SingleRecord(
             dateTime = dateTime,
             externalId = "transaction 1",
-            record = CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal(1.0), Currency.EUR)
+            record = CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal(1.0).toDouble(), Currency.EUR)
         )
         val transaction2 = CreateTransactionTO.SingleRecord(
             dateTime = dateTime,
             externalId = "transaction 2",
-            record = CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal(2.0), Currency.EUR)
+            record = CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal(2.0).toDouble(), Currency.EUR)
         )
 
         val request1 = CreateTransactionsTO(listOf(transaction1))

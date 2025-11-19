@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Label
+import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.commons.api.model.Label
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.domain.Account
 import ro.jf.funds.fund.service.domain.Fund
@@ -60,14 +60,14 @@ class TransactionServiceTest {
             sourceRecord = CreateTransactionRecordTO(
                 accountId = companyAccountId,
                 fundId = workFundId,
-                amount = BigDecimal("-100.25"),
+                amount = BigDecimal("-100.25").toDouble(),
                 unit = FinancialUnit.of("currency", "RON"),
                 labels = listOf(Label("one"), Label("two"))
             ),
             destinationRecord = CreateTransactionRecordTO(
                 accountId = personalAccountId,
                 fundId = expensesFundId,
-                amount = BigDecimal("100.25"),
+                amount = BigDecimal("100.25").toDouble(),
                 unit = FinancialUnit.of("currency", "RON")
             )
         )

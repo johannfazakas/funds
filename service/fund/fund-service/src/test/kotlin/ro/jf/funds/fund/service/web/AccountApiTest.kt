@@ -11,11 +11,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.ListTO
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.ListTO
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment

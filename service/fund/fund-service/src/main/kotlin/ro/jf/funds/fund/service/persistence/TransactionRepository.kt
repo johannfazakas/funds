@@ -8,8 +8,10 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.datetime
-import ro.jf.funds.commons.model.*
-import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.api.model.Instrument
+import ro.jf.funds.commons.api.model.asLabels
+import ro.jf.funds.commons.api.model.asString
+import ro.jf.funds.commons.api.model.toFinancialUnit
 import ro.jf.funds.commons.persistence.blockingTransaction
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.domain.Transaction
@@ -184,7 +186,8 @@ class TransactionRepository(
                 this[AccountRecordTable.transactionId] = it.first
                 this[AccountRecordTable.accountId] = it.second.accountId
                 this[AccountRecordTable.fundId] = extractFundId(it.second)
-                this[AccountRecordTable.amount] = it.second.amount
+                // TODO(Johann) not good, Double will loose precision
+                this[AccountRecordTable.amount] = it.second.amount.toBigDecimal()
                 this[AccountRecordTable.unitType] = it.second.unit.type.value
                 this[AccountRecordTable.unit] = it.second.unit.value
                 this[AccountRecordTable.labels] = it.second.labels.asString()
@@ -219,7 +222,7 @@ class TransactionRepository(
             it[AccountRecordTable.transactionId] = transactionId
             it[accountId] = record.accountId
             it[fundId] = extractFundId(record)
-            it[amount] = record.amount
+            it[amount] = record.amount.toBigDecimal()
             it[unit] = record.unit.value
             it[unitType] = record.unit.type.value
             it[labels] = record.labels.asString()

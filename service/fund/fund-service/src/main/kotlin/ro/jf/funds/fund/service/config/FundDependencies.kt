@@ -9,9 +9,6 @@ import ro.jf.funds.commons.config.getEnvironmentProperty
 import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.model.GenericResponse
 import ro.jf.funds.commons.persistence.getDataSource
-import ro.jf.funds.fund.api.event.FUND_DOMAIN
-import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_REQUEST
-import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_RESPONSE
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.fund.service.persistence.AccountRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
@@ -21,6 +18,11 @@ import ro.jf.funds.fund.service.service.FundService
 import ro.jf.funds.fund.service.service.TransactionService
 import ro.jf.funds.fund.service.service.event.CreateTransactionsRequestHandler
 import javax.sql.DataSource
+
+// TODO(Johann) not great to have these here
+val FUND_DOMAIN = Domain("fund")
+val FUND_TRANSACTIONS_REQUEST = EventType("transactions-request")
+val FUND_TRANSACTIONS_RESPONSE = EventType("transactions-response")
 
 val CREATE_FUND_TRANSACTIONS_RESPONSE_PRODUCER: Qualifier =
     StringQualifier("CreateFundTransactionsResponse")

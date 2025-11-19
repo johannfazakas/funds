@@ -9,8 +9,8 @@ import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
+import ro.jf.funds.commons.api.model.Currency
 import ro.jf.funds.commons.event.*
-import ro.jf.funds.commons.model.Currency
 import ro.jf.funds.commons.model.GenericResponse
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
@@ -19,9 +19,6 @@ import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.test.utils.testTopicSupplier
-import ro.jf.funds.fund.api.event.FUND_DOMAIN
-import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_REQUEST
-import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_RESPONSE
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.module
 import ro.jf.funds.fund.service.persistence.AccountRepository
@@ -31,6 +28,12 @@ import java.math.BigDecimal
 import java.time.Duration
 import java.util.UUID.randomUUID
 import java.util.concurrent.TimeUnit
+
+// TODO(Johann) not great to have these here
+val FUND_DOMAIN = Domain("fund")
+val FUND_TRANSACTIONS_REQUEST = EventType("transactions-request")
+val FUND_TRANSACTIONS_RESPONSE = EventType("transactions-response")
+
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(KafkaContainerExtension::class)
@@ -74,7 +77,8 @@ class TransactionsEventHandlingTest {
                     record = CreateTransactionRecordTO(
                         fundId = fund.id,
                         accountId = account.id,
-                        amount = BigDecimal("100.0"),
+                        // TODO(Johann) Double?
+                        amount = BigDecimal("100.0").toDouble(),
                         unit = Currency.RON
                     )
                 )
