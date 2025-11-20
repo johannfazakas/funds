@@ -8,6 +8,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":commons:commons-api"))
+                api(libs.bignum)
             }
         }
     }
