@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":commons:commons-jvm"))
     api(project(":fund:fund-api"))
+    implementation(project(":commons:commons-jvm"))
     testImplementation(project(":commons:commons-test"))
 }

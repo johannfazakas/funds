@@ -1,5 +1,6 @@
 package ro.jf.funds.fund.sdk
 
+import com.benasher44.uuid.uuid4
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -18,12 +19,12 @@ import org.mockserver.model.Header
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.model.FinancialUnit
+import ro.jf.funds.commons.api.model.Currency
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
-import ro.jf.funds.fund.api.model.*
-import java.math.BigDecimal
-import java.util.UUID.randomUUID
+import ro.jf.funds.fund.api.model.CreateTransactionRecordTO
+import ro.jf.funds.fund.api.model.CreateTransactionTO
+import ro.jf.funds.fund.api.model.TransactionTO
 
 @ExtendWith(MockServerContainerExtension::class)
 class TransactionSdkTest {
@@ -40,13 +41,13 @@ class TransactionSdkTest {
         }
     )
 
-    private val userId = randomUUID()
-    private val transactionId = randomUUID()
-    private val transactionExternalId = randomUUID().toString()
+    private val userId = uuid4()
+    private val transactionId = uuid4()
+    private val transactionExternalId = uuid4().toString()
     private val dateTime = "2024-07-22T09:17"
-    private val recordId = randomUUID()
-    private val accountId = randomUUID()
-    private val fundId = randomUUID()
+    private val recordId = uuid4()
+    private val accountId = uuid4()
+    private val fundId = uuid4()
 
     @Test
     fun `given create transaction`(mockServerClient: MockServerClient): Unit = runBlocking {
@@ -93,8 +94,8 @@ class TransactionSdkTest {
                 record = CreateTransactionRecordTO(
                     accountId = accountId,
                     fundId = fundId,
-                    amount = BigDecimal(amount),
-                    unit = FinancialUnit.of("currency", "RON")
+                    amount = amount,
+                    unit = Currency.RON,
                 )
             )
         )
@@ -105,7 +106,7 @@ class TransactionSdkTest {
         assertThat(singleRecord.dateTime.toString()).isEqualTo(dateTime)
         assertThat(singleRecord.record.id).isEqualTo(recordId)
         assertThat(singleRecord.record.accountId).isEqualTo(accountId)
-        assertThat(singleRecord.record.amount.compareTo(BigDecimal(amount))).isZero()
+        assertThat(singleRecord.record.amount).isEqualTo(amount)
         assertThat(singleRecord.record.fundId).isEqualTo(fundId)
     }
 
@@ -157,7 +158,7 @@ class TransactionSdkTest {
         assertThat(transaction.dateTime.toString()).isEqualTo(dateTime)
         assertThat(transaction.record.id).isEqualTo(recordId)
         assertThat(transaction.record.accountId).isEqualTo(accountId)
-        assertThat(transaction.record.amount.compareTo(BigDecimal(42.0))).isZero()
+        assertThat(transaction.record.amount).isEqualTo(42.0)
         assertThat(transaction.record.fundId).isEqualTo(fundId)
     }
 
