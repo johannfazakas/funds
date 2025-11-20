@@ -1,11 +1,12 @@
 package ro.jf.funds.fund.sdk
 
+import com.benasher44.uuid.Uuid
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.api.model.ListTO
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
@@ -14,7 +15,6 @@ import ro.jf.funds.fund.api.TransactionApi
 import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.fund.api.model.TransactionFilterTO
 import ro.jf.funds.fund.api.model.TransactionTO
-import java.util.*
 
 private val log = logger { }
 
@@ -22,7 +22,7 @@ class TransactionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : TransactionApi {
-    override suspend fun createTransaction(userId: UUID, transaction: CreateTransactionTO): TransactionTO =
+    override suspend fun createTransaction(userId: Uuid, transaction: CreateTransactionTO): TransactionTO =
         withSuspendingSpan {
             val response = httpClient.post("$baseUrl$BASE_PATH/transactions") {
                 headers {
@@ -41,7 +41,7 @@ class TransactionSdk(
         }
 
     override suspend fun listTransactions(
-        userId: UUID,
+        userId: Uuid,
         filter: TransactionFilterTO,
     ): ListTO<TransactionTO> = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
@@ -60,7 +60,7 @@ class TransactionSdk(
         transactions
     }
 
-    override suspend fun deleteTransaction(userId: UUID, transactionId: UUID) = withSuspendingSpan() {
+    override suspend fun deleteTransaction(userId: Uuid, transactionId: Uuid) = withSuspendingSpan {
         val response = httpClient.delete("$baseUrl$BASE_PATH/transactions/$transactionId") {
             headers {
                 append(USER_ID_HEADER, userId.toString())

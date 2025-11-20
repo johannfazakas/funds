@@ -1,5 +1,6 @@
 package ro.jf.funds.fund.sdk
 
+import com.benasher44.uuid.uuid4
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
@@ -12,11 +13,11 @@ import org.mockserver.model.Header
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
+import ro.jf.funds.commons.api.model.Currency
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.CreateAccountTO
-import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerContainerExtension::class)
 class AccountSdkTest {
@@ -24,9 +25,9 @@ class AccountSdkTest {
 
     @Test
     fun `test list accounts`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val userId = randomUUID()
-        val accountId1 = randomUUID()
-        val accountId2 = randomUUID()
+        val userId = uuid4()
+        val accountId1 = uuid4()
+        val accountId2 = uuid4()
 
         mockServerClient
             .`when`(
@@ -68,16 +69,16 @@ class AccountSdkTest {
         assertThat(accounts.items).hasSize(2)
         assertThat(accounts.items[0].id).isEqualTo(accountId1)
         assertThat(accounts.items[0].name).isEqualTo(AccountName("Checking Account"))
-        assertThat(accounts.items[0].unit).isEqualTo(ro.jf.funds.commons.model.Currency.RON)
+        assertThat(accounts.items[0].unit).isEqualTo(Currency.RON)
         assertThat(accounts.items[1].id).isEqualTo(accountId2)
         assertThat(accounts.items[1].name).isEqualTo(AccountName("Savings Account"))
-        assertThat(accounts.items[1].unit).isEqualTo(ro.jf.funds.commons.model.Currency.EUR)
+        assertThat(accounts.items[1].unit).isEqualTo(Currency.EUR)
     }
 
     @Test
     fun `test get account by id`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val userId = randomUUID()
-        val accountId = randomUUID()
+        val userId = uuid4()
+        val accountId = uuid4()
 
         mockServerClient
             .`when`(
@@ -107,13 +108,13 @@ class AccountSdkTest {
         assertThat(account).isNotNull
         assertThat(account!!.id).isEqualTo(accountId)
         assertThat(account.name).isEqualTo(AccountName("Investment Account"))
-        assertThat(account.unit).isEqualTo(ro.jf.funds.commons.model.Currency.USD)
+        assertThat(account.unit).isEqualTo(Currency.USD)
     }
 
     @Test
     fun `test get account by id not found`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val userId = randomUUID()
-        val accountId = randomUUID()
+        val userId = uuid4()
+        val accountId = uuid4()
 
         mockServerClient
             .`when`(
@@ -131,8 +132,8 @@ class AccountSdkTest {
 
     @Test
     fun `test create account`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val userId = randomUUID()
-        val accountId = randomUUID()
+        val userId = uuid4()
+        val accountId = uuid4()
 
         mockServerClient
             .`when`(
@@ -161,19 +162,19 @@ class AccountSdkTest {
             userId,
             CreateAccountTO(
                 name = AccountName("New Checking Account"),
-                unit = ro.jf.funds.commons.model.Currency.RON
+                unit = Currency.RON
             )
         )
 
         assertThat(account.id).isEqualTo(accountId)
         assertThat(account.name).isEqualTo(AccountName("New Checking Account"))
-        assertThat(account.unit).isEqualTo(ro.jf.funds.commons.model.Currency.RON)
+        assertThat(account.unit).isEqualTo(Currency.RON)
     }
 
     @Test
     fun `test delete account by id`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val userId = randomUUID()
-        val accountId = randomUUID()
+        val userId = uuid4()
+        val accountId = uuid4()
 
         mockServerClient
             .`when`(

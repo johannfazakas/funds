@@ -331,8 +331,7 @@ class TransactionRepository(
             userId = userId,
             externalId = externalId,
             dateTime = dateTime,
-            currencyRecord = records.firstOrNull { it.unit is Currency }
-                ?: throw IllegalStateException("OPEN_POSITION transaction must have currency record"),
+            currencyRecord = records.first(),
             instrumentRecord = records.firstOrNull { it.unit is Instrument }
                 ?: throw IllegalStateException("OPEN_POSITION transaction must have instrument record")
         )
@@ -342,8 +341,7 @@ class TransactionRepository(
             userId = userId,
             externalId = externalId,
             dateTime = dateTime,
-            currencyRecord = records.firstOrNull { it.unit is Currency }
-                ?: throw IllegalStateException("OPEN_POSITION transaction must have currency record"),
+            currencyRecord = records.first(),
             instrumentRecord = records.firstOrNull { it.unit is Instrument }
                 ?: throw IllegalStateException("OPEN_POSITION transaction must have instrument record")
         )

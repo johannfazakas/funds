@@ -1,11 +1,12 @@
 package ro.jf.funds.fund.sdk
 
+import com.benasher44.uuid.Uuid
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.api.model.ListTO
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.commons.web.createHttpClient
@@ -14,7 +15,6 @@ import ro.jf.funds.fund.api.FundApi
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
-import java.util.*
 
 private val log = logger { }
 
@@ -22,7 +22,7 @@ class FundSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : FundApi {
-    override suspend fun getFundById(userId: UUID, fundId: UUID): FundTO? = withSuspendingSpan {
+    override suspend fun getFundById(userId: Uuid, fundId: Uuid): FundTO? = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds/$fundId") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -39,7 +39,7 @@ class FundSdk(
         response.body()
     }
 
-    override suspend fun getFundByName(userId: UUID, name: FundName): FundTO? = withSuspendingSpan {
+    override suspend fun getFundByName(userId: Uuid, name: FundName): FundTO? = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds/name/${name}".encodeURLPath()) {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -56,7 +56,7 @@ class FundSdk(
         response.body()
     }
 
-    override suspend fun listFunds(userId: UUID): ListTO<FundTO> = withSuspendingSpan {
+    override suspend fun listFunds(userId: Uuid): ListTO<FundTO> = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -71,7 +71,7 @@ class FundSdk(
         funds
     }
 
-    override suspend fun createFund(userId: UUID, request: CreateFundTO): FundTO = withSuspendingSpan {
+    override suspend fun createFund(userId: Uuid, request: CreateFundTO): FundTO = withSuspendingSpan {
         val response = httpClient.post("$baseUrl$BASE_PATH/funds") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
