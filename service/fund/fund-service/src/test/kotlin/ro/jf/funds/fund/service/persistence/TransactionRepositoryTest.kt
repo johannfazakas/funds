@@ -1,5 +1,6 @@
 package ro.jf.funds.fund.service.persistence
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
@@ -9,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import ro.jf.funds.commons.api.model.Currency
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.fund.api.model.*
-import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
 @ExtendWith(PostgresContainerExtension::class)
@@ -26,12 +26,12 @@ class TransactionRepositoryTest {
         val transaction1 = CreateTransactionTO.SingleRecord(
             dateTime = dateTime,
             externalId = "transaction 1",
-            record = CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal(1.0).toDouble(), Currency.EUR)
+            record = CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal.parseString("1.0"), Currency.EUR)
         )
         val transaction2 = CreateTransactionTO.SingleRecord(
             dateTime = dateTime,
             externalId = "transaction 2",
-            record = CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal(2.0).toDouble(), Currency.EUR)
+            record = CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal.parseString("2.0"), Currency.EUR)
         )
 
         val request1 = CreateTransactionsTO(listOf(transaction1))

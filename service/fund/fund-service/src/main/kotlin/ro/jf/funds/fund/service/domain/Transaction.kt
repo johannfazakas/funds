@@ -1,10 +1,10 @@
 package ro.jf.funds.fund.service.domain
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDateTime
 import ro.jf.funds.commons.api.model.FinancialUnit
 import ro.jf.funds.commons.api.model.Label
 import ro.jf.funds.fund.api.model.TransactionType
-import java.math.BigDecimal
 import java.util.*
 
 sealed class Transaction {

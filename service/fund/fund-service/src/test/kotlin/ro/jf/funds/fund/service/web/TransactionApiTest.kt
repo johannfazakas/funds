@@ -27,10 +27,10 @@ import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.config.configureFundErrorHandling
 import ro.jf.funds.fund.service.config.configureFundRouting
 import ro.jf.funds.fund.service.config.fundDependencies
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import ro.jf.funds.fund.service.persistence.AccountRepository
 import ro.jf.funds.fund.service.persistence.TransactionRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
-import java.math.BigDecimal
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
@@ -61,14 +61,14 @@ class TransactionApiTest {
             sourceRecord = CreateTransactionRecordTO(
                 accountId = companyAccount.id,
                 fundId = workFund.id,
-                amount = BigDecimal("-100.25").toDouble(),
+                amount = BigDecimal.parseString("-100.25"),
                 unit = Currency.RON,
                 labels = listOf(Label("one"), Label("two"))
             ),
             destinationRecord = CreateTransactionRecordTO(
                 accountId = personalAccount.id,
                 fundId = expensesFund.id,
-                amount = BigDecimal("100.25").toDouble(),
+                amount = BigDecimal.parseString("100.25"),
                 unit = Currency.RON
             )
         )
@@ -106,14 +106,14 @@ class TransactionApiTest {
                 sourceRecord = CreateTransactionRecordTO(
                     accountId = account1.id,
                     fundId = workFund.id,
-                    amount = BigDecimal("-100.25").toDouble(),
+                    amount = BigDecimal.parseString("-100.25"),
                     unit = Currency.RON,
                     labels = listOf(Label("salary"))
                 ),
                 destinationRecord = CreateTransactionRecordTO(
                     accountId = account2.id,
                     fundId = expensesFund.id,
-                    amount = BigDecimal("100.25").toDouble(),
+                    amount = BigDecimal.parseString("100.25"),
                     unit = Currency.RON
                 )
             )
@@ -127,7 +127,7 @@ class TransactionApiTest {
                 record = CreateTransactionRecordTO(
                     accountId = account1.id,
                     fundId = workFund.id,
-                    amount = BigDecimal("50.00").toDouble(),
+                    amount = BigDecimal.parseString("50.00"),
                     unit = Currency.RON
                 )
             )
@@ -143,17 +143,17 @@ class TransactionApiTest {
 
         val fundTransaction1 = transactions.items.find { it.type == TransactionType.TRANSFER } as? TransactionTO.Transfer
         assertThat(fundTransaction1).isNotNull
-        assertThat(fundTransaction1!!.sourceRecord.amount).isEqualByComparingTo(BigDecimal("-100.25").toDouble())
+        assertThat(fundTransaction1!!.sourceRecord.amount).isEqualByComparingTo(BigDecimal.parseString("-100.25"))
         assertThat(fundTransaction1.sourceRecord.fundId).isEqualTo(workFund.id)
         assertThat(fundTransaction1.sourceRecord.accountId).isEqualTo(account1.id)
         assertThat(fundTransaction1.sourceRecord.labels).contains(Label("salary"))
-        assertThat(fundTransaction1.destinationRecord.amount).isEqualByComparingTo(BigDecimal("100.25").toDouble())
+        assertThat(fundTransaction1.destinationRecord.amount).isEqualByComparingTo(BigDecimal.parseString("100.25"))
         assertThat(fundTransaction1.destinationRecord.fundId).isEqualTo(expensesFund.id)
         assertThat(fundTransaction1.destinationRecord.accountId).isEqualTo(account2.id)
 
         val fundTransaction2 = transactions.items.find { it.type == TransactionType.SINGLE_RECORD } as? TransactionTO.SingleRecord
         assertThat(fundTransaction2).isNotNull
-        assertThat(fundTransaction2!!.record.amount).isEqualByComparingTo(BigDecimal("50.00").toDouble())
+        assertThat(fundTransaction2!!.record.amount).isEqualByComparingTo(BigDecimal.parseString("50.00"))
         assertThat(fundTransaction2.record.fundId).isEqualTo(workFund.id)
         assertThat(fundTransaction2.record.accountId).isEqualTo(account1.id)
     }
@@ -177,7 +177,7 @@ class TransactionApiTest {
                 record = CreateTransactionRecordTO(
                     accountId = account1.id,
                     fundId = workFund.id,
-                    amount = BigDecimal("100.00").toDouble(),
+                    amount = BigDecimal.parseString("100.00"),
                     unit = Currency.RON
                 )
             )
@@ -191,7 +191,7 @@ class TransactionApiTest {
                 record = CreateTransactionRecordTO(
                     accountId = account1.id,
                     fundId = workFund.id,
-                    amount = BigDecimal("200.00").toDouble(),
+                    amount = BigDecimal.parseString("200.00"),
                     unit = Currency.RON
                 )
             )
@@ -205,7 +205,7 @@ class TransactionApiTest {
                 record = CreateTransactionRecordTO(
                     accountId = account1.id,
                     fundId = workFund.id,
-                    amount = BigDecimal("300.00").toDouble(),
+                    amount = BigDecimal.parseString("300.00"),
                     unit = Currency.RON
                 )
             )
@@ -221,7 +221,7 @@ class TransactionApiTest {
         val transactions = response.body<ListTO<TransactionTO>>()
         assertThat(transactions.items).hasSize(1)
         val transaction = transactions.items[0] as TransactionTO.SingleRecord
-        assertThat(transaction.record.amount).isEqualByComparingTo(BigDecimal("200.00").toDouble())
+        assertThat(transaction.record.amount).isEqualByComparingTo(BigDecimal.parseString("200.00"))
         assertThat(transaction.dateTime).isEqualTo(fromDate.atTime(15, 30))
     }
 
@@ -242,7 +242,7 @@ class TransactionApiTest {
                 record = CreateTransactionRecordTO(
                     accountId = account1.id,
                     fundId = workFund.id,
-                    amount = BigDecimal("100.00").toDouble(),
+                    amount = BigDecimal.parseString("100.00"),
                     unit = Currency.RON
                 )
             )
@@ -256,7 +256,7 @@ class TransactionApiTest {
                 record = CreateTransactionRecordTO(
                     accountId = account1.id,
                     fundId = expensesFund.id,
-                    amount = BigDecimal("200.00").toDouble(),
+                    amount = BigDecimal.parseString("200.00"),
                     unit = Currency.RON
                 )
             )
@@ -271,7 +271,7 @@ class TransactionApiTest {
         val transactions = response.body<ListTO<TransactionTO>>()
         assertThat(transactions.items).hasSize(1)
         val transaction = transactions.items[0] as TransactionTO.SingleRecord
-        assertThat(transaction.record.amount).isEqualByComparingTo(BigDecimal("100.00").toDouble())
+        assertThat(transaction.record.amount).isEqualByComparingTo(BigDecimal.parseString("100.00"))
         assertThat(transaction.record.fundId).isEqualTo(workFund.id)
     }
 

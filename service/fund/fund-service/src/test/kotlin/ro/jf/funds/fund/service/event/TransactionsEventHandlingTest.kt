@@ -21,10 +21,10 @@ import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.test.utils.testTopicSupplier
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.module
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import ro.jf.funds.fund.service.persistence.AccountRepository
 import ro.jf.funds.fund.service.persistence.TransactionRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
-import java.math.BigDecimal
 import java.time.Duration
 import java.util.UUID.randomUUID
 import java.util.concurrent.TimeUnit
@@ -77,8 +77,7 @@ class TransactionsEventHandlingTest {
                     record = CreateTransactionRecordTO(
                         fundId = fund.id,
                         accountId = account.id,
-                        // TODO(Johann) Double?
-                        amount = BigDecimal("100.0").toDouble(),
+                        amount = BigDecimal.parseString("100.0"),
                         unit = Currency.RON
                     )
                 )
@@ -103,7 +102,7 @@ class TransactionsEventHandlingTest {
         val transaction = persistedTransactions[0] as ro.jf.funds.fund.service.domain.Transaction.SingleRecord
         assertThat(transaction.externalId).isEqualTo(externalId)
         assertThat(transaction.record.accountId).isEqualTo(account.id)
-        assertThat(transaction.record.amount).isEqualByComparingTo(BigDecimal("100.0"))
+        assertThat(transaction.record.amount).isEqualByComparingTo(BigDecimal.parseString("100.0"))
         assertThat(transaction.record.unit).isEqualTo(Currency.RON)
     }
 

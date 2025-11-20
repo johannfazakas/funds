@@ -12,6 +12,7 @@ import ro.jf.funds.commons.api.model.Instrument
 import ro.jf.funds.commons.api.model.asLabels
 import ro.jf.funds.commons.api.model.asString
 import ro.jf.funds.commons.api.model.toFinancialUnit
+import ro.jf.funds.commons.persistence.bigDecimal
 import ro.jf.funds.commons.persistence.blockingTransaction
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.domain.Transaction
@@ -36,7 +37,7 @@ class TransactionRepository(
         val transactionId = uuid("transaction_id").references(AccountTransactionTable.id)
         val accountId = uuid("account_id").references(AccountTable.id)
         val fundId = uuid("fund_id").references(FundTable.id)
-        val amount = decimal("amount", 20, 8)
+        val amount = bigDecimal("amount", 20, 8)
         val unitType = varchar("unit_type", 50)
         val unit = varchar("unit", 50)
         val labels = varchar("labels", 100)
@@ -186,8 +187,7 @@ class TransactionRepository(
                 this[AccountRecordTable.transactionId] = it.first
                 this[AccountRecordTable.accountId] = it.second.accountId
                 this[AccountRecordTable.fundId] = extractFundId(it.second)
-                // TODO(Johann) not good, Double will loose precision
-                this[AccountRecordTable.amount] = it.second.amount.toBigDecimal()
+                this[AccountRecordTable.amount] = it.second.amount
                 this[AccountRecordTable.unitType] = it.second.unit.type.value
                 this[AccountRecordTable.unit] = it.second.unit.value
                 this[AccountRecordTable.labels] = it.second.labels.asString()
@@ -222,7 +222,7 @@ class TransactionRepository(
             it[AccountRecordTable.transactionId] = transactionId
             it[accountId] = record.accountId
             it[fundId] = extractFundId(record)
-            it[amount] = record.amount.toBigDecimal()
+            it[amount] = record.amount
             it[unit] = record.unit.value
             it[unitType] = record.unit.type.value
             it[labels] = record.labels.asString()

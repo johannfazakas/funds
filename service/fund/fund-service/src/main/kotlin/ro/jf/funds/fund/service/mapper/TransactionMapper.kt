@@ -52,8 +52,7 @@ fun TransactionRecord.toTO() = TransactionRecordTO(
     id = id,
     accountId = accountId,
     fundId = fundId,
-    // TODO(Johann) not ok
-    amount = amount.toDouble(),
+    amount = amount,
     unit = unit,
     labels = labels,
 )

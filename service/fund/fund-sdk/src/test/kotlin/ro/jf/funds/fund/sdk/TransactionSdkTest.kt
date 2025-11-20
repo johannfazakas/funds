@@ -1,6 +1,7 @@
 package ro.jf.funds.fund.sdk
 
 import com.benasher44.uuid.uuid4
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -51,7 +52,7 @@ class TransactionSdkTest {
 
     @Test
     fun `given create transaction`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val amount = 42.0
+        val amount = BigDecimal.parseString("42.0")
 
         mockServerClient
             .`when`(
@@ -75,7 +76,7 @@ class TransactionSdkTest {
                                 put("id", JsonPrimitive(recordId.toString()))
                                 put("accountId", JsonPrimitive(accountId.toString()))
                                 put("fundId", JsonPrimitive(fundId.toString()))
-                                put("amount", JsonPrimitive(amount))
+                                put("amount", JsonPrimitive(amount.toStringExpanded()))
                                 put("unit", buildJsonObject {
                                     put("type", JsonPrimitive("currency"))
                                     put("value", JsonPrimitive("RON"))

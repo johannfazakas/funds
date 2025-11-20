@@ -1,5 +1,6 @@
 package ro.jf.funds.fund.service.service
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
@@ -17,7 +18,6 @@ import ro.jf.funds.fund.service.domain.TransactionRecord
 import ro.jf.funds.fund.service.persistence.AccountRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
 import ro.jf.funds.fund.service.persistence.TransactionRepository
-import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
 class TransactionServiceTest {
@@ -60,14 +60,14 @@ class TransactionServiceTest {
             sourceRecord = CreateTransactionRecordTO(
                 accountId = companyAccountId,
                 fundId = workFundId,
-                amount = BigDecimal("-100.25").toDouble(),
+                amount = BigDecimal.parseString("-100.25"),
                 unit = FinancialUnit.of("currency", "RON"),
                 labels = listOf(Label("one"), Label("two"))
             ),
             destinationRecord = CreateTransactionRecordTO(
                 accountId = personalAccountId,
                 fundId = expensesFundId,
-                amount = BigDecimal("100.25").toDouble(),
+                amount = BigDecimal.parseString("100.25"),
                 unit = FinancialUnit.of("currency", "RON")
             )
         )
@@ -95,7 +95,7 @@ class TransactionServiceTest {
                     id = record1Id,
                     accountId = companyAccountId,
                     fundId = workFundId,
-                    amount = BigDecimal("-100.25"),
+                    amount = BigDecimal.parseString("-100.25"),
                     unit = FinancialUnit.of("currency", "RON"),
                     labels = listOf(Label("one"), Label("two"))
                 ),
@@ -103,7 +103,7 @@ class TransactionServiceTest {
                     id = record2Id,
                     accountId = personalAccountId,
                     fundId = expensesFundId,
-                    amount = BigDecimal("100.25"),
+                    amount = BigDecimal.parseString("100.25"),
                     unit = FinancialUnit.of("currency", "RON"),
                     labels = emptyList()
                 )
@@ -118,11 +118,11 @@ class TransactionServiceTest {
         assertThat(transaction.sourceRecord.id).isEqualTo(record1Id)
         assertThat(transaction.sourceRecord.fundId).isEqualTo(workFundId)
         assertThat(transaction.sourceRecord.accountId).isEqualTo(companyAccountId)
-        assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal("-100.25"))
+        assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal.parseString("-100.25"))
         assertThat(transaction.destinationRecord.id).isEqualTo(record2Id)
         assertThat(transaction.destinationRecord.fundId).isEqualTo(expensesFundId)
         assertThat(transaction.destinationRecord.accountId).isEqualTo(personalAccountId)
-        assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal("100.25"))
+        assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal.parseString("100.25"))
     }
 
     @Test
@@ -141,7 +141,7 @@ class TransactionServiceTest {
                         id = record1Id,
                         accountId = companyAccountId,
                         fundId = workFundId,
-                        amount = BigDecimal(100.25),
+                        amount = BigDecimal.parseString("100.25"),
                         unit = FinancialUnit.of("currency", "RON"),
                         labels = listOf(Label("one"), Label("two"))
                     ),
@@ -149,7 +149,7 @@ class TransactionServiceTest {
                         id = record2Id,
                         accountId = personalAccountId,
                         fundId = expensesFundId,
-                        amount = BigDecimal(50.75),
+                        amount = BigDecimal.parseString("50.75"),
                         unit = FinancialUnit.of("currency", "RON"),
                         labels = emptyList()
                     )
@@ -167,12 +167,12 @@ class TransactionServiceTest {
         assertThat(transaction.sourceRecord.id).isEqualTo(record1Id)
         assertThat(transaction.sourceRecord.fundId).isEqualTo(workFundId)
         assertThat(transaction.sourceRecord.accountId).isEqualTo(companyAccountId)
-        assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal(100.25))
+        assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal.parseString("100.25"))
         assertThat(transaction.sourceRecord.labels).containsExactlyInAnyOrder(Label("one"), Label("two"))
         assertThat(transaction.destinationRecord.id).isEqualTo(record2Id)
         assertThat(transaction.destinationRecord.fundId).isEqualTo(expensesFundId)
         assertThat(transaction.destinationRecord.accountId).isEqualTo(personalAccountId)
-        assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal(50.75))
+        assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal.parseString("50.75"))
         assertThat(transaction.destinationRecord.labels).isEmpty()
     }
 
@@ -190,7 +190,7 @@ class TransactionServiceTest {
                         id = record1Id,
                         accountId = companyAccountId,
                         fundId = workFundId,
-                        amount = BigDecimal(100.25),
+                        amount = BigDecimal.parseString("100.25"),
                         unit = FinancialUnit.of("currency", "RON"),
                         labels = listOf(Label("one"), Label("two"))
                     ),
@@ -198,7 +198,7 @@ class TransactionServiceTest {
                         id = record2Id,
                         accountId = personalAccountId,
                         fundId = expensesFundId,
-                        amount = BigDecimal(50.75),
+                        amount = BigDecimal.parseString("50.75"),
                         unit = FinancialUnit.of("currency", "RON"),
                         labels = emptyList()
                     )
@@ -216,12 +216,12 @@ class TransactionServiceTest {
         assertThat(transaction.sourceRecord.id).isEqualTo(record1Id)
         assertThat(transaction.sourceRecord.fundId).isEqualTo(workFundId)
         assertThat(transaction.sourceRecord.accountId).isEqualTo(companyAccountId)
-        assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal(100.25))
+        assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal.parseString("100.25"))
         assertThat(transaction.sourceRecord.labels).containsExactlyInAnyOrder(Label("one"), Label("two"))
         assertThat(transaction.destinationRecord.id).isEqualTo(record2Id)
         assertThat(transaction.destinationRecord.fundId).isEqualTo(expensesFundId)
         assertThat(transaction.destinationRecord.accountId).isEqualTo(personalAccountId)
-        assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal(50.75))
+        assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal.parseString("50.75"))
         assertThat(transaction.destinationRecord.labels).isEmpty()
     }
 

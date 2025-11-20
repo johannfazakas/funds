@@ -1,9 +1,13 @@
 package ro.jf.funds.commons.persistence
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.coroutines.Dispatchers
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
+import java.math.BigDecimal as JavaBigDecimal
 
 suspend fun <T> blockingTransaction(statement: suspend Transaction.() -> T): T {
     return withSuspendingSpan(
@@ -16,3 +20,9 @@ suspend fun <T> blockingTransaction(statement: suspend Transaction.() -> T): T {
         })
     }
 }
+
+fun Table.bigDecimal(name: String, precision: Int, scale: Int): Column<BigDecimal> =
+    decimal(name, precision, scale).transform(
+        wrap = { BigDecimal.parseString(it.toPlainString()) },
+        unwrap = { JavaBigDecimal(it.toStringExpanded()) }
+    )
