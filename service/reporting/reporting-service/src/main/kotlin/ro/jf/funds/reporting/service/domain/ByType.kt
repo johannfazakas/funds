@@ -1,8 +1,8 @@
 package ro.jf.funds.reporting.service.domain
 
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Instrument
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.commons.api.model.Instrument
 
 typealias ByBucket<V> = Map<TimeBucket, V>
 typealias ByGroup<V> = Map<String, V>

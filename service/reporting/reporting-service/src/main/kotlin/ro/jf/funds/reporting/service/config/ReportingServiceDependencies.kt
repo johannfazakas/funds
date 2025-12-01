@@ -6,16 +6,11 @@ import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import ro.jf.funds.commons.config.getEnvironmentProperty
 import ro.jf.funds.commons.config.getStringProperty
-import ro.jf.funds.commons.event.Producer
-import ro.jf.funds.commons.event.ProducerProperties
-import ro.jf.funds.commons.event.TopicSupplier
-import ro.jf.funds.commons.event.createProducer
+import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.commons.web.createHttpClient
-import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.conversion.sdk.ConversionSdk
-import ro.jf.funds.reporting.api.event.REPORTING_DOMAIN
-import ro.jf.funds.reporting.api.event.REPORT_VIEW_REQUEST
+import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.ReportViewService
@@ -53,7 +48,7 @@ private val Application.eventProducerDependencies
         single<TopicSupplier> { TopicSupplier(environment.getEnvironmentProperty()) }
         single<ProducerProperties> { ProducerProperties.fromEnv(environment) }
         single<Producer<CreateReportViewCommand>> {
-            createProducer(get(), get<TopicSupplier>().topic(REPORTING_DOMAIN, REPORT_VIEW_REQUEST))
+            createProducer(get(), get<TopicSupplier>().topic(Resource.REPORT_VIEW, EventType.REQUEST))
         }
     }
 

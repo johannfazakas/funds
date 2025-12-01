@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.service.web.mapper
 
+import ro.jf.funds.reporting.service.utils.toKmpBigDecimal
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.domain.*
 
@@ -36,68 +37,68 @@ fun BucketType.toBucketTypeTO(): BucketTypeTO = when (this) {
     BucketType.FORECAST -> BucketTypeTO.FORECAST
 }
 
-fun NetReport.toNetReportTO(): NetReportTO = NetReportTO(this.net)
+fun NetReport.toNetReportTO(): NetReportTO = NetReportTO(this.net.toKmpBigDecimal())
 
 fun ByGroup<NetReport>.toGroupedNetTO(): ByGroupTO<GroupNetReportTO> =
-    this.map { (group, report) -> GroupNetReportTO(group = group, net = report.net) }
+    this.map { (group, report) -> GroupNetReportTO(group = group, net = report.net.toKmpBigDecimal()) }
         .let(::ByGroupTO)
 
 fun ValueReport.toValueReportTO(): ValueReportTO =
     ValueReportTO(
-        start = this.start,
-        end = this.end,
-        min = this.min,
-        max = this.max
+        start = this.start.toKmpBigDecimal(),
+        end = this.end.toKmpBigDecimal(),
+        min = this.min.toKmpBigDecimal(),
+        max = this.max.toKmpBigDecimal()
     )
 
 fun ByGroup<Budget>.toGroupedBudgetTO(): ByGroupTO<GroupedBudgetReportTO> =
     this.map { (group, budget) ->
         GroupedBudgetReportTO(
             group = group,
-            allocated = budget.allocated,
-            spent = budget.spent,
-            left = budget.left
+            allocated = budget.allocated.toKmpBigDecimal(),
+            spent = budget.spent.toKmpBigDecimal(),
+            left = budget.left.toKmpBigDecimal()
         )
     }
         .let(::ByGroupTO)
 
 fun PerformanceReport.toPerformanceTO(): PerformanceReportTO =
     PerformanceReportTO(
-        totalAssetsValue = this.totalAssetsValue,
-        totalCurrencyValue = this.totalCurrencyValue,
-        totalInvestment = this.totalInvestment,
-        currentInvestment = this.currentInvestment,
-        totalProfit = this.totalProfit,
-        currentProfit = this.currentProfit
+        totalAssetsValue = this.totalAssetsValue.toKmpBigDecimal(),
+        totalCurrencyValue = this.totalCurrencyValue.toKmpBigDecimal(),
+        totalInvestment = this.totalInvestment.toKmpBigDecimal(),
+        currentInvestment = this.currentInvestment.toKmpBigDecimal(),
+        totalProfit = this.totalProfit.toKmpBigDecimal(),
+        currentProfit = this.currentProfit.toKmpBigDecimal()
     )
 
 fun ByInstrument<InstrumentPerformanceReport>.toInstrumentsPerformanceReportTO(): InstrumentsPerformanceReportTO =
     this.map { (symbol, performance) ->
         InstrumentPerformanceReportTO(
             instrument = symbol,
-            totalUnits = performance.totalUnits,
-            currentUnits = performance.currentUnits,
-            totalValue = performance.totalValue,
-            totalInvestment = performance.totalInvestment,
-            currentInvestment = performance.currentInvestment,
-            totalProfit = performance.totalProfit,
-            currentProfit = performance.currentProfit
+            totalUnits = performance.totalUnits.toKmpBigDecimal(),
+            currentUnits = performance.currentUnits.toKmpBigDecimal(),
+            totalValue = performance.totalValue.toKmpBigDecimal(),
+            totalInvestment = performance.totalInvestment.toKmpBigDecimal(),
+            currentInvestment = performance.currentInvestment.toKmpBigDecimal(),
+            totalProfit = performance.totalProfit.toKmpBigDecimal(),
+            currentProfit = performance.currentProfit.toKmpBigDecimal()
         )
     }
         .let(::InstrumentsPerformanceReportTO)
 
 fun InterestRateReport.toInterestRateTO(): InterestRateReportTO =
     InterestRateReportTO(
-        totalInterestRate = this.totalInterestRate,
-        currentInterestRate = this.currentInterestRate
+        totalInterestRate = this.totalInterestRate.toKmpBigDecimal(),
+        currentInterestRate = this.currentInterestRate.toKmpBigDecimal()
     )
 
 fun ByInstrument<InstrumentInterestRateReport>.toInstrumentsInterestRateTO(): InstrumentsInterestRateReportTO =
     this.map { (instrument, interestRate) ->
         InstrumentInterestRateReportTO(
             instrument = instrument,
-            totalInterestRate = interestRate.totalInterestRate,
-            currentInterestRate = interestRate.currentInterestRate
+            totalInterestRate = interestRate.totalInterestRate.toKmpBigDecimal(),
+            currentInterestRate = interestRate.currentInterestRate.toKmpBigDecimal()
         )
     }
         .let(::InstrumentsInterestRateReportTO)

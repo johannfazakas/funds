@@ -1,5 +1,6 @@
 package ro.jf.funds.conversion.service.service.instrument.converter.bt
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
@@ -18,7 +19,6 @@ import ro.jf.funds.conversion.service.domain.InstrumentConversionInfo
 import ro.jf.funds.conversion.service.service.instrument.InstrumentConverter
 import java.io.ByteArrayInputStream
 import java.io.InputStream
-import java.math.BigDecimal
 import java.text.NumberFormat.getNumberInstance
 import java.util.*
 
@@ -103,8 +103,8 @@ class BTInstrumentConverter(
 
     private fun Cell.toBigDecimal(): BigDecimal {
         return when (cellType) {
-            CellType.NUMERIC -> numericCellValue.toBigDecimal()
-            CellType.STRING -> getNumberInstance(Locale.FRANCE).parse(stringCellValue).toDouble().toBigDecimal()
+            CellType.NUMERIC -> BigDecimal.fromDouble(numericCellValue)
+            CellType.STRING -> BigDecimal.fromDouble(getNumberInstance(Locale.FRANCE).parse(stringCellValue).toDouble())
             else -> error("Unsupported cell type: $cellType")
         }
     }

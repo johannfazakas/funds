@@ -1,11 +1,11 @@
 package ro.jf.funds.conversion.api.model
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.serialization.BigDecimalSerializer
-import java.math.BigDecimal
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.commons.api.serialization.BigDecimalSerializer
 
 @Serializable
 data class ConversionResponse(

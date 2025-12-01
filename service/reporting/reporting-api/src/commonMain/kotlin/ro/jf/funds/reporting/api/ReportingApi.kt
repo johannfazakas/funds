@@ -1,59 +1,59 @@
 package ro.jf.funds.reporting.api
 
-import ro.jf.funds.commons.model.ListTO
+import com.benasher44.uuid.Uuid
+import ro.jf.funds.commons.api.model.ListTO
 import ro.jf.funds.reporting.api.model.*
-import java.util.*
 
 interface ReportingApi {
-    suspend fun createReportView(userId: UUID, request: CreateReportViewTO): ReportViewTO
-    suspend fun listReportViews(userId: UUID): ListTO<ReportViewTO>
-    suspend fun getReportView(userId: UUID, reportViewId: UUID): ReportViewTO
+    suspend fun createReportView(userId: Uuid, request: CreateReportViewTO): ReportViewTO
+    suspend fun listReportViews(userId: Uuid): ListTO<ReportViewTO>
+    suspend fun getReportView(userId: Uuid, reportViewId: Uuid): ReportViewTO
 
     suspend fun getNetData(
-        userId: UUID,
-        reportViewId: UUID,
+        userId: Uuid,
+        reportViewId: Uuid,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<NetReportTO>
 
     suspend fun getGroupedNetData(
-        userId: UUID,
-        reportViewId: UUID,
+        userId: Uuid,
+        reportViewId: Uuid,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<ByGroupTO<GroupNetReportTO>>
 
     suspend fun getValueData(
-        userId: UUID,
-        reportViewId: UUID,
+        userId: Uuid,
+        reportViewId: Uuid,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<ValueReportTO>
 
     suspend fun getGroupedBudgetData(
-        userId: UUID,
-        reportViewId: UUID,
+        userId: Uuid,
+        reportViewId: Uuid,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<ByGroupTO<GroupedBudgetReportTO>>
 
     suspend fun getPerformanceData(
-        userId: UUID,
-        reportViewId: UUID,
+        userId: Uuid,
+        reportViewId: Uuid,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<PerformanceReportTO>
 
     suspend fun getInstrumentPerformanceData(
-        userId: UUID,
-        reportViewId: UUID,
+        userId: Uuid,
+        reportViewId: Uuid,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<InstrumentsPerformanceReportTO>
 
     suspend fun getInterestRateData(
-        userId: UUID,
-        reportViewId: UUID,
+        userId: Uuid,
+        reportViewId: Uuid,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<InterestRateReportTO>
 
     suspend fun getInstrumentInterestRateData(
-        userId: UUID,
-        reportViewId: UUID,
+        userId: Uuid,
+        reportViewId: Uuid,
         reportDataInterval: ReportDataIntervalTO,
     ): ReportDataTO<InstrumentsInterestRateReportTO>
 }

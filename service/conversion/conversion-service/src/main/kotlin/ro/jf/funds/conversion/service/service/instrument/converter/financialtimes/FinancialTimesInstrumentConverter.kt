@@ -1,5 +1,6 @@
 package ro.jf.funds.conversion.service.service.instrument.converter.financialtimes
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -17,7 +18,7 @@ import ro.jf.funds.conversion.service.service.instrument.converter.financialtime
 import ro.jf.funds.conversion.service.service.instrument.converter.financialtimes.model.FTHtmlResponse
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Locale
 import java.time.LocalDate as JavaLocalDate
 
 class FinancialTimesInstrumentConverter(
@@ -76,7 +77,7 @@ class FinancialTimesInstrumentConverter(
     private fun String.asPrice(): FTCell.Price? {
         return try {
             val priceValue = NumberFormat.getNumberInstance(Locale.US).parse(this).toDouble()
-            if (priceValue == 0.0) null else FTCell.Price(priceValue.toBigDecimal())
+            if (priceValue == 0.0) null else FTCell.Price(BigDecimal.fromDouble(priceValue))
         } catch (e: Exception) {
             null
         }

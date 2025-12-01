@@ -1,8 +1,8 @@
 package ro.jf.funds.conversion.service.domain
 
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Instrument
+import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.commons.api.model.Instrument
 
 sealed class ConversionExceptions(message: String) : RuntimeException(message) {
     class ConversionNotFound(

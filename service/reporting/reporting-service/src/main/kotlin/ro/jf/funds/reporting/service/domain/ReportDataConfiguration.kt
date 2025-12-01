@@ -2,8 +2,8 @@ package ro.jf.funds.reporting.service.domain
 
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Label
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.Label
 
 @Serializable
 data class ReportDataConfiguration(

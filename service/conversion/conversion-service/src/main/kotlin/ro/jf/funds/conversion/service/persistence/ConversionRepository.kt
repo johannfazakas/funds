@@ -1,5 +1,6 @@
 package ro.jf.funds.conversion.service.persistence
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toJavaLocalDate
 import org.jetbrains.exposed.dao.UUIDEntity
@@ -11,9 +12,11 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.selectAll
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.toFinancialUnit
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.commons.api.model.toFinancialUnit
+import ro.jf.funds.commons.persistence.bigDecimal
+import ro.jf.funds.commons.persistence.blockingTransaction
 import ro.jf.funds.conversion.service.domain.Conversion
 import java.util.*
 
@@ -26,7 +29,7 @@ class ConversionRepository(
         val sourceType = varchar("source_type", 50)
         val targetCurrency = varchar("target_currency", 50)
         val date = date("date")
-        val price = decimal("price", 20, 8)
+        val price = bigDecimal("price", 20, 8)
     }
 
     class DAO(id: EntityID<UUID>) : UUIDEntity(id) {

@@ -1,13 +1,14 @@
 package ro.jf.funds.conversion.service.service
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Instrument
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.Instrument
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionResponse
 import ro.jf.funds.conversion.api.model.ConversionsRequest
@@ -19,7 +20,6 @@ import ro.jf.funds.conversion.service.service.currency.CurrencyConverter
 import ro.jf.funds.conversion.service.service.instrument.InstrumentConversionInfoRepository
 import ro.jf.funds.conversion.service.service.instrument.InstrumentConverter
 import ro.jf.funds.conversion.service.service.instrument.InstrumentConverterRegistry
-import java.math.BigDecimal
 
 class ConversionServiceTest {
     private val currencyConverter = mock<CurrencyConverter>()
@@ -49,14 +49,14 @@ class ConversionServiceTest {
         )
             .thenReturn(
                 listOf(
-                    Conversion(Currency.RON, Currency.EUR, date1, BigDecimal("0.2")),
-                    Conversion(Currency.RON, Currency.EUR, date2, BigDecimal("0.21"))
+                    Conversion(Currency.RON, Currency.EUR, date1, BigDecimal.parseString("0.2")),
+                    Conversion(Currency.RON, Currency.EUR, date2, BigDecimal.parseString("0.21"))
                 )
             )
         whenever(conversionRepository.getConversions(Currency.EUR, Currency.RON, listOf(date3)))
             .thenReturn(
                 listOf(
-                    Conversion(Currency.EUR, Currency.RON, date3, BigDecimal("4.9"))
+                    Conversion(Currency.EUR, Currency.RON, date3, BigDecimal.parseString("4.9"))
                 )
             )
         val request = ConversionsRequest(
@@ -70,9 +70,9 @@ class ConversionServiceTest {
         val response = conversionService.convert(request)
 
         assertThat(response.conversions).hasSize(3)
-        assertThat(response.getRate(Currency.RON, Currency.EUR, date1)).isEqualTo(BigDecimal("0.2"))
-        assertThat(response.getRate(Currency.RON, Currency.EUR, date2)).isEqualTo(BigDecimal("0.21"))
-        assertThat(response.getRate(Currency.EUR, Currency.RON, date3)).isEqualTo(BigDecimal("4.9"))
+        assertThat(response.getRate(Currency.RON, Currency.EUR, date1)).isEqualTo(BigDecimal.parseString("0.2"))
+        assertThat(response.getRate(Currency.RON, Currency.EUR, date2)).isEqualTo(BigDecimal.parseString("0.21"))
+        assertThat(response.getRate(Currency.EUR, Currency.RON, date3)).isEqualTo(BigDecimal.parseString("4.9"))
         assertThat(response.getRate(Currency.RON, Currency.EUR, date3)).isNull()
     }
 
@@ -87,15 +87,15 @@ class ConversionServiceTest {
         )
             .thenReturn(
                 listOf(
-                    Conversion(Currency.RON, Currency.EUR, date1, BigDecimal("0.2")),
+                    Conversion(Currency.RON, Currency.EUR, date1, BigDecimal.parseString("0.2")),
                 )
             )
         whenever(conversionRepository.getConversions(Currency.EUR, Currency.RON, listOf(date3)))
             .thenReturn(emptyList())
         whenever(currencyConverter.convert(Currency.RON, Currency.EUR, listOf(date2)))
-            .thenReturn(listOf(ConversionResponse(Currency.RON, Currency.EUR, date2, BigDecimal("0.21"))))
+            .thenReturn(listOf(ConversionResponse(Currency.RON, Currency.EUR, date2, BigDecimal.parseString("0.21"))))
         whenever(currencyConverter.convert(Currency.EUR, Currency.RON, listOf(date3)))
-            .thenReturn(listOf(ConversionResponse(Currency.EUR, Currency.RON, date3, BigDecimal("4.9"))))
+            .thenReturn(listOf(ConversionResponse(Currency.EUR, Currency.RON, date3, BigDecimal.parseString("4.9"))))
 
         val request = ConversionsRequest(
             listOf(
@@ -108,9 +108,9 @@ class ConversionServiceTest {
         val response = conversionService.convert(request)
 
         assertThat(response.conversions).hasSize(3)
-        assertThat(response.getRate(Currency.RON, Currency.EUR, date1)).isEqualTo(BigDecimal("0.2"))
-        assertThat(response.getRate(Currency.RON, Currency.EUR, date2)).isEqualTo(BigDecimal("0.21"))
-        assertThat(response.getRate(Currency.EUR, Currency.RON, date3)).isEqualTo(BigDecimal("4.9"))
+        assertThat(response.getRate(Currency.RON, Currency.EUR, date1)).isEqualTo(BigDecimal.parseString("0.2"))
+        assertThat(response.getRate(Currency.RON, Currency.EUR, date2)).isEqualTo(BigDecimal.parseString("0.21"))
+        assertThat(response.getRate(Currency.EUR, Currency.RON, date3)).isEqualTo(BigDecimal.parseString("4.9"))
         assertThat(response.getRate(Currency.RON, Currency.EUR, date3)).isNull()
     }
 
@@ -131,7 +131,7 @@ class ConversionServiceTest {
             whenever(conversionRepository.getConversions(instrument, Currency.EUR, listOf(date1, date2, date3)))
                 .thenReturn(
                     listOf(
-                        Conversion(instrument, Currency.EUR, date1, BigDecimal("100.5"))
+                        Conversion(instrument, Currency.EUR, date1, BigDecimal.parseString("100.5"))
                     )
                 )
             whenever(instrumentConverterRegistry.getConverter(pricingInstrument))
@@ -139,8 +139,8 @@ class ConversionServiceTest {
             whenever(instrumentConverter.convert(pricingInstrument, listOf(date2, date3)))
                 .thenReturn(
                     listOf(
-                        ConversionResponse(instrument, Currency.EUR, date2, BigDecimal("101.2")),
-                        ConversionResponse(instrument, Currency.EUR, date3, BigDecimal("102.8"))
+                        ConversionResponse(instrument, Currency.EUR, date2, BigDecimal.parseString("101.2")),
+                        ConversionResponse(instrument, Currency.EUR, date3, BigDecimal.parseString("102.8"))
                     )
                 )
 
@@ -155,9 +155,9 @@ class ConversionServiceTest {
             val response = conversionService.convert(request)
 
             assertThat(response.conversions).hasSize(3)
-            assertThat(response.getRate(instrument, Currency.EUR, date1)).isEqualTo(BigDecimal("100.5"))
-            assertThat(response.getRate(instrument, Currency.EUR, date2)).isEqualTo(BigDecimal("101.2"))
-            assertThat(response.getRate(instrument, Currency.EUR, date3)).isEqualTo(BigDecimal("102.8"))
+            assertThat(response.getRate(instrument, Currency.EUR, date1)).isEqualTo(BigDecimal.parseString("100.5"))
+            assertThat(response.getRate(instrument, Currency.EUR, date2)).isEqualTo(BigDecimal.parseString("101.2"))
+            assertThat(response.getRate(instrument, Currency.EUR, date3)).isEqualTo(BigDecimal.parseString("102.8"))
         }
 
     @Test
@@ -177,19 +177,19 @@ class ConversionServiceTest {
             whenever(conversionRepository.getConversions(instrument, Currency.RON, listOf(date1, date2)))
                 .thenReturn(
                     listOf(
-                        Conversion(instrument, Currency.RON, date1, BigDecimal("502.5"))
+                        Conversion(instrument, Currency.RON, date1, BigDecimal.parseString("502.5"))
                     )
                 )
             whenever(conversionRepository.getConversions(Currency.EUR, Currency.RON, listOf(date2)))
                 .thenReturn(emptyList())
             whenever(currencyConverter.convert(Currency.EUR, Currency.RON, listOf(date2)))
-                .thenReturn(listOf(ConversionResponse(Currency.EUR, Currency.RON, date2, BigDecimal("5.0"))))
+                .thenReturn(listOf(ConversionResponse(Currency.EUR, Currency.RON, date2, BigDecimal.parseString("5.0"))))
             whenever(instrumentConverterRegistry.getConverter(pricingInstrument))
                 .thenReturn(instrumentConverter)
             whenever(instrumentConverter.convert(pricingInstrument, listOf(date2)))
                 .thenReturn(
                     listOf(
-                        ConversionResponse(instrument, Currency.EUR, date2, BigDecimal("101.0"))
+                        ConversionResponse(instrument, Currency.EUR, date2, BigDecimal.parseString("101.0"))
                     )
                 )
 
@@ -203,7 +203,7 @@ class ConversionServiceTest {
             val response = conversionService.convert(request)
 
             assertThat(response.conversions).hasSize(2)
-            assertThat(response.getRate(instrument, Currency.RON, date1)).isEqualTo(BigDecimal("502.5"))
-            assertThat(response.getRate(instrument, Currency.RON, date2)).isEqualTo(BigDecimal("505.00"))
+            assertThat(response.getRate(instrument, Currency.RON, date1)).isEqualTo(BigDecimal.parseString("502.5"))
+            assertThat(response.getRate(instrument, Currency.RON, date2)).isEqualTo(BigDecimal.parseString("505.00"))
         }
 }

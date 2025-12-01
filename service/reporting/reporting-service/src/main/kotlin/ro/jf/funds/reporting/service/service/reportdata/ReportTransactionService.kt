@@ -1,5 +1,7 @@
 package ro.jf.funds.reporting.service.service.reportdata
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import com.ionspin.kotlin.bignum.decimal.toJavaBigDecimal
 import kotlinx.datetime.LocalDate
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.TransactionFilterTO
@@ -76,7 +78,7 @@ class ReportTransactionService(
             date = date,
             fundId = this.fundId,
             unit = this.unit,
-            amount = this.amount,
+            amount = this.amount.toJavaBigDecimal(),
             labels = this.labels,
         )
     }

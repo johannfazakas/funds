@@ -1,5 +1,6 @@
 package ro.jf.funds.conversion.sdk
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.JsonPrimitive
@@ -12,12 +13,11 @@ import org.mockserver.client.MockServerClient
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Instrument
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.Instrument
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionsRequest
-import java.math.BigDecimal
 
 @ExtendWith(MockServerContainerExtension::class)
 class ConversionSdkTest {
@@ -33,19 +33,19 @@ class ConversionSdkTest {
             )
         )
         mockServerClient.mockConversionRequest(
-            request.conversions[0] to BigDecimal("4.9"),
-            request.conversions[1] to BigDecimal("4.8"),
-            request.conversions[2] to BigDecimal("0.2")
+            request.conversions[0] to BigDecimal.parseString("4.9"),
+            request.conversions[1] to BigDecimal.parseString("4.8"),
+            request.conversions[2] to BigDecimal.parseString("0.2")
         )
 
         val response = conversionSdk.convert(request)
 
         assertThat(response.getRate(Currency.RON, Currency.EUR, LocalDate.parse("2025-02-01")))
-            .isEqualTo(BigDecimal("4.9"))
+            .isEqualTo(BigDecimal.parseString("4.9"))
         assertThat(response.getRate(Currency.RON, Currency.EUR, LocalDate.parse("2025-01-31")))
-            .isEqualTo(BigDecimal("4.8"))
+            .isEqualTo(BigDecimal.parseString("4.8"))
         assertThat(response.getRate(Currency.EUR, Currency.RON, LocalDate.parse("2025-01-28")))
-            .isEqualTo(BigDecimal("0.2"))
+            .isEqualTo(BigDecimal.parseString("0.2"))
     }
 
     private fun MockServerClient.mockConversionRequest(vararg conversions: Pair<ConversionRequest, BigDecimal>) {

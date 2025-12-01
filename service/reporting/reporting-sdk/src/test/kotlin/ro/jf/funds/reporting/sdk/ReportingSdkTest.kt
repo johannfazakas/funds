@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.sdk
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -12,15 +13,14 @@ import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.JsonSchemaBody.jsonSchema
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.model.Currency.Companion.RON
-import ro.jf.funds.commons.model.Instrument
-import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.model.labelsOf
+import ro.jf.funds.commons.api.model.Currency.Companion.RON
+import ro.jf.funds.commons.api.model.Instrument
+import ro.jf.funds.commons.api.model.ListTO
+import ro.jf.funds.commons.api.model.labelsOf
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.commons.web.USER_ID_HEADER
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.api.serializer.YearMonthSerializer
-import java.math.BigDecimal
 import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerContainerExtension::class)
@@ -173,17 +173,17 @@ class ReportingSdkTest {
                 BucketDataTO(
                     timeBucket = DateIntervalTO(YearMonthTO(2024, 11), YearMonthTO(2024, 11)),
                     bucketType = BucketTypeTO.REAL,
-                    report = NetReportTO(BigDecimal("200.0"))
+                    report = NetReportTO(BigDecimal.fromDouble(200.0))
                 ),
                 BucketDataTO(
                     timeBucket = DateIntervalTO(YearMonthTO(2024, 12), YearMonthTO(2024, 12)),
                     bucketType = BucketTypeTO.REAL,
-                    report = NetReportTO(BigDecimal("300.0"))
+                    report = NetReportTO(BigDecimal.fromDouble(300.0))
                 ),
                 BucketDataTO(
                     timeBucket = DateIntervalTO(YearMonthTO(2025, 1), YearMonthTO(2025, 1)),
                     bucketType = BucketTypeTO.REAL,
-                    report = NetReportTO(BigDecimal("400.0"))
+                    report = NetReportTO(BigDecimal.fromDouble(400.0))
                 )
             )
         )
@@ -217,24 +217,24 @@ class ReportingSdkTest {
                     timeBucket = DateIntervalTO(YearMonthTO(2024, 11), YearMonthTO(2024, 11)),
                     bucketType = BucketTypeTO.REAL,
                     report = InterestRateReportTO(
-                        totalInterestRate = BigDecimal("5.5"),
-                        currentInterestRate = BigDecimal("2.0")
+                        totalInterestRate = BigDecimal.fromDouble(5.5),
+                        currentInterestRate = BigDecimal.fromDouble(2.0)
                     )
                 ),
                 BucketDataTO(
                     timeBucket = DateIntervalTO(YearMonthTO(2024, 12), YearMonthTO(2024, 12)),
                     bucketType = BucketTypeTO.REAL,
                     report = InterestRateReportTO(
-                        totalInterestRate = BigDecimal("6.0"),
-                        currentInterestRate = BigDecimal("2.5")
+                        totalInterestRate = BigDecimal.fromDouble(6.0),
+                        currentInterestRate = BigDecimal.fromDouble(2.5)
                     )
                 ),
                 BucketDataTO(
                     timeBucket = DateIntervalTO(YearMonthTO(2025, 1), YearMonthTO(2025, 1)),
                     bucketType = BucketTypeTO.REAL,
                     report = InterestRateReportTO(
-                        totalInterestRate = BigDecimal("7.0"),
-                        currentInterestRate = BigDecimal("3.0")
+                        totalInterestRate = BigDecimal.fromDouble(7.0),
+                        currentInterestRate = BigDecimal.fromDouble(3.0)
                     )
                 )
             )
@@ -272,8 +272,8 @@ class ReportingSdkTest {
                         reports = listOf(
                             InstrumentInterestRateReportTO(
                                 instrument = Instrument("AAPL"),
-                                totalInterestRate = BigDecimal("5.5"),
-                                currentInterestRate = BigDecimal("2.0")
+                                totalInterestRate = BigDecimal.fromDouble(5.5),
+                                currentInterestRate = BigDecimal.fromDouble(2.0)
                             )
                         )
                     )
@@ -285,8 +285,8 @@ class ReportingSdkTest {
                         reports = listOf(
                             InstrumentInterestRateReportTO(
                                 instrument = Instrument("AAPL"),
-                                totalInterestRate = BigDecimal("6.0"),
-                                currentInterestRate = BigDecimal("2.5")
+                                totalInterestRate = BigDecimal.fromDouble(6.0),
+                                currentInterestRate = BigDecimal.fromDouble(2.5)
                             )
                         )
                     )
@@ -298,8 +298,8 @@ class ReportingSdkTest {
                         reports = listOf(
                             InstrumentInterestRateReportTO(
                                 instrument = Instrument("AAPL"),
-                                totalInterestRate = BigDecimal("7.0"),
-                                currentInterestRate = BigDecimal("3.0")
+                                totalInterestRate = BigDecimal.fromDouble(7.0),
+                                currentInterestRate = BigDecimal.fromDouble(3.0)
                             )
                         )
                     )

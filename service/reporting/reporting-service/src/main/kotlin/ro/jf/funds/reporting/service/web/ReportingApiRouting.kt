@@ -7,7 +7,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.api.model.ListTO
 import ro.jf.funds.commons.web.userId
 import ro.jf.funds.reporting.api.model.CreateReportViewTO
 import ro.jf.funds.reporting.api.model.ReportViewTO

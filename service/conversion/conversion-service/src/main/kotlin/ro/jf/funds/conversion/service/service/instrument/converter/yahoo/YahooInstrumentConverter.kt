@@ -1,5 +1,6 @@
 package ro.jf.funds.conversion.service.service.instrument.converter.yahoo
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -9,7 +10,6 @@ import ro.jf.funds.conversion.service.domain.InstrumentConversionInfo
 import ro.jf.funds.conversion.service.service.instrument.InstrumentConverter
 import ro.jf.funds.conversion.service.service.instrument.converter.MonthlyCachedInstrumentConverterProxy
 import ro.jf.funds.conversion.service.service.instrument.converter.yahoo.model.YahooChartResponse
-import java.math.BigDecimal
 
 private const val ONE_DAY = "1d"
 
@@ -67,14 +67,14 @@ class YahooInstrumentConverter(
         if (instrument.instrument.value == "IMAE") {
             if (date.year == 2022) {
                 val rate = when (date.month) {
-                    Month.MAY -> BigDecimal("63.54")
-                    Month.JUNE -> BigDecimal("63.90")
-                    Month.JULY -> BigDecimal("59.025")
-                    Month.AUGUST -> BigDecimal("63.43")
-                    Month.SEPTEMBER -> BigDecimal("59.94")
-                    Month.OCTOBER -> BigDecimal("56.56")
-                    Month.NOVEMBER -> BigDecimal("60.34")
-                    Month.DECEMBER -> BigDecimal("64.725")
+                    Month.MAY -> BigDecimal.parseString("63.54")
+                    Month.JUNE -> BigDecimal.parseString("63.90")
+                    Month.JULY -> BigDecimal.parseString("59.025")
+                    Month.AUGUST -> BigDecimal.parseString("63.43")
+                    Month.SEPTEMBER -> BigDecimal.parseString("59.94")
+                    Month.OCTOBER -> BigDecimal.parseString("56.56")
+                    Month.NOVEMBER -> BigDecimal.parseString("60.34")
+                    Month.DECEMBER -> BigDecimal.parseString("64.725")
                     else -> null
                 }
                 if (rate != null) {

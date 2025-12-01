@@ -1,5 +1,6 @@
 package ro.jf.funds.conversion.service.service.currency.converter.currencybeacon
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -14,7 +15,7 @@ import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.minus
 import mu.KotlinLogging
-import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.api.model.Currency
 import ro.jf.funds.conversion.api.model.ConversionResponse
 import ro.jf.funds.conversion.service.domain.ConversionExceptions
 import ro.jf.funds.conversion.service.service.currency.CurrencyConverter
@@ -97,7 +98,7 @@ class CurrencyBeaconCurrencyConverter(
             )
         return ConversionResponse(
             date = date,
-            rate = price,
+            rate = BigDecimal.fromDouble(price.toDouble()),
             sourceUnit = sourceCurrency,
             targetCurrency = targetCurrency,
         )

@@ -15,10 +15,10 @@ import org.mockserver.client.MockServerClient
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.model.Currency
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import ro.jf.funds.commons.api.model.Currency
 import ro.jf.funds.commons.test.extension.MockServerContainerExtension
 import ro.jf.funds.conversion.service.domain.ConversionExceptions
-import java.math.BigDecimal
 
 @ExtendWith(MockServerContainerExtension::class)
 class CurrencyBeaconCurrencyConverterTest {
@@ -46,19 +46,19 @@ class CurrencyBeaconCurrencyConverterTest {
         val date2 = LocalDate.parse("2021-03-01")
         val dates = listOf(date1, date2)
 
-        mockServerClient.mockCurrencyBeaconRequest("EUR", "RON", "2021-02-28", BigDecimal("4.87281309"))
-        mockServerClient.mockCurrencyBeaconRequest("EUR", "RON", "2021-03-01", BigDecimal("4.88123456"))
+        mockServerClient.mockCurrencyBeaconRequest("EUR", "RON", "2021-02-28", BigDecimal.parseString("4.87281309"))
+        mockServerClient.mockCurrencyBeaconRequest("EUR", "RON", "2021-03-01", BigDecimal.parseString("4.88123456"))
 
         val result = currencyConverter.convert(Currency.EUR, Currency.RON, dates)
 
         assertThat(result).hasSize(2)
         assertThat(result[0].date).isEqualTo(date1)
-        assertThat(result[0].rate).isEqualTo(BigDecimal("4.87281309"))
+        assertThat(result[0].rate).isEqualTo(BigDecimal.parseString("4.87281309"))
         assertThat(result[0].sourceUnit).isEqualTo(Currency.EUR)
         assertThat(result[0].targetCurrency).isEqualTo(Currency.RON)
 
         assertThat(result[1].date).isEqualTo(date2)
-        assertThat(result[1].rate).isEqualTo(BigDecimal("4.88123456"))
+        assertThat(result[1].rate).isEqualTo(BigDecimal.parseString("4.88123456"))
         assertThat(result[1].sourceUnit).isEqualTo(Currency.EUR)
         assertThat(result[1].targetCurrency).isEqualTo(Currency.RON)
     }
@@ -110,13 +110,13 @@ class CurrencyBeaconCurrencyConverterTest {
 
         mockServerClient.mockCurrencyBeaconNullRateRequest("EUR", "RON", "2021-02-28")
         mockServerClient.mockCurrencyBeaconNullRateRequest("EUR", "RON", "2021-02-27")
-        mockServerClient.mockCurrencyBeaconRequest("EUR", "RON", "2021-02-26", BigDecimal("4.87123456"))
+        mockServerClient.mockCurrencyBeaconRequest("EUR", "RON", "2021-02-26", BigDecimal.parseString("4.87123456"))
 
         val result = currencyConverter.convert(Currency.EUR, Currency.RON, dates)
 
         assertThat(result).hasSize(1)
         assertThat(result[0].date).isEqualTo(date) // Should return original date
-        assertThat(result[0].rate).isEqualTo(BigDecimal("4.87123456")) // Rate from previous day
+        assertThat(result[0].rate).isEqualTo(BigDecimal.parseString("4.87123456")) // Rate from previous day
         assertThat(result[0].sourceUnit).isEqualTo(Currency.EUR)
         assertThat(result[0].targetCurrency).isEqualTo(Currency.RON)
     }
@@ -128,13 +128,13 @@ class CurrencyBeaconCurrencyConverterTest {
 
         mockServerClient.mockCurrencyBeaconEmptyRatesRequest("EUR", "RON", "2021-02-28")
         mockServerClient.mockCurrencyBeaconEmptyRatesRequest("EUR", "RON", "2021-02-27")
-        mockServerClient.mockCurrencyBeaconRequest("EUR", "RON", "2021-02-26", BigDecimal("4.87123456"))
+        mockServerClient.mockCurrencyBeaconRequest("EUR", "RON", "2021-02-26", BigDecimal.parseString("4.87123456"))
 
         val result = currencyConverter.convert(Currency.EUR, Currency.RON, dates)
 
         assertThat(result).hasSize(1)
         assertThat(result[0].date).isEqualTo(date) // Should return original date
-        assertThat(result[0].rate).isEqualTo(BigDecimal("4.87123456")) // Rate from previous day
+        assertThat(result[0].rate).isEqualTo(BigDecimal.parseString("4.87123456")) // Rate from previous day
         assertThat(result[0].sourceUnit).isEqualTo(Currency.EUR)
         assertThat(result[0].targetCurrency).isEqualTo(Currency.RON)
     }

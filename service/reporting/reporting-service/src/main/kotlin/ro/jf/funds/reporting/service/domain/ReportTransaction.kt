@@ -1,10 +1,10 @@
 package ro.jf.funds.reporting.service.domain
 
+import com.benasher44.uuid.Uuid
+import java.math.BigDecimal as JavaBigDecimal
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Label
-import java.math.BigDecimal
-import java.util.UUID
+import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.commons.api.model.Label
 
 sealed class ReportTransaction {
     abstract val date: LocalDate
@@ -53,8 +53,8 @@ sealed class ReportTransaction {
 
 data class ReportRecord(
     val date: LocalDate,
-    val fundId: UUID,
+    val fundId: Uuid,
     val unit: FinancialUnit,
-    val amount: BigDecimal,
+    val amount: JavaBigDecimal,
     val labels: List<Label>,
 )

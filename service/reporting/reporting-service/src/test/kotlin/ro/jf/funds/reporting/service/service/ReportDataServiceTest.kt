@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.service.service
 
+import com.ionspin.kotlin.bignum.decimal.toJavaBigDecimal
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
@@ -10,10 +11,15 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.Currency.Companion.EUR
+import ro.jf.funds.commons.api.model.Currency.Companion.RON
+import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.commons.api.model.Instrument
+import ro.jf.funds.commons.api.model.Label
+import ro.jf.funds.commons.api.model.ListTO
+import ro.jf.funds.commons.api.model.labelsOf
 import ro.jf.funds.commons.model.*
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Currency.Companion.EUR
-import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.fund.api.model.TransactionFilterTO
 import ro.jf.funds.fund.api.model.TransactionRecordTO
 import ro.jf.funds.fund.api.model.TransactionTO
@@ -1095,11 +1101,11 @@ class ReportDataServiceTest {
 
     private fun ronTransaction(
         date: LocalDate, amount: Int, labels: List<Label>,
-    ) = transaction(date, RON, BigDecimal(amount), labels)
+    ) = transaction(date, RON, amount, labels)
 
     private fun eurTransaction(
         date: LocalDate, amount: Int, labels: List<Label>,
-    ) = transaction(date, EUR, BigDecimal(amount), labels)
+    ) = transaction(date, EUR, amount, labels)
 
     private fun investmentEurTransfer(date: LocalDate, amountEur: Int) =
         TransactionTO.Transfer(
@@ -1111,7 +1117,7 @@ class ReportDataServiceTest {
                 id = randomUUID(),
                 fundId = expensesFundId,
                 accountId = randomUUID(),
-                amount = BigDecimal(amountEur * -1),
+                amount = com.ionspin.kotlin.bignum.decimal.BigDecimal.fromInt(amountEur * -1),
                 unit = EUR,
                 labels = labelsOf("investment")
             ),
@@ -1119,7 +1125,7 @@ class ReportDataServiceTest {
                 id = randomUUID(),
                 fundId = investmentFundId,
                 accountId = randomUUID(),
-                amount = BigDecimal(amountEur),
+                amount = com.ionspin.kotlin.bignum.decimal.BigDecimal.fromInt(amountEur),
                 unit = EUR,
                 labels = labelsOf("investment")
             )
@@ -1135,7 +1141,7 @@ class ReportDataServiceTest {
                 id = randomUUID(),
                 fundId = investmentFundId,
                 accountId = randomUUID(),
-                amount = BigDecimal(eurAmount * -1),
+                amount = com.ionspin.kotlin.bignum.decimal.BigDecimal.fromInt(eurAmount * -1),
                 unit = EUR,
                 labels = emptyList(),
             ),
@@ -1143,14 +1149,14 @@ class ReportDataServiceTest {
                 id = randomUUID(),
                 fundId = investmentFundId,
                 accountId = randomUUID(),
-                amount = BigDecimal(instrumentAmount),
+                amount = com.ionspin.kotlin.bignum.decimal.BigDecimal.fromInt(instrumentAmount),
                 unit = instrument,
                 labels = emptyList(),
             )
         )
 
     private fun transaction(
-        date: LocalDate, unit: FinancialUnit, amount: BigDecimal, labels: List<Label>,
+        date: LocalDate, unit: FinancialUnit, amount: Int, labels: List<Label>,
     ) = TransactionTO.SingleRecord(
         id = randomUUID(),
         userId = userId,
@@ -1160,7 +1166,7 @@ class ReportDataServiceTest {
             id = randomUUID(),
             fundId = expensesFundId,
             unit = unit,
-            amount = amount,
+            amount = com.ionspin.kotlin.bignum.decimal.BigDecimal.fromInt(amount),
             labels = labels,
             accountId = randomUUID()
         )

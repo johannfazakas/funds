@@ -1,7 +1,7 @@
 package ro.jf.funds.conversion.service.service.instrument.converter.financialtimes.model
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
-import java.math.BigDecimal
 
 sealed class FTCell {
     class Date(val value: LocalDate) : FTCell()

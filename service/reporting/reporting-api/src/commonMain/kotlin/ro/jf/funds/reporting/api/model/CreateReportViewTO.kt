@@ -1,13 +1,13 @@
 package ro.jf.funds.reporting.api.model
 
+import com.benasher44.uuid.Uuid
 import kotlinx.serialization.Serializable
-import ro.jf.funds.commons.serialization.UUIDSerializer
-import java.util.*
+import ro.jf.funds.commons.api.serialization.UuidSerializer
 
 @Serializable
 data class CreateReportViewTO(
     val name: String,
-    @Serializable(with = UUIDSerializer::class)
-    val fundId: UUID,
+    @Serializable(with = UuidSerializer::class)
+    val fundId: Uuid,
     val dataConfiguration: ReportDataConfigurationTO,
 )

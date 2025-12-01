@@ -1,6 +1,6 @@
 package ro.jf.funds.reporting.service.service.reportdata.resolver
 
-import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.api.model.Currency
 import ro.jf.funds.commons.observability.tracing.withSpan
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.*

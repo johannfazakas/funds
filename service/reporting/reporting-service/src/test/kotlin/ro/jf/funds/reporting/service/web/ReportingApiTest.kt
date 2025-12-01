@@ -19,13 +19,13 @@ import org.mockito.kotlin.whenever
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Currency.Companion.EUR
-import ro.jf.funds.commons.model.Currency.Companion.RON
-import ro.jf.funds.commons.model.Instrument
-import ro.jf.funds.commons.model.Label
-import ro.jf.funds.commons.model.ListTO
-import ro.jf.funds.commons.model.labelsOf
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.Currency.Companion.EUR
+import ro.jf.funds.commons.api.model.Currency.Companion.RON
+import ro.jf.funds.commons.api.model.Instrument
+import ro.jf.funds.commons.api.model.Label
+import ro.jf.funds.commons.api.model.ListTO
+import ro.jf.funds.commons.api.model.labelsOf
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
@@ -44,10 +44,11 @@ import ro.jf.funds.reporting.service.config.reportingDependencies
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService
-import java.math.BigDecimal
-import java.util.*
-import java.util.UUID.randomUUID
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import com.benasher44.uuid.Uuid
+import com.benasher44.uuid.uuid4
 import javax.sql.DataSource
+import java.math.BigDecimal as JavaBigDecimal
 
 @ExtendWith(KafkaContainerExtension::class)
 @ExtendWith(PostgresContainerExtension::class)
@@ -56,10 +57,10 @@ class ReportingApiTest {
     private val transactionSdk = mock<TransactionSdk>()
     private val conversionRateService = mock<ConversionRateService>()
 
-    private val userId = randomUUID()
-    private val expenseFundId = randomUUID()
+    private val userId = uuid4()
+    private val expenseFundId = uuid4()
     private val expenseReportName = "Expense Report"
-    private val cashAccountId = randomUUID()
+    private val cashAccountId = uuid4()
     private val date = LocalDate(2021, 9, 1)
     private val labels = labelsOf("need", "want")
     private val reportDataConfiguration = ReportDataConfiguration(
@@ -85,7 +86,7 @@ class ReportingApiTest {
         val transaction =
             singleRecordTransaction(
                 userId, date,
-                record(expenseFundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need"))
+                record(expenseFundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, labelsOf("need"))
             )
         whenever(transactionSdk.listTransactions(userId, TransactionFilterTO(fundId = expenseFundId)))
             .thenReturn(ListTO.of(transaction))
@@ -173,8 +174,8 @@ class ReportingApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
         val httpClient = createJsonHttpClient()
         val reportView = reportViewRepository.save(reportViewCommand)
-        whenever(conversionRateService.getRate(any(), eq(EUR), eq(RON))).thenReturn(BigDecimal("5.0"))
-        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), eq(EUR), eq(RON))).thenReturn(JavaBigDecimal(5))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(JavaBigDecimal.ONE)
 
         val fromDate = LocalDate(2021, 1, 1)
         val toDate = LocalDate(2021, 1, 28)
@@ -184,13 +185,13 @@ class ReportingApiTest {
                 singleRecordTransaction(
                     userId, LocalDate(2021, 1, 2),
                     record(
-                        reportView.fundId, cashAccountId, BigDecimal("-25.0"), RON, labelsOf("need")
+                        reportView.fundId, cashAccountId, BigDecimal.parseString("-25.0"), RON, labelsOf("need")
                     )
                 ),
                 singleRecordTransaction(
                     userId, LocalDate(2021, 1, 2),
                     record(
-                        reportView.fundId, cashAccountId, BigDecimal("-10.0"), EUR, labelsOf("want")
+                        reportView.fundId, cashAccountId, BigDecimal.parseString("-10.0"), EUR, labelsOf("want")
                     )
                 )
             )
@@ -212,7 +213,7 @@ class ReportingApiTest {
                 BucketDataTO(
                     timeBucket = DateIntervalTO(LocalDate(2021, 1, 1), LocalDate(2021, 1, 1)),
                     bucketType = BucketTypeTO.REAL,
-                    report = NetReportTO(BigDecimal("0.0")),
+                    report = NetReportTO(BigDecimal.parseString("0.0")),
                 )
             )
         assertThat(reportData.timeBuckets[1])
@@ -220,7 +221,7 @@ class ReportingApiTest {
                 BucketDataTO(
                     timeBucket = DateIntervalTO(LocalDate(2021, 1, 2), LocalDate(2021, 1, 2)),
                     bucketType = BucketTypeTO.REAL,
-                    report = NetReportTO(BigDecimal("-75.0")),
+                    report = NetReportTO(BigDecimal.parseString("-75.0")),
                 )
             )
     }
@@ -236,16 +237,16 @@ class ReportingApiTest {
                 )
             )
         )
-        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(JavaBigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(JavaBigDecimal("100.0"))
 
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
         mockTransactions(
             interval, investmentReportView.fundId, listOf(
                 openPositionTransaction(
                     userId, LocalDate(2021, 2, 15),
-                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need")),
-                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("1.0"), Instrument("AAPL"), labelsOf("need"))
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, labelsOf("need")),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), labelsOf("need"))
                 )
             )
         )
@@ -276,16 +277,16 @@ class ReportingApiTest {
                 )
             )
         )
-        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(JavaBigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(JavaBigDecimal("100.0"))
 
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
         mockTransactions(
             interval, investmentReportView.fundId, listOf(
                 openPositionTransaction(
                     userId, LocalDate(2021, 2, 15),
-                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need")),
-                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("1.0"), Instrument("AAPL"), labelsOf("need"))
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, labelsOf("need")),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), labelsOf("need"))
                 )
             )
         )
@@ -318,16 +319,16 @@ class ReportingApiTest {
                 )
             )
         )
-        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(JavaBigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(JavaBigDecimal("100.0"))
 
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
         mockTransactions(
             interval, investmentReportView.fundId, listOf(
                 openPositionTransaction(
                     userId, LocalDate(2021, 2, 15),
-                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need")),
-                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("1.0"), Instrument("AAPL"), labelsOf("need"))
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, labelsOf("need")),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), labelsOf("need"))
                 )
             )
         )
@@ -359,16 +360,16 @@ class ReportingApiTest {
                 )
             )
         )
-        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
-        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(BigDecimal("100.0"))
+        whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(JavaBigDecimal.ONE)
+        whenever(conversionRateService.getRate(any(), any<Instrument>(), eq(RON))).thenReturn(JavaBigDecimal("100.0"))
 
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 1), YearMonth(2021, 3), null)
         mockTransactions(
             interval, investmentReportView.fundId, listOf(
                 openPositionTransaction(
                     userId, LocalDate(2021, 2, 15),
-                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("-100.0"), RON, labelsOf("need")),
-                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal("1.0"), Instrument("AAPL"), labelsOf("need"))
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, labelsOf("need")),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), labelsOf("need"))
                 )
             )
         )
@@ -415,7 +416,7 @@ class ReportingApiTest {
 
     private suspend fun mockTransactions(
         interval: ReportDataInterval,
-        fundId: UUID,
+        fundId: Uuid,
         transactions: List<TransactionTO>,
     ) {
         whenever(
@@ -435,37 +436,37 @@ class ReportingApiTest {
     }
 
     fun singleRecordTransaction(
-        userId: UUID,
+        userId: Uuid,
         date: LocalDate,
         record: TransactionRecordTO,
     ): TransactionTO.SingleRecord =
-        TransactionTO.SingleRecord(randomUUID(), userId, randomUUID().toString(), date.atTime(12, 0), record)
+        TransactionTO.SingleRecord(uuid4(), userId, uuid4().toString(), date.atTime(12, 0), record)
 
     fun openPositionTransaction(
-        userId: UUID,
+        userId: Uuid,
         date: LocalDate,
         currencyRecord: TransactionRecordTO,
         instrumentRecord: TransactionRecordTO,
     ): TransactionTO.OpenPosition =
-        TransactionTO.OpenPosition(randomUUID(), userId, randomUUID().toString(), date.atTime(12, 0), currencyRecord, instrumentRecord)
+        TransactionTO.OpenPosition(uuid4(), userId, uuid4().toString(), date.atTime(12, 0), currencyRecord, instrumentRecord)
 
     fun record(
-        fundId: UUID,
-        accountId: UUID,
+        fundId: Uuid,
+        accountId: Uuid,
         amount: BigDecimal,
         currency: Currency,
         labels: List<Label>,
     ): TransactionRecordTO =
-        TransactionRecordTO(randomUUID(), accountId, fundId, amount, currency, labels)
+        TransactionRecordTO(uuid4(), accountId, fundId, amount, currency, labels)
 
     fun record(
-        fundId: UUID,
-        accountId: UUID,
+        fundId: Uuid,
+        accountId: Uuid,
         amount: BigDecimal,
         instrument: Instrument,
         labels: List<Label>,
     ): TransactionRecordTO =
-        TransactionRecordTO(randomUUID(), accountId, fundId, amount, instrument, labels)
+        TransactionRecordTO(uuid4(), accountId, fundId, amount, instrument, labels)
 
     private fun Application.testModule() {
         val importAppTestModule = module {

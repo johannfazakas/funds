@@ -1,5 +1,6 @@
 package ro.jf.funds.conversion.service.web
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -7,18 +8,17 @@ import io.ktor.server.application.*
 import io.ktor.server.testing.*
 import kotlinx.datetime.LocalDate
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.dsl.module
 import org.koin.ktor.ext.get
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
+import ro.jf.funds.commons.api.model.Currency.Companion.EUR
+import ro.jf.funds.commons.api.model.Currency.Companion.RON
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
-import ro.jf.funds.commons.model.Currency.Companion.EUR
-import ro.jf.funds.commons.model.Currency.Companion.RON
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.createJsonHttpClient
@@ -53,15 +53,15 @@ class ConversionApiTest {
         val httpClient = createJsonHttpClient()
 
         listOf(
-            Conversion(RON, EUR, date1, "0.2".toBigDecimal()),
-            Conversion(RON, EUR, date2, "0.21".toBigDecimal()),
-            Conversion(EUR, RON, date3, "4.9".toBigDecimal())
+            Conversion(RON, EUR, date1, "0.2".let { BigDecimal.parseString(it) }),
+            Conversion(RON, EUR, date2, "0.21".let { BigDecimal.parseString(it) }),
+            Conversion(EUR, RON, date3, "4.9".let { BigDecimal.parseString(it) })
         ).forEach { conversionRepository.saveConversion(it) }
 
         whenever(currencyConverter.convert(EUR, RON, listOf(date4)))
             .thenReturn(
                 listOf(
-                    ConversionResponse(EUR, RON, date4, "4.92".toBigDecimal()),
+                    ConversionResponse(EUR, RON, date4, "4.92".let { BigDecimal.parseString(it) }),
                 )
             )
 
@@ -82,10 +82,10 @@ class ConversionApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         val conversionsResponse = response.body<ConversionsResponse>()
         assertThat(conversionsResponse.conversions).hasSize(4)
-        assertThat(conversionsResponse.getRate(RON, EUR, date1)).isEqualTo("0.2".toBigDecimal())
-        assertThat(conversionsResponse.getRate(RON, EUR, date2)).isEqualTo("0.21".toBigDecimal())
-        assertThat(conversionsResponse.getRate(EUR, RON, date3)).isEqualTo("4.9".toBigDecimal())
-        assertThat(conversionsResponse.getRate(EUR, RON, date4)).isEqualTo("4.92".toBigDecimal())
+        assertThat(conversionsResponse.getRate(RON, EUR, date1)).isEqualTo("0.2".let { BigDecimal.parseString(it) })
+        assertThat(conversionsResponse.getRate(RON, EUR, date2)).isEqualTo("0.21".let { BigDecimal.parseString(it) })
+        assertThat(conversionsResponse.getRate(EUR, RON, date3)).isEqualTo("4.9".let { BigDecimal.parseString(it) })
+        assertThat(conversionsResponse.getRate(EUR, RON, date4)).isEqualTo("4.92".let { BigDecimal.parseString(it) })
         assertThat(conversionsResponse.getRate(RON, EUR, date3)).isNull()
     }
 

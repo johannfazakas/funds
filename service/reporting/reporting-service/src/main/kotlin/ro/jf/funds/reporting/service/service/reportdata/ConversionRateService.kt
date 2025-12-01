@@ -6,11 +6,12 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.plus
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.FinancialUnit
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.FinancialUnit
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionsRequest
 import ro.jf.funds.conversion.sdk.ConversionSdk
+import com.ionspin.kotlin.bignum.decimal.toJavaBigDecimal
 import java.math.BigDecimal
 
 class ConversionRateService(
@@ -44,7 +45,7 @@ class ConversionRateService(
         val conversions = conversionSdk.convert(ConversionsRequest(conversionRequests))
         cacheWriteMutex.withLock {
             conversions.conversions.forEach {
-                cache[ConversionRequest(it.sourceUnit, it.targetCurrency, it.date)] = it.rate
+                cache[ConversionRequest(it.sourceUnit, it.targetCurrency, it.date)] = it.rate.toJavaBigDecimal()
             }
         }
     }

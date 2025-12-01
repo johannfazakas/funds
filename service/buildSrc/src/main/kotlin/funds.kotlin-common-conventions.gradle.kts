@@ -6,6 +6,7 @@ repositories {
     mavenLocal()
 }
 
+// TODO(Johann) this is some workaround. What did it fix? Where should it be placed?
 configurations.all {
     resolutionStrategy {
         force("org.apache.commons:commons-compress:1.26.0")

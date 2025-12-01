@@ -1,7 +1,7 @@
 package ro.jf.funds.reporting.service.service.reportdata.resolver
 
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.api.model.Currency
 import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.service.reportdata.ConversionRateService

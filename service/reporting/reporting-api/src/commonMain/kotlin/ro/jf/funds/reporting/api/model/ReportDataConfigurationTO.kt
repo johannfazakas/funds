@@ -1,8 +1,8 @@
 package ro.jf.funds.reporting.api.model
 
 import kotlinx.serialization.Serializable
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Label
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.Label
 
 @Serializable
 data class ReportDataConfigurationTO(

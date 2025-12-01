@@ -1,16 +1,16 @@
 package ro.jf.funds.reporting.api.model
 
+import com.benasher44.uuid.Uuid
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.serialization.Serializable
-import ro.jf.funds.commons.model.Instrument
-import ro.jf.funds.commons.serialization.BigDecimalSerializer
-import ro.jf.funds.commons.serialization.UUIDSerializer
-import java.math.BigDecimal
-import java.util.*
+import ro.jf.funds.commons.api.model.Instrument
+import ro.jf.funds.commons.api.serialization.BigDecimalSerializer
+import ro.jf.funds.commons.api.serialization.UuidSerializer
 
 @Serializable
 data class ReportDataTO<T>(
-    @Serializable(with = UUIDSerializer::class)
-    val viewId: UUID,
+    @Serializable(with = UuidSerializer::class)
+    val viewId: Uuid,
     val interval: ReportDataIntervalTO,
     val timeBuckets: List<BucketDataTO<T>>,
 ) {
