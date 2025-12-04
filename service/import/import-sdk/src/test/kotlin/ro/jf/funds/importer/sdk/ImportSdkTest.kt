@@ -1,5 +1,6 @@
 package ro.jf.funds.importer.sdk
 
+import com.benasher44.uuid.uuid4
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -18,16 +19,15 @@ import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.*
 import java.io.File
-import java.util.UUID.randomUUID
 
 @ExtendWith(MockServerContainerExtension::class)
 class ImportSdkTest {
     private val importSdk = ImportSdk(baseUrl = MockServerContainerExtension.baseUrl)
-    private val importTaskId = randomUUID()
+    private val importTaskId = uuid4()
 
     @Test
     fun `given import successful should retrieve response`(mockServerClient: MockServerClient): Unit = runBlocking {
-        val userId = randomUUID()
+        val userId = uuid4()
         val files = listOf(
             File("src/test/resources/mock/import-file-1.csv"),
             File("src/test/resources/mock/import-file-2.csv"),
@@ -75,7 +75,7 @@ class ImportSdkTest {
     @Test
     fun `given import failed due to client format error should retrieve response`(mockServerClient: MockServerClient): Unit =
         runBlocking {
-            val userId = randomUUID()
+            val userId = uuid4()
             val files = listOf(
                 File("src/test/resources/mock/import-file-1.csv"),
                 File("src/test/resources/mock/import-file-2.csv"),
@@ -117,7 +117,7 @@ class ImportSdkTest {
     @Test
     fun `given import failed due to client data error should retrieve response`(mockServerClient: MockServerClient): Unit =
         runBlocking {
-            val userId = randomUUID()
+            val userId = uuid4()
             val files = listOf(
                 File("src/test/resources/mock/import-file-1.csv"),
                 File("src/test/resources/mock/import-file-2.csv"),

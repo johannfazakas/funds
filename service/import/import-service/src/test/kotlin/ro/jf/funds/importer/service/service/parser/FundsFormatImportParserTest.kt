@@ -4,12 +4,12 @@ import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import ro.jf.funds.fund.api.model.AccountName
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Label
-import ro.jf.funds.commons.model.Instrument
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.Label
+import ro.jf.funds.commons.api.model.Instrument
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.*
-import java.math.BigDecimal
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 
 class FundsFormatImportParserTest {
     private val fundsFormatImportParser = FundsFormatImportParser(CsvParser())
@@ -57,12 +57,12 @@ class FundsFormatImportParserTest {
         assertThat(transfer.records[0].accountName).isEqualTo(AccountName("BT EUR"))
         assertThat(transfer.records[0].fundName).isEqualTo(FundName("Expenses"))
         assertThat(transfer.records[0].unit).isEqualTo(Currency.RON)
-        assertThat(transfer.records[0].amount).isEqualByComparingTo(BigDecimal("-2970.0"))
+        assertThat(transfer.records[0].amount).isEqualByComparingTo(BigDecimal.parseString("-2970.0"))
         assertThat(transfer.records[0].labels).containsExactly(Label("investment"))
         assertThat(transfer.records[1].accountName).isEqualTo(AccountName("XTB EUR"))
         assertThat(transfer.records[1].fundName).isEqualTo(FundName("Investments"))
         assertThat(transfer.records[1].unit).isEqualTo(Currency.EUR)
-        assertThat(transfer.records[1].amount).isEqualByComparingTo(BigDecimal("600.0"))
+        assertThat(transfer.records[1].amount).isEqualByComparingTo(BigDecimal.parseString("600.0"))
         assertThat(transfer.records[1].labels).containsExactly(Label("investment"))
 
         val investment = importTransactions[1]
@@ -72,12 +72,12 @@ class FundsFormatImportParserTest {
         assertThat(investment.records[0].accountName).isEqualTo(AccountName("XTB EUR"))
         assertThat(investment.records[0].fundName).isEqualTo(FundName("Investments"))
         assertThat(investment.records[0].unit).isEqualTo(Currency.EUR)
-        assertThat(investment.records[0].amount).isEqualByComparingTo(BigDecimal("-544.25"))
+        assertThat(investment.records[0].amount).isEqualByComparingTo(BigDecimal.parseString("-544.25"))
         assertThat(investment.records[0].labels).isEmpty()
         assertThat(investment.records[1].accountName).isEqualTo(AccountName("XTB EUNL"))
         assertThat(investment.records[1].fundName).isEqualTo(FundName("Investments"))
         assertThat(investment.records[1].unit).isEqualTo(Instrument("EUNL"))
-        assertThat(investment.records[1].amount).isEqualByComparingTo(BigDecimal("7.0"))
+        assertThat(investment.records[1].amount).isEqualByComparingTo(BigDecimal.parseString("7.0"))
         assertThat(investment.records[1].labels).isEmpty()
     }
 

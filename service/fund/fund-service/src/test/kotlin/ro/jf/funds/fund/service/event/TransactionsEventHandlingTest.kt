@@ -1,5 +1,6 @@
 package ro.jf.funds.fund.service.event
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.testing.*
@@ -19,21 +20,15 @@ import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.test.utils.testTopicSupplier
+import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.module
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import ro.jf.funds.fund.service.persistence.AccountRepository
-import ro.jf.funds.fund.service.persistence.TransactionRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
+import ro.jf.funds.fund.service.persistence.TransactionRepository
 import java.time.Duration
 import java.util.UUID.randomUUID
 import java.util.concurrent.TimeUnit
-
-// TODO(Johann) not great to have these here
-val FUND_DOMAIN = Domain("fund")
-val FUND_TRANSACTIONS_REQUEST = EventType("transactions-request")
-val FUND_TRANSACTIONS_RESPONSE = EventType("transactions-response")
-
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(KafkaContainerExtension::class)
@@ -43,9 +38,9 @@ class TransactionsEventHandlingTest {
     private val accountTransactionRepository = createAccountTransactionRepository()
 
     private val createFundTransactionsRequestTopic =
-        testTopicSupplier.topic(FUND_DOMAIN, FUND_TRANSACTIONS_REQUEST)
+        testTopicSupplier.topic(FundEvents.FundTransactionsBatchRequest)
     private val createFundTransactionsResponseTopic =
-        testTopicSupplier.topic(FUND_DOMAIN, FUND_TRANSACTIONS_RESPONSE)
+        testTopicSupplier.topic(FundEvents.FundTransactionsBatchResponse)
 
     private val consumerProperties = ConsumerProperties(KafkaContainerExtension.bootstrapServers, "test-consumer")
     private val producerProperties = ProducerProperties(KafkaContainerExtension.bootstrapServers, "test-client")

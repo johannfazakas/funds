@@ -1,11 +1,11 @@
 package ro.jf.funds.importer.service.service.parser
 
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.DateTimeFormat
 import ro.jf.funds.importer.service.domain.exception.ImportFormatException
-import java.math.BigDecimal
 
 @JvmInline
 value class CsvRow(private val values: Map<String, String>) {
@@ -42,7 +42,7 @@ value class CsvRow(private val values: Map<String, String>) {
     }
 
     private fun String.toDecimal() = try {
-        this.toBigDecimal()
+        BigDecimal.parseString(this)
     } catch (e: Exception) {
         throw ImportFormatException("Error parsing decimal $this", e)
     }

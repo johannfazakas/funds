@@ -1,13 +1,13 @@
 package ro.jf.funds.importer.api.model
 
+import com.benasher44.uuid.Uuid
 import kotlinx.serialization.Serializable
-import ro.jf.funds.commons.serialization.UUIDSerializer
-import java.util.*
+import ro.jf.funds.commons.api.serialization.UuidSerializer
 
 @Serializable
 data class ImportTaskTO(
-    @Serializable(with = UUIDSerializer::class)
-    val taskId: UUID,
+    @Serializable(with = UuidSerializer::class)
+    val taskId: Uuid,
     val status: Status,
     val reason: String? = null,
 ) {

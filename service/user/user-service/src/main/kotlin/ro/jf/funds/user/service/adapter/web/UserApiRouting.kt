@@ -1,12 +1,11 @@
 package ro.jf.funds.user.service.adapter.web
 
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.model.toListTO
+import ro.jf.funds.commons.api.model.toListTO
 import ro.jf.funds.user.api.model.CreateUserTO
 import ro.jf.funds.user.service.adapter.web.mapper.toCommand
 import ro.jf.funds.user.service.adapter.web.mapper.toTO

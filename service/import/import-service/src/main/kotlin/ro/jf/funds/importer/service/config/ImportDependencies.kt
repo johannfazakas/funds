@@ -12,14 +12,12 @@ import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.model.GenericResponse
 import ro.jf.funds.commons.persistence.getDataSource
 import ro.jf.funds.commons.web.createHttpClient
-import ro.jf.funds.fund.api.event.FUND_DOMAIN
-import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_REQUEST
-import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_RESPONSE
+import ro.jf.funds.conversion.sdk.ConversionSdk
+import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
-import ro.jf.funds.conversion.sdk.ConversionSdk
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
 import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.service.conversion.AccountService
@@ -77,7 +75,7 @@ private val Application.importEventProducerDependencies
         single<TopicSupplier> { TopicSupplier(environment.getEnvironmentProperty()) }
         single<ProducerProperties> { ProducerProperties.fromEnv(environment) }
         single<Producer<CreateTransactionsTO>> {
-            createProducer(get(), get<TopicSupplier>().topic(FUND_DOMAIN, FUND_TRANSACTIONS_REQUEST))
+            createProducer(get(), get<TopicSupplier>().topic(FundEvents.FundTransactionsBatchRequest))
         }
     }
 
@@ -109,7 +107,7 @@ private val Application.importEventConsumerDependencies
         single<Consumer<GenericResponse>>(CREATE_FUND_TRANSACTIONS_RESPONSE_CONSUMER) {
             createConsumer(
                 get(),
-                get<TopicSupplier>().topic(FUND_DOMAIN, FUND_TRANSACTIONS_RESPONSE),
+                get<TopicSupplier>().topic(FundEvents.FundTransactionsBatchResponse),
                 get<CreateFundTransactionsResponseHandler>()
             )
         }

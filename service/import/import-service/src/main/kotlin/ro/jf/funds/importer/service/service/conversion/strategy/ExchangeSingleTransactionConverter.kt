@@ -1,8 +1,9 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.FinancialUnit
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.FinancialUnit
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
@@ -12,7 +13,6 @@ import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import ro.jf.funds.importer.service.service.conversion.ImportTransactionConverter
 import ro.jf.funds.importer.service.service.conversion.getRequiredImportConversions
 import ro.jf.funds.importer.service.service.conversion.toFundRecordAmount
-import java.math.BigDecimal
 
 class ExchangeSingleTransactionConverter : ImportTransactionConverter {
     override fun matches(

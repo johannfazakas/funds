@@ -5,7 +5,6 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -13,6 +12,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.ktor.ext.get
+import ro.jf.funds.commons.api.model.ListTO
 import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
@@ -48,7 +48,7 @@ class UserApiTest {
         val response = createJsonHttpClient().get("/funds-api/user/v1/users")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-        val users = response.body<ro.jf.funds.commons.model.ListTO<UserTO>>()
+        val users = response.body<ListTO<UserTO>>()
         assertThat(users.items).hasSize(3)
         assertThat(users.items.map { it.username }).containsExactlyInAnyOrder("Olivia", "Crina", "Johann")
     }

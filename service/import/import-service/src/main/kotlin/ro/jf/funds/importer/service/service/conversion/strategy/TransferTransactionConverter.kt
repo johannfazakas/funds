@@ -1,6 +1,7 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
-import ro.jf.funds.commons.model.Currency
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import ro.jf.funds.commons.api.model.Currency
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
@@ -9,7 +10,6 @@ import ro.jf.funds.importer.service.domain.Store
 import ro.jf.funds.importer.service.service.conversion.ImportTransactionConverter
 import ro.jf.funds.importer.service.service.conversion.getRequiredImportConversions
 import ro.jf.funds.importer.service.service.conversion.toImportCurrencyFundRecord
-import java.math.BigDecimal
 
 class TransferTransactionConverter : ImportTransactionConverter {
     override fun matches(
@@ -27,7 +27,7 @@ class TransferTransactionConverter : ImportTransactionConverter {
         if (targetUnits[0] != targetUnits[1] || targetUnits.any { it !is Currency }) {
             return false
         }
-        return transaction.records.sumOf { it.amount }.compareTo(BigDecimal.ZERO) == 0
+        return transaction.records.fold(BigDecimal.ZERO) { acc, record -> acc + record.amount }.compareTo(BigDecimal.ZERO) == 0
     }
 
     override fun getRequiredConversions(

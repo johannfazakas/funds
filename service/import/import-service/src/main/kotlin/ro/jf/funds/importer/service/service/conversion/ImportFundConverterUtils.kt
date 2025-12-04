@@ -1,7 +1,9 @@
 package ro.jf.funds.importer.service.service.conversion
 
+import com.benasher44.uuid.Uuid
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.model.Currency
+import ro.jf.funds.commons.api.model.Currency
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.fund.api.model.CreateTransactionRecordTO
@@ -11,8 +13,6 @@ import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import java.math.BigDecimal
-import java.util.*
 
 fun ImportParsedTransaction.getRequiredImportConversions(
     accountStore: Store<AccountName, AccountTO>,
@@ -26,7 +26,7 @@ fun ImportParsedTransaction.getRequiredImportConversions(
 
 fun ImportParsedRecord.toImportCurrencyFundRecord(
     date: LocalDate,
-    fundId: UUID,
+    fundId: Uuid,
     account: AccountTO,
     conversions: ConversionsResponse,
 ): CreateTransactionRecordTO {

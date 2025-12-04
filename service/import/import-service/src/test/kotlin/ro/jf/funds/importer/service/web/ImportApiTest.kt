@@ -19,9 +19,9 @@ import ro.jf.funds.commons.config.configureContentNegotiation
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.error.ErrorTO
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Label
-import ro.jf.funds.commons.model.ListTO
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.Label
+import ro.jf.funds.commons.api.model.ListTO
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.createJsonHttpClient

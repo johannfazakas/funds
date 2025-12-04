@@ -5,12 +5,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import ro.jf.funds.fund.api.model.AccountName
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.Label
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.Label
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 
 class WalletCsvImportParserTest {
     private val walletCsvImportParser = WalletCsvImportParser(CsvParser())
@@ -37,7 +38,7 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Expenses"))
         assertThat(importTransactions[0].records[0].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[0].records[0].amount).isEqualTo("-13.80".toBigDecimal())
+        assertThat(importTransactions[0].records[0].amount).isEqualTo(BigDecimal.parseString("-13.80"))
         assertThat(importTransactions[0].records[0].labels).containsExactly(Label("Basic"))
     }
 
@@ -70,10 +71,10 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[0].records).hasSize(2)
         assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[0].records[0].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[0].records[0].amount).isEqualTo("-400.00".toBigDecimal())
+        assertThat(importTransactions[0].records[0].amount).isEqualTo(BigDecimal.parseString("-400.00"))
         assertThat(importTransactions[0].records[1].accountName).isEqualTo(AccountName("Cash"))
         assertThat(importTransactions[0].records[1].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[0].records[1].amount).isEqualTo("400.00".toBigDecimal())
+        assertThat(importTransactions[0].records[1].amount).isEqualTo(BigDecimal.parseString("400.00"))
     }
 
     @Test
@@ -108,21 +109,21 @@ class WalletCsvImportParserTest {
                 AccountName("Cash EUR"),
                 FundName("Expenses"),
                 Currency.EUR,
-                "-1.89".toBigDecimal(),
+                BigDecimal.parseString("-1.89"),
                 listOf(Label("Exchange"))
             ),
             ImportParsedRecord(
                 AccountName("Cash RON"),
                 FundName("Expenses"),
                 Currency.RON,
-                "-1434.00".toBigDecimal(),
+                BigDecimal.parseString("-1434.00"),
                 listOf(Label("Exchange"))
             ),
             ImportParsedRecord(
                 AccountName("Cash EUR"),
                 FundName("Expenses"),
                 Currency.EUR,
-                "301.24".toBigDecimal(),
+                BigDecimal.parseString("301.24"),
                 listOf(Label("Exchange"))
             )
         )
@@ -158,7 +159,7 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Gift income"))
         assertThat(importTransactions[0].records[0].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[0].records[0].amount).isEqualTo("740.00".toBigDecimal())
+        assertThat(importTransactions[0].records[0].amount).isEqualTo(BigDecimal.parseString("740.00"))
 
         // Transfer transaction
         assertThat(importTransactions[1].transactionExternalId).endsWith("-fund-transfer")
@@ -167,12 +168,12 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[1].records[0].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[1].records[0].fundName).isEqualTo(FundName("Gift income"))
         assertThat(importTransactions[1].records[0].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[1].records[0].amount).isEqualTo("-740.00".toBigDecimal())
+        assertThat(importTransactions[1].records[0].amount).isEqualTo(BigDecimal.parseString("-740.00"))
 
         assertThat(importTransactions[1].records[1].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[1].records[1].fundName).isEqualTo(FundName("Expenses"))
         assertThat(importTransactions[1].records[1].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[1].records[1].amount).isEqualTo("740.00".toBigDecimal())
+        assertThat(importTransactions[1].records[1].amount).isEqualTo(BigDecimal.parseString("740.00"))
     }
 
     @Test
@@ -208,7 +209,7 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Work"))
         assertThat(importTransactions[0].records[0].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[0].records[0].amount).isEqualTo("6740.00".toBigDecimal())
+        assertThat(importTransactions[0].records[0].amount).isEqualTo(BigDecimal.parseString("6740.00"))
 
         // Transfer transaction
         assertThat(importTransactions[1].transactionExternalId).endsWith("-fund-transfer")
@@ -217,12 +218,12 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[1].records[0].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[1].records[0].fundName).isEqualTo(FundName("Work"))
         assertThat(importTransactions[1].records[0].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[1].records[0].amount).isEqualTo("-6740.00".toBigDecimal())
+        assertThat(importTransactions[1].records[0].amount).isEqualTo(BigDecimal.parseString("-6740.00"))
 
         assertThat(importTransactions[1].records[1].accountName).isEqualTo(AccountName("ING"))
         assertThat(importTransactions[1].records[1].fundName).isEqualTo(FundName("Expenses"))
         assertThat(importTransactions[1].records[1].unit).isEqualTo(Currency.RON)
-        assertThat(importTransactions[1].records[1].amount).isEqualTo("6740.00".toBigDecimal())
+        assertThat(importTransactions[1].records[1].amount).isEqualTo(BigDecimal.parseString("6740.00"))
     }
 
     @Test

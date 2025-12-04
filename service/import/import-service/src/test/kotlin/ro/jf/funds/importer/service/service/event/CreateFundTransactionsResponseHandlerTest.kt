@@ -10,9 +10,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import ro.jf.funds.commons.error.ErrorTO
-import ro.jf.funds.commons.event.Event
-import ro.jf.funds.commons.event.ProducerProperties
-import ro.jf.funds.commons.event.createProducer
+import ro.jf.funds.commons.event.*
 import ro.jf.funds.commons.model.GenericResponse
 import ro.jf.funds.commons.test.extension.KafkaContainerExtension
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
@@ -20,8 +18,7 @@ import ro.jf.funds.commons.test.utils.configureEnvironment
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.commons.test.utils.kafkaConfig
 import ro.jf.funds.commons.test.utils.testTopicSupplier
-import ro.jf.funds.fund.api.event.FUND_DOMAIN
-import ro.jf.funds.fund.api.event.FUND_TRANSACTIONS_RESPONSE
+import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.importer.service.domain.ImportTaskPartStatus
 import ro.jf.funds.importer.service.domain.StartImportTaskCommand
 import ro.jf.funds.importer.service.module
@@ -34,7 +31,7 @@ import java.util.UUID.randomUUID
 class CreateFundTransactionsResponseHandlerTest {
     private val importTaskRepository = ImportTaskRepository(PostgresContainerExtension.connection)
     private val createTransactionsResponseTopic =
-        testTopicSupplier.topic(FUND_DOMAIN, FUND_TRANSACTIONS_RESPONSE)
+        testTopicSupplier.topic(FundEvents.FundTransactionsBatchResponse)
     private val fundTransactionsResponseProducer = createProducer<GenericResponse>(
         ProducerProperties(KafkaContainerExtension.bootstrapServers, "test-producer"),
         createTransactionsResponseTopic
@@ -46,7 +43,6 @@ class CreateFundTransactionsResponseHandlerTest {
     fun tearDown() = runBlocking {
         importTaskRepository.deleteAll()
     }
-
 
     @Test
     fun `should complete task on success`(): Unit = testApplication {
