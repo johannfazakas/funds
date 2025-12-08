@@ -3,9 +3,8 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":client-shared:client-shared-api"))
-    implementation(project(":client-shared:client-shared-sdk"))
-    implementation(project(":client-shared:client-shared-core"))
+    implementation(project(":client:client-sdk"))
+    implementation(project(":fund:fund-api"))
 
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
     implementation("androidx.compose.ui:ui")

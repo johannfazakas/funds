@@ -27,9 +27,7 @@ include("reporting:reporting-api")
 include("reporting:reporting-sdk")
 include("reporting:reporting-service")
 
-include("client-shared:client-shared-api")
-include("client-shared:client-shared-sdk")
-include("client-shared:client-shared-core")
+include("client:client-sdk")
+include("client:client-web")
 
 include("client-android")
-include("client-web")

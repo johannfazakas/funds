@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import ro.jf.funds.client.api.model.FundTO
-import ro.jf.funds.client.core.repository.FundRepository
+import ro.jf.funds.client.sdk.FundClient
+import ro.jf.funds.fund.api.model.FundTO
 
 data class FundListState(
     val funds: List<FundTO> = emptyList(),
@@ -18,7 +18,7 @@ data class FundListState(
 )
 
 class FundListViewModel(
-    private val fundRepository: FundRepository = FundRepository()
+    private val fundClient: FundClient = FundClient()
 ) : ViewModel() {
     private val log = Logger.withTag("FundListViewModel")
 
@@ -29,7 +29,7 @@ class FundListViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             try {
-                val funds = fundRepository.listFunds(userId)
+                val funds = fundClient.listFunds(userId)
                 _state.value = FundListState(
                     funds = funds,
                     isLoading = false

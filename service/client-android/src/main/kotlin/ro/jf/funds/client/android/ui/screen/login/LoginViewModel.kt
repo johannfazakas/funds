@@ -7,11 +7,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import ro.jf.funds.client.core.repository.AuthRepository
-import ro.jf.funds.client.core.state.AuthState
+import ro.jf.funds.client.sdk.AuthenticationClient
+import ro.jf.funds.client.sdk.AuthState
 
 class LoginViewModel(
-    private val authRepository: AuthRepository = AuthRepository()
+    private val authenticationClient: AuthenticationClient = AuthenticationClient()
 ) : ViewModel() {
     private val log = Logger.withTag("LoginViewModel")
 
@@ -27,7 +27,7 @@ class LoginViewModel(
         viewModelScope.launch {
             _authState.value = _authState.value.copy(isLoading = true, error = null)
             try {
-                val user = authRepository.loginWithUsername(username.trim())
+                val user = authenticationClient.loginWithUsername(username.trim())
                 if (user != null) {
                     _authState.value = AuthState(
                         userId = user.id,

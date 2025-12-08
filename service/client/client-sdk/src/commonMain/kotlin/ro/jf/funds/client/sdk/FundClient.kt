@@ -1,0 +1,35 @@
+package ro.jf.funds.client.sdk
+
+import co.touchlab.kermit.Logger
+import com.benasher44.uuid.Uuid
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import ro.jf.funds.commons.api.model.ListTO
+import ro.jf.funds.fund.api.model.FundTO
+
+private const val LOCALHOST_BASE_URL = "http://localhost:5253"
+private const val BASE_PATH = "/funds-api/fund/v1"
+
+class FundClient(
+    private val baseUrl: String = LOCALHOST_BASE_URL,
+    private val httpClient: HttpClient = createHttpClient(),
+) {
+    private val log = Logger.withTag("FundClient")
+
+    suspend fun listFunds(userId: Uuid): List<FundTO> {
+        val response = httpClient.get("$baseUrl$BASE_PATH/funds") {
+            headers {
+                append(USER_ID_HEADER, userId.toString())
+            }
+        }
+        if (response.status != HttpStatusCode.OK) {
+            log.w { "Unexpected response on list funds: $response" }
+            throw Exception("Failed to list funds: ${response.status}")
+        }
+        val funds = response.body<ListTO<FundTO>>()
+        log.d { "Retrieved funds: $funds" }
+        return funds.items
+    }
+}
