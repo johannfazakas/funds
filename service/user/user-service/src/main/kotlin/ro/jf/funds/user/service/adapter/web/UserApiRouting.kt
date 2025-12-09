@@ -27,6 +27,7 @@ fun Routing.userApiRouting(userRepository: UserRepository) {
             val user = userId
                 ?.let(UUID::fromString)
                 ?.let { userRepository.findById(it) }
+                // TODO(Johann) this should have a proper response
                 ?: return@get call.respond(HttpStatusCode.NotFound)
             call.respond(user.toTO())
         }
