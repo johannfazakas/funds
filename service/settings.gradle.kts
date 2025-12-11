@@ -29,5 +29,4 @@ include("reporting:reporting-service")
 
 include("client:client-sdk")
 include("client:client-web")
-
-include("client-android")
+include("client:client-android")
