@@ -1,6 +1,8 @@
 group = rootProject.group
 version = rootProject.version
 
+// TODO(Johann) could evaluate using "included builds" / "composite builds" instead of buildSrc. This is actually the recommended modern approach because buildSrc has some drawback.
+
 repositories {
     mavenCentral()
     mavenLocal()

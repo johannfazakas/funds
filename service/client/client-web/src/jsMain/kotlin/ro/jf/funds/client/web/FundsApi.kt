@@ -12,8 +12,12 @@ import kotlin.js.Promise
 
 @JsExport
 object FundsApi {
-    private val authenticationClient = AuthenticationClient()
-    private val fundClient = FundClient()
+    private val config = js("window.FUNDS_CONFIG")
+    private val userServiceUrl: String = config?.userServiceUrl as? String ?: "http://localhost:5247"
+    private val fundServiceUrl: String = config?.fundServiceUrl as? String ?: "http://localhost:5253"
+
+    private val authenticationClient = AuthenticationClient(baseUrl = userServiceUrl)
+    private val fundClient = FundClient(baseUrl = fundServiceUrl)
 
     fun loginWithUsername(username: String): Promise<JsUser?> = GlobalScope.promise {
         val user = authenticationClient.loginWithUsername(username)

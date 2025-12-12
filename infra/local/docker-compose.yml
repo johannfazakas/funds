@@ -110,6 +110,18 @@ services:
       - kafka
       - otel-collector
 
+  client-web:
+    image: funds/client-web:latest
+    container_name: ff_client_web
+    ports:
+      - '5070:80'
+    environment:
+      - USER_SERVICE_URL=http://localhost:5247
+      - FUND_SERVICE_URL=http://localhost:5253
+    depends_on:
+      - user-service
+      - fund-service
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.128.0
     container_name: ff_otel_collector

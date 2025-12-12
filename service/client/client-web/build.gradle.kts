@@ -1,18 +1,49 @@
 plugins {
-    id("funds.kotlin-js-conventions")
+    id("org.jetbrains.kotlin.multiplatform")
     alias(libs.plugins.kotlin.serialization)
+    `maven-publish`
+}
+
+group = rootProject.group
+version = rootProject.version
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    google()
 }
 
 kotlin {
     js(IR) {
         generateTypeScriptDefinitions()
+        browser {
+            commonWebpackConfig {
+                cssSupport {
+                    enabled.set(true)
+                }
+            }
+        }
+        binaries.executable()
     }
 
-    // TODO(Johann) create a cleanInstall task
     sourceSets {
+        // TODO(Johann) are commonMain & commonTest required?
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+            }
+        }
+
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
         val jsMain by getting {
             dependencies {
-                // TODO(Johann) extract deps in toml?
                 implementation(project(":client:client-sdk"))
                 implementation("io.ktor:ktor-client-core:3.0.3")
                 implementation("io.ktor:ktor-client-js:3.0.3")
@@ -27,9 +58,26 @@ kotlin {
                 implementation(devNpm("html-webpack-plugin", "5.6.0"))
             }
         }
+
+        val jsTest by getting
     }
 }
 
 tasks.named<Sync>("jsBrowserDistribution") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.register<Exec>("buildDockerImage") {
+    group = "docker"
+    description = "Build the Docker image for the web application"
+    dependsOn("jsBrowserProductionWebpack")
+
+    workingDir(projectDir)
+    commandLine("docker", "build", "-t", "funds/client-web:latest", ".")
+}
+
+tasks.register("installLocal") {
+    group = "build"
+    description = "Build the web application and create a Docker image"
+    dependsOn("build", "buildDockerImage")
 }

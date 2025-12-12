@@ -7,8 +7,6 @@ common
         jvm-library
         jvm-service
     kmp
-    android
-    js
 
 #### Common
 - installLocal task
