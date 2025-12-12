@@ -29,3 +29,7 @@ kotlin {
         }
     }
 }
+
+tasks.named<Sync>("jsBrowserDistribution") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

@@ -5,10 +5,11 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import ro.jf.funds.commons.model.Currency
-import ro.jf.funds.commons.model.FinancialUnit
-import ro.jf.funds.commons.model.Instrument
-import ro.jf.funds.commons.model.UnitType
+import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.commons.api.model.Instrument
+import ro.jf.funds.commons.api.model.UnitType
+import ro.jf.funds.commons.api.serialization.FinancialUnitSerializer
 
 class FinancialUnitSerializerTest {
 
