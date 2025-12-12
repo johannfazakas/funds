@@ -37,3 +37,6 @@ data/
 
 # Android SDK location
 local.properties
+
+# Jupyter notebooks (contain personal data)
+client/notebook/*.ipynb
