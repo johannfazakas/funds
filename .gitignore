@@ -34,3 +34,6 @@ data/
 
 # kotlin errors
 .kotlin/
+
+# Android SDK location
+local.properties
