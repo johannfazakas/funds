@@ -4,6 +4,7 @@ import com.charleskorn.kaml.AnchorsAndAliases
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlConfiguration
 import com.charleskorn.kaml.YamlMap
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -37,7 +38,6 @@ import ro.jf.funds.reporting.sdk.ReportingSdk
 import ro.jf.funds.user.api.model.UserTO
 import ro.jf.funds.user.sdk.UserSdk
 import java.io.File
-import java.math.BigDecimal
 import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -97,7 +97,7 @@ class FundsClient(
                 record = CreateTransactionRecordTO(
                     fundId = fund.id,
                     accountId = account.id,
-                    amount = BigDecimal(initialBalance.amount),
+                    amount = BigDecimal.parseString(initialBalance.amount),
                     unit = account.unit
                 )
             )

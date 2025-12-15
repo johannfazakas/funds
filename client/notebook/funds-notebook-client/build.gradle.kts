@@ -26,6 +26,7 @@ dependencies {
     implementation("ro.jf.funds:fund-sdk:1.0.0")
     implementation("ro.jf.funds:import-sdk:1.0.0")
     implementation("ro.jf.funds:reporting-sdk:1.0.0")
+    implementation("io.ktor:ktor-client-core:3.1.3")
     implementation("org.jetbrains.kotlinx:kandy-lets-plot:0.8.0")
     implementation("org.jetbrains.kotlinx:kandy-api:0.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")

@@ -92,3 +92,9 @@ One idea could be to handle generating multiple requests at a higher level, mayb
 
 ### Use grpc for conversions
 It would make sense to have a bidirectional streamed channel to resolve conversions.
+
+### Replace convention plugins with included build
+
+- [ ] apply included builds
+- [ ] use toml catalogs for versions
+

@@ -5,6 +5,6 @@ plugins {
 
 dependencies {
     api(project(":user:user-api"))
-    implementation(project(":commons:commons-jvm"))
+    api(project(":commons:commons-jvm"))
     testImplementation(project(":commons:commons-test"))
 }

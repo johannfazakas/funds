@@ -4,6 +4,6 @@ plugins {
 
 dependencies {
     api(project(":conversion:conversion-api"))
-    implementation(project(":commons:commons-jvm"))
+    api(project(":commons:commons-jvm"))
     testImplementation(project(":commons:commons-test"))
 }
