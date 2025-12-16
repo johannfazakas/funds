@@ -28,7 +28,7 @@
     config.resolve.modules.push(path.resolve(__dirname, '../../node_modules'));
     config.resolve.modules.push('node_modules');
 
-    const reactEntryPath = path.resolve(__dirname, '../../../../client/client-web/build/processedResources/js/main/react/main.tsx');
+    const reactEntryPath = path.resolve(__dirname, '../../../../client/web-client/build/processedResources/js/main/react/main.tsx');
     if (config.entry && config.entry.main) {
         config.entry.main.push(reactEntryPath);
     } else {

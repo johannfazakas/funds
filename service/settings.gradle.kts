@@ -28,5 +28,5 @@ include("reporting:reporting-sdk")
 include("reporting:reporting-service")
 
 include("client:client-sdk")
-include("client:client-web")
-include("client:client-android")
+include("client:web-client")
+include("client:android-client")

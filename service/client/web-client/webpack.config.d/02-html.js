@@ -4,7 +4,7 @@
 
     config.plugins.push(
         new HtmlWebpackPlugin({
-            template: path.resolve(__dirname, '../../../../client/client-web/build/processedResources/js/main/index.html'),
+            template: path.resolve(__dirname, '../../../../client/web-client/build/processedResources/js/main/index.html'),
             filename: 'index.html'
         })
     );
