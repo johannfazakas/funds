@@ -97,4 +97,5 @@ It would make sense to have a bidirectional streamed channel to resolve conversi
 
 - [ ] apply included builds
 - [ ] use toml catalogs for versions
+- [ ] reference included buids using toml catalogs
 

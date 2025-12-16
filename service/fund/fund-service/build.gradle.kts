@@ -1,12 +1,5 @@
 plugins {
-    id("funds.kotlin-service-conventions")
-    /*
-    TODO(Johann) could convention plugins be referenced in a type-safe way?
-    [plugins]
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.9.20" }
-kotlin-common-conventions = { id = "funds.kotlin-common-conventions", version = "unspecified" }
-spring-conventions = { id = "funds.spring-conventions", version = "unspecified" }
-     */
+    id("funds.jvm-service-conventions")
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.serialization)
 }

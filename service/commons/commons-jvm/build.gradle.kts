@@ -1,5 +1,5 @@
 plugins {
-    id("funds.kotlin-library-conventions")
+    id("funds.jvm-library-conventions")
     alias(libs.plugins.kotlin.serialization)
 }
 

@@ -14,13 +14,7 @@ configurations.all {
 }
 
 plugins {
-    id("org.jetbrains.kotlin.jvm")
     `maven-publish`
-}
-
-tasks.named<Test>("test") {
-    // TODO(Johann) is JUnit multiplatform? should this be here?
-    useJUnitPlatform()
 }
 
 tasks.register("installLocal") {
@@ -30,17 +24,5 @@ tasks.register("installLocal") {
     dependsOn("build", "publishToMavenLocal")
     if (tasks.findByName("publishImageToLocalRegistry") != null) {
         dependsOn("publishImageToLocalRegistry")
-    }
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("mavenKotlin") {
-            from(components["kotlin"])
-
-            groupId = group.toString()
-            artifactId = project.name
-            version = rootProject.version.toString()
-        }
     }
 }

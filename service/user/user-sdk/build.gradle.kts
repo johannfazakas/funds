@@ -1,6 +1,5 @@
 plugins {
-    // TODO(Johann) library? jvm?
-    id("funds.kotlin-library-conventions")
+    id("funds.jvm-library-conventions")
 }
 
 dependencies {

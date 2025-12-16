@@ -1,22 +1,21 @@
-import gradle.kotlin.dsl.accessors._0ca2999132398b98e46376b5f7cd33f7.publishing
+import com.android.build.gradle.LibraryExtension as AndroidLibraryExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 group = rootProject.group
 version = rootProject.version
 
-// TODO(Johann) shouldn't this convention plugin inherit from common conventions?
+
+plugins {
+    id("funds.common-conventions")
+    id("com.android.library")
+    id("org.jetbrains.kotlin.multiplatform")
+}
+
 repositories {
-    mavenCentral()
-    mavenLocal()
     google()
 }
 
-plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.multiplatform")
-    `maven-publish`
-}
-
-android {
+configure<AndroidLibraryExtension> {
     namespace = "ro.jf.funds"
     compileSdk = 35
 
@@ -30,7 +29,7 @@ android {
     }
 }
 
-kotlin {
+configure<KotlinMultiplatformExtension> {
     jvm()
 
     androidTarget {
@@ -74,24 +73,5 @@ kotlin {
 
         val jsMain by getting
         val jsTest by getting
-    }
-}
-
-tasks.register("installLocal") {
-    group = "build"
-    description = "Build the artifact and publish it to local maven"
-
-    dependsOn("build", "publishToMavenLocal")
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("mavenKotlin") {
-            from(components["kotlin"])
-
-            groupId = group.toString()
-            artifactId = project.name
-            version = rootProject.version.toString()
-        }
     }
 }

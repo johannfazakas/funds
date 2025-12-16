@@ -5,7 +5,6 @@ import ro.jf.funds.fund.api.model.AccountName
 import java.util.*
 
 data class Account(
-    // TODO(Johann) UUID? or Kmp Uuid
     val id: UUID,
     val userId: UUID,
     val name: AccountName,
