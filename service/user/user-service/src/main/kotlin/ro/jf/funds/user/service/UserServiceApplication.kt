@@ -8,6 +8,7 @@ import ro.jf.funds.commons.config.configureCors
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.config.configureTracing
+import ro.jf.funds.user.service.config.configureUserErrorHandling
 import ro.jf.funds.user.service.config.configureUserRouting
 import ro.jf.funds.user.service.config.userDependencies
 import javax.sql.DataSource
@@ -21,6 +22,7 @@ fun Application.module() {
     configureDependencies(userDependencies)
     configureContentNegotiation()
     configureCors()
+    configureUserErrorHandling()
     configureDatabaseMigration(get<DataSource>())
     configureUserRouting()
 }

@@ -9,6 +9,7 @@ import ro.jf.funds.commons.api.model.toListTO
 import ro.jf.funds.user.api.model.CreateUserTO
 import ro.jf.funds.user.service.adapter.web.mapper.toCommand
 import ro.jf.funds.user.service.adapter.web.mapper.toTO
+import ro.jf.funds.user.service.domain.UserException
 import ro.jf.funds.user.service.domain.port.UserRepository
 import java.util.*
 
@@ -22,13 +23,11 @@ fun Routing.userApiRouting(userRepository: UserRepository) {
             call.respond(response)
         }
         get("/users/{id}") {
-            val userId = call.parameters["id"]
+            val userId = call.parameters["id"]?.let(UUID::fromString)
+                ?: throw IllegalArgumentException("Invalid user id")
             log.debug { "Get user by id $userId." }
-            val user = userId
-                ?.let(UUID::fromString)
-                ?.let { userRepository.findById(it) }
-                // TODO(Johann) this should have a proper response
-                ?: return@get call.respond(HttpStatusCode.NotFound)
+            val user = userRepository.findById(userId)
+                ?: throw UserException.UserNotFound(userId)
             call.respond(user.toTO())
         }
         get("/users/username/{username}") {

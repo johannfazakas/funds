@@ -6,12 +6,12 @@ repositories {
     mavenLocal()
 }
 
-// TODO(Johann) this is some workaround. What did it fix? Where should it be placed?
-configurations.all {
-    resolutionStrategy {
-        force("org.apache.commons:commons-compress:1.26.0")
-    }
-}
+//// TODO(Johann) this is some workaround. What did it fix? Where should it be placed? Seems like it could be removed. I'm leaving it here until I test everything at runtime.
+//configurations.all {
+//    resolutionStrategy {
+//        force("org.apache.commons:commons-compress:1.26.0")
+//    }
+//}
 
 plugins {
     `maven-publish`

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.ktor.ext.get
 import ro.jf.funds.commons.api.model.ListTO
 import ro.jf.funds.commons.config.configureContentNegotiation
+import ro.jf.funds.commons.error.ErrorTO
 import ro.jf.funds.commons.config.configureDatabaseMigration
 import ro.jf.funds.commons.config.configureDependencies
 import ro.jf.funds.commons.test.extension.PostgresContainerExtension
@@ -21,6 +22,7 @@ import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.user.api.model.CreateUserTO
 import ro.jf.funds.user.api.model.UserTO
 import ro.jf.funds.user.service.adapter.persistence.UserExposedRepository
+import ro.jf.funds.user.service.config.configureUserErrorHandling
 import ro.jf.funds.user.service.config.configureUserRouting
 import ro.jf.funds.user.service.config.userDependencies
 import ro.jf.funds.user.service.domain.command.CreateUserCommand
@@ -68,12 +70,16 @@ class UserApiTest {
     }
 
     @Test
-    fun `test get user by id when missing`() = testApplication {
+    fun `given missing user - when get user by id - then returns 404 with error body`() = testApplication {
         configureEnvironment()
+        val userId = randomUUID()
 
-        val response = createJsonHttpClient().get("/funds-api/user/v1/users/${randomUUID()}")
+        val response = createJsonHttpClient().get("/funds-api/user/v1/users/$userId")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
+        val error = response.body<ErrorTO>()
+        assertThat(error.title).isEqualTo("User not found")
+        assertThat(error.detail).isEqualTo("User with id '$userId' not found")
     }
 
     @Test
@@ -151,6 +157,7 @@ class UserApiTest {
         application {
             configureDependencies(userDependencies)
             configureContentNegotiation()
+            configureUserErrorHandling()
             configureDatabaseMigration(get<DataSource>())
             configureUserRouting()
         }
