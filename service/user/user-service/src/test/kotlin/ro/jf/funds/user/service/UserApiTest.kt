@@ -21,18 +21,18 @@ import ro.jf.funds.commons.test.extension.PostgresContainerExtension
 import ro.jf.funds.commons.test.utils.dbConfig
 import ro.jf.funds.user.api.model.CreateUserTO
 import ro.jf.funds.user.api.model.UserTO
-import ro.jf.funds.user.service.adapter.persistence.UserExposedRepository
+import ro.jf.funds.user.service.persistence.UserRepository
 import ro.jf.funds.user.service.config.configureUserErrorHandling
 import ro.jf.funds.user.service.config.configureUserRouting
 import ro.jf.funds.user.service.config.userDependencies
-import ro.jf.funds.user.service.domain.command.CreateUserCommand
+import ro.jf.funds.user.service.domain.CreateUserCommand
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
 class UserApiTest {
 
-    private val userRepository = UserExposedRepository(PostgresContainerExtension.connection)
+    private val userRepository = UserRepository(PostgresContainerExtension.connection)
 
     @AfterEach
     fun tearDown() = runBlocking {

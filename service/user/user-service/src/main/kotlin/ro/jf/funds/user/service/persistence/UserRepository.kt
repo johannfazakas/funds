@@ -1,4 +1,4 @@
-package ro.jf.funds.user.service.adapter.persistence
+package ro.jf.funds.user.service.persistence
 
 import org.jetbrains.exposed.dao.UUIDEntity
 import org.jetbrains.exposed.dao.UUIDEntityClass
@@ -7,15 +7,14 @@ import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import ro.jf.funds.commons.persistence.blockingTransaction
-import ro.jf.funds.user.service.domain.command.CreateUserCommand
-import ro.jf.funds.user.service.domain.model.User
-import ro.jf.funds.user.service.domain.port.UserRepository
+import ro.jf.funds.user.service.domain.CreateUserCommand
+import ro.jf.funds.user.service.domain.User
 import java.util.*
 
 
-class UserExposedRepository(
+class UserRepository(
     private val database: Database
-) : UserRepository {
+) {
 
     object Table : UUIDTable("user") {
         val username = varchar("username", 50)
@@ -27,13 +26,13 @@ class UserExposedRepository(
         var username by Table.username
     }
 
-    override suspend fun listAll(): List<User> = blockingTransaction {
+    suspend fun listAll(): List<User> = blockingTransaction {
         Table
             .selectAll()
             .map { it.toModel() }
     }
 
-    override suspend fun findById(id: UUID): User? = blockingTransaction {
+    suspend fun findById(id: UUID): User? = blockingTransaction {
         Table
             .selectAll()
             .where { Table.id eq id }
@@ -41,7 +40,7 @@ class UserExposedRepository(
             .singleOrNull()
     }
 
-    override suspend fun findByUsername(username: String): User? = blockingTransaction {
+    suspend fun findByUsername(username: String): User? = blockingTransaction {
         Table
             .selectAll()
             .where { Table.username eq username }
@@ -49,15 +48,15 @@ class UserExposedRepository(
             .singleOrNull()
     }
 
-    override suspend fun save(command: CreateUserCommand): User = blockingTransaction {
+    suspend fun save(command: CreateUserCommand): User = blockingTransaction {
         DAO.new { username = command.username }.toModel()
     }
 
-    override suspend fun deleteById(id: UUID): Unit = blockingTransaction {
+    suspend fun deleteById(id: UUID): Unit = blockingTransaction {
         Table.deleteWhere { Table.id eq id }
     }
 
-    override suspend fun deleteAll(): Unit = blockingTransaction {
+    suspend fun deleteAll(): Unit = blockingTransaction {
         Table.deleteAll()
     }
 

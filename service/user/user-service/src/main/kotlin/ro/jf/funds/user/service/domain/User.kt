@@ -1,4 +1,4 @@
-package ro.jf.funds.user.service.domain.model
+package ro.jf.funds.user.service.domain
 
 import java.util.*
 

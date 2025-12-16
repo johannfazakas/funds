@@ -1,9 +1,9 @@
-package ro.jf.funds.user.service.adapter.web.mapper
+package ro.jf.funds.user.service.web.mapper
 
 import ro.jf.funds.user.api.model.CreateUserTO
 import ro.jf.funds.user.api.model.UserTO
-import ro.jf.funds.user.service.domain.command.CreateUserCommand
-import ro.jf.funds.user.service.domain.model.User
+import ro.jf.funds.user.service.domain.CreateUserCommand
+import ro.jf.funds.user.service.domain.User
 
 fun User.toTO() = UserTO(id, username)
 
