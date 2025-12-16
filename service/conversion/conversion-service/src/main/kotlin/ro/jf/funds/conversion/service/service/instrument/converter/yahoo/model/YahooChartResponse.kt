@@ -2,7 +2,7 @@ package ro.jf.funds.conversion.service.service.instrument.converter.yahoo.model
 
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.serialization.Serializable
-import ro.jf.funds.commons.api.serialization.BigDecimalSerializer
+import ro.jf.funds.platform.api.serialization.BigDecimalSerializer
 
 @Serializable
 data class YahooChartResponse(val chart: Chart) {

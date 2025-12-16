@@ -5,9 +5,9 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.api.model.ListTO
-import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
-import ro.jf.funds.commons.web.createHttpClient
+import ro.jf.funds.platform.api.model.ListTO
+import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
+import ro.jf.funds.platform.jvm.web.createHttpClient
 import ro.jf.funds.user.api.UserServiceApi
 import ro.jf.funds.user.api.exception.UserApiException
 import ro.jf.funds.user.api.model.CreateUserTO

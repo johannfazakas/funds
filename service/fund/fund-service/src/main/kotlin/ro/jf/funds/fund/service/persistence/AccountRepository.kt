@@ -3,8 +3,8 @@ package ro.jf.funds.fund.service.persistence
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import ro.jf.funds.commons.api.model.toFinancialUnit
-import ro.jf.funds.commons.persistence.blockingTransaction
+import ro.jf.funds.platform.api.model.toFinancialUnit
+import ro.jf.funds.platform.jvm.persistence.blockingTransaction
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.CreateAccountTO
 import ro.jf.funds.fund.service.domain.Account

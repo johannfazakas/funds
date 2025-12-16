@@ -6,8 +6,8 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.plus
-import ro.jf.funds.commons.api.model.Currency
-import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionsRequest
 import ro.jf.funds.conversion.sdk.ConversionSdk

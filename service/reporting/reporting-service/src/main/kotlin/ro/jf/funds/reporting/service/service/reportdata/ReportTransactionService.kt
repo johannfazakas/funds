@@ -3,7 +3,7 @@ package ro.jf.funds.reporting.service.service.reportdata
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import com.ionspin.kotlin.bignum.decimal.toJavaBigDecimal
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
+import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.TransactionFilterTO
 import ro.jf.funds.fund.api.model.TransactionRecordTO
 import ro.jf.funds.fund.api.model.TransactionTO

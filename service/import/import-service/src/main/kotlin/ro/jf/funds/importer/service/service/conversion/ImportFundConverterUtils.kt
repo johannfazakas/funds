@@ -3,7 +3,7 @@ package ro.jf.funds.importer.service.service.conversion
 import com.benasher44.uuid.Uuid
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.fund.api.model.CreateTransactionRecordTO

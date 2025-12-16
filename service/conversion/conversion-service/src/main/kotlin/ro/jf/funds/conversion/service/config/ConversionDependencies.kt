@@ -8,7 +8,7 @@ import io.ktor.server.application.*
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
-import ro.jf.funds.commons.persistence.getDataSource
+import ro.jf.funds.platform.jvm.persistence.getDataSource
 import ro.jf.funds.conversion.service.domain.InstrumentConversionSource
 import ro.jf.funds.conversion.service.persistence.ConversionRepository
 import ro.jf.funds.conversion.service.service.ConversionService

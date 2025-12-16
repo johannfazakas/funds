@@ -1,6 +1,6 @@
 package ro.jf.funds.fund.service.domain
 
-import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.fund.api.model.AccountName
 import java.util.*
 

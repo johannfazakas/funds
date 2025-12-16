@@ -6,11 +6,11 @@ plugins {
 
 dependencies {
     implementation(project(":import:import-api"))
-    implementation(project(":commons:commons-jvm"))
+    implementation(project(":platform:platform-jvm"))
     implementation(project(":fund:fund-sdk"))
     implementation(project(":conversion:conversion-sdk"))
     implementation(libs.kotlin.csv)
-    testImplementation(project(":commons:commons-test"))
+    testImplementation(project(":platform:platform-jvm-test"))
 }
 
 application {

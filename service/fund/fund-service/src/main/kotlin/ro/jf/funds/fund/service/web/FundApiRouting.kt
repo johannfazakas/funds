@@ -5,8 +5,8 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.api.model.toListTO
-import ro.jf.funds.commons.web.userId
+import ro.jf.funds.platform.api.model.toListTO
+import ro.jf.funds.platform.jvm.web.userId
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.service.domain.Fund

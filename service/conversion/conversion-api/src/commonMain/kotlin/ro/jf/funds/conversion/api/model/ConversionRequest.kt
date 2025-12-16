@@ -2,8 +2,8 @@ package ro.jf.funds.conversion.api.model
 
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
-import ro.jf.funds.commons.api.model.Currency
-import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.api.model.FinancialUnit
 
 @Serializable
 data class ConversionRequest(

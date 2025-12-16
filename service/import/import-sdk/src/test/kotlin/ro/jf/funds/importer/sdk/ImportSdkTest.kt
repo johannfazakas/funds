@@ -12,9 +12,9 @@ import org.mockserver.client.MockServerClient
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.error.ApiException
-import ro.jf.funds.commons.test.extension.MockServerContainerExtension
-import ro.jf.funds.commons.web.USER_ID_HEADER
+import ro.jf.funds.platform.jvm.error.ApiException
+import ro.jf.funds.platform.jvm.test.extension.MockServerContainerExtension
+import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.*

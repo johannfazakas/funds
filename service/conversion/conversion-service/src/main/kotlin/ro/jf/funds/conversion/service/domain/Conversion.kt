@@ -2,8 +2,8 @@ package ro.jf.funds.conversion.service.domain
 
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.api.model.Currency
-import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.api.model.FinancialUnit
 
 data class Conversion(
     val source: FinancialUnit,

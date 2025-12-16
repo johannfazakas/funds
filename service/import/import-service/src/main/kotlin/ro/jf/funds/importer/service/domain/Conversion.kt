@@ -1,8 +1,8 @@
 package ro.jf.funds.importer.service.domain
 
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.api.model.Currency
-import ro.jf.funds.commons.api.model.FinancialUnit
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.api.model.FinancialUnit
 
 data class Conversion(
     val date: LocalDate,

@@ -1,6 +1,6 @@
 package ro.jf.funds.reporting.api.event
 
-import ro.jf.funds.commons.api.event.EventType
+import ro.jf.funds.platform.api.event.EventType
 
 object ReportingEvents {
     private const val REPORTING_DOMAIN = "reporting"

@@ -4,7 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
+import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.domain.ReportingException.FeatureDisabled
 import ro.jf.funds.reporting.service.domain.ReportingException.ReportViewNotFound

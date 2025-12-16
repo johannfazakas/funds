@@ -8,7 +8,7 @@ import org.mockserver.client.MockServerClient
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.test.extension.MockServerContainerExtension
+import ro.jf.funds.platform.jvm.test.extension.MockServerContainerExtension
 import ro.jf.funds.user.api.exception.UserApiException
 import java.util.UUID.randomUUID
 import kotlin.test.assertFailsWith

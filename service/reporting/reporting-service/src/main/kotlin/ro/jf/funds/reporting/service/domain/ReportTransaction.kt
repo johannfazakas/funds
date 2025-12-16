@@ -3,8 +3,8 @@ package ro.jf.funds.reporting.service.domain
 import com.benasher44.uuid.Uuid
 import java.math.BigDecimal as JavaBigDecimal
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.commons.api.model.FinancialUnit
-import ro.jf.funds.commons.api.model.Label
+import ro.jf.funds.platform.api.model.FinancialUnit
+import ro.jf.funds.platform.api.model.Label
 
 sealed class ReportTransaction {
     abstract val date: LocalDate

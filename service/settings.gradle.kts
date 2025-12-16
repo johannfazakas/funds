@@ -3,9 +3,9 @@ plugins {
 }
 rootProject.name = "funds"
 
-include("commons:commons-api")
-include("commons:commons-jvm")
-include("commons:commons-test")
+include("platform:platform-api")
+include("platform:platform-jvm")
+include("platform:platform-jvm-test")
 
 include("conversion:conversion-api")
 include("conversion:conversion-sdk")

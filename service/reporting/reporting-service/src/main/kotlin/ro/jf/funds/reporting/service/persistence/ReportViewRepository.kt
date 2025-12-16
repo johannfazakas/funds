@@ -5,7 +5,7 @@ import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.json.json
-import ro.jf.funds.commons.persistence.blockingTransaction
+import ro.jf.funds.platform.jvm.persistence.blockingTransaction
 import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
 import ro.jf.funds.reporting.service.domain.ReportView

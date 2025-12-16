@@ -5,10 +5,10 @@ import org.jetbrains.exposed.sql.Database
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.qualifier.StringQualifier
 import org.koin.dsl.module
-import ro.jf.funds.commons.config.getEnvironmentProperty
-import ro.jf.funds.commons.event.*
-import ro.jf.funds.commons.model.GenericResponse
-import ro.jf.funds.commons.persistence.getDataSource
+import ro.jf.funds.platform.jvm.config.getEnvironmentProperty
+import ro.jf.funds.platform.jvm.event.*
+import ro.jf.funds.platform.jvm.model.GenericResponse
+import ro.jf.funds.platform.jvm.persistence.getDataSource
 import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.fund.service.persistence.AccountRepository

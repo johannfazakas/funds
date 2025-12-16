@@ -5,8 +5,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.*
-import ro.jf.funds.commons.event.Event
-import ro.jf.funds.commons.event.Producer
+import ro.jf.funds.platform.jvm.event.Event
+import ro.jf.funds.platform.jvm.event.Producer
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportFileTypeTO

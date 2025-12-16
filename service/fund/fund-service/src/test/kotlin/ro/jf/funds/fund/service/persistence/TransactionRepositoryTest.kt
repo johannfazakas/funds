@@ -7,8 +7,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import ro.jf.funds.commons.api.model.Currency
-import ro.jf.funds.commons.test.extension.PostgresContainerExtension
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.jvm.test.extension.PostgresContainerExtension
 import ro.jf.funds.fund.api.model.*
 import java.util.UUID.randomUUID
 

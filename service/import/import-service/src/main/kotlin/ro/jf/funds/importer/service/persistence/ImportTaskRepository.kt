@@ -2,7 +2,7 @@ package ro.jf.funds.importer.service.persistence
 
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
-import ro.jf.funds.commons.persistence.blockingTransaction
+import ro.jf.funds.platform.jvm.persistence.blockingTransaction
 import ro.jf.funds.importer.service.domain.*
 import java.util.*
 

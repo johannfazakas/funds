@@ -6,12 +6,12 @@ plugins {
 
 dependencies {
     implementation(project(":conversion:conversion-api"))
-    implementation(project(":commons:commons-jvm"))
+    implementation(project(":platform:platform-jvm"))
 
     implementation(libs.jsoup)
     implementation(libs.poi)
 
-    testImplementation(project(":commons:commons-test"))
+    testImplementation(project(":platform:platform-jvm-test"))
 }
 
 application {

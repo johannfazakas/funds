@@ -5,8 +5,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import ro.jf.funds.fund.api.model.AccountName
-import ro.jf.funds.commons.api.model.Currency
-import ro.jf.funds.commons.api.model.Label
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.service.domain.ImportParsedRecord

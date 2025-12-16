@@ -7,7 +7,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api(project(":commons:commons-api"))
+                api(project(":platform:platform-api"))
                 api(libs.bignum)
             }
         }

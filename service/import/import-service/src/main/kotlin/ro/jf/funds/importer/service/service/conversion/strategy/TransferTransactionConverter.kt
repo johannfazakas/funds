@@ -1,7 +1,7 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
-import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion

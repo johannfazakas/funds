@@ -5,7 +5,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.api.model.toListTO
+import ro.jf.funds.platform.api.model.toListTO
 import ro.jf.funds.user.api.model.CreateUserTO
 import ro.jf.funds.user.service.service.UserService
 import ro.jf.funds.user.service.web.mapper.toCommand

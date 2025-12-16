@@ -6,8 +6,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.toInstant
-import ro.jf.funds.commons.api.model.Currency
-import ro.jf.funds.commons.observability.tracing.withSpan
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.jvm.observability.tracing.withSpan
 import ro.jf.funds.importer.api.model.ExchangeMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO.*
 import ro.jf.funds.importer.api.model.ImportConfigurationTO

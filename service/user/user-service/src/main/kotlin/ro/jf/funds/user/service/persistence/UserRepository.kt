@@ -6,7 +6,7 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import ro.jf.funds.commons.persistence.blockingTransaction
+import ro.jf.funds.platform.jvm.persistence.blockingTransaction
 import ro.jf.funds.user.service.domain.CreateUserCommand
 import ro.jf.funds.user.service.domain.User
 import java.util.*

@@ -1,10 +1,10 @@
 package ro.jf.funds.fund.service.service.event
 
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.event.Event
-import ro.jf.funds.commons.event.EventHandler
-import ro.jf.funds.commons.event.Producer
-import ro.jf.funds.commons.model.GenericResponse
+import ro.jf.funds.platform.jvm.event.Event
+import ro.jf.funds.platform.jvm.event.EventHandler
+import ro.jf.funds.platform.jvm.event.Producer
+import ro.jf.funds.platform.jvm.model.GenericResponse
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.fund.service.config.toError
 import ro.jf.funds.fund.service.service.TransactionService

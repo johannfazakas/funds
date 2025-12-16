@@ -6,11 +6,11 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.api.model.ListTO
-import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
-import ro.jf.funds.commons.web.USER_ID_HEADER
-import ro.jf.funds.commons.web.createHttpClient
-import ro.jf.funds.commons.web.toApiException
+import ro.jf.funds.platform.api.model.ListTO
+import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
+import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
+import ro.jf.funds.platform.jvm.web.createHttpClient
+import ro.jf.funds.platform.jvm.web.toApiException
 import ro.jf.funds.fund.api.FundApi
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName

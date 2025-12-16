@@ -1,7 +1,7 @@
 package ro.jf.funds.fund.service.service
 
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
+import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.fund.api.model.TransactionFilterTO

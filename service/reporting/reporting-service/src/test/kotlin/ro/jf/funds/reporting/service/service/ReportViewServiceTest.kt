@@ -6,8 +6,8 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 import org.mockito.kotlin.whenever
-import ro.jf.funds.commons.api.model.Currency.Companion.RON
-import ro.jf.funds.commons.api.model.labelsOf
+import ro.jf.funds.platform.api.model.Currency.Companion.RON
+import ro.jf.funds.platform.api.model.labelsOf
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import java.util.UUID.randomUUID

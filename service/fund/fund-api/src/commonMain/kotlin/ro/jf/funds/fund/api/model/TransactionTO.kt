@@ -8,10 +8,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonClassDiscriminator
-import ro.jf.funds.commons.api.model.FinancialUnit
-import ro.jf.funds.commons.api.model.Label
-import ro.jf.funds.commons.api.serialization.BigDecimalSerializer
-import ro.jf.funds.commons.api.serialization.UuidSerializer
+import ro.jf.funds.platform.api.model.FinancialUnit
+import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.serialization.BigDecimalSerializer
+import ro.jf.funds.platform.api.serialization.UuidSerializer
 
 @OptIn(ExperimentalSerializationApi::class)
 @JsonClassDiscriminator("type")

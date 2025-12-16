@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import ro.jf.funds.commons.api.model.FinancialUnit
-import ro.jf.funds.commons.api.model.Label
+import ro.jf.funds.platform.api.model.FinancialUnit
+import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.domain.Account
 import ro.jf.funds.fund.service.domain.Fund

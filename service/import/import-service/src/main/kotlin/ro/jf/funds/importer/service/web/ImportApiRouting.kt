@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.io.readByteArray
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.web.userId
+import ro.jf.funds.platform.jvm.web.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
 import ro.jf.funds.importer.service.domain.ImportFile

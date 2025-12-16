@@ -13,9 +13,9 @@ import org.mockserver.client.MockServerClient
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import ro.jf.funds.commons.api.model.Currency
-import ro.jf.funds.commons.api.model.Instrument
-import ro.jf.funds.commons.test.extension.MockServerContainerExtension
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.api.model.Instrument
+import ro.jf.funds.platform.jvm.test.extension.MockServerContainerExtension
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionsRequest
 

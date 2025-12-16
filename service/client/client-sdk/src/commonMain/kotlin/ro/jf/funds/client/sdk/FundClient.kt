@@ -6,7 +6,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import ro.jf.funds.commons.api.model.ListTO
+import ro.jf.funds.platform.api.model.ListTO
 import ro.jf.funds.fund.api.model.FundTO
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5253"

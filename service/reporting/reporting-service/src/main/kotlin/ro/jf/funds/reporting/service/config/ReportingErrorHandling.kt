@@ -6,7 +6,7 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.error.ErrorTO
+import ro.jf.funds.platform.jvm.error.ErrorTO
 import ro.jf.funds.reporting.service.domain.ReportingException
 
 private val logger = logger { }

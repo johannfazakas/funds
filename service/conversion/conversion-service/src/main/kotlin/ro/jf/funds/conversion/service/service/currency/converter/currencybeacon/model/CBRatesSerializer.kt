@@ -5,7 +5,7 @@ import kotlinx.serialization.builtins.*
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 import kotlinx.serialization.json.*
-import ro.jf.funds.commons.serialization.BigDecimalSerializer
+import ro.jf.funds.platform.jvm.serialization.BigDecimalSerializer
 import java.math.BigDecimal
 
 object CBRatesSerializer : KSerializer<Map<String, BigDecimal?>> {

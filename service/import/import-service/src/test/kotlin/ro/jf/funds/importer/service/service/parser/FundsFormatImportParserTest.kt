@@ -4,9 +4,9 @@ import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import ro.jf.funds.fund.api.model.AccountName
-import ro.jf.funds.commons.api.model.Currency
-import ro.jf.funds.commons.api.model.Label
-import ro.jf.funds.commons.api.model.Instrument
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Instrument
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.*
 import com.ionspin.kotlin.bignum.decimal.BigDecimal

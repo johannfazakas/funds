@@ -1,7 +1,7 @@
 package ro.jf.funds.reporting.service.service
 
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
+import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
 import ro.jf.funds.reporting.service.domain.ReportDataConfiguration
 import ro.jf.funds.reporting.service.domain.ReportView

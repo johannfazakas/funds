@@ -3,7 +3,7 @@ package ro.jf.funds.fund.service.config
 import io.ktor.server.application.*
 import mu.KotlinLogging.logger
 import org.koin.ktor.ext.inject
-import ro.jf.funds.commons.event.Consumer
+import ro.jf.funds.platform.jvm.event.Consumer
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 
 private val logger = logger {}

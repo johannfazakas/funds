@@ -1,7 +1,7 @@
 package ro.jf.funds.conversion.service.service.instrument
 
-import ro.jf.funds.commons.api.model.Currency.Companion.EUR
-import ro.jf.funds.commons.api.model.Instrument
+import ro.jf.funds.platform.api.model.Currency.Companion.EUR
+import ro.jf.funds.platform.api.model.Instrument
 import ro.jf.funds.conversion.service.domain.InstrumentConversionSource.YAHOO
 import ro.jf.funds.conversion.service.domain.ConversionExceptions
 import ro.jf.funds.conversion.service.domain.InstrumentConversionInfo

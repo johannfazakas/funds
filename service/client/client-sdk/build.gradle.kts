@@ -9,7 +9,7 @@ kotlin {
             dependencies {
                 api(project(":fund:fund-api"))
                 api(project(":user:user-api"))
-                api(project(":commons:commons-api"))
+                api(project(":platform:platform-api"))
                 implementation("io.ktor:ktor-client-core:3.0.3")
                 implementation("io.ktor:ktor-client-content-negotiation:3.0.3")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.3")

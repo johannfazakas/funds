@@ -1,7 +1,7 @@
 package ro.jf.funds.reporting.api
 
 import com.benasher44.uuid.Uuid
-import ro.jf.funds.commons.api.model.ListTO
+import ro.jf.funds.platform.api.model.ListTO
 import ro.jf.funds.reporting.api.model.*
 
 interface ReportingApi {

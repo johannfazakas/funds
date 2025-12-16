@@ -3,9 +3,9 @@ package ro.jf.funds.conversion.api.model
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
-import ro.jf.funds.commons.api.model.Currency
-import ro.jf.funds.commons.api.model.FinancialUnit
-import ro.jf.funds.commons.api.serialization.BigDecimalSerializer
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.api.model.FinancialUnit
+import ro.jf.funds.platform.api.serialization.BigDecimalSerializer
 
 @Serializable
 data class ConversionResponse(

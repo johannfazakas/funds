@@ -1,7 +1,7 @@
 package ro.jf.funds.fund.api
 
 import com.benasher44.uuid.Uuid
-import ro.jf.funds.commons.api.model.ListTO
+import ro.jf.funds.platform.api.model.ListTO
 import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.fund.api.model.CreateAccountTO
 

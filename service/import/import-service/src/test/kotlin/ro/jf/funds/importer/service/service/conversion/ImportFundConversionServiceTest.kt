@@ -7,8 +7,8 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
-import ro.jf.funds.commons.api.model.*
-import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.platform.api.model.*
+import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk

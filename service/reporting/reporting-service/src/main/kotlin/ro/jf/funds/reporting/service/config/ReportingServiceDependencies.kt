@@ -4,11 +4,11 @@ import io.ktor.client.*
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
-import ro.jf.funds.commons.config.getEnvironmentProperty
-import ro.jf.funds.commons.config.getStringProperty
-import ro.jf.funds.commons.event.*
-import ro.jf.funds.commons.persistence.getDataSource
-import ro.jf.funds.commons.web.createHttpClient
+import ro.jf.funds.platform.jvm.config.getEnvironmentProperty
+import ro.jf.funds.platform.jvm.config.getStringProperty
+import ro.jf.funds.platform.jvm.event.*
+import ro.jf.funds.platform.jvm.persistence.getDataSource
+import ro.jf.funds.platform.jvm.web.createHttpClient
 import ro.jf.funds.conversion.sdk.ConversionSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.api.event.ReportingEvents

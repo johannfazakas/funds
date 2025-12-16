@@ -5,9 +5,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import mu.KotlinLogging.logger
-import ro.jf.funds.commons.event.Event
-import ro.jf.funds.commons.event.Producer
-import ro.jf.funds.commons.observability.tracing.withSuspendingSpan
+import ro.jf.funds.platform.jvm.event.Event
+import ro.jf.funds.platform.jvm.event.Producer
+import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.service.domain.ImportFile

@@ -15,7 +15,7 @@ import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.minus
 import mu.KotlinLogging
-import ro.jf.funds.commons.api.model.Currency
+import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.conversion.api.model.ConversionResponse
 import ro.jf.funds.conversion.service.domain.ConversionExceptions
 import ro.jf.funds.conversion.service.service.currency.CurrencyConverter

@@ -1,6 +1,6 @@
 package ro.jf.funds.fund.api.event
 
-import ro.jf.funds.commons.api.event.EventType
+import ro.jf.funds.platform.api.event.EventType
 
 object FundEvents {
     private const val FUND_DOMAIN = "fund"

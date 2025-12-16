@@ -12,11 +12,11 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.selectAll
-import ro.jf.funds.commons.api.model.Currency
-import ro.jf.funds.commons.api.model.FinancialUnit
-import ro.jf.funds.commons.api.model.toFinancialUnit
-import ro.jf.funds.commons.persistence.bigDecimal
-import ro.jf.funds.commons.persistence.blockingTransaction
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.api.model.FinancialUnit
+import ro.jf.funds.platform.api.model.toFinancialUnit
+import ro.jf.funds.platform.jvm.persistence.bigDecimal
+import ro.jf.funds.platform.jvm.persistence.blockingTransaction
 import ro.jf.funds.conversion.service.domain.Conversion
 import java.util.*
 
