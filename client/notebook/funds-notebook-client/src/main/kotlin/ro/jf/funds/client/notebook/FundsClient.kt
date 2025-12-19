@@ -39,6 +39,7 @@ import ro.jf.funds.user.api.model.UserTO
 import ro.jf.funds.user.sdk.UserSdk
 import java.io.File
 import java.util.*
+import java.math.BigDecimal as JavaBigDecimal
 import kotlin.time.Duration.Companion.seconds
 
 class FundsClient(
@@ -198,8 +199,8 @@ class FundsClient(
     fun <T> plotReportData(
         title: String,
         reportData: ReportDataTO<T>,
-        plottedLines: Map<Color, (T) -> BigDecimal> = emptyMap(),
-        plottedAreas: Map<Color, (T) -> BigDecimal> = emptyMap(),
+        plottedLines: Map<Color, (T) -> JavaBigDecimal> = emptyMap(),
+        plottedAreas: Map<Color, (T) -> JavaBigDecimal> = emptyMap(),
     ): Plot {
         val plottedData = plottedLines + plottedAreas
         val dataFrame = plottedData
@@ -252,16 +253,16 @@ class FundsClient(
     }
 
     private fun <T> DataFramePlotBuilder<Any?>.plotForecastBorderLine(
-        plottedData: Map<Color, (T) -> BigDecimal>,
+        plottedData: Map<Color, (T) -> JavaBigDecimal>,
         dataFrame: DataFrame<*>,
         reportData: ReportDataTO<T>,
     ) {
         line {
             val values = plottedData.keys
                 .flatMap { dataFrame[it.toString()].values() }
-                .map { it as BigDecimal }
-            val forecastBorderMin = values.minOrNull()?.takeIf { it < BigDecimal.ZERO } ?: BigDecimal.ZERO
-            val forecastBorderMax = values.maxOrNull()?.takeIf { it > BigDecimal.ZERO } ?: BigDecimal.ZERO
+                .map { it as JavaBigDecimal }
+            val forecastBorderMin = values.minOrNull()?.takeIf { it < JavaBigDecimal.ZERO } ?: JavaBigDecimal.ZERO
+            val forecastBorderMax = values.maxOrNull()?.takeIf { it > JavaBigDecimal.ZERO } ?: JavaBigDecimal.ZERO
             val forecastBorderX = when (reportData.interval.granularity) {
                 TimeGranularityTO.YEARLY -> reportData.interval.toDate.minus(183, DateTimeUnit.DAY)
                 TimeGranularityTO.MONTHLY -> reportData.interval.toDate.minus(15, DateTimeUnit.DAY)

@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// TODO(Johann) how about renaming commons to platform? and I'm not sure about -jvm, but -sdk or -service might be more restrictive. should it be split?
 dependencies {
     api(project(":platform:platform-api"))
     api(libs.kotlinx.serialization.json)
