@@ -14,16 +14,6 @@
 
 ### Calculate interest rate when positions are closed
 
-### UI, step 1
-
-Anything, just have some AI and integrate the backend. Planning to use KMP would be great.
-
-- [ ] Working Web app with React and Ktor Client
-- [ ] Working Mobile app
-- [ ] Understand the changes and adjust where needed
-
-### Integrate Pricing for ICBETNETF
-
 ### Decouple Report View from Report Data requests
 
 The report view could be considered just a template for a dashboard. Its setting would be used to load the report data.

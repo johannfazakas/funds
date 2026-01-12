@@ -1,10 +1,11 @@
 package ro.jf.funds.conversion.service.service.instrument
 
-import ro.jf.funds.platform.api.model.Currency.Companion.EUR
-import ro.jf.funds.platform.api.model.Instrument
-import ro.jf.funds.conversion.service.domain.InstrumentConversionSource.YAHOO
 import ro.jf.funds.conversion.service.domain.ConversionExceptions
 import ro.jf.funds.conversion.service.domain.InstrumentConversionInfo
+import ro.jf.funds.conversion.service.domain.InstrumentConversionSource.YAHOO
+import ro.jf.funds.platform.api.model.Currency.Companion.EUR
+import ro.jf.funds.platform.api.model.Currency.Companion.RON
+import ro.jf.funds.platform.api.model.Instrument
 
 class InstrumentConversionInfoRepository {
 
@@ -15,8 +16,10 @@ class InstrumentConversionInfoRepository {
         InstrumentConversionInfo(Instrument("IMAE"), YAHOO, "IMAEA.XC", EUR),
         InstrumentConversionInfo(Instrument("IS3N"), YAHOO, "IS3N.DE", EUR),
         InstrumentConversionInfo(Instrument("SUSW"), YAHOO, "SUSW.L", EUR),
+        InstrumentConversionInfo(Instrument("ICBETNETF"), YAHOO, "ICBETNETF.RO", RON),
     ).associateBy { it.instrument }
 
     fun findByInstrument(instrument: Instrument): InstrumentConversionInfo =
-        instrumentsByInstrument[instrument] ?: throw ConversionExceptions.InstrumentSourceIntegrationNotFound(instrument)
+        instrumentsByInstrument[instrument]
+            ?: throw ConversionExceptions.InstrumentSourceIntegrationNotFound(instrument)
 }
