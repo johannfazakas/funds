@@ -1,7 +1,9 @@
 [versions]
 kotlin = "2.1.20"
+android-gradle = "8.7.0"
 ktor = "3.1.3"
 kotlinx-serialization = "1.8.1"
+kotlinx-coroutines = "1.9.0"
 kotlinx-datetime = "0.6.0"
 koin = "4.1.0"
 postgres = "42.7.6"
@@ -29,6 +31,11 @@ kotlin-statistics = "1.2.1"
 
 [libraries]
 
+# gradle plugins (for included build)
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+compose-gradle-plugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
+android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "android-gradle" }
+
 # ktor
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
@@ -45,6 +52,8 @@ ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx
 
 # kotlinx
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 # ktor
@@ -106,3 +115,16 @@ mockserver-client = { module = "org.mock-server:mockserver-client-java", version
 [plugins]
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+android-application = { id = "com.android.application", version.ref = "android-gradle" }
+android-library = { id = "com.android.library", version.ref = "android-gradle" }
+
+# Convention plugins (from included build)
+funds-common = { id = "funds.common-conventions" }
+funds-jvm = { id = "funds.jvm-conventions" }
+funds-jvm-library = { id = "funds.jvm-library-conventions" }
+funds-jvm-service = { id = "funds.jvm-service-conventions" }
+funds-multiplatform = { id = "funds.multiplatform-conventions" }

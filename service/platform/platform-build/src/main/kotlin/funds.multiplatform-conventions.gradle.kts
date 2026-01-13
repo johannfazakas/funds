@@ -15,6 +15,8 @@ repositories {
     google()
 }
 
+val libs = the<VersionCatalogsExtension>().named("libs")
+
 configure<AndroidLibraryExtension> {
     namespace = "ro.jf.funds"
     compileSdk = 35
@@ -50,9 +52,9 @@ configure<KotlinMultiplatformExtension> {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+                implementation(libs.findLibrary("kotlinx-serialization-json").get())
+                implementation(libs.findLibrary("kotlinx-coroutines-core").get())
+                implementation(libs.findLibrary("kotlinx-datetime").get())
             }
         }
 
@@ -67,7 +69,7 @@ configure<KotlinMultiplatformExtension> {
 
         val androidMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+                implementation(libs.findLibrary("kotlinx-coroutines-android").get())
             }
         }
 

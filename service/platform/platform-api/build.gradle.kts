@@ -1,5 +1,5 @@
 plugins {
-    id("funds.multiplatform-conventions")
+    alias(libs.plugins.funds.multiplatform)
     alias(libs.plugins.kotlin.serialization)
 }
 

@@ -1,5 +1,5 @@
 plugins {
-    id("funds.jvm-service-conventions")
+    alias(libs.plugins.funds.jvm.service)
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.serialization)
 }
