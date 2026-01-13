@@ -7,8 +7,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api(project(":fund:fund-api"))
-                api(project(":user:user-api"))
+                api(project(":service:fund:fund-api"))
+                api(project(":service:user:user-api"))
                 api(project(":platform:platform-api"))
                 implementation("io.ktor:ktor-client-core:3.0.3")
                 implementation("io.ktor:ktor-client-content-negotiation:3.0.3")

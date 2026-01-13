@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":fund:fund-api"))
+    implementation(project(":service:fund:fund-api"))
     implementation(project(":platform:platform-jvm"))
     testImplementation(project(":platform:platform-jvm-test"))
 }

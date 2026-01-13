@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":user:user-api"))
+    implementation(project(":service:user:user-api"))
     implementation(project(":platform:platform-jvm"))
     testImplementation(project(":platform:platform-jvm-test"))
 }

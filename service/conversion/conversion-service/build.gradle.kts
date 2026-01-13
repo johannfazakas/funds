@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":conversion:conversion-api"))
+    implementation(project(":service:conversion:conversion-api"))
     implementation(project(":platform:platform-jvm"))
 
     implementation(libs.jsoup)

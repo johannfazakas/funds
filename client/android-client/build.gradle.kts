@@ -57,7 +57,7 @@ android {
 
 dependencies {
     implementation(project(":client:client-sdk"))
-    implementation(project(":fund:fund-api"))
+    implementation(project(":service:fund:fund-api"))
 
     implementation("io.ktor:ktor-client-core:3.0.3")
     implementation("io.ktor:ktor-client-okhttp:3.0.3")

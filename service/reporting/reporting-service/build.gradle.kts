@@ -5,10 +5,10 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":reporting:reporting-api"))
+    implementation(project(":service:reporting:reporting-api"))
     implementation(project(":platform:platform-jvm"))
-    implementation(project(":fund:fund-sdk"))
-    implementation(project(":conversion:conversion-sdk"))
+    implementation(project(":service:fund:fund-sdk"))
+    implementation(project(":service:conversion:conversion-sdk"))
     implementation(libs.big.math)
     implementation(libs.kotlin.statistics)
     testImplementation(project(":platform:platform-jvm-test"))

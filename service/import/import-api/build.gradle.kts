@@ -8,7 +8,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":platform:platform-api"))
-                api(project(":fund:fund-api"))
+                api(project(":service:fund:fund-api"))
             }
         }
     }
