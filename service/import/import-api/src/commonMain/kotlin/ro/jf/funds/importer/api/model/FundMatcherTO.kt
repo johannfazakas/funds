@@ -15,29 +15,29 @@ sealed class FundMatcherTO {
     @Serializable
     @SerialName("by_account")
     data class ByAccount(
-        val importAccountName: String,
+        val importAccountNames: List<String>,
         override val fundName: FundName,
     ) : FundMatcherTO()
 
     @Serializable
     @SerialName("by_label")
     data class ByLabel(
-        val importLabel: String,
+        val importLabels: List<String>,
         override val fundName: FundName,
     ) : FundMatcherTO()
 
     @Serializable
     @SerialName("by_account_label")
     data class ByAccountLabel(
-        val importAccountName: String,
-        val importLabel: String,
+        val importAccountNames: List<String>,
+        val importLabels: List<String>,
         override val fundName: FundName,
     ) : FundMatcherTO()
 
     @Serializable
     @SerialName("by_label_with_post_transfer")
     data class ByLabelWithPostTransfer(
-        val importLabel: String,
+        val importLabels: List<String>,
         val initialFundName: FundName,
         override val fundName: FundName,
     ) : FundMatcherTO()
@@ -45,8 +45,8 @@ sealed class FundMatcherTO {
     @Serializable
     @SerialName("by_account_label_with_post_transfer")
     data class ByAccountLabelWithPostTransfer(
-        val importAccountName: String,
-        val importLabel: String,
+        val importAccountNames: List<String>,
+        val importLabels: List<String>,
         val initialFundName: FundName,
         override val fundName: FundName,
     ) : FundMatcherTO()
@@ -54,8 +54,8 @@ sealed class FundMatcherTO {
     @Serializable
     @SerialName("by_account_label_with_pre_transfer")
     data class ByAccountLabelWithPreTransfer(
-        val importAccountName: String,
-        val importLabel: String,
+        val importAccountNames: List<String>,
+        val importLabels: List<String>,
         val initialFundName: FundName,
         override val fundName: FundName,
     ) : FundMatcherTO()

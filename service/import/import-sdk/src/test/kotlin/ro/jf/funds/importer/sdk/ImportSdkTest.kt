@@ -35,10 +35,10 @@ class ImportSdkTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO.ByName("Cash RON", AccountName("Cash"))
+                AccountMatcherTO.ByName(listOf("Cash RON"), AccountName("Cash"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
+                FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))
             )
         )
         mockServerClient
@@ -83,10 +83,10 @@ class ImportSdkTest {
             val importConfiguration = ImportConfigurationTO(
                 fileType = ImportFileTypeTO.WALLET_CSV,
                 accountMatchers = listOf(
-                    AccountMatcherTO.ByName("Cash RON", AccountName("Cash"))
+                    AccountMatcherTO.ByName(listOf("Cash RON"), AccountName("Cash"))
                 ),
                 fundMatchers = listOf(
-                    FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
+                    FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))
                 )
             )
             mockServerClient
@@ -125,10 +125,10 @@ class ImportSdkTest {
             val importConfiguration = ImportConfigurationTO(
                 fileType = ImportFileTypeTO.WALLET_CSV,
                 accountMatchers = listOf(
-                    AccountMatcherTO.ByName("Cash RON", AccountName("Cash"))
+                    AccountMatcherTO.ByName(listOf("Cash RON"), AccountName("Cash"))
                 ),
                 fundMatchers = listOf(
-                    FundMatcherTO.ByAccount("Cash RON", FundName("Expenses"))
+                    FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))
                 )
             )
             mockServerClient

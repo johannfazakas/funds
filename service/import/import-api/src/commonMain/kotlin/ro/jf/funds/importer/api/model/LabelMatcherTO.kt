@@ -5,6 +5,6 @@ import ro.jf.funds.platform.api.model.Label
 
 @Serializable
 data class LabelMatcherTO(
-    val importLabel: String,
+    val importLabels: List<String>,
     val label: Label,
 )

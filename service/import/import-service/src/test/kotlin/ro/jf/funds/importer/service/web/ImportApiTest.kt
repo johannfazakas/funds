@@ -61,23 +61,21 @@ class ImportApiTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO.ByName("ING old", AccountName("ING"))
+                AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
-                FundMatcherTO.ByLabel("Gifts", FundName("Expenses")),
-                FundMatcherTO.ByLabel("C&T - Gas & Parking", FundName("Expenses")),
+                FundMatcherTO.ByLabel(listOf("Basic - Food", "Gifts", "C&T - Gas & Parking"), FundName("Expenses")),
                 FundMatcherTO.ByAccountLabelWithPostTransfer(
-                    "ING old",
-                    "Work Income",
+                    listOf("ING old"),
+                    listOf("Work Income"),
                     FundName("Work"),
                     FundName("Expenses")
                 ),
             ),
             labelMatchers = listOf(
-                LabelMatcherTO("Basic - Food", Label("Basic")),
-                LabelMatcherTO("C&T - Gas & Parking", Label("Transport")),
-                LabelMatcherTO("Work Income", Label("Income")),
+                LabelMatcherTO(listOf("Basic - Food"), Label("Basic")),
+                LabelMatcherTO(listOf("C&T - Gas & Parking"), Label("Transport")),
+                LabelMatcherTO(listOf("Work Income"), Label("Income")),
             )
         )
         whenever(accountSdk.listAccounts(userId)).thenReturn(
@@ -157,15 +155,13 @@ class ImportApiTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO.ByName("ING old", AccountName("ING"))
+                AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
-                FundMatcherTO.ByLabel("Gifts", FundName("Expenses")),
-                FundMatcherTO.ByLabel("C&T - Gas & Parking", FundName("Expenses")),
+                FundMatcherTO.ByLabel(listOf("Basic - Food", "Gifts", "C&T - Gas & Parking"), FundName("Expenses")),
                 FundMatcherTO.ByAccountLabelWithPostTransfer(
-                    "ING old",
-                    "Work Income",
+                    listOf("ING old"),
+                    listOf("Work Income"),
                     FundName("Work"),
                     FundName("Expenses")
                 ),
@@ -204,15 +200,13 @@ class ImportApiTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.WALLET_CSV,
             accountMatchers = listOf(
-                AccountMatcherTO.ByName("Something else", AccountName("ING"))
+                AccountMatcherTO.ByName(listOf("Something else"), AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabel("Basic - Food", FundName("Expenses")),
-                FundMatcherTO.ByLabel("Gifts", FundName("Expenses")),
-                FundMatcherTO.ByLabel("C&T - Gas & Parking", FundName("Expenses")),
+                FundMatcherTO.ByLabel(listOf("Basic - Food", "Gifts", "C&T - Gas & Parking"), FundName("Expenses")),
                 FundMatcherTO.ByAccountLabelWithPostTransfer(
-                    "ING old",
-                    "Work Income",
+                    listOf("ING old"),
+                    listOf("Work Income"),
                     FundName("Work"),
                     FundName("Expenses")
                 ),

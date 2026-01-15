@@ -33,17 +33,16 @@ class FundsFormatImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             fileType = ImportFileTypeTO.FUNDS_FORMAT,
             accountMatchers = listOf(
-                AccountMatcherTO.ByName("BT EUR", AccountName("BT EUR")),
-                AccountMatcherTO.ByName("XTB EUR", AccountName("XTB EUR")),
-                AccountMatcherTO.ByName("XTB EUNL", AccountName("XTB EUNL")),
+                AccountMatcherTO.ByName(listOf("BT EUR"), AccountName("BT EUR")),
+                AccountMatcherTO.ByName(listOf("XTB EUR"), AccountName("XTB EUR")),
+                AccountMatcherTO.ByName(listOf("XTB EUNL"), AccountName("XTB EUNL")),
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByAccount("BT EUR", FundName("Expenses")),
-                FundMatcherTO.ByAccount("XTB EUR", FundName("Investments")),
-                FundMatcherTO.ByAccount("XTB EUNL", FundName("Investments")),
+                FundMatcherTO.ByAccount(listOf("BT EUR"), FundName("Expenses")),
+                FundMatcherTO.ByAccount(listOf("XTB EUR", "XTB EUNL"), FundName("Investments")),
             ),
             labelMatchers = listOf(
-                LabelMatcherTO("investment", Label("investment")),
+                LabelMatcherTO(listOf("investment"), Label("investment")),
             )
         )
 
