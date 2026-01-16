@@ -4,10 +4,10 @@
 
 ### Improve import matching logic
 
-- [ ] Fund matchers should be applicable to all import parsers. Actual case, implicit fund transfer for investment
+- [x] Fund matchers should be applicable to all import parsers. Actual case, implicit fund transfer for investment
   accounts interest transactions.
-- [ ] Check common logic between Import Parser implementations
-- [ ] Find a common strategy for transactionId generation
+- [x] Check common logic between Import Parser implementations
+- [x] Find a common strategy for transactionId generation
 - [x] Allow multiple matching per matcher to simplify request definition
 - [ ] verify that bt work taxes are correctly imported (ex. May CASS payment). Also check September 2021 minus.
 - [ ] verify that distributed profit are correctly imported in investment accounts for currency interests
