@@ -2,9 +2,12 @@ package ro.jf.funds.importer.service.service.parser
 
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
+import kotlinx.datetime.toInstant
 import ro.jf.funds.platform.api.model.Currency
+import java.util.*
 
 class WalletImportItem(private val csvRow: CsvRow) : ImportItem() {
     override val dateTime: LocalDateTime by lazy { csvRow.getDateTime(DATE_COLUMN, dateTimeFormat) }
@@ -18,6 +21,17 @@ class WalletImportItem(private val csvRow: CsvRow) : ImportItem() {
             .filter { it.isNotBlank() }
     }
     override val note: String by lazy { csvRow.getString(NOTE_COLUMN) }
+
+    override fun transactionId(isExchange: (ImportItem) -> Boolean): String {
+        val baseId = if (isExchange(this)) {
+            listOf(dateTime.inWholeMinutes()).joinToString()
+        } else {
+            listOf(note, dateTime.toString(), amount.abs().toString()).joinToString()
+        }
+        return UUID.nameUUIDFromBytes(baseId.toByteArray()).toString()
+    }
+
+    private fun LocalDateTime.inWholeMinutes(): Long = this.toInstant(TimeZone.UTC).epochSeconds / 60
 
     companion object {
         private const val ACCOUNT_NAME_COLUMN = "account"

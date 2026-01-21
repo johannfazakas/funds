@@ -7,6 +7,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import ro.jf.funds.platform.api.model.FinancialUnit
+import java.util.*
 
 class FundsFormatImportItem(private val csvRow: CsvRow) : ImportItem() {
     override val dateTime: LocalDateTime by lazy { LocalDateTime(csvRow.getDate(DATE_COLUMN, dateFormat), LocalTime(0, 0)) }
@@ -15,6 +16,11 @@ class FundsFormatImportItem(private val csvRow: CsvRow) : ImportItem() {
     override val unit: FinancialUnit by lazy { FinancialUnit.of(csvRow.getString(UNIT_TYPE_COLUMN), csvRow.getString(UNIT_COLUMN)) }
     override val note: String by lazy { csvRow.getString(NOTE_COLUMN) }
     override val labels: List<String> by lazy { listOfNotNull(csvRow.getString(LABEL_COLUMN).takeIf { it.isNotBlank() }) }
+
+    override fun transactionId(isExchange: (ImportItem) -> Boolean): String {
+        val baseId = listOf(note, dateTime.date.toString()).joinToString()
+        return UUID.nameUUIDFromBytes(baseId.toByteArray()).toString()
+    }
 
     companion object {
         private const val DATE_COLUMN = "date"

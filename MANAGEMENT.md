@@ -2,16 +2,6 @@
 
 ## Functional Tasks
 
-### Improve import matching logic
-
-- [x] Fund matchers should be applicable to all import parsers. Actual case, implicit fund transfer for investment
-  accounts interest transactions.
-- [x] Check common logic between Import Parser implementations
-- [x] Find a common strategy for transactionId generation
-- [x] Allow multiple matching per matcher to simplify request definition
-- [ ] verify that bt work taxes are correctly imported (ex. May CASS payment). Also check September 2021 minus.
-- [ ] verify that distributed profit are correctly imported in investment accounts for currency interests
-
 ### Calculate interest rate when positions are closed
 
 ### Decouple Report View from Report Data requests

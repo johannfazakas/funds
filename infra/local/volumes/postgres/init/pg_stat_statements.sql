@@ -4,9 +4,6 @@ CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 \c ff_user;
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 
-\c ff_account;
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-
 \c ff_fund;
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 
