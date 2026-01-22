@@ -79,11 +79,11 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
             account = accountStore[currencyRecord.accountName],
             conversions = conversions,
         )
-        val instrumentRecordTO = CreateTransactionRecordTO(
+        val instrumentRecordTO = CreateTransactionRecordTO.InstrumentRecord(
             fundId = fundStore[instrumentRecord.fundName].id,
             accountId = accountStore[instrumentRecord.accountName].id,
             amount = instrumentRecord.amount,
-            unit = instrumentRecord.unit,
+            unit = instrumentRecord.unit as Instrument,
             labels = instrumentRecord.labels,
         )
         return when (transactionType) {

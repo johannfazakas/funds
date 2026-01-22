@@ -1113,7 +1113,7 @@ class ReportDataServiceTest {
             userId = userId,
             dateTime = date.atTime(12, 0),
             externalId = randomUUID().toString(),
-            sourceRecord = TransactionRecordTO(
+            sourceRecord = TransactionRecordTO.CurrencyRecord(
                 id = randomUUID(),
                 fundId = expensesFundId,
                 accountId = randomUUID(),
@@ -1121,7 +1121,7 @@ class ReportDataServiceTest {
                 unit = EUR,
                 labels = labelsOf("investment")
             ),
-            destinationRecord = TransactionRecordTO(
+            destinationRecord = TransactionRecordTO.CurrencyRecord(
                 id = randomUUID(),
                 fundId = investmentFundId,
                 accountId = randomUUID(),
@@ -1137,7 +1137,7 @@ class ReportDataServiceTest {
             userId = userId,
             dateTime = date.atTime(12, 0),
             externalId = randomUUID().toString(),
-            currencyRecord = TransactionRecordTO(
+            currencyRecord = TransactionRecordTO.CurrencyRecord(
                 id = randomUUID(),
                 fundId = investmentFundId,
                 accountId = randomUUID(),
@@ -1145,7 +1145,7 @@ class ReportDataServiceTest {
                 unit = EUR,
                 labels = emptyList(),
             ),
-            instrumentRecord = TransactionRecordTO(
+            instrumentRecord = TransactionRecordTO.InstrumentRecord(
                 id = randomUUID(),
                 fundId = investmentFundId,
                 accountId = randomUUID(),
@@ -1156,13 +1156,13 @@ class ReportDataServiceTest {
         )
 
     private fun transaction(
-        date: LocalDate, unit: FinancialUnit, amount: Int, labels: List<Label>,
+        date: LocalDate, unit: Currency, amount: Int, labels: List<Label>,
     ) = TransactionTO.SingleRecord(
         id = randomUUID(),
         userId = userId,
         dateTime = date.atTime(12, 0),
         externalId = randomUUID().toString(),
-        record = TransactionRecordTO(
+        record = TransactionRecordTO.CurrencyRecord(
             id = randomUUID(),
             fundId = expensesFundId,
             unit = unit,

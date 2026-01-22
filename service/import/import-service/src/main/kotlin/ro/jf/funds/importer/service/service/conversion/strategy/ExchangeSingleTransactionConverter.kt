@@ -62,11 +62,11 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
         val creditRecord = transaction.records.single { it.amount > BigDecimal.ZERO }
         val creditAmount = creditRecord
             .toFundRecordAmount(date, accountStore[creditRecord.accountName], conversions)
-        val creditFundRecord = CreateTransactionRecordTO(
+        val creditFundRecord = CreateTransactionRecordTO.CurrencyRecord(
             fundId = fundStore[creditRecord.fundName].id,
             accountId = accountStore[creditRecord.accountName].id,
             amount = creditAmount,
-            unit = creditRecord.unit,
+            unit = creditRecord.unit as Currency,
             labels = creditRecord.labels,
         )
 
@@ -79,11 +79,11 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
         val rate = conversions.getConversionRate(creditRecord.unit, debitRecord.unit, date)
 
         val debitAmount = creditAmount.negate() * rate
-        val debitFundRecord = CreateTransactionRecordTO(
+        val debitFundRecord = CreateTransactionRecordTO.CurrencyRecord(
             fundId = fundStore[debitRecord.fundName].id,
             accountId = accountStore[debitRecord.accountName].id,
             amount = debitAmount,
-            unit = debitRecord.unit,
+            unit = debitRecord.unit as Currency,
             labels = debitRecord.labels,
         )
 
@@ -91,12 +91,12 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
         val feeAmount = debitTotalAmount - debitAmount
         val feeFundRecord = (debitTotalAmount - debitAmount)
             .takeIf { it.compareTo(BigDecimal.ZERO) != 0 }
-            .let {
-                CreateTransactionRecordTO(
+            ?.let {
+                CreateTransactionRecordTO.CurrencyRecord(
                     fundId = fundStore[debitRecord.fundName].id,
                     accountId = accountStore[debitRecord.accountName].id,
                     amount = feeAmount,
-                    unit = debitRecord.unit,
+                    unit = debitRecord.unit as Currency,
                     labels = feeRecord?.labels ?: debitRecord.labels,
                 )
             }

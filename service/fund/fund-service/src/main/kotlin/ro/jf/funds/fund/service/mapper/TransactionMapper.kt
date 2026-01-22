@@ -48,7 +48,21 @@ fun Transaction.toTO(): TransactionTO = when (this) {
     )
 }
 
-fun TransactionRecord.toTO() = TransactionRecordTO(
+fun TransactionRecord.toTO(): TransactionRecordTO = when (this) {
+    is TransactionRecord.CurrencyRecord -> toTO()
+    is TransactionRecord.InstrumentRecord -> toTO()
+}
+
+fun TransactionRecord.CurrencyRecord.toTO() = TransactionRecordTO.CurrencyRecord(
+    id = id,
+    accountId = accountId,
+    fundId = fundId,
+    amount = amount,
+    unit = unit,
+    labels = labels,
+)
+
+fun TransactionRecord.InstrumentRecord.toTO() = TransactionRecordTO.InstrumentRecord(
     id = id,
     accountId = accountId,
     fundId = fundId,

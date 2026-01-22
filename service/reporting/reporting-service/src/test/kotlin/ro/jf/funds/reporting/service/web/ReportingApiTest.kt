@@ -438,15 +438,15 @@ class ReportingApiTest {
     fun singleRecordTransaction(
         userId: Uuid,
         date: LocalDate,
-        record: TransactionRecordTO,
+        record: TransactionRecordTO.CurrencyRecord,
     ): TransactionTO.SingleRecord =
         TransactionTO.SingleRecord(uuid4(), userId, uuid4().toString(), date.atTime(12, 0), record)
 
     fun openPositionTransaction(
         userId: Uuid,
         date: LocalDate,
-        currencyRecord: TransactionRecordTO,
-        instrumentRecord: TransactionRecordTO,
+        currencyRecord: TransactionRecordTO.CurrencyRecord,
+        instrumentRecord: TransactionRecordTO.InstrumentRecord,
     ): TransactionTO.OpenPosition =
         TransactionTO.OpenPosition(uuid4(), userId, uuid4().toString(), date.atTime(12, 0), currencyRecord, instrumentRecord)
 
@@ -456,8 +456,8 @@ class ReportingApiTest {
         amount: BigDecimal,
         currency: Currency,
         labels: List<Label>,
-    ): TransactionRecordTO =
-        TransactionRecordTO(uuid4(), accountId, fundId, amount, currency, labels)
+    ): TransactionRecordTO.CurrencyRecord =
+        TransactionRecordTO.CurrencyRecord(uuid4(), accountId, fundId, amount, currency, labels)
 
     fun record(
         fundId: Uuid,
@@ -465,8 +465,8 @@ class ReportingApiTest {
         amount: BigDecimal,
         instrument: Instrument,
         labels: List<Label>,
-    ): TransactionRecordTO =
-        TransactionRecordTO(uuid4(), accountId, fundId, amount, instrument, labels)
+    ): TransactionRecordTO.InstrumentRecord =
+        TransactionRecordTO.InstrumentRecord(uuid4(), accountId, fundId, amount, instrument, labels)
 
     private fun Application.testModule() {
         val importAppTestModule = module {

@@ -69,7 +69,7 @@ class TransactionsEventHandlingTest {
                 CreateTransactionTO.SingleRecord(
                     dateTime = dateTime,
                     externalId = externalId,
-                    record = CreateTransactionRecordTO(
+                    record = CreateTransactionRecordTO.CurrencyRecord(
                         fundId = fund.id,
                         accountId = account.id,
                         amount = BigDecimal.parseString("100.0"),

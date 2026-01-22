@@ -2,7 +2,9 @@ package ro.jf.funds.fund.service.domain
 
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDateTime
+import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
+import ro.jf.funds.platform.api.model.Instrument
 import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.fund.api.model.TransactionType
 import java.util.*
@@ -19,7 +21,7 @@ sealed class Transaction {
         override val userId: UUID,
         override val externalId: String,
         override val dateTime: LocalDateTime,
-        val record: TransactionRecord,
+        val record: TransactionRecord.CurrencyRecord,
     ) : Transaction() {
         override val type = TransactionType.SINGLE_RECORD
     }
@@ -29,8 +31,8 @@ sealed class Transaction {
         override val userId: UUID,
         override val externalId: String,
         override val dateTime: LocalDateTime,
-        val sourceRecord: TransactionRecord,
-        val destinationRecord: TransactionRecord,
+        val sourceRecord: TransactionRecord.CurrencyRecord,
+        val destinationRecord: TransactionRecord.CurrencyRecord,
     ) : Transaction() {
         override val type = TransactionType.TRANSFER
     }
@@ -40,9 +42,9 @@ sealed class Transaction {
         override val userId: UUID,
         override val externalId: String,
         override val dateTime: LocalDateTime,
-        val sourceRecord: TransactionRecord,
-        val destinationRecord: TransactionRecord,
-        val feeRecord: TransactionRecord?,
+        val sourceRecord: TransactionRecord.CurrencyRecord,
+        val destinationRecord: TransactionRecord.CurrencyRecord,
+        val feeRecord: TransactionRecord.CurrencyRecord?,
     ) : Transaction() {
         override val type = TransactionType.EXCHANGE
     }
@@ -52,8 +54,8 @@ sealed class Transaction {
         override val userId: UUID,
         override val externalId: String,
         override val dateTime: LocalDateTime,
-        val currencyRecord: TransactionRecord,
-        val instrumentRecord: TransactionRecord,
+        val currencyRecord: TransactionRecord.CurrencyRecord,
+        val instrumentRecord: TransactionRecord.InstrumentRecord,
     ) : Transaction() {
         override val type = TransactionType.OPEN_POSITION
     }
@@ -63,18 +65,36 @@ sealed class Transaction {
         override val userId: UUID,
         override val externalId: String,
         override val dateTime: LocalDateTime,
-        val currencyRecord: TransactionRecord,
-        val instrumentRecord: TransactionRecord,
+        val currencyRecord: TransactionRecord.CurrencyRecord,
+        val instrumentRecord: TransactionRecord.InstrumentRecord,
     ) : Transaction() {
         override val type = TransactionType.CLOSE_POSITION
     }
 }
 
-data class TransactionRecord(
-    val id: UUID,
-    val accountId: UUID,
-    val fundId: UUID,
-    val amount: BigDecimal,
-    val unit: FinancialUnit,
-    val labels: List<Label> = emptyList(),
-)
+sealed class TransactionRecord {
+    abstract val id: UUID
+    abstract val accountId: UUID
+    abstract val fundId: UUID
+    abstract val amount: BigDecimal
+    abstract val unit: FinancialUnit
+    abstract val labels: List<Label>
+
+    data class CurrencyRecord(
+        override val id: UUID,
+        override val accountId: UUID,
+        override val fundId: UUID,
+        override val amount: BigDecimal,
+        override val unit: Currency,
+        override val labels: List<Label> = emptyList(),
+    ) : TransactionRecord()
+
+    data class InstrumentRecord(
+        override val id: UUID,
+        override val accountId: UUID,
+        override val fundId: UUID,
+        override val amount: BigDecimal,
+        override val unit: Instrument,
+        override val labels: List<Label> = emptyList(),
+    ) : TransactionRecord()
+}

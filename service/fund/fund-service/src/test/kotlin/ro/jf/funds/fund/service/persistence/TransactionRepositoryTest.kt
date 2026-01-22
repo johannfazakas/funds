@@ -26,12 +26,12 @@ class TransactionRepositoryTest {
         val transaction1 = CreateTransactionTO.SingleRecord(
             dateTime = dateTime,
             externalId = "transaction 1",
-            record = CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal.parseString("1.0"), Currency.EUR)
+            record = CreateTransactionRecordTO.CurrencyRecord(account.id, randomUUID(), BigDecimal.parseString("1.0"), Currency.EUR)
         )
         val transaction2 = CreateTransactionTO.SingleRecord(
             dateTime = dateTime,
             externalId = "transaction 2",
-            record = CreateTransactionRecordTO(account.id, randomUUID(), BigDecimal.parseString("2.0"), Currency.EUR)
+            record = CreateTransactionRecordTO.CurrencyRecord(account.id, randomUUID(), BigDecimal.parseString("2.0"), Currency.EUR)
         )
 
         val request1 = CreateTransactionsTO(listOf(transaction1))

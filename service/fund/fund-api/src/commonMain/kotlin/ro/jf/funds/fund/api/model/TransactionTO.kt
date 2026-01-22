@@ -8,7 +8,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonClassDiscriminator
+import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
+import ro.jf.funds.platform.api.model.Instrument
 import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.platform.api.serialization.BigDecimalSerializer
 import ro.jf.funds.platform.api.serialization.UuidSerializer
@@ -34,7 +36,7 @@ sealed class TransactionTO {
         override val userId: Uuid,
         override val externalId: String,
         override val dateTime: LocalDateTime,
-        val record: TransactionRecordTO,
+        val record: TransactionRecordTO.CurrencyRecord,
     ) : TransactionTO() {
         @Transient
         override val type = TransactionType.SINGLE_RECORD
@@ -52,8 +54,8 @@ sealed class TransactionTO {
         override val userId: Uuid,
         override val externalId: String,
         override val dateTime: LocalDateTime,
-        val sourceRecord: TransactionRecordTO,
-        val destinationRecord: TransactionRecordTO,
+        val sourceRecord: TransactionRecordTO.CurrencyRecord,
+        val destinationRecord: TransactionRecordTO.CurrencyRecord,
     ) : TransactionTO() {
         @Transient
         override val type = TransactionType.TRANSFER
@@ -71,9 +73,9 @@ sealed class TransactionTO {
         override val userId: Uuid,
         override val externalId: String,
         override val dateTime: LocalDateTime,
-        val sourceRecord: TransactionRecordTO,
-        val destinationRecord: TransactionRecordTO,
-        val feeRecord: TransactionRecordTO?,
+        val sourceRecord: TransactionRecordTO.CurrencyRecord,
+        val destinationRecord: TransactionRecordTO.CurrencyRecord,
+        val feeRecord: TransactionRecordTO.CurrencyRecord?,
     ) : TransactionTO() {
         @Transient
         override val type = TransactionType.EXCHANGE
@@ -91,8 +93,8 @@ sealed class TransactionTO {
         override val userId: Uuid,
         override val externalId: String,
         override val dateTime: LocalDateTime,
-        val currencyRecord: TransactionRecordTO,
-        val instrumentRecord: TransactionRecordTO,
+        val currencyRecord: TransactionRecordTO.CurrencyRecord,
+        val instrumentRecord: TransactionRecordTO.InstrumentRecord,
     ) : TransactionTO() {
         @Transient
         override val type = TransactionType.OPEN_POSITION
@@ -110,8 +112,8 @@ sealed class TransactionTO {
         override val userId: Uuid,
         override val externalId: String,
         override val dateTime: LocalDateTime,
-        val currencyRecord: TransactionRecordTO,
-        val instrumentRecord: TransactionRecordTO,
+        val currencyRecord: TransactionRecordTO.CurrencyRecord,
+        val instrumentRecord: TransactionRecordTO.InstrumentRecord,
     ) : TransactionTO() {
         @Transient
         override val type = TransactionType.CLOSE_POSITION
@@ -121,16 +123,44 @@ sealed class TransactionTO {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
+@JsonClassDiscriminator("recordType")
 @Serializable
-data class TransactionRecordTO(
-    @Serializable(with = UuidSerializer::class)
-    val id: Uuid,
-    @Serializable(with = UuidSerializer::class)
-    val accountId: Uuid,
-    @Serializable(with = UuidSerializer::class)
-    val fundId: Uuid,
-    @Serializable(with = BigDecimalSerializer::class)
-    val amount: BigDecimal,
-    val unit: FinancialUnit,
-    val labels: List<Label>,
-)
+sealed class TransactionRecordTO {
+    abstract val id: Uuid
+    abstract val accountId: Uuid
+    abstract val fundId: Uuid
+    abstract val amount: BigDecimal
+    abstract val unit: FinancialUnit
+    abstract val labels: List<Label>
+
+    @Serializable
+    @SerialName("CURRENCY")
+    data class CurrencyRecord(
+        @Serializable(with = UuidSerializer::class)
+        override val id: Uuid,
+        @Serializable(with = UuidSerializer::class)
+        override val accountId: Uuid,
+        @Serializable(with = UuidSerializer::class)
+        override val fundId: Uuid,
+        @Serializable(with = BigDecimalSerializer::class)
+        override val amount: BigDecimal,
+        override val unit: Currency,
+        override val labels: List<Label>,
+    ) : TransactionRecordTO()
+
+    @Serializable
+    @SerialName("INSTRUMENT")
+    data class InstrumentRecord(
+        @Serializable(with = UuidSerializer::class)
+        override val id: Uuid,
+        @Serializable(with = UuidSerializer::class)
+        override val accountId: Uuid,
+        @Serializable(with = UuidSerializer::class)
+        override val fundId: Uuid,
+        @Serializable(with = BigDecimalSerializer::class)
+        override val amount: BigDecimal,
+        override val unit: Instrument,
+        override val labels: List<Label>,
+    ) : TransactionRecordTO()
+}

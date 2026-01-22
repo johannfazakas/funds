@@ -58,14 +58,14 @@ class TransactionApiTest {
         val request: CreateTransactionTO = CreateTransactionTO.Transfer(
             dateTime = transactionTime,
             externalId = randomUUID().toString(),
-            sourceRecord = CreateTransactionRecordTO(
+            sourceRecord = CreateTransactionRecordTO.CurrencyRecord(
                 accountId = companyAccount.id,
                 fundId = workFund.id,
                 amount = BigDecimal.parseString("-100.25"),
                 unit = Currency.RON,
                 labels = listOf(Label("one"), Label("two"))
             ),
-            destinationRecord = CreateTransactionRecordTO(
+            destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                 accountId = personalAccount.id,
                 fundId = expensesFund.id,
                 amount = BigDecimal.parseString("100.25"),
@@ -103,14 +103,14 @@ class TransactionApiTest {
             CreateTransactionTO.Transfer(
                 dateTime = LocalDateTime.parse("2021-09-01T12:00:00"),
                 externalId = "transaction1",
-                sourceRecord = CreateTransactionRecordTO(
+                sourceRecord = CreateTransactionRecordTO.CurrencyRecord(
                     accountId = account1.id,
                     fundId = workFund.id,
                     amount = BigDecimal.parseString("-100.25"),
                     unit = Currency.RON,
                     labels = listOf(Label("salary"))
                 ),
-                destinationRecord = CreateTransactionRecordTO(
+                destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                     accountId = account2.id,
                     fundId = expensesFund.id,
                     amount = BigDecimal.parseString("100.25"),
@@ -124,7 +124,7 @@ class TransactionApiTest {
             CreateTransactionTO.SingleRecord(
                 dateTime = LocalDateTime.parse("2021-09-02T15:30:00"),
                 externalId = "transaction2",
-                record = CreateTransactionRecordTO(
+                record = CreateTransactionRecordTO.CurrencyRecord(
                     accountId = account1.id,
                     fundId = workFund.id,
                     amount = BigDecimal.parseString("50.00"),
@@ -174,7 +174,7 @@ class TransactionApiTest {
             CreateTransactionTO.SingleRecord(
                 dateTime = fromDate.minus(1, DateTimeUnit.DAY).atTime(12, 0),
                 externalId = "before-range",
-                record = CreateTransactionRecordTO(
+                record = CreateTransactionRecordTO.CurrencyRecord(
                     accountId = account1.id,
                     fundId = workFund.id,
                     amount = BigDecimal.parseString("100.00"),
@@ -188,7 +188,7 @@ class TransactionApiTest {
             CreateTransactionTO.SingleRecord(
                 dateTime = fromDate.atTime(15, 30),
                 externalId = "in-range",
-                record = CreateTransactionRecordTO(
+                record = CreateTransactionRecordTO.CurrencyRecord(
                     accountId = account1.id,
                     fundId = workFund.id,
                     amount = BigDecimal.parseString("200.00"),
@@ -202,7 +202,7 @@ class TransactionApiTest {
             CreateTransactionTO.SingleRecord(
                 dateTime = toDate.plus(1, DateTimeUnit.DAY).atTime(12, 0),
                 externalId = "after-range",
-                record = CreateTransactionRecordTO(
+                record = CreateTransactionRecordTO.CurrencyRecord(
                     accountId = account1.id,
                     fundId = workFund.id,
                     amount = BigDecimal.parseString("300.00"),
@@ -239,7 +239,7 @@ class TransactionApiTest {
             CreateTransactionTO.SingleRecord(
                 dateTime = LocalDateTime.parse("2021-09-01T12:00:00"),
                 externalId = "work-transaction",
-                record = CreateTransactionRecordTO(
+                record = CreateTransactionRecordTO.CurrencyRecord(
                     accountId = account1.id,
                     fundId = workFund.id,
                     amount = BigDecimal.parseString("100.00"),
@@ -253,7 +253,7 @@ class TransactionApiTest {
             CreateTransactionTO.SingleRecord(
                 dateTime = LocalDateTime.parse("2021-09-02T15:30:00"),
                 externalId = "expenses-transaction",
-                record = CreateTransactionRecordTO(
+                record = CreateTransactionRecordTO.CurrencyRecord(
                     accountId = account1.id,
                     fundId = expensesFund.id,
                     amount = BigDecimal.parseString("200.00"),

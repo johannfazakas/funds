@@ -29,8 +29,8 @@ fun ImportParsedRecord.toImportCurrencyFundRecord(
     fundId: Uuid,
     account: AccountTO,
     conversions: ConversionsResponse,
-): CreateTransactionRecordTO {
-    return CreateTransactionRecordTO(
+): CreateTransactionRecordTO.CurrencyRecord {
+    return CreateTransactionRecordTO.CurrencyRecord(
         fundId = fundId,
         accountId = account.id,
         amount = toFundRecordAmount(date, account, conversions),

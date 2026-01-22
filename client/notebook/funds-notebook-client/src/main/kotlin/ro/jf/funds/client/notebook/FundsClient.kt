@@ -28,6 +28,7 @@ import ro.jf.funds.fund.api.model.CreateAccountTO
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.client.notebook.model.InitialBalances
 import ro.jf.funds.fund.api.model.*
+import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
@@ -95,11 +96,11 @@ class FundsClient(
                 dateTime = dateTime,
                 externalId = listOf(dateTime, initialBalance.accountName, initialBalance.amount).joinToString()
                     .let { UUID.nameUUIDFromBytes(it.toByteArray()).toString() },
-                record = CreateTransactionRecordTO(
+                record = CreateTransactionRecordTO.CurrencyRecord(
                     fundId = fund.id,
                     accountId = account.id,
                     amount = BigDecimal.parseString(initialBalance.amount),
-                    unit = account.unit
+                    unit = account.unit as Currency
                 )
             )
         }

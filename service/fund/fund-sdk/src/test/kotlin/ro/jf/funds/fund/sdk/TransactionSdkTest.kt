@@ -73,14 +73,12 @@ class TransactionSdkTest {
                             put("externalId", JsonPrimitive(transactionExternalId))
                             put("dateTime", JsonPrimitive(dateTime))
                             put("record", buildJsonObject {
+                                put("recordType", JsonPrimitive("CURRENCY"))
                                 put("id", JsonPrimitive(recordId.toString()))
                                 put("accountId", JsonPrimitive(accountId.toString()))
                                 put("fundId", JsonPrimitive(fundId.toString()))
                                 put("amount", JsonPrimitive(amount.toStringExpanded()))
-                                put("unit", buildJsonObject {
-                                    put("type", JsonPrimitive("currency"))
-                                    put("value", JsonPrimitive("RON"))
-                                })
+                                put("unit", JsonPrimitive("RON"))
                                 put("labels", buildJsonArray {})
                             })
                         }.toString()
@@ -92,7 +90,7 @@ class TransactionSdkTest {
             CreateTransactionTO.SingleRecord(
                 dateTime = LocalDateTime.parse(dateTime),
                 externalId = transactionExternalId,
-                record = CreateTransactionRecordTO(
+                record = CreateTransactionRecordTO.CurrencyRecord(
                     accountId = accountId,
                     fundId = fundId,
                     amount = amount,
@@ -134,14 +132,12 @@ class TransactionSdkTest {
                                     put("dateTime", JsonPrimitive(dateTime))
                                     put("externalId", JsonPrimitive(transactionExternalId))
                                     put("record", buildJsonObject {
+                                        put("recordType", JsonPrimitive("CURRENCY"))
                                         put("id", JsonPrimitive(recordId.toString()))
                                         put("accountId", JsonPrimitive(accountId.toString()))
                                         put("fundId", JsonPrimitive(fundId.toString()))
                                         put("amount", JsonPrimitive(42.0))
-                                        put("unit", buildJsonObject {
-                                            put("type", JsonPrimitive("currency"))
-                                            put("value", JsonPrimitive("RON"))
-                                        })
+                                        put("unit", JsonPrimitive("RON"))
                                         put("labels", buildJsonArray {})
                                     })
                                 })

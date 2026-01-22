@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.fund.api.model.*
@@ -49,26 +50,26 @@ class TransactionServiceTest {
     @Test
     fun `given create valid transaction`(): Unit = runBlocking {
         whenever(accountRepository.findById(userId, companyAccountId)).thenReturn(
-            Account(companyAccountId, userId, AccountName("Company"), FinancialUnit.of("currency", "RON"))
+            Account(companyAccountId, userId, AccountName("Company"), Currency("RON"))
         )
         whenever(accountRepository.findById(userId, personalAccountId)).thenReturn(
-            Account(personalAccountId, userId, AccountName("Personal"), FinancialUnit.of("currency", "RON"))
+            Account(personalAccountId, userId, AccountName("Personal"), Currency("RON"))
         )
         val request = CreateTransactionTO.Transfer(
             dateTime = transactionTime,
             externalId = transactionExternalId,
-            sourceRecord = CreateTransactionRecordTO(
+            sourceRecord = CreateTransactionRecordTO.CurrencyRecord(
                 accountId = companyAccountId,
                 fundId = workFundId,
                 amount = BigDecimal.parseString("-100.25"),
-                unit = FinancialUnit.of("currency", "RON"),
+                unit = Currency("RON"),
                 labels = listOf(Label("one"), Label("two"))
             ),
-            destinationRecord = CreateTransactionRecordTO(
+            destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                 accountId = personalAccountId,
                 fundId = expensesFundId,
                 amount = BigDecimal.parseString("100.25"),
-                unit = FinancialUnit.of("currency", "RON")
+                unit = Currency("RON")
             )
         )
         whenever(fundRepository.findById(userId, workFundId)).thenReturn(
@@ -91,20 +92,20 @@ class TransactionServiceTest {
                 userId = userId,
                 externalId = transactionExternalId,
                 dateTime = transactionTime,
-                sourceRecord = TransactionRecord(
+                sourceRecord = TransactionRecord.CurrencyRecord(
                     id = record1Id,
                     accountId = companyAccountId,
                     fundId = workFundId,
                     amount = BigDecimal.parseString("-100.25"),
-                    unit = FinancialUnit.of("currency", "RON"),
+                    unit = Currency("RON"),
                     labels = listOf(Label("one"), Label("two"))
                 ),
-                destinationRecord = TransactionRecord(
+                destinationRecord = TransactionRecord.CurrencyRecord(
                     id = record2Id,
                     accountId = personalAccountId,
                     fundId = expensesFundId,
                     amount = BigDecimal.parseString("100.25"),
-                    unit = FinancialUnit.of("currency", "RON"),
+                    unit = Currency("RON"),
                     labels = emptyList()
                 )
             )
@@ -137,20 +138,20 @@ class TransactionServiceTest {
                     userId = userId,
                     dateTime = transactionTime,
                     externalId = transactionExternalId,
-                    sourceRecord = TransactionRecord(
+                    sourceRecord = TransactionRecord.CurrencyRecord(
                         id = record1Id,
                         accountId = companyAccountId,
                         fundId = workFundId,
                         amount = BigDecimal.parseString("100.25"),
-                        unit = FinancialUnit.of("currency", "RON"),
+                        unit = Currency("RON"),
                         labels = listOf(Label("one"), Label("two"))
                     ),
-                    destinationRecord = TransactionRecord(
+                    destinationRecord = TransactionRecord.CurrencyRecord(
                         id = record2Id,
                         accountId = personalAccountId,
                         fundId = expensesFundId,
                         amount = BigDecimal.parseString("50.75"),
-                        unit = FinancialUnit.of("currency", "RON"),
+                        unit = Currency("RON"),
                         labels = emptyList()
                     )
                 )
@@ -186,20 +187,20 @@ class TransactionServiceTest {
                     userId = userId,
                     dateTime = transactionTime,
                     externalId = transactionExternalId,
-                    sourceRecord = TransactionRecord(
+                    sourceRecord = TransactionRecord.CurrencyRecord(
                         id = record1Id,
                         accountId = companyAccountId,
                         fundId = workFundId,
                         amount = BigDecimal.parseString("100.25"),
-                        unit = FinancialUnit.of("currency", "RON"),
+                        unit = Currency("RON"),
                         labels = listOf(Label("one"), Label("two"))
                     ),
-                    destinationRecord = TransactionRecord(
+                    destinationRecord = TransactionRecord.CurrencyRecord(
                         id = record2Id,
                         accountId = personalAccountId,
                         fundId = expensesFundId,
                         amount = BigDecimal.parseString("50.75"),
-                        unit = FinancialUnit.of("currency", "RON"),
+                        unit = Currency("RON"),
                         labels = emptyList()
                     )
                 )

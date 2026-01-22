@@ -81,7 +81,7 @@ class ImportFundConversionServiceTest {
             CreateTransactionTO.SingleRecord(
                 dateTime = transactionDateTime,
                 externalId = transactionExternalId,
-                record = CreateTransactionRecordTO(
+                record = CreateTransactionRecordTO.CurrencyRecord(
                     fundId = expensedFund.id,
                     accountId = bankAccount.id,
                     amount = BigDecimal.parseString("-100.00"),
@@ -174,14 +174,14 @@ class ImportFundConversionServiceTest {
             CreateTransactionTO.Transfer(
                 dateTime = transactionDateTime,
                 externalId = transactionExternalId,
-                sourceRecord = CreateTransactionRecordTO(
+                sourceRecord = CreateTransactionRecordTO.CurrencyRecord(
                     fundId = incomeFund.id,
                     accountId = companyAccount.id,
                     amount = BigDecimal.parseString("-50.00"),
                     unit = Currency.RON,
                     labels = listOf(Label("Basic"))
                 ),
-                destinationRecord = CreateTransactionRecordTO(
+                destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                     fundId = expensedFund.id,
                     accountId = cashAccount.id,
                     amount = BigDecimal.parseString("50.00"),
