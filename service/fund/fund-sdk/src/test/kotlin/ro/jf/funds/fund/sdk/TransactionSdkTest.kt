@@ -73,7 +73,7 @@ class TransactionSdkTest {
                             put("externalId", JsonPrimitive(transactionExternalId))
                             put("dateTime", JsonPrimitive(dateTime))
                             put("record", buildJsonObject {
-                                put("recordType", JsonPrimitive("CURRENCY"))
+                                put("type", JsonPrimitive("CURRENCY"))
                                 put("id", JsonPrimitive(recordId.toString()))
                                 put("accountId", JsonPrimitive(accountId.toString()))
                                 put("fundId", JsonPrimitive(fundId.toString()))
@@ -132,7 +132,7 @@ class TransactionSdkTest {
                                     put("dateTime", JsonPrimitive(dateTime))
                                     put("externalId", JsonPrimitive(transactionExternalId))
                                     put("record", buildJsonObject {
-                                        put("recordType", JsonPrimitive("CURRENCY"))
+                                        put("type", JsonPrimitive("CURRENCY"))
                                         put("id", JsonPrimitive(recordId.toString()))
                                         put("accountId", JsonPrimitive(accountId.toString()))
                                         put("fundId", JsonPrimitive(fundId.toString()))

@@ -3,11 +3,9 @@ package ro.jf.funds.fund.api.model
 import com.benasher44.uuid.Uuid
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDateTime
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.json.JsonClassDiscriminator
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.api.model.Instrument
@@ -20,8 +18,6 @@ data class CreateTransactionsTO(
     val transactions: List<CreateTransactionTO>,
 )
 
-@OptIn(ExperimentalSerializationApi::class)
-@JsonClassDiscriminator("type")
 @Serializable
 sealed class CreateTransactionTO {
     abstract val dateTime: LocalDateTime
@@ -105,8 +101,6 @@ sealed class CreateTransactionTO {
     }
 }
 
-@OptIn(ExperimentalSerializationApi::class)
-@JsonClassDiscriminator("recordType")
 @Serializable
 sealed class CreateTransactionRecordTO {
     abstract val accountId: Uuid

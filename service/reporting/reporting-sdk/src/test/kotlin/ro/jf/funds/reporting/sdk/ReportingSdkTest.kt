@@ -650,7 +650,7 @@ class ReportingSdkTest {
     private fun buildDataIntervalJson(
         interval: ReportDataIntervalTO,
     ): JsonObject = buildJsonObject {
-        put("granularity", JsonPrimitive(interval.granularity.name))
+        put("type", JsonPrimitive(interval.granularity.name))
         when (interval) {
             is ReportDataIntervalTO.Yearly -> {
                 put("fromYear", JsonPrimitive(interval.fromYear.toString()))

@@ -1,7 +1,5 @@
 package ro.jf.funds.reporting.service.domain
 
-import ro.jf.funds.reporting.service.domain.ReportDataResolverInput
-
 data class ReportDataForecastInput<T>(
     val interval: ReportDataInterval,
     val realData: ByBucket<T>,

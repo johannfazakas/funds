@@ -26,7 +26,7 @@ class ReportDataIntervalSerializerTest {
 
         assertThat(intervalJson)
             .isEqualTo(buildJsonObject {
-                put("granularity", JsonPrimitive(TimeGranularityTO.MONTHLY.name))
+                put("type", JsonPrimitive(TimeGranularityTO.MONTHLY.name))
                 put("fromYearMonth", JsonPrimitive("2021-01"))
                 put("toYearMonth", JsonPrimitive("2022-12"))
                 put("forecastUntilYearMonth", JsonPrimitive("2023-12"))
@@ -36,7 +36,7 @@ class ReportDataIntervalSerializerTest {
     @Test
     fun `should deserialize monthly interval`() {
         val intervalJson = buildJsonObject {
-            put("granularity", JsonPrimitive(TimeGranularityTO.MONTHLY.name))
+            put("type", JsonPrimitive(TimeGranularityTO.MONTHLY.name))
             put("fromYearMonth", JsonPrimitive("2021-01"))
             put("toYearMonth", JsonPrimitive("2022-12"))
             put("forecastUntilYearMonth", JsonPrimitive("2023-12"))
@@ -60,7 +60,7 @@ class ReportDataIntervalSerializerTest {
         val intervalJson = Json.encodeToJsonElement(interval)
 
         assertThat(intervalJson).isEqualTo(buildJsonObject {
-            put("granularity", JsonPrimitive(TimeGranularityTO.DAILY.name))
+            put("type", JsonPrimitive(TimeGranularityTO.DAILY.name))
             put("fromDate", JsonPrimitive("2021-01-15"))
             put("toDate", JsonPrimitive("2021-02-14"))
         })
@@ -69,7 +69,7 @@ class ReportDataIntervalSerializerTest {
     @Test
     fun `should deserialize daily interval`() {
         val intervalJson = buildJsonObject {
-            put("granularity", JsonPrimitive(TimeGranularityTO.DAILY.name))
+            put("type", JsonPrimitive(TimeGranularityTO.DAILY.name))
             put("fromDate", JsonPrimitive("2021-01-15"))
             put("toDate", JsonPrimitive("2021-02-14"))
         }
@@ -93,7 +93,7 @@ class ReportDataIntervalSerializerTest {
         val intervalJson = Json.encodeToJsonElement(interval)
 
         assertThat(intervalJson).isEqualTo(buildJsonObject {
-            put("granularity", JsonPrimitive(TimeGranularityTO.YEARLY.name))
+            put("type", JsonPrimitive(TimeGranularityTO.YEARLY.name))
             put("fromYear", JsonPrimitive(2021))
             put("toYear", JsonPrimitive(2023))
             put("forecastUntilYear", JsonPrimitive(2025))
@@ -103,7 +103,7 @@ class ReportDataIntervalSerializerTest {
     @Test
     fun `should deserialize yearly interval`() {
         val intervalJson = buildJsonObject {
-            put("granularity", JsonPrimitive(TimeGranularityTO.YEARLY.name))
+            put("type", JsonPrimitive(TimeGranularityTO.YEARLY.name))
             put("fromYear", JsonPrimitive(2021))
             put("toYear", JsonPrimitive(2023))
             put("forecastUntilYear", JsonPrimitive(2025))

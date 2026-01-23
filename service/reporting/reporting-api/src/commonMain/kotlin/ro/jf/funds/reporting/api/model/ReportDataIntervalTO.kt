@@ -4,16 +4,12 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.json.JsonClassDiscriminator
 import ro.jf.funds.reporting.api.serializer.YearMonthSerializer
 
 @Serializable
-@OptIn(ExperimentalSerializationApi::class)
-@JsonClassDiscriminator("granularity")
 sealed class ReportDataIntervalTO(
 ) {
     abstract val granularity: TimeGranularityTO
