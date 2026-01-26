@@ -15,11 +15,6 @@ But report data generation shouldn't depend on the report view.
 
 ## Infrastructure
 
-### Improve Docker usage
-
-- [ ] Have a bridge network
-- [ ] Separate non-functional services from normal deployment
-
 ### Deployment option in kubernetes
 
 Have it deployed with Helm Charts in kubernetes. At least locally in a minikube.
@@ -27,10 +22,6 @@ Have it deployed with Helm Charts in kubernetes. At least locally in a minikube.
 ### Store CSV files in S3
 
 ## Non-Functional Tasks
-
-### Use sealed class on Records so Currency and Instrument record can be separated.
-
-look for situations where a cast is used "as Instrument" or "as Currency". those could be replaced
 
 ### Integrate automatic linting
 
@@ -44,12 +35,6 @@ GIN index could be used to filter by fundId.
 ### Investigate and understand the Exposed potential bug
 
 Check AccountTransactionRepositoryTest
-
-### Investigate & improve sealed classes' serialization
-
-There seem to be another option to handle it with
-SerializersModule: https://www.baeldung.com/kotlin/sealed-class-serialization
-This would eliminate the need to use @OptIn(ExperimentalSerializationApi::class)
 
 ### Improve Reporting Service code
 

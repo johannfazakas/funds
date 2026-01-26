@@ -50,7 +50,6 @@ services:
       - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres
-      - otel-collector
 
   conversion-service:
     image: funds/conversion-service:latest
@@ -62,7 +61,6 @@ services:
       - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres
-      - otel-collector
 
   fund-service:
     image: funds/fund-service:latest
@@ -76,7 +74,6 @@ services:
     depends_on:
       - postgres
       - kafka
-      - otel-collector
 
   import-service:
     image: funds/import-service:latest
@@ -92,7 +89,6 @@ services:
     depends_on:
       - postgres
       - kafka
-      - otel-collector
 
   reporting-service:
     image: funds/reporting-service:latest
@@ -108,7 +104,6 @@ services:
     depends_on:
       - postgres
       - kafka
-      - otel-collector
 
   client-web:
     image: funds/client-web:latest
@@ -123,6 +118,7 @@ services:
       - fund-service
 
   otel-collector:
+    profiles: [observability]
     image: otel/opentelemetry-collector-contrib:0.128.0
     container_name: ff_otel_collector
     command: [ "--config", "/etc/otel-collector-config.yaml" ]
@@ -136,6 +132,7 @@ services:
       - tempo
 
   tempo:
+    profiles: [observability]
     image: grafana/tempo:2.8.0
     container_name: ff_tempo
     command: [ "-config.file=/etc/tempo.yaml" ]
@@ -149,6 +146,7 @@ services:
       - ./volumes/tempo/data:/tmp/tempo
 
   grafana:
+    profiles: [observability]
     image: grafana/grafana:12.0.1
     container_name: ff_grafana
     ports:
@@ -160,3 +158,8 @@ services:
       - tempo
     volumes:
       - ./volumes/grafana/data:/var/lib/grafana
+
+networks:
+  default:
+    name: funds
+    driver: bridge
