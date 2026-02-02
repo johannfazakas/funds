@@ -4,6 +4,7 @@ import io.ktor.server.application.*
 import io.ktor.server.netty.*
 import org.koin.ktor.ext.get
 import ro.jf.funds.platform.jvm.config.configureContentNegotiation
+import ro.jf.funds.platform.jvm.config.configureCors
 import ro.jf.funds.platform.jvm.config.configureDatabaseMigration
 import ro.jf.funds.platform.jvm.config.configureDependencies
 import ro.jf.funds.platform.jvm.config.configureTracing
@@ -21,6 +22,7 @@ fun Application.module() {
     configureDependencies(reportingDependencies)
     configureReportingErrorHandling()
     configureContentNegotiation()
+    configureCors()
     configureDatabaseMigration(get<DataSource>())
     configureReportingRouting()
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import '../styles/FundListPage.css';
 
 declare const ro: {
@@ -52,9 +53,12 @@ function FundListPage({ userId, onLogout }: FundListPageProps) {
         <div className="fund-list-container">
             <header className="header">
                 <h1>My Funds</h1>
-                <button onClick={onLogout} className="logout-button">
-                    Logout
-                </button>
+                <nav className="nav-links">
+                    <Link to="/expenses" className="nav-link">Expenses</Link>
+                    <button onClick={onLogout} className="logout-button">
+                        Logout
+                    </button>
+                </nav>
             </header>
 
             <main className="main-content">

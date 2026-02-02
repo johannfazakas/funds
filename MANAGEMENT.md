@@ -23,6 +23,21 @@ Have it deployed with Helm Charts in kubernetes. At least locally in a minikube.
 
 ## Non-Functional Tasks
 
+### Improve report load time
+
+- [ ] load data incrementally. how can I retrieve segments one by one?
+- [ ] cache reporting data. how would I invalidate the cache?
+
+#### Reports calculated ahead of time based on kafka events
+
+Cons:
+- would have to calculate data per Year, Month, Day, maybe also later Week? 
+  - But this could be a dashboard feature to select the granularity.
+
+#### Incremental data load, retrieve segments one by one
+
+#### Cache reporting data
+
 ### Integrate automatic linting
 
 Integrate ktlint maybe. It could be applied automatically using Claude Code hooks.

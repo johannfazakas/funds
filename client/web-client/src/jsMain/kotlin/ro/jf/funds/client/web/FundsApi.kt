@@ -1,5 +1,3 @@
-@file:JsExport
-
 package ro.jf.funds.client.web
 
 import com.benasher44.uuid.uuidFrom
@@ -8,6 +6,11 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.promise
 import ro.jf.funds.client.sdk.AuthenticationClient
 import ro.jf.funds.client.sdk.FundClient
+import ro.jf.funds.client.sdk.ReportingClient
+import ro.jf.funds.reporting.api.model.ByGroupTO
+import ro.jf.funds.reporting.api.model.GroupedBudgetReportTO
+import ro.jf.funds.reporting.api.model.ReportDataTO
+import kotlin.js.JsExport
 import kotlin.js.Promise
 
 @JsExport
@@ -15,9 +18,11 @@ object FundsApi {
     private val config = js("window.FUNDS_CONFIG")
     private val userServiceUrl: String = config?.userServiceUrl as? String ?: "http://localhost:5247"
     private val fundServiceUrl: String = config?.fundServiceUrl as? String ?: "http://localhost:5253"
+    private val reportingServiceUrl: String = config?.reportingServiceUrl as? String ?: "http://localhost:5212"
 
     private val authenticationClient = AuthenticationClient(baseUrl = userServiceUrl)
     private val fundClient = FundClient(baseUrl = fundServiceUrl)
+    private val reportingClient = ReportingClient(baseUrl = reportingServiceUrl)
 
     fun loginWithUsername(username: String): Promise<JsUser?> = GlobalScope.promise {
         val user = authenticationClient.loginWithUsername(username)
@@ -39,19 +44,57 @@ object FundsApi {
             )
         }.toTypedArray()
     }
+
+    fun listReportViews(userId: String): Promise<Array<JsReportView>> = GlobalScope.promise {
+        val uuid = uuidFrom(userId)
+        val views = reportingClient.listReportViews(uuid)
+        views.map {
+            JsReportView(
+                id = it.id.toString(),
+                name = it.name,
+            )
+        }.toTypedArray()
+    }
+
+    fun monthlyInterval(from: String, to: String, forecastUntil: String? = null): JsReportInterval =
+        JsReportInterval.Monthly(from, to, forecastUntil)
+
+    fun yearlyInterval(from: Int, to: Int, forecastUntil: Int? = null): JsReportInterval =
+        JsReportInterval.Yearly(from, to, forecastUntil)
+
+    fun getGroupedBudgetData(
+        userId: String,
+        reportViewId: String,
+        interval: JsReportInterval,
+    ): Promise<JsGroupedBudgetReport> = GlobalScope.promise {
+        val data = reportingClient.getGroupedBudgetData(
+            userId = uuidFrom(userId),
+            reportViewId = uuidFrom(reportViewId),
+            interval = interval.toReportDataIntervalTO(),
+        )
+        toJsGroupedBudgetReport(data)
+    }
+
+    private fun toJsGroupedBudgetReport(
+        data: ReportDataTO<ByGroupTO<GroupedBudgetReportTO>>
+    ): JsGroupedBudgetReport = JsGroupedBudgetReport(
+        viewId = data.viewId.toString(),
+        timeBuckets = data.timeBuckets.map { bucket ->
+            JsBucketData(
+                label = bucket.timeBucket.from.toString(),
+                bucketType = bucket.bucketType.name,
+                groups = bucket.report.groups.map { group ->
+                    JsGroupBudget(
+                        group = group.group,
+                        allocated = group.allocated.doubleValue(false),
+                        spent = group.spent.doubleValue(false),
+                        left = group.left.doubleValue(false),
+                    )
+                }.toTypedArray()
+            )
+        }.toTypedArray()
+    )
 }
-
-@JsExport
-data class JsUser(
-    val id: String,
-    val username: String
-)
-
-@JsExport
-data class JsFund(
-    val id: String,
-    val name: String
-)
 
 fun main() {
     val ro = js("{}")

@@ -50,6 +50,8 @@ kotlin {
                 implementation(npm("react", "18.3.1"))
                 implementation(npm("react-dom", "18.3.1"))
                 implementation(npm("react-router-dom", "6.28.0"))
+                implementation(npm("chart.js", "4.4.1"))
+                implementation(npm("react-chartjs-2", "5.2.0"))
 
                 implementation(devNpm("ts-loader", "9.5.1"))
                 implementation(devNpm("@types/react", "18.3.12"))

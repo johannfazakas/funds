@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import LoginPage from './pages/LoginPage';
 import FundListPage from './pages/FundListPage';
+import ExpensesPage from './pages/ExpensesPage';
 
 function App() {
     const [userId, setUserId] = useState<string | null>(
@@ -32,6 +33,16 @@ function App() {
                     element={
                         userId ? (
                             <FundListPage userId={userId} onLogout={handleLogout} />
+                        ) : (
+                            <Navigate to="/login" />
+                        )
+                    }
+                />
+                <Route
+                    path="/expenses"
+                    element={
+                        userId ? (
+                            <ExpensesPage userId={userId} onLogout={handleLogout} />
                         ) : (
                             <Navigate to="/login" />
                         )
