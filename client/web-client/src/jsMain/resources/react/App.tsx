@@ -1,8 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useState } from 'react';
 import LoginPage from './pages/LoginPage';
 import FundListPage from './pages/FundListPage';
+import AccountsPage from './pages/AccountsPage';
+import TransactionsPage from './pages/TransactionsPage';
 import ExpensesPage from './pages/ExpensesPage';
+import Sidebar from './components/Sidebar';
 
 function App() {
     const [userId, setUserId] = useState<string | null>(
@@ -29,25 +32,24 @@ function App() {
                     }
                 />
                 <Route
-                    path="/funds"
                     element={
                         userId ? (
-                            <FundListPage userId={userId} onLogout={handleLogout} />
+                            <div className="app-layout">
+                                <Sidebar onLogout={handleLogout} />
+                                <main className="app-main">
+                                    <Outlet />
+                                </main>
+                            </div>
                         ) : (
                             <Navigate to="/login" />
                         )
                     }
-                />
-                <Route
-                    path="/expenses"
-                    element={
-                        userId ? (
-                            <ExpensesPage userId={userId} onLogout={handleLogout} />
-                        ) : (
-                            <Navigate to="/login" />
-                        )
-                    }
-                />
+                >
+                    <Route path="/funds" element={<FundListPage userId={userId!} />} />
+                    <Route path="/accounts" element={<AccountsPage userId={userId!} />} />
+                    <Route path="/transactions" element={<TransactionsPage userId={userId!} />} />
+                    <Route path="/expenses" element={<ExpensesPage userId={userId!} />} />
+                </Route>
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
         </BrowserRouter>

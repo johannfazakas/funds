@@ -1,0 +1,4 @@
+;(function(config) {
+    config.devServer = config.devServer || {};
+    config.devServer.historyApiFallback = true;
+})(config);

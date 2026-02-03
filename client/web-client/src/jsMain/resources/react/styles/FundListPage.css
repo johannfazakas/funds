@@ -1,55 +1,35 @@
 .fund-list-container {
-    min-height: 100vh;
+    padding: 32px;
+    max-width: 1200px;
 }
 
-.header {
-    background: #1976d2;
-    color: white;
-    padding: 16px 24px;
+.page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 24px;
 }
 
-.header h1 {
+.page-header h1 {
     font-size: 24px;
+    color: #333;
 }
 
-.nav-links {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.nav-link {
+.create-button {
+    padding: 8px 20px;
+    background: #1976d2;
     color: white;
-    text-decoration: none;
-    padding: 8px 16px;
-    border: 1px solid white;
-    border-radius: 4px;
-}
-
-.nav-link:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.logout-button {
-    background: transparent;
-    color: white;
-    border: 1px solid white;
-    padding: 8px 16px;
+    border: none;
     border-radius: 4px;
     font-size: 14px;
 }
 
-.logout-button:hover {
-    background: rgba(255, 255, 255, 0.1);
+.create-button:hover {
+    background: #1565c0;
 }
 
 .main-content {
-    padding: 24px;
-    max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
 }
 
 .loading {
@@ -86,26 +66,179 @@
     color: #666;
 }
 
-.fund-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-}
-
-.fund-card {
+.fund-table {
+    width: 100%;
+    border-collapse: collapse;
     background: white;
-    padding: 20px;
     border-radius: 8px;
+    overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.fund-card h3 {
-    margin-bottom: 8px;
+.fund-table th {
+    text-align: left;
+    padding: 12px 16px;
+    background: #fafafa;
+    border-bottom: 2px solid #e0e0e0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fund-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+}
+
+.fund-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.fund-table tbody tr:hover {
+    background: #f5f9ff;
+}
+
+.actions-column {
+    width: 80px;
+    text-align: right;
+}
+
+.delete-button {
+    padding: 4px 12px;
+    background: transparent;
+    color: #d32f2f;
+    border: 1px solid #d32f2f;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.delete-button:hover {
+    background: #ffebee;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal {
+    background: white;
+    padding: 32px;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 420px;
+}
+
+.modal h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
     color: #333;
 }
 
-.fund-card .fund-id {
-    font-size: 12px;
-    color: #999;
-    word-break: break-all;
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #1976d2;
+}
+
+.form-group input:disabled {
+    background: #f5f5f5;
+}
+
+.modal .error {
+    color: #f44336;
+    margin-bottom: 16px;
+    padding: 10px;
+    background-color: #ffebee;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.cancel-button {
+    padding: 8px 20px;
+    background: white;
+    color: #666;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.cancel-button:hover {
+    background: #f5f5f5;
+}
+
+.submit-button {
+    padding: 8px 20px;
+    background: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.submit-button:hover:not(:disabled) {
+    background: #1565c0;
+}
+
+.submit-button:disabled {
+    background: #90caf9;
+    cursor: not-allowed;
+}
+
+.delete-message {
+    color: #555;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.danger-button {
+    padding: 8px 20px;
+    background: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.danger-button:hover:not(:disabled) {
+    background: #b71c1c;
+}
+
+.danger-button:disabled {
+    background: #ef9a9a;
+    cursor: not-allowed;
 }

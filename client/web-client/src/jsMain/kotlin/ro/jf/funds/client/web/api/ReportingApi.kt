@@ -1,12 +1,10 @@
-package ro.jf.funds.client.web
+package ro.jf.funds.client.web.api
 
 import com.benasher44.uuid.uuidFrom
-import kotlinx.browser.window
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.promise
-import ro.jf.funds.client.sdk.AuthenticationClient
-import ro.jf.funds.client.sdk.FundClient
 import ro.jf.funds.client.sdk.ReportingClient
+import ro.jf.funds.client.web.model.*
 import ro.jf.funds.reporting.api.model.ByGroupTO
 import ro.jf.funds.reporting.api.model.GroupedBudgetReportTO
 import ro.jf.funds.reporting.api.model.ReportDataTO
@@ -14,36 +12,10 @@ import kotlin.js.JsExport
 import kotlin.js.Promise
 
 @JsExport
-object FundsApi {
+object ReportingApi {
     private val config = js("window.FUNDS_CONFIG")
-    private val userServiceUrl: String = config?.userServiceUrl as? String ?: "http://localhost:5247"
-    private val fundServiceUrl: String = config?.fundServiceUrl as? String ?: "http://localhost:5253"
     private val reportingServiceUrl: String = config?.reportingServiceUrl as? String ?: "http://localhost:5212"
-
-    private val authenticationClient = AuthenticationClient(baseUrl = userServiceUrl)
-    private val fundClient = FundClient(baseUrl = fundServiceUrl)
     private val reportingClient = ReportingClient(baseUrl = reportingServiceUrl)
-
-    fun loginWithUsername(username: String): Promise<JsUser?> = GlobalScope.promise {
-        val user = authenticationClient.loginWithUsername(username)
-        user?.let {
-            JsUser(
-                id = it.id.toString(),
-                username = it.username
-            )
-        }
-    }
-
-    fun listFunds(userId: String): Promise<Array<JsFund>> = GlobalScope.promise {
-        val uuid = uuidFrom(userId)
-        val funds = fundClient.listFunds(uuid)
-        funds.map {
-            JsFund(
-                id = it.id.toString(),
-                name = it.name.toString()
-            )
-        }.toTypedArray()
-    }
 
     fun listReportViews(userId: String): Promise<Array<JsReportView>> = GlobalScope.promise {
         val uuid = uuidFrom(userId)
@@ -94,14 +66,4 @@ object FundsApi {
             )
         }.toTypedArray()
     )
-}
-
-fun main() {
-    val ro = js("{}")
-    ro.jf = js("{}")
-    ro.jf.funds = js("{}")
-    ro.jf.funds.client = js("{}")
-    ro.jf.funds.client.web = js("{}")
-    ro.jf.funds.client.web.FundsApi = FundsApi
-    window.asDynamic().ro = ro
 }

@@ -1,0 +1,85 @@
+.sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: #1976d2;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+}
+
+.sidebar-top {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-title {
+    font-size: 22px;
+    font-weight: 600;
+    padding: 24px 20px 20px;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 12px 20px 4px;
+    opacity: 0.6;
+}
+
+.sidebar-link {
+    display: block;
+    padding: 8px 20px 8px 28px;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.sidebar-link.active {
+    background: rgba(255, 255, 255, 0.18);
+    color: white;
+    font-weight: 500;
+}
+
+.sidebar-bottom {
+    padding: 16px 20px;
+}
+
+.sidebar-logout {
+    width: 100%;
+    padding: 8px 16px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-logout:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.7);
+}

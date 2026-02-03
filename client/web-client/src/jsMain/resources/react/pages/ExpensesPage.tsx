@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import BudgetChart from '../components/BudgetChart';
 import { JsReportView, JsGroupedBudgetReport, ChartDataPoint } from '../types/reporting';
 import { transformToTotalChartData, transformToGroupChartData, getAvailableGroups } from '../utils/chartUtils';
@@ -10,7 +9,7 @@ declare const ro: {
         funds: {
             client: {
                 web: {
-                    FundsApi: {
+                    ReportingApi: {
                         listReportViews(userId: string): Promise<JsReportView[]>;
                         yearlyInterval(from: number, to: number, forecastUntil: number | null): any;
                         getGroupedBudgetData(
@@ -29,10 +28,9 @@ const EXPENSE_REPORT_VIEW_NAME = 'Expenses report';
 
 interface ExpensesPageProps {
     userId: string;
-    onLogout: () => void;
 }
 
-function ExpensesPage({ userId, onLogout }: ExpensesPageProps) {
+function ExpensesPage({ userId }: ExpensesPageProps) {
     const [report, setReport] = useState<JsGroupedBudgetReport | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -56,7 +54,7 @@ function ExpensesPage({ userId, onLogout }: ExpensesPageProps) {
 
     const loadReportView = async () => {
         try {
-            const views = await ro.jf.funds.client.web.FundsApi.listReportViews(userId);
+            const views = await ro.jf.funds.client.web.ReportingApi.listReportViews(userId);
             const expenseView = views.find(v => v.name === EXPENSE_REPORT_VIEW_NAME);
             if (expenseView) {
                 setReportViewId(expenseView.id);
@@ -77,8 +75,8 @@ function ExpensesPage({ userId, onLogout }: ExpensesPageProps) {
         setError(null);
 
         try {
-            const interval = ro.jf.funds.client.web.FundsApi.yearlyInterval(fromYear, toYear, forecastUntilYear);
-            const data = await ro.jf.funds.client.web.FundsApi.getGroupedBudgetData(
+            const interval = ro.jf.funds.client.web.ReportingApi.yearlyInterval(fromYear, toYear, forecastUntilYear);
+            const data = await ro.jf.funds.client.web.ReportingApi.getGroupedBudgetData(
                 userId,
                 reportViewId,
                 interval
@@ -103,17 +101,9 @@ function ExpensesPage({ userId, onLogout }: ExpensesPageProps) {
 
     return (
         <div className="expenses-container">
-            <header className="header">
-                <h1>Expenses</h1>
-                <nav className="nav-links">
-                    <Link to="/funds" className="nav-link">Funds</Link>
-                    <button onClick={onLogout} className="logout-button">
-                        Logout
-                    </button>
-                </nav>
-            </header>
+            <h1>Expenses</h1>
 
-            <main className="main-content">
+            <div className="main-content">
                 {loading && <div className="loading">Loading expense data...</div>}
 
                 {error && (
@@ -151,7 +141,7 @@ function ExpensesPage({ userId, onLogout }: ExpensesPageProps) {
                         )}
                     </>
                 )}
-            </main>
+            </div>
         </div>
     );
 }

@@ -7,6 +7,8 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import ro.jf.funds.platform.api.model.ListTO
+import ro.jf.funds.fund.api.model.CreateFundTO
+import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5253"
@@ -31,5 +33,32 @@ class FundClient(
         val funds = response.body<ListTO<FundTO>>()
         log.d { "Retrieved funds: $funds" }
         return funds.items
+    }
+
+    suspend fun createFund(userId: Uuid, name: String): FundTO {
+        val response = httpClient.post("$baseUrl$BASE_PATH/funds") {
+            headers {
+                append(USER_ID_HEADER, userId.toString())
+            }
+            contentType(ContentType.Application.Json)
+            setBody(CreateFundTO(FundName(name)))
+        }
+        if (response.status != HttpStatusCode.Created) {
+            log.w { "Unexpected response on create fund: $response" }
+            throw Exception("Failed to create fund: ${response.status}")
+        }
+        return response.body()
+    }
+
+    suspend fun deleteFund(userId: Uuid, fundId: Uuid) {
+        val response = httpClient.delete("$baseUrl$BASE_PATH/funds/$fundId") {
+            headers {
+                append(USER_ID_HEADER, userId.toString())
+            }
+        }
+        if (response.status != HttpStatusCode.NoContent) {
+            log.w { "Unexpected response on delete fund: $response" }
+            throw Exception("Failed to delete fund: ${response.status}")
+        }
     }
 }

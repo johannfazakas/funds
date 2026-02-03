@@ -1,0 +1,14 @@
+.content-page {
+    padding: 32px;
+    max-width: 1400px;
+}
+
+.content-page h1 {
+    font-size: 24px;
+    margin-bottom: 16px;
+    color: #333;
+}
+
+.placeholder-text {
+    color: #666;
+}

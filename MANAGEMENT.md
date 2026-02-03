@@ -13,6 +13,8 @@ But report data generation shouldn't depend on the report view.
 
 ### Find a way to pinpoint unclassified records
 
+### UI Management of accounts, funds, and transactions
+
 ## Infrastructure
 
 ### Deployment option in kubernetes

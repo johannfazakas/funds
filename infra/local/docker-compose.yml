@@ -113,9 +113,11 @@ services:
     environment:
       - USER_SERVICE_URL=http://localhost:5247
       - FUND_SERVICE_URL=http://localhost:5253
+      - REPORTING_SERVICE_URL=http://localhost:5212
     depends_on:
       - user-service
       - fund-service
+      - reporting-service
 
   otel-collector:
     profiles: [observability]

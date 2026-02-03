@@ -1,20 +1,8 @@
-package ro.jf.funds.client.web
+package ro.jf.funds.client.web.model
 
 import ro.jf.funds.reporting.api.model.ReportDataIntervalTO
 import ro.jf.funds.reporting.api.model.YearMonthTO
 import kotlin.js.JsExport
-
-@JsExport
-data class JsUser(
-    val id: String,
-    val username: String
-)
-
-@JsExport
-data class JsFund(
-    val id: String,
-    val name: String
-)
 
 @JsExport
 data class JsReportView(

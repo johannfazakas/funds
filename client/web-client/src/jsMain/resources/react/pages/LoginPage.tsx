@@ -6,7 +6,7 @@ declare const ro: {
         funds: {
             client: {
                 web: {
-                    FundsApi: {
+                    UserApi: {
                         loginWithUsername(username: string): Promise<{ id: string; username: string } | null>;
                     };
                 };
@@ -36,7 +36,7 @@ function LoginPage({ onLogin }: LoginPageProps) {
         setError(null);
 
         try {
-            const user = await ro.jf.funds.client.web.FundsApi.loginWithUsername(username);
+            const user = await ro.jf.funds.client.web.UserApi.loginWithUsername(username);
             if (user) {
                 onLogin(user.id);
             } else {
