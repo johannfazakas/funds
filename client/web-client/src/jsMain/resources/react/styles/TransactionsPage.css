@@ -1,0 +1,422 @@
+.transactions-container {
+    padding: 32px;
+    max-width: 1400px;
+}
+
+.transactions-container .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.transactions-container .page-header h1 {
+    font-size: 24px;
+    color: #333;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.filter-bar .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.filter-bar .filter-group label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.filter-bar .filter-group input,
+.filter-bar .filter-group select {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    min-width: 140px;
+}
+
+.filter-bar .filter-group input:focus,
+.filter-bar .filter-group select:focus {
+    outline: none;
+    border-color: #1976d2;
+}
+
+.filter-bar .apply-button {
+    padding: 8px 16px;
+    background: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.filter-bar .apply-button:hover {
+    background: #1565c0;
+}
+
+.filter-bar .clear-button {
+    padding: 8px 16px;
+    background: white;
+    color: #666;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.filter-bar .clear-button:hover {
+    background: #f5f5f5;
+}
+
+.transaction-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.transaction-table th {
+    text-align: left;
+    padding: 12px 16px;
+    background: #fafafa;
+    border-bottom: 2px solid #e0e0e0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.transaction-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+}
+
+.transaction-table tbody tr.transaction-row:hover {
+    background: #f5f9ff;
+}
+
+.transaction-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.transaction-table .actions-column {
+    width: 80px;
+    text-align: right;
+}
+
+.expand-toggle {
+    cursor: pointer;
+    user-select: none;
+    width: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+}
+
+.expand-toggle:hover {
+    color: #1976d2;
+}
+
+.record-details-row td {
+    padding: 0 16px 12px 40px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #eee;
+}
+
+.record-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.record-details-table th {
+    text-align: left;
+    padding: 6px 12px;
+    background: #f0f0f0;
+    font-weight: 600;
+    color: #666;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.record-details-table td {
+    padding: 6px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.type-badge.SINGLE_RECORD {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.type-badge.TRANSFER {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.type-badge.EXCHANGE {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.type-badge.OPEN_POSITION {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.type-badge.CLOSE_POSITION {
+    background: #fce4ec;
+    color: #c62828;
+}
+
+.transactions-container .create-button {
+    padding: 8px 20px;
+    background: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.transactions-container .create-button:hover {
+    background: #1565c0;
+}
+
+.transactions-container .delete-button {
+    padding: 4px 12px;
+    background: transparent;
+    color: #d32f2f;
+    border: 1px solid #d32f2f;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.transactions-container .delete-button:hover {
+    background: #ffebee;
+}
+
+.transactions-container .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.transactions-container .modal {
+    background: white;
+    padding: 32px;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.transactions-container .modal h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.transactions-container .form-group {
+    margin-bottom: 16px;
+}
+
+.transactions-container .form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+}
+
+.transactions-container .form-group input,
+.transactions-container .form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.transactions-container .form-group input:focus,
+.transactions-container .form-group select:focus {
+    outline: none;
+    border-color: #1976d2;
+}
+
+.transactions-container .form-group input:disabled,
+.transactions-container .form-group select:disabled {
+    background: #f5f5f5;
+}
+
+.record-section {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f9f9f9;
+    border-radius: 6px;
+    border: 1px solid #eee;
+}
+
+.record-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 12px;
+}
+
+.transactions-container .modal .error {
+    color: #f44336;
+    margin-bottom: 16px;
+    padding: 10px;
+    background-color: #ffebee;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.transactions-container .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.transactions-container .cancel-button {
+    padding: 8px 20px;
+    background: white;
+    color: #666;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.transactions-container .cancel-button:hover {
+    background: #f5f5f5;
+}
+
+.transactions-container .submit-button {
+    padding: 8px 20px;
+    background: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.transactions-container .submit-button:hover:not(:disabled) {
+    background: #1565c0;
+}
+
+.transactions-container .submit-button:disabled {
+    background: #90caf9;
+    cursor: not-allowed;
+}
+
+.transactions-container .delete-message {
+    color: #555;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.transactions-container .danger-button {
+    padding: 8px 20px;
+    background: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.transactions-container .danger-button:hover:not(:disabled) {
+    background: #b71c1c;
+}
+
+.transactions-container .danger-button:disabled {
+    background: #ef9a9a;
+    cursor: not-allowed;
+}
+
+.transactions-container .loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.transactions-container .error-container {
+    text-align: center;
+    padding: 40px;
+}
+
+.transactions-container .error-container .error {
+    color: #f44336;
+    margin-bottom: 16px;
+    padding: 10px;
+    background-color: #ffebee;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.transactions-container .error-container button {
+    padding: 8px 16px;
+    background: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.transactions-container .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.transaction-summary {
+    font-size: 13px;
+    color: #555;
+}
+
+.label-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    background: #e0e0e0;
+    color: #555;
+    margin-right: 4px;
+}

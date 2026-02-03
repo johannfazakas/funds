@@ -47,6 +47,8 @@ class TransactionSdk(
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
             filter.fromDate?.let { parameter("fromDate", it.toString()) }
             filter.toDate?.let { parameter("toDate", it.toString()) }
+            filter.fundId?.let { parameter("fundId", it.toString()) }
+            filter.accountId?.let { parameter("accountId", it.toString()) }
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }

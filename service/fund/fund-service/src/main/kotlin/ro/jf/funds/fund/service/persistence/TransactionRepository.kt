@@ -58,9 +58,9 @@ class TransactionRepository(
         userId: UUID,
         filter: TransactionFilterTO,
     ): List<Transaction> = blockingTransaction {
-        val query = TransactionTable
+        val matchingTransactionIds = TransactionTable
             .leftJoin(RecordTable)
-            .selectAll()
+            .select(TransactionTable.id)
             .where(toPredicate(userId, filter))
             .let { query ->
                 if (filter.fundId != null) {
@@ -69,7 +69,23 @@ class TransactionRepository(
                     query
                 }
             }
-        query.toTransactions()
+            .let { query ->
+                if (filter.accountId != null) {
+                    query.andWhere { RecordTable.accountId eq filter.accountId!! }
+                } else {
+                    query
+                }
+            }
+            .map { it[TransactionTable.id].value }
+            .distinct()
+
+        if (matchingTransactionIds.isEmpty()) return@blockingTransaction emptyList()
+
+        TransactionTable
+            .leftJoin(RecordTable)
+            .selectAll()
+            .where { TransactionTable.userId eq userId and (TransactionTable.id inList matchingTransactionIds) }
+            .toTransactions()
     }
 
     suspend fun save(userId: UUID, command: CreateTransactionTO): Transaction = blockingTransaction {

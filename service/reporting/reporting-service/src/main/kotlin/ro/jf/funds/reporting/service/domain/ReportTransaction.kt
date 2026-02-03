@@ -19,16 +19,16 @@ sealed class ReportTransaction {
 
     data class Transfer(
         override val date: LocalDate,
-        val sourceRecord: ReportRecord,
-        val destinationRecord: ReportRecord,
+        val sourceRecord: ReportRecord?,
+        val destinationRecord: ReportRecord?,
     ) : ReportTransaction() {
-        override val records: List<ReportRecord> = listOf(sourceRecord, destinationRecord)
+        override val records: List<ReportRecord> = listOfNotNull(sourceRecord, destinationRecord)
     }
 
     data class Exchange(
         override val date: LocalDate,
-        val sourceRecord: ReportRecord,
-        val destinationRecord: ReportRecord,
+        val sourceRecord: ReportRecord?,
+        val destinationRecord: ReportRecord?,
         val feeRecord: ReportRecord?,
     ) : ReportTransaction() {
         override val records: List<ReportRecord> = listOfNotNull(sourceRecord, destinationRecord, feeRecord)

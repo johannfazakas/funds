@@ -7,8 +7,9 @@ data class TransactionFilterTO(
     val fromDate: LocalDate? = null,
     val toDate: LocalDate? = null,
     val fundId: Uuid? = null,
+    val accountId: Uuid? = null,
 ) {
     companion object {
-        fun empty() = TransactionFilterTO(null, null, null)
+        fun empty() = TransactionFilterTO(null, null, null, null)
     }
 }

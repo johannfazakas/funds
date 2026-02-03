@@ -49,5 +49,6 @@ fun Parameters.fundTransactionsFilter(): TransactionFilterTO =
     TransactionFilterTO(
         fromDate = this["fromDate"]?.let { LocalDate.parse(it) },
         toDate = this["toDate"]?.let { LocalDate.parse(it) },
-        fundId = this["fundId"]?.let(UUID::fromString)
+        fundId = this["fundId"]?.let(UUID::fromString),
+        accountId = this["accountId"]?.let(UUID::fromString),
     )
