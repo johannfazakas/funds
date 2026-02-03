@@ -1,6 +1,8 @@
 [versions]
 kotlin = "2.1.20"
 android-gradle = "8.7.0"
+kobweb = "0.21.1"
+jetbrains-compose = "1.7.3"
 ktor = "3.1.3"
 kotlinx-serialization = "1.8.1"
 kotlinx-coroutines = "1.9.0"
@@ -92,6 +94,13 @@ poi = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
 big-math = { module = "ch.obermuhlner:big-math", version.ref = "big-math" }
 kotlin-statistics = { module = "org.nield:kotlin-statistics", version.ref = "kotlin-statistics" }
 
+# kobweb / compose html
+kobweb-core = { module = "com.varabyte.kobweb:kobweb-core", version.ref = "kobweb" }
+kobweb-silk = { module = "com.varabyte.kobweb:kobweb-silk", version.ref = "kobweb" }
+silk-icons-fa = { module = "com.varabyte.kobwebx:silk-icons-fa", version.ref = "kobweb" }
+compose-html-core = { module = "org.jetbrains.compose.html:html-core", version.ref = "jetbrains-compose" }
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "jetbrains-compose" }
+
 # test libraries
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
@@ -121,6 +130,8 @@ kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref 
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-application = { id = "com.android.application", version.ref = "android-gradle" }
 android-library = { id = "com.android.library", version.ref = "android-gradle" }
+
+kobweb-application = { id = "com.varabyte.kobweb.application", version.ref = "kobweb" }
 
 # Convention plugins (from included build)
 funds-common = { id = "funds.common-conventions" }

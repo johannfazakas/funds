@@ -38,4 +38,5 @@ include("service:reporting:reporting-service")
 
 include("client:client-sdk")
 include("client:web-client")
+include("client:web-client-compose")
 include("client:android-client")

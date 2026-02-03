@@ -1,0 +1,12 @@
+site:
+  title: "Funds"
+
+server:
+  files:
+    dev:
+      contentRoot: "build/processedResources/js/main/public"
+      script: "build/kotlin-webpack/js/developmentExecutable/ro-jf-funds.js"
+    prod:
+      script: "build/kotlin-webpack/js/productionExecutable/ro-jf-funds.js"
+      siteRoot: ".kobweb/site"
+  port: 8080
