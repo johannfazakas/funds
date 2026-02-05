@@ -1,26 +1,6 @@
 import { useEffect, useState } from 'react';
 import '../styles/FundListPage.css';
-
-declare const ro: {
-    jf: {
-        funds: {
-            client: {
-                web: {
-                    FundApi: {
-                        listFunds(userId: string): Promise<Array<{ id: string; name: string }>>;
-                        createFund(userId: string, name: string): Promise<{ id: string; name: string }>;
-                        deleteFund(userId: string, fundId: string): Promise<void>;
-                    };
-                };
-            };
-        };
-    };
-};
-
-interface Fund {
-    id: string;
-    name: string;
-}
+import { Fund, listFunds, createFund, deleteFund } from '../api/fundApi';
 
 interface FundListPageProps {
     userId: string;
@@ -47,7 +27,7 @@ function FundListPage({ userId }: FundListPageProps) {
         setError(null);
 
         try {
-            const fundList = await ro.jf.funds.client.web.FundApi.listFunds(userId);
+            const fundList = await listFunds(userId);
             setFunds(fundList);
         } catch (err) {
             setError('Failed to load funds: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -67,7 +47,7 @@ function FundListPage({ userId }: FundListPageProps) {
         setCreateError(null);
 
         try {
-            await ro.jf.funds.client.web.FundApi.createFund(userId, newFundName.trim());
+            await createFund(userId, newFundName.trim());
             setShowCreateModal(false);
             setNewFundName('');
             await loadFunds();
@@ -85,7 +65,7 @@ function FundListPage({ userId }: FundListPageProps) {
         setDeleteError(null);
 
         try {
-            await ro.jf.funds.client.web.FundApi.deleteFund(userId, fundToDelete.id);
+            await deleteFund(userId, fundToDelete.id);
             setFundToDelete(null);
             await loadFunds();
         } catch (err) {
