@@ -70,9 +70,9 @@ The project includes Kotlin Multiplatform mobile and web clients:
 
 **Platform-Specific Clients**:
 - `client:android-client`: Native Android app with Jetpack Compose, Material 3, MVVM architecture (minSdk 26, targetSdk 35)
-- `client:web-client`: Kotlin/JS module with integrated React TypeScript frontend
+- `client:web-client-react`: Kotlin/JS module with integrated React TypeScript frontend
 
-**Web Frontend** (`client/web-client/`):
+**Web Frontend** (`client/web-client-react/`):
 - React 18 + TypeScript app bundled via Kotlin/JS webpack
 - Consumes Kotlin/JS `FundsApi` exports (wraps AuthenticationClient/FundClient)
 - Uses React Router for navigation, localStorage for session persistence
@@ -152,7 +152,7 @@ emulator -avd $(emulator -list-avds | head -1) &
 
 **Web App:**
 ```bash
-./gradlew :client:client-sdk:build :client:web-client:jsBrowserDevelopmentRun
+./gradlew :client:client-sdk:build :client:web-client-react:jsBrowserDevelopmentRun
 ```
 
 ### Service Communication
@@ -207,8 +207,32 @@ Data analysis notebooks in `client/notebook/`:
 - **Android**: Follow Material 3 guidelines, use Compose best practices, MVVM pattern
 - **Web**: Use TypeScript, functional React components with hooks
 - **API Calls**: Use header-based auth with `FUNDS_USER_ID` header
-- **Gradle**: Client modules follow pattern `client:client-sdk`, `client:android-client`, or `client:web-client`
+- **Gradle**: Client modules follow pattern `client:client-sdk`, `client:android-client`, or `client:web-client-react`
 - **Web npm deps**: Use `npm()` and `devNpm()` in build.gradle.kts, not package.json
+
+### Kobweb Web Client (`client:web-client-kobweb`)
+- **Kobweb 0.21.1** with Silk UI components, uses Kotlin/JS target (not wasmJs)
+- **JetBrains Compose 1.7.3** — required by Kobweb 0.21.1
+- **`@Layout` annotation is NOT available** (requires Kobweb 0.22.0+ / Kotlin 2.1.21) — use manual layout composables instead
+- **`@Page` functions must be under `{group}.pages` package** (e.g. `ro.jf.funds.pages`) — Kobweb KSP silently skips pages in wrong packages
+- **Webpack output JS name** is derived from the root project group (`ro.jf.funds` → `ro-jf-funds.js`), not the module name — this must match `.kobweb/conf.yaml` dev/prod script paths
+- **No changes needed to client-sdk or convention plugins** — Kobweb uses the existing JS target
+- **Ktor client dependencies** must be added explicitly (`ktor-client-core` + `ktor-client-js`) since client-sdk depends on them transitively but Kobweb needs them on the compile classpath
+- **Dev server**: `./gradlew :client:web-client-kobweb:kobwebStart` / `kobwebStop` (port 8080)
+- **Build check**: `./gradlew :client:web-client-kobweb:jsMainClasses` for compilation only
+- **`conf.yaml` changes require server restart** — the Kobweb server reads config at startup and caches it
+- **Silk theming API**:
+  - Palette customization: `ctx.theme.palettes.light.background`, `.color`, `.border`, `.focusOutline`, `.overlay`, `.placeholder`
+  - Widget palettes: `.button.set(default, hover, focus, pressed)`, `.input.set(hoveredBorder, invalidBorder, filled, filledHover, filledFocus)`
+  - Component style overrides: `ctx.theme.replaceStyle(ButtonStyle) { ... }` or `ctx.theme.modifyComponentStyle(ButtonStyle) { ... }` — but `modifyComponentStyle` may not exist in 0.21.1, use `replaceStyle` instead
+  - CssStyle: `val MyStyle = CssStyle { base { Modifier... }; hover { Modifier... } }` — must be public top-level vals for auto-registration
+  - CssStyle.base: requires `import com.varabyte.kobweb.silk.style.base` (extension function on companion)
+  - Hover/focus/active selectors: `import com.varabyte.kobweb.silk.style.selectors.hover` etc.
+  - `toModifier()` requires `import com.varabyte.kobweb.silk.style.toModifier`
+- **FontAwesome icons**: package is `com.varabyte.kobweb.silk.components.icons.fa` (NOT `com.varabyte.kobwebx.silk.icons.fa`)
+- **`kobweb { app { index { head.add { ... } } } }` in build.gradle.kts** uses kotlinx.html DSL, but `kotlinx.html` is NOT on the build script classpath — the `link {}` function is unavailable. Load fonts dynamically via `document.createElement("link")` in `@InitSilk` instead
+- **Modifier APIs**: `letterSpacing(CSSLengthNumericValue)` takes a raw value (e.g. `0.5.px`), no `LetterSpacing.of()` wrapper. `thenIf` is in `com.varabyte.kobweb.compose.ui`
+- **TextInput**: parameter is `onTextChange` (not `onTextChanged`)
 
 ## Git Workflow
 

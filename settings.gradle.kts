@@ -37,6 +37,6 @@ include("service:reporting:reporting-sdk")
 include("service:reporting:reporting-service")
 
 include("client:client-sdk")
-include("client:web-client")
-include("client:web-client-compose")
+include("client:web-client-react")
+include("client:web-client-kobweb")
 include("client:android-client")
