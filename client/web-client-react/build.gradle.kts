@@ -57,6 +57,21 @@ kotlin {
                 implementation(devNpm("@types/react", "18.3.12"))
                 implementation(devNpm("@types/react-dom", "18.3.1"))
                 implementation(devNpm("html-webpack-plugin", "5.6.0"))
+
+                implementation(devNpm("tailwindcss", "3.4.1"))
+                implementation(devNpm("postcss", "8.4.35"))
+                implementation(devNpm("postcss-loader", "8.1.0"))
+                implementation(devNpm("autoprefixer", "10.4.17"))
+
+                implementation(npm("class-variance-authority", "0.7.0"))
+                implementation(npm("clsx", "2.1.0"))
+                implementation(npm("tailwind-merge", "2.2.1"))
+                implementation(npm("lucide-react", "0.344.0"))
+                implementation(npm("@radix-ui/react-dialog", "1.0.5"))
+                implementation(npm("@radix-ui/react-select", "2.0.0"))
+                implementation(npm("@radix-ui/react-label", "2.0.2"))
+                implementation(npm("@radix-ui/react-slot", "1.0.2"))
+                implementation(devNpm("tailwindcss-animate", "1.0.7"))
             }
         }
 

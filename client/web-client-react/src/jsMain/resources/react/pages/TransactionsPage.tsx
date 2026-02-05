@@ -1,5 +1,33 @@
 import { useEffect, useState } from 'react';
-import '../styles/TransactionsPage.css';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '../components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '../components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '../components/ui/select';
+import { Loader2, ChevronRight, ChevronDown } from 'lucide-react';
 
 declare const ro: {
     jf: {
@@ -345,168 +373,191 @@ function TransactionsPage({ userId }: TransactionsPageProps) {
         accounts.filter(a => a.unitType === filter);
 
     return (
-        <div className="transactions-container">
-            <div className="page-header">
-                <h1>Transactions</h1>
-                <button className="create-button" onClick={openCreateModal}>Create Transaction</button>
+        <div>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold">Transactions</h1>
+                <Button onClick={openCreateModal}>Create Transaction</Button>
             </div>
 
-            <div className="filter-bar">
-                <div className="filter-group">
-                    <label>From</label>
-                    <input type="date" value={filterFromDate} onChange={e => setFilterFromDate(e.target.value)} />
-                </div>
-                <div className="filter-group">
-                    <label>To</label>
-                    <input type="date" value={filterToDate} onChange={e => setFilterToDate(e.target.value)} />
-                </div>
-                <div className="filter-group">
-                    <label>Fund</label>
-                    <select value={filterFundId} onChange={e => setFilterFundId(e.target.value)}>
-                        <option value="">All funds</option>
-                        {funds.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-                    </select>
-                </div>
-                <div className="filter-group">
-                    <label>Account</label>
-                    <select value={filterAccountId} onChange={e => setFilterAccountId(e.target.value)}>
-                        <option value="">All accounts</option>
-                        {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                    </select>
-                </div>
-                <button className="apply-button" onClick={handleApplyFilter}>Apply</button>
-                <button className="clear-button" onClick={handleClearFilter}>Clear</button>
-            </div>
-
-            <div className="main-content">
-                {loading && <div className="loading">Loading...</div>}
-
-                {error && (
-                    <div className="error-container">
-                        <div className="error">{error}</div>
-                        <button onClick={loadTransactions}>Retry</button>
+            <Card className="mb-6">
+                <CardContent className="pt-6">
+                    <div className="flex flex-wrap gap-4 items-end">
+                        <div className="space-y-2">
+                            <Label>From</Label>
+                            <Input type="date" className="w-40" value={filterFromDate} onChange={e => setFilterFromDate(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>To</Label>
+                            <Input type="date" className="w-40" value={filterToDate} onChange={e => setFilterToDate(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Fund</Label>
+                            <Select value={filterFundId} onValueChange={setFilterFundId}>
+                                <SelectTrigger className="w-40">
+                                    <SelectValue placeholder="All funds" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">All funds</SelectItem>
+                                    {funds.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Account</Label>
+                            <Select value={filterAccountId} onValueChange={setFilterAccountId}>
+                                <SelectTrigger className="w-40">
+                                    <SelectValue placeholder="All accounts" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">All accounts</SelectItem>
+                                    {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <Button size="sm" onClick={handleApplyFilter}>Apply</Button>
+                        <Button variant="ghost" size="sm" onClick={handleClearFilter}>Clear</Button>
                     </div>
-                )}
+                </CardContent>
+            </Card>
 
-                {!loading && !error && transactions.length === 0 && (
-                    <div className="empty-state">No transactions found.</div>
-                )}
+            {loading && (
+                <div className="flex justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            )}
 
-                {!loading && !error && transactions.length > 0 && (
-                    <table className="transaction-table">
-                        <thead>
-                            <tr>
-                                <th style={{ width: 32 }}></th>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Summary</th>
-                                <th className="actions-column"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            {error && (
+                <div className="flex items-center gap-4 p-4 mb-4 text-destructive bg-destructive/10 rounded-md">
+                    <span>{error}</span>
+                    <Button variant="outline" size="sm" onClick={loadTransactions}>Retry</Button>
+                </div>
+            )}
+
+            {!loading && !error && transactions.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                    No transactions found.
+                </div>
+            )}
+
+            {!loading && !error && transactions.length > 0 && (
+                <Card>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-8"></TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Summary</TableHead>
+                                <TableHead className="w-24"></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {transactions.map(tx => {
                                 const isExpanded = expandedRows.has(tx.id);
                                 return (
                                     <>
-                                        <tr key={tx.id} className="transaction-row">
-                                            <td className="expand-toggle" onClick={() => toggleExpand(tx.id)}>
-                                                {isExpanded ? '▼' : '▶'}
-                                            </td>
-                                            <td>{tx.dateTime.substring(0, 10)}</td>
-                                            <td>
-                                                <span className={`type-badge ${tx.type}`}>
-                                                    {formatType(tx.type)}
-                                                </span>
-                                            </td>
-                                            <td className="transaction-summary">
+                                        <TableRow key={tx.id}>
+                                            <TableCell className="cursor-pointer" onClick={() => toggleExpand(tx.id)}>
+                                                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                            </TableCell>
+                                            <TableCell>{tx.dateTime.substring(0, 10)}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">{formatType(tx.type)}</Badge>
+                                            </TableCell>
+                                            <TableCell className="max-w-md truncate">
                                                 {transactionSummary(tx, accountMap)}
-                                            </td>
-                                            <td className="actions-column">
-                                                <button
-                                                    className="delete-button"
+                                            </TableCell>
+                                            <TableCell>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-destructive hover:text-destructive"
                                                     onClick={() => { setDeleteError(null); setTransactionToDelete(tx); }}
                                                 >
                                                     Delete
-                                                </button>
-                                            </td>
-                                        </tr>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
                                         {isExpanded && (
-                                            <tr key={tx.id + '-details'} className="record-details-row">
-                                                <td colSpan={5}>
-                                                    <table className="record-details-table">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Account</th>
-                                                                <th>Fund</th>
-                                                                <th>Amount</th>
-                                                                <th>Unit</th>
-                                                                <th>Labels</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {tx.records.map(rec => (
-                                                                <tr key={rec.id}>
-                                                                    <td>{accountMap[rec.accountId]?.name ?? rec.accountId}</td>
-                                                                    <td>{fundMap[rec.fundId]?.name ?? rec.fundId}</td>
-                                                                    <td>{rec.amount}</td>
-                                                                    <td>
-                                                                        <span className={`type-badge ${rec.unitType}`}>
-                                                                            {rec.unitValue}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td>
-                                                                        {rec.labels.map((l, i) => (
-                                                                            <span key={i} className="label-badge">{l}</span>
-                                                                        ))}
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </td>
-                                            </tr>
+                                            <TableRow key={tx.id + '-details'}>
+                                                <TableCell colSpan={5} className="bg-muted/50">
+                                                    <div className="p-4">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead>Account</TableHead>
+                                                                    <TableHead>Fund</TableHead>
+                                                                    <TableHead>Amount</TableHead>
+                                                                    <TableHead>Unit</TableHead>
+                                                                    <TableHead>Labels</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {tx.records.map(rec => (
+                                                                    <TableRow key={rec.id}>
+                                                                        <TableCell>{accountMap[rec.accountId]?.name ?? rec.accountId}</TableCell>
+                                                                        <TableCell>{fundMap[rec.fundId]?.name ?? rec.fundId}</TableCell>
+                                                                        <TableCell>{rec.amount}</TableCell>
+                                                                        <TableCell>
+                                                                            <Badge variant={rec.unitType === 'currency' ? 'default' : 'secondary'}>
+                                                                                {rec.unitValue}
+                                                                            </Badge>
+                                                                        </TableCell>
+                                                                        <TableCell>
+                                                                            {rec.labels.map((l, i) => (
+                                                                                <Badge key={i} variant="outline" className="mr-1">{l}</Badge>
+                                                                            ))}
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
                                         )}
                                     </>
                                 );
                             })}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+                        </TableBody>
+                    </Table>
+                </Card>
+            )}
 
-            {showCreateModal && (
-                <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-                    <div className="modal" onClick={e => e.stopPropagation()}>
-                        <h2>Create Transaction</h2>
-                        <form onSubmit={handleCreate}>
-                            <div className="form-group">
-                                <label htmlFor="txType">Type</label>
-                                <select
-                                    id="txType"
-                                    value={createType}
-                                    onChange={e => handleTypeChange(e.target.value)}
-                                    disabled={creating}
-                                >
-                                    {Object.keys(RECORD_CONFIGS).map(t => (
-                                        <option key={t} value={t}>{formatType(t)}</option>
-                                    ))}
-                                </select>
+            <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Create Transaction</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreate}>
+                        <div className="space-y-4 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Type</Label>
+                                    <Select value={createType} onValueChange={handleTypeChange} disabled={creating}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.keys(RECORD_CONFIGS).map(t => (
+                                                <SelectItem key={t} value={t}>{formatType(t)}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Date / Time</Label>
+                                    <Input
+                                        type="datetime-local"
+                                        value={createDateTime}
+                                        onChange={e => setCreateDateTime(e.target.value)}
+                                        disabled={creating}
+                                    />
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label htmlFor="txDateTime">Date / Time</label>
-                                <input
-                                    id="txDateTime"
-                                    type="datetime-local"
-                                    value={createDateTime}
-                                    onChange={e => setCreateDateTime(e.target.value)}
-                                    disabled={creating}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="txExternalId">External ID (optional)</label>
-                                <input
-                                    id="txExternalId"
-                                    type="text"
+                            <div className="space-y-2">
+                                <Label>External ID (optional)</Label>
+                                <Input
                                     value={createExternalId}
                                     onChange={e => setCreateExternalId(e.target.value)}
                                     disabled={creating}
@@ -515,100 +566,130 @@ function TransactionsPage({ userId }: TransactionsPageProps) {
                             </div>
 
                             {(RECORD_CONFIGS[createType] || []).map(config => (
-                                <div key={config.role} className="record-section">
-                                    <div className="record-section-title">
-                                        {config.label} {!config.required && '(optional)'}
+                                <div key={config.role} className="p-4 bg-muted rounded-lg space-y-3">
+                                    <div className="font-semibold">
+                                        {config.label} {!config.required && <span className="text-muted-foreground font-normal">(optional)</span>}
                                     </div>
-                                    <div className="form-group">
-                                        <label>Account</label>
-                                        <select
-                                            value={createRecords[config.role]?.accountId ?? ''}
-                                            onChange={e => updateRecordField(config.role, 'accountId', e.target.value)}
-                                            disabled={creating}
-                                        >
-                                            <option value="">Select account</option>
-                                            {filteredAccounts(config.accountFilter).map(a => (
-                                                <option key={a.id} value={a.id}>
-                                                    {a.name} ({a.unitValue})
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Fund</label>
-                                        <select
-                                            value={createRecords[config.role]?.fundId ?? ''}
-                                            onChange={e => updateRecordField(config.role, 'fundId', e.target.value)}
-                                            disabled={creating}
-                                        >
-                                            <option value="">Select fund</option>
-                                            {funds.map(f => (
-                                                <option key={f.id} value={f.id}>{f.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Amount</label>
-                                        <input
-                                            type="text"
-                                            value={createRecords[config.role]?.amount ?? ''}
-                                            onChange={e => updateRecordField(config.role, 'amount', e.target.value)}
-                                            disabled={creating}
-                                            placeholder="0.00"
-                                        />
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="space-y-2">
+                                            <Label>Account</Label>
+                                            <Select
+                                                value={createRecords[config.role]?.accountId ?? ''}
+                                                onValueChange={v => updateRecordField(config.role, 'accountId', v)}
+                                                disabled={creating}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select account" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {filteredAccounts(config.accountFilter).map(a => (
+                                                        <SelectItem key={a.id} value={a.id}>
+                                                            {a.name} ({a.unitValue})
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Fund</Label>
+                                            <Select
+                                                value={createRecords[config.role]?.fundId ?? ''}
+                                                onValueChange={v => updateRecordField(config.role, 'fundId', v)}
+                                                disabled={creating}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select fund" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {funds.map(f => (
+                                                        <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Amount</Label>
+                                            <Input
+                                                value={createRecords[config.role]?.amount ?? ''}
+                                                onChange={e => updateRecordField(config.role, 'amount', e.target.value)}
+                                                disabled={creating}
+                                                placeholder="0.00"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             ))}
 
-                            {createError && <div className="error">{createError}</div>}
-                            <div className="modal-actions">
-                                <button
-                                    type="button"
-                                    className="cancel-button"
-                                    onClick={() => setShowCreateModal(false)}
-                                    disabled={creating}
-                                >
-                                    Cancel
-                                </button>
-                                <button type="submit" className="submit-button" disabled={creating}>
-                                    {creating ? 'Creating...' : 'Create'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {transactionToDelete && (
-                <div className="modal-overlay" onClick={() => !deleting && setTransactionToDelete(null)}>
-                    <div className="modal" onClick={e => e.stopPropagation()}>
-                        <h2>Delete Transaction</h2>
-                        <p className="delete-message">
-                            Are you sure you want to delete this <strong>{formatType(transactionToDelete.type)}</strong> transaction
-                            from <strong>{transactionToDelete.dateTime.substring(0, 10)}</strong>?
-                        </p>
-                        {deleteError && <div className="error">{deleteError}</div>}
-                        <div className="modal-actions">
-                            <button
+                            {createError && (
+                                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                                    {createError}
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button
                                 type="button"
-                                className="cancel-button"
-                                onClick={() => setTransactionToDelete(null)}
-                                disabled={deleting}
+                                variant="outline"
+                                onClick={() => setShowCreateModal(false)}
+                                disabled={creating}
                             >
                                 Cancel
-                            </button>
-                            <button
-                                type="button"
-                                className="danger-button"
-                                onClick={handleDelete}
-                                disabled={deleting}
-                            >
-                                {deleting ? 'Deleting...' : 'Delete'}
-                            </button>
+                            </Button>
+                            <Button type="submit" disabled={creating}>
+                                {creating ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Creating...
+                                    </>
+                                ) : (
+                                    'Create'
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!transactionToDelete} onOpenChange={(open) => !open && !deleting && setTransactionToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Transaction</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this <strong>{transactionToDelete && formatType(transactionToDelete.type)}</strong> transaction
+                            from <strong>{transactionToDelete?.dateTime.substring(0, 10)}</strong>?
+                        </DialogDescription>
+                    </DialogHeader>
+                    {deleteError && (
+                        <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                            {deleteError}
                         </div>
-                    </div>
-                </div>
-            )}
+                    )}
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setTransactionToDelete(null)}
+                            disabled={deleting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDelete}
+                            disabled={deleting}
+                        >
+                            {deleting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import BudgetChart from '../components/BudgetChart';
 import { JsReportView, JsGroupedBudgetReport, ChartDataPoint } from '../types/reporting';
 import { transformToTotalChartData, transformToGroupChartData, getAvailableGroups } from '../utils/chartUtils';
-import '../styles/ExpensesPage.css';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 declare const ro: {
     jf: {
@@ -100,48 +102,59 @@ function ExpensesPage({ userId }: ExpensesPageProps) {
         : [];
 
     return (
-        <div className="expenses-container">
-            <h1>Expenses</h1>
+        <div>
+            <h1 className="text-2xl font-bold mb-6">Expenses</h1>
 
-            <div className="main-content">
-                {loading && <div className="loading">Loading expense data...</div>}
+            {loading && (
+                <div className="flex justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            )}
 
-                {error && (
-                    <div className="error-container">
-                        <div className="error">{error}</div>
-                        {reportViewId && <button onClick={loadData}>Retry</button>}
-                    </div>
-                )}
+            {error && (
+                <div className="flex items-center gap-4 p-4 mb-4 text-destructive bg-destructive/10 rounded-md">
+                    <span>{error}</span>
+                    {reportViewId && <Button variant="outline" size="sm" onClick={loadData}>Retry</Button>}
+                </div>
+            )}
 
-                {!loading && !error && report && (
-                    <>
-                        <section className="chart-section">
+            {!loading && !error && report && (
+                <>
+                    <Card className="mb-6">
+                        <CardContent className="pt-6">
                             <BudgetChart title="Total Expenses" data={totalChartData} />
-                        </section>
+                        </CardContent>
+                    </Card>
 
-                        <section className="group-selector">
-                            <h3>Select Group</h3>
-                            <div className="group-buttons">
+                    <Card className="mb-6">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Select Group</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-wrap gap-2">
                                 {groups.map(group => (
-                                    <button
+                                    <Button
                                         key={group}
-                                        className={`group-button ${selectedGroup === group ? 'active' : ''}`}
+                                        variant={selectedGroup === group ? 'default' : 'ghost'}
+                                        size="sm"
                                         onClick={() => setSelectedGroup(group)}
                                     >
                                         {group}
-                                    </button>
+                                    </Button>
                                 ))}
                             </div>
-                        </section>
+                        </CardContent>
+                    </Card>
 
-                        {selectedGroup && (
-                            <section className="chart-section">
+                    {selectedGroup && (
+                        <Card>
+                            <CardContent className="pt-6">
                                 <BudgetChart title={`${selectedGroup} Expenses`} data={groupChartData} />
-                            </section>
-                        )}
-                    </>
-                )}
-            </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </>
+            )}
         </div>
     );
 }

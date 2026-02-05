@@ -34,9 +34,9 @@ function App() {
                 <Route
                     element={
                         userId ? (
-                            <div className="app-layout">
+                            <div className="flex min-h-screen">
                                 <Sidebar onLogout={handleLogout} />
-                                <main className="app-main">
+                                <main className="flex-1 ml-56 min-h-screen bg-muted/40 p-6">
                                     <Outlet />
                                 </main>
                             </div>

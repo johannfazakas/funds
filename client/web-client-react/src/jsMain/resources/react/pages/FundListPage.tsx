@@ -1,6 +1,26 @@
 import { useEffect, useState } from 'react';
-import '../styles/FundListPage.css';
 import { Fund, listFunds, createFund, deleteFund } from '../api/fundApi';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Card } from '../components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '../components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '../components/ui/dialog';
+import { Loader2 } from 'lucide-react';
 
 interface FundListPageProps {
     userId: string;
@@ -82,63 +102,72 @@ function FundListPage({ userId }: FundListPageProps) {
     };
 
     return (
-        <div className="fund-list-container">
-            <div className="page-header">
-                <h1>Funds</h1>
-                <button className="create-button" onClick={openCreateModal}>Create Fund</button>
+        <div>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold">Funds</h1>
+                <Button onClick={openCreateModal}>Create Fund</Button>
             </div>
 
-            <div className="main-content">
-                {loading && <div className="loading">Loading...</div>}
+            {loading && (
+                <div className="flex justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            )}
 
-                {error && (
-                    <div className="error-container">
-                        <div className="error">{error}</div>
-                        <button onClick={loadFunds}>Retry</button>
-                    </div>
-                )}
+            {error && (
+                <div className="flex items-center gap-4 p-4 mb-4 text-destructive bg-destructive/10 rounded-md">
+                    <span>{error}</span>
+                    <Button variant="outline" size="sm" onClick={loadFunds}>Retry</Button>
+                </div>
+            )}
 
-                {!loading && !error && funds.length === 0 && (
-                    <div className="empty-state">No funds yet — create one to get started.</div>
-                )}
+            {!loading && !error && funds.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                    No funds yet — create one to get started.
+                </div>
+            )}
 
-                {!loading && !error && funds.length > 0 && (
-                    <table className="fund-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th className="actions-column"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            {!loading && !error && funds.length > 0 && (
+                <Card>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead className="w-24"></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {funds.map((fund) => (
-                                <tr key={fund.id}>
-                                    <td>{fund.name}</td>
-                                    <td className="actions-column">
-                                        <button
-                                            className="delete-button"
+                                <TableRow key={fund.id}>
+                                    <TableCell>{fund.name}</TableCell>
+                                    <TableCell>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-destructive hover:text-destructive"
                                             onClick={() => { setDeleteError(null); setFundToDelete(fund); }}
                                         >
                                             Delete
-                                        </button>
-                                    </td>
-                                </tr>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
                             ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+                        </TableBody>
+                    </Table>
+                </Card>
+            )}
 
-            {showCreateModal && (
-                <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        <h2>Create Fund</h2>
-                        <form onSubmit={handleCreate}>
-                            <div className="form-group">
-                                <label htmlFor="fundName">Fund name</label>
-                                <input
+            <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create Fund</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreate}>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="fundName">Fund name</Label>
+                                <Input
                                     id="fundName"
-                                    type="text"
                                     value={newFundName}
                                     onChange={(e) => setNewFundName(e.target.value)}
                                     disabled={creating}
@@ -146,52 +175,75 @@ function FundListPage({ userId }: FundListPageProps) {
                                     autoFocus
                                 />
                             </div>
-                            {createError && <div className="error">{createError}</div>}
-                            <div className="modal-actions">
-                                <button
-                                    type="button"
-                                    className="cancel-button"
-                                    onClick={() => setShowCreateModal(false)}
-                                    disabled={creating}
-                                >
-                                    Cancel
-                                </button>
-                                <button type="submit" className="submit-button" disabled={creating}>
-                                    {creating ? 'Creating...' : 'Create'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {fundToDelete && (
-                <div className="modal-overlay" onClick={() => !deleting && setFundToDelete(null)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        <h2>Delete Fund</h2>
-                        <p className="delete-message">Are you sure you want to delete "<strong>{fundToDelete.name}</strong>"?</p>
-                        {deleteError && <div className="error">{deleteError}</div>}
-                        <div className="modal-actions">
-                            <button
+                            {createError && (
+                                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                                    {createError}
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button
                                 type="button"
-                                className="cancel-button"
-                                onClick={() => setFundToDelete(null)}
-                                disabled={deleting}
+                                variant="outline"
+                                onClick={() => setShowCreateModal(false)}
+                                disabled={creating}
                             >
                                 Cancel
-                            </button>
-                            <button
-                                type="button"
-                                className="danger-button"
-                                onClick={handleDelete}
-                                disabled={deleting}
-                            >
-                                {deleting ? 'Deleting...' : 'Delete'}
-                            </button>
+                            </Button>
+                            <Button type="submit" disabled={creating}>
+                                {creating ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Creating...
+                                    </>
+                                ) : (
+                                    'Create'
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!fundToDelete} onOpenChange={(open) => !open && !deleting && setFundToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Fund</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete "<strong>{fundToDelete?.name}</strong>"?
+                        </DialogDescription>
+                    </DialogHeader>
+                    {deleteError && (
+                        <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                            {deleteError}
                         </div>
-                    </div>
-                </div>
-            )}
+                    )}
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setFundToDelete(null)}
+                            disabled={deleting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDelete}
+                            disabled={deleting}
+                        >
+                            {deleting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

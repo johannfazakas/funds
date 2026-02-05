@@ -1,5 +1,33 @@
 import { useEffect, useState } from 'react';
-import '../styles/AccountsPage.css';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Card } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '../components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '../components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '../components/ui/select';
+import { Loader2 } from 'lucide-react';
 
 declare const ro: {
     jf: {
@@ -119,69 +147,78 @@ function AccountsPage({ userId }: AccountsPageProps) {
     };
 
     return (
-        <div className="account-list-container">
-            <div className="page-header">
-                <h1>Accounts</h1>
-                <button className="create-button" onClick={openCreateModal}>Create Account</button>
+        <div>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold">Accounts</h1>
+                <Button onClick={openCreateModal}>Create Account</Button>
             </div>
 
-            <div className="main-content">
-                {loading && <div className="loading">Loading...</div>}
+            {loading && (
+                <div className="flex justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            )}
 
-                {error && (
-                    <div className="error-container">
-                        <div className="error">{error}</div>
-                        <button onClick={loadAccounts}>Retry</button>
-                    </div>
-                )}
+            {error && (
+                <div className="flex items-center gap-4 p-4 mb-4 text-destructive bg-destructive/10 rounded-md">
+                    <span>{error}</span>
+                    <Button variant="outline" size="sm" onClick={loadAccounts}>Retry</Button>
+                </div>
+            )}
 
-                {!loading && !error && accounts.length === 0 && (
-                    <div className="empty-state">No accounts yet — create one to get started.</div>
-                )}
+            {!loading && !error && accounts.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                    No accounts yet — create one to get started.
+                </div>
+            )}
 
-                {!loading && !error && accounts.length > 0 && (
-                    <table className="account-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Unit</th>
-                                <th className="actions-column"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            {!loading && !error && accounts.length > 0 && (
+                <Card>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Unit</TableHead>
+                                <TableHead className="w-24"></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {accounts.map((account) => (
-                                <tr key={account.id}>
-                                    <td>{account.name}</td>
-                                    <td>
-                                        <span className={`unit-badge ${account.unitType}`}>
+                                <TableRow key={account.id}>
+                                    <TableCell>{account.name}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={account.unitType === 'currency' ? 'default' : 'secondary'}>
                                             {account.unitValue}
-                                        </span>
-                                    </td>
-                                    <td className="actions-column">
-                                        <button
-                                            className="delete-button"
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-destructive hover:text-destructive"
                                             onClick={() => { setDeleteError(null); setAccountToDelete(account); }}
                                         >
                                             Delete
-                                        </button>
-                                    </td>
-                                </tr>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
                             ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+                        </TableBody>
+                    </Table>
+                </Card>
+            )}
 
-            {showCreateModal && (
-                <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        <h2>Create Account</h2>
-                        <form onSubmit={handleCreate}>
-                            <div className="form-group">
-                                <label htmlFor="accountName">Account name</label>
-                                <input
+            <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create Account</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreate}>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="accountName">Account name</Label>
+                                <Input
                                     id="accountName"
-                                    type="text"
                                     value={newAccountName}
                                     onChange={(e) => setNewAccountName(e.target.value)}
                                     disabled={creating}
@@ -189,75 +226,97 @@ function AccountsPage({ userId }: AccountsPageProps) {
                                     autoFocus
                                 />
                             </div>
-                            <div className="form-group">
-                                <label htmlFor="unitType">Unit type</label>
-                                <select
-                                    id="unitType"
-                                    value={newUnitType}
-                                    onChange={(e) => setNewUnitType(e.target.value)}
-                                    disabled={creating}
-                                >
-                                    <option value="currency">Currency</option>
-                                    <option value="instrument">Instrument</option>
-                                </select>
+                            <div className="space-y-2">
+                                <Label htmlFor="unitType">Unit type</Label>
+                                <Select value={newUnitType} onValueChange={setNewUnitType} disabled={creating}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="currency">Currency</SelectItem>
+                                        <SelectItem value="instrument">Instrument</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <div className="form-group">
-                                <label htmlFor="unitValue">Unit value</label>
-                                <input
+                            <div className="space-y-2">
+                                <Label htmlFor="unitValue">Unit value</Label>
+                                <Input
                                     id="unitValue"
-                                    type="text"
                                     value={newUnitValue}
                                     onChange={(e) => setNewUnitValue(e.target.value)}
                                     disabled={creating}
                                     placeholder={newUnitType === 'currency' ? 'e.g. RON, EUR, USD' : 'e.g. BTC, AAPL'}
                                 />
                             </div>
-                            {createError && <div className="error">{createError}</div>}
-                            <div className="modal-actions">
-                                <button
-                                    type="button"
-                                    className="cancel-button"
-                                    onClick={() => setShowCreateModal(false)}
-                                    disabled={creating}
-                                >
-                                    Cancel
-                                </button>
-                                <button type="submit" className="submit-button" disabled={creating}>
-                                    {creating ? 'Creating...' : 'Create'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {accountToDelete && (
-                <div className="modal-overlay" onClick={() => !deleting && setAccountToDelete(null)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        <h2>Delete Account</h2>
-                        <p className="delete-message">Are you sure you want to delete "<strong>{accountToDelete.name}</strong>"?</p>
-                        {deleteError && <div className="error">{deleteError}</div>}
-                        <div className="modal-actions">
-                            <button
+                            {createError && (
+                                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                                    {createError}
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button
                                 type="button"
-                                className="cancel-button"
-                                onClick={() => setAccountToDelete(null)}
-                                disabled={deleting}
+                                variant="outline"
+                                onClick={() => setShowCreateModal(false)}
+                                disabled={creating}
                             >
                                 Cancel
-                            </button>
-                            <button
-                                type="button"
-                                className="danger-button"
-                                onClick={handleDelete}
-                                disabled={deleting}
-                            >
-                                {deleting ? 'Deleting...' : 'Delete'}
-                            </button>
+                            </Button>
+                            <Button type="submit" disabled={creating}>
+                                {creating ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Creating...
+                                    </>
+                                ) : (
+                                    'Create'
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!accountToDelete} onOpenChange={(open) => !open && !deleting && setAccountToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Account</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete "<strong>{accountToDelete?.name}</strong>"?
+                        </DialogDescription>
+                    </DialogHeader>
+                    {deleteError && (
+                        <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                            {deleteError}
                         </div>
-                    </div>
-                </div>
-            )}
+                    )}
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setAccountToDelete(null)}
+                            disabled={deleting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDelete}
+                            disabled={deleting}
+                        >
+                            {deleting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
