@@ -28,6 +28,8 @@ import {
     SelectValue,
 } from '../components/ui/select';
 import { Loader2, ChevronRight, ChevronDown } from 'lucide-react';
+import { Fund, listFunds } from '../api/fundApi';
+import { Account, listAccounts } from '../api/accountApi';
 
 declare const ro: {
     jf: {
@@ -39,29 +41,11 @@ declare const ro: {
                         createTransaction(userId: string, type: string, dateTime: string, externalId: string, records: Array<CreateRecord>): Promise<Transaction>;
                         deleteTransaction(userId: string, transactionId: string): Promise<void>;
                     };
-                    FundApi: {
-                        listFunds(userId: string): Promise<Array<Fund>>;
-                    };
-                    AccountApi: {
-                        listAccounts(userId: string): Promise<Array<Account>>;
-                    };
                 };
             };
         };
     };
 };
-
-interface Fund {
-    id: string;
-    name: string;
-}
-
-interface Account {
-    id: string;
-    name: string;
-    unitType: string;
-    unitValue: string;
-}
 
 interface CreateRecord {
     role: string;
@@ -207,8 +191,8 @@ function TransactionsPage({ userId }: TransactionsPageProps) {
         setError(null);
         try {
             const [fundList, accountList] = await Promise.all([
-                ro.jf.funds.client.web.FundApi.listFunds(userId),
-                ro.jf.funds.client.web.AccountApi.listAccounts(userId),
+                listFunds(userId),
+                listAccounts(userId),
             ]);
             setFunds(fundList);
             setAccounts(accountList);
@@ -329,8 +313,8 @@ function TransactionsPage({ userId }: TransactionsPageProps) {
                         accountId: rec.accountId,
                         fundId: rec.fundId,
                         amount: rec.amount,
-                        unitType: account?.unitType ?? 'currency',
-                        unitValue: account?.unitValue ?? '',
+                        unitType: account?.unit.type ?? 'currency',
+                        unitValue: account?.unit.value ?? '',
                         labels: [],
                     };
                 });
@@ -370,7 +354,7 @@ function TransactionsPage({ userId }: TransactionsPageProps) {
     };
 
     const filteredAccounts = (filter: 'currency' | 'instrument') =>
-        accounts.filter(a => a.unitType === filter);
+        accounts.filter(a => a.unit.type === filter);
 
     return (
         <div>
@@ -584,7 +568,7 @@ function TransactionsPage({ userId }: TransactionsPageProps) {
                                                 <SelectContent>
                                                     {filteredAccounts(config.accountFilter).map(a => (
                                                         <SelectItem key={a.id} value={a.id}>
-                                                            {a.name} ({a.unitValue})
+                                                            {a.name} ({a.unit.value})
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>

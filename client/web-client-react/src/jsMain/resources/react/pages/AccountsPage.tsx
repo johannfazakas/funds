@@ -28,29 +28,7 @@ import {
     SelectValue,
 } from '../components/ui/select';
 import { Loader2 } from 'lucide-react';
-
-declare const ro: {
-    jf: {
-        funds: {
-            client: {
-                web: {
-                    AccountApi: {
-                        listAccounts(userId: string): Promise<Array<{ id: string; name: string; unitType: string; unitValue: string }>>;
-                        createAccount(userId: string, name: string, unitType: string, unitValue: string): Promise<{ id: string; name: string; unitType: string; unitValue: string }>;
-                        deleteAccount(userId: string, accountId: string): Promise<void>;
-                    };
-                };
-            };
-        };
-    };
-};
-
-interface Account {
-    id: string;
-    name: string;
-    unitType: string;
-    unitValue: string;
-}
+import { Account, listAccounts, createAccount, deleteAccount } from '../api/accountApi';
 
 interface AccountsPageProps {
     userId: string;
@@ -79,7 +57,7 @@ function AccountsPage({ userId }: AccountsPageProps) {
         setError(null);
 
         try {
-            const accountList = await ro.jf.funds.client.web.AccountApi.listAccounts(userId);
+            const accountList = await listAccounts(userId);
             setAccounts(accountList);
         } catch (err) {
             setError('Failed to load accounts: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -103,7 +81,7 @@ function AccountsPage({ userId }: AccountsPageProps) {
         setCreateError(null);
 
         try {
-            await ro.jf.funds.client.web.AccountApi.createAccount(
+            await createAccount(
                 userId,
                 newAccountName.trim(),
                 newUnitType,
@@ -128,7 +106,7 @@ function AccountsPage({ userId }: AccountsPageProps) {
         setDeleteError(null);
 
         try {
-            await ro.jf.funds.client.web.AccountApi.deleteAccount(userId, accountToDelete.id);
+            await deleteAccount(userId, accountToDelete.id);
             setAccountToDelete(null);
             await loadAccounts();
         } catch (err) {
@@ -187,8 +165,8 @@ function AccountsPage({ userId }: AccountsPageProps) {
                                 <TableRow key={account.id}>
                                     <TableCell>{account.name}</TableCell>
                                     <TableCell>
-                                        <Badge variant={account.unitType === 'currency' ? 'default' : 'secondary'}>
-                                            {account.unitValue}
+                                        <Badge variant={account.unit.type === 'currency' ? 'default' : 'secondary'}>
+                                            {account.unit.value}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>

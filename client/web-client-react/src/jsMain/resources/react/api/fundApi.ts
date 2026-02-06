@@ -1,11 +1,8 @@
+import { ListResponse } from './types';
+
 export interface Fund {
     id: string;
     name: string;
-}
-
-interface ListResponse<T> {
-    items: T[];
-    count: number;
 }
 
 interface CreateFundRequest {
@@ -16,8 +13,13 @@ declare const window: Window & {
     FUNDS_CONFIG?: { fundServiceUrl?: string };
 };
 
-const getBaseUrl = () =>
-    window.FUNDS_CONFIG?.fundServiceUrl ?? 'http://localhost:5253';
+function getBaseUrl(): string {
+    const url = window.FUNDS_CONFIG?.fundServiceUrl;
+    if (!url) {
+        throw new Error('FUNDS_CONFIG.fundServiceUrl is not configured');
+    }
+    return url;
+}
 
 const BASE_PATH = '/funds-api/fund/v1';
 
