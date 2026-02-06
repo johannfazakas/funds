@@ -1,86 +1,118 @@
-import { Line } from 'react-chartjs-2';
+import { useState } from 'react';
 import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
+    XAxis,
+    YAxis,
+    CartesianGrid,
     Tooltip,
     Legend,
-    Filler,
-} from 'chart.js';
+    ResponsiveContainer,
+    Area,
+    ComposedChart,
+    Line,
+} from 'recharts';
 import { ChartDataPoint } from '../types/reporting';
-
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend,
-    Filler
-);
 
 interface BudgetChartProps {
     title: string;
     data: ChartDataPoint[];
 }
 
+type SeriesKey = 'spent' | 'allocated' | 'left';
+
+const seriesConfig: Record<SeriesKey, { name: string; color: string }> = {
+    spent: { name: 'Spent', color: '#dc3545' },
+    allocated: { name: 'Allocated', color: '#28a745' },
+    left: { name: 'Left', color: '#ffa500' },
+};
+
 function BudgetChart({ title, data }: BudgetChartProps) {
-    const labels = data.map(d => d.label);
+    const [hiddenSeries, setHiddenSeries] = useState<Set<SeriesKey>>(new Set());
 
-    const chartData = {
-        labels,
-        datasets: [
-            {
-                label: 'Spent',
-                data: data.map(d => d.spent),
-                borderColor: 'rgb(220, 53, 69)',
-                backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                tension: 0.1,
-            },
-            {
-                label: 'Allocated',
-                data: data.map(d => d.allocated),
-                borderColor: 'rgb(40, 167, 69)',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                tension: 0.1,
-            },
-            {
-                label: 'Left',
-                data: data.map(d => d.left),
-                borderColor: 'rgb(255, 165, 0)',
-                backgroundColor: 'rgba(255, 165, 0, 0.2)',
-                fill: true,
-                tension: 0.1,
-            },
-        ],
+    const handleLegendClick = (dataKey: string) => {
+        const key = dataKey as SeriesKey;
+        setHiddenSeries(prev => {
+            const next = new Set(prev);
+            if (next.has(key)) {
+                next.delete(key);
+            } else {
+                next.add(key);
+            }
+            return next;
+        });
     };
 
-    const options = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'top' as const,
-            },
-            title: {
-                display: true,
-                text: title,
-            },
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-            },
-        },
-    };
+    const isHidden = (key: SeriesKey) => hiddenSeries.has(key);
 
     return (
-        <div style={{ height: '400px', width: '100%' }}>
-            <Line data={chartData} options={options} />
+        <div className="w-full">
+            <h3 className="text-lg font-semibold mb-4 text-center">{title}</h3>
+            <div style={{ height: '400px', width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis
+                            dataKey="label"
+                            className="text-muted-foreground"
+                            tick={{ fill: 'currentColor' }}
+                        />
+                        <YAxis
+                            className="text-muted-foreground"
+                            tick={{ fill: 'currentColor' }}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: 'hsl(var(--card))',
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: 'var(--radius)',
+                                color: 'hsl(var(--card-foreground))'
+                            }}
+                        />
+                        <Legend
+                            onClick={(e) => handleLegendClick(e.dataKey as string)}
+                            wrapperStyle={{ cursor: 'pointer' }}
+                            formatter={(value, entry) => (
+                                <span style={{
+                                    color: isHidden(entry.dataKey as SeriesKey)
+                                        ? 'hsl(var(--muted-foreground))'
+                                        : entry.color,
+                                    textDecoration: isHidden(entry.dataKey as SeriesKey)
+                                        ? 'line-through'
+                                        : 'none'
+                                }}>
+                                    {value}
+                                </span>
+                            )}
+                        />
+                        <Area
+                            type="monotone"
+                            dataKey="left"
+                            name="Left"
+                            stroke={seriesConfig.left.color}
+                            fill="rgba(255, 165, 0, 0.2)"
+                            strokeWidth={2}
+                            hide={isHidden('left')}
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey="spent"
+                            name="Spent"
+                            stroke={seriesConfig.spent.color}
+                            strokeWidth={2}
+                            dot={{ fill: seriesConfig.spent.color }}
+                            hide={isHidden('spent')}
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey="allocated"
+                            name="Allocated"
+                            stroke={seriesConfig.allocated.color}
+                            strokeWidth={2}
+                            dot={{ fill: seriesConfig.allocated.color }}
+                            hide={isHidden('allocated')}
+                        />
+                    </ComposedChart>
+                </ResponsiveContainer>
+            </div>
         </div>
     );
 }
