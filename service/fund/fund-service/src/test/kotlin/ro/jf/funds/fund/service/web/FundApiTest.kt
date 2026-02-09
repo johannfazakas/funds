@@ -10,7 +10,7 @@ import org.jetbrains.exposed.sql.Database
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.ktor.ext.get
-import ro.jf.funds.platform.api.model.ListTO
+import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.jvm.config.configureContentNegotiation
 import ro.jf.funds.platform.jvm.config.configureDatabaseMigration
 import ro.jf.funds.platform.jvm.config.configureDependencies
@@ -37,7 +37,7 @@ class FundApiTest {
     private val fundRepository = createFundRepository()
 
     @Test
-    fun `test list funds`() = testApplication {
+    fun `given fund exists when listing without pagination then returns all funds`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
@@ -49,10 +49,54 @@ class FundApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
 
-        val funds = response.body<ListTO<FundTO>>()
+        val funds = response.body<PageTO<FundTO>>()
         assertThat(funds.items).hasSize(1)
         assertThat(funds.items.first().name).isEqualTo(FundName("Expenses"))
         assertThat(funds.items.first().id).isEqualTo(fund.id)
+        assertThat(funds.total).isEqualTo(1)
+    }
+
+    @Test
+    fun `given multiple funds when listing with offset and limit then returns correct slice`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+
+        val userId = randomUUID()
+        fundRepository.save(userId, CreateFundTO(FundName("Alpha")))
+        fundRepository.save(userId, CreateFundTO(FundName("Beta")))
+        fundRepository.save(userId, CreateFundTO(FundName("Gamma")))
+        fundRepository.save(userId, CreateFundTO(FundName("Delta")))
+        fundRepository.save(userId, CreateFundTO(FundName("Epsilon")))
+
+        val response = createJsonHttpClient().get("/funds-api/fund/v1/funds?offset=1&limit=2&sort=name&order=asc") {
+            header(USER_ID_HEADER, userId)
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+
+        val page = response.body<PageTO<FundTO>>()
+        assertThat(page.items).hasSize(2)
+        assertThat(page.items.map { it.name.value }).containsExactly("Beta", "Delta")
+        assertThat(page.total).isEqualTo(5)
+    }
+
+    @Test
+    fun `given multiple funds when sorting by name descending then returns sorted results`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+
+        val userId = randomUUID()
+        fundRepository.save(userId, CreateFundTO(FundName("Alpha")))
+        fundRepository.save(userId, CreateFundTO(FundName("Zeta")))
+        fundRepository.save(userId, CreateFundTO(FundName("Beta")))
+
+        val response = createJsonHttpClient().get("/funds-api/fund/v1/funds?sort=name&order=desc") {
+            header(USER_ID_HEADER, userId)
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+
+        val page = response.body<PageTO<FundTO>>()
+        assertThat(page.items.map { it.name.value }).containsExactly("Zeta", "Beta", "Alpha")
+        assertThat(page.total).isEqualTo(3)
     }
 
     @Test

@@ -52,6 +52,7 @@ class FundSdkTest {
                                     })
                                 })
                             })
+                            put("total", JsonPrimitive(1))
                         }.toString()
                     )
             )

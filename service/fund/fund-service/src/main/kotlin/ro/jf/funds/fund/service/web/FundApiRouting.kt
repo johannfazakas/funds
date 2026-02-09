@@ -5,10 +5,13 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.platform.api.model.toListTO
+import ro.jf.funds.platform.api.model.PageTO
+import ro.jf.funds.platform.jvm.web.pageRequest
+import ro.jf.funds.platform.jvm.web.sortRequest
 import ro.jf.funds.platform.jvm.web.userId
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
+import ro.jf.funds.fund.api.model.FundSortField
 import ro.jf.funds.fund.service.domain.Fund
 import ro.jf.funds.fund.service.mapper.toTO
 import java.util.*
@@ -19,9 +22,11 @@ fun Routing.fundApiRouting(fundService: ro.jf.funds.fund.service.service.FundSer
     route("/funds-api/fund/v1/funds") {
         get {
             val userId = call.userId()
-            log.debug { "List all accounts by user id $userId." }
-            val funds = fundService.listFunds(userId)
-            call.respond(funds.toListTO(Fund::toTO))
+            val pageRequest = call.pageRequest()
+            val sortRequest = call.sortRequest<FundSortField>()
+            log.debug { "List funds for user $userId with page=$pageRequest, sort=$sortRequest." }
+            val result = fundService.listFunds(userId, pageRequest, sortRequest)
+            call.respond(PageTO(result.items.map(Fund::toTO), result.total))
         }
         get("/{fundId}") {
             val userId = call.userId()

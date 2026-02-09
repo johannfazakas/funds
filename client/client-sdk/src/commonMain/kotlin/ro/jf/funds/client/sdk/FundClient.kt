@@ -6,9 +6,12 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import ro.jf.funds.platform.api.model.ListTO
+import ro.jf.funds.platform.api.model.PageRequest
+import ro.jf.funds.platform.api.model.PageTO
+import ro.jf.funds.platform.api.model.SortRequest
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
+import ro.jf.funds.fund.api.model.FundSortField
 import ro.jf.funds.fund.api.model.FundTO
 
 private const val LOCALHOST_BASE_URL = "http://localhost:5253"
@@ -20,19 +23,33 @@ class FundClient(
 ) {
     private val log = Logger.withTag("FundClient")
 
-    suspend fun listFunds(userId: Uuid): List<FundTO> {
+    suspend fun listFunds(
+        userId: Uuid,
+        pageRequest: PageRequest? = null,
+        sortRequest: SortRequest<FundSortField>? = null,
+    ): PageTO<FundTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
+            }
+            url {
+                pageRequest?.let {
+                    parameters.append("offset", it.offset.toString())
+                    parameters.append("limit", it.limit.toString())
+                }
+                sortRequest?.let {
+                    parameters.append("sort", it.field.name.lowercase())
+                    parameters.append("order", it.order.name.lowercase())
+                }
             }
         }
         if (response.status != HttpStatusCode.OK) {
             log.w { "Unexpected response on list funds: $response" }
             throw Exception("Failed to list funds: ${response.status}")
         }
-        val funds = response.body<ListTO<FundTO>>()
+        val funds = response.body<PageTO<FundTO>>()
         log.d { "Retrieved funds: $funds" }
-        return funds.items
+        return funds
     }
 
     suspend fun createFund(userId: Uuid, name: String): FundTO {

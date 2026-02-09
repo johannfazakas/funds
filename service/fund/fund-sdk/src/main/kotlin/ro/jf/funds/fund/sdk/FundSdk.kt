@@ -6,7 +6,9 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
-import ro.jf.funds.platform.api.model.ListTO
+import ro.jf.funds.platform.api.model.PageRequest
+import ro.jf.funds.platform.api.model.PageTO
+import ro.jf.funds.platform.api.model.SortRequest
 import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
 import ro.jf.funds.platform.jvm.web.createHttpClient
@@ -14,6 +16,7 @@ import ro.jf.funds.platform.jvm.web.toApiException
 import ro.jf.funds.fund.api.FundApi
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
+import ro.jf.funds.fund.api.model.FundSortField
 import ro.jf.funds.fund.api.model.FundTO
 
 private val log = logger { }
@@ -56,17 +59,31 @@ class FundSdk(
         response.body()
     }
 
-    override suspend fun listFunds(userId: Uuid): ListTO<FundTO> = withSuspendingSpan {
+    override suspend fun listFunds(
+        userId: Uuid,
+        pageRequest: PageRequest?,
+        sortRequest: SortRequest<FundSortField>?,
+    ): PageTO<FundTO> = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/funds") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
+            }
+            url {
+                pageRequest?.let {
+                    parameters.append("offset", it.offset.toString())
+                    parameters.append("limit", it.limit.toString())
+                }
+                sortRequest?.let {
+                    parameters.append("sort", it.field.name.lowercase())
+                    parameters.append("order", it.order.name.lowercase())
+                }
             }
         }
         if (response.status != HttpStatusCode.OK) {
             log.warn { "Unexpected response on list funds: $response" }
             throw response.toApiException()
         }
-        val funds = response.body<ListTO<FundTO>>()
+        val funds = response.body<PageTO<FundTO>>()
         log.debug { "Retrieved funds: $funds" }
         funds
     }

@@ -3,9 +3,14 @@ package ro.jf.funds.fund.service.persistence
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import ro.jf.funds.platform.api.model.PageRequest
+import ro.jf.funds.platform.api.model.SortRequest
+import ro.jf.funds.platform.jvm.persistence.PagedResult
 import ro.jf.funds.platform.jvm.persistence.blockingTransaction
+import ro.jf.funds.platform.jvm.persistence.toExposedSortOrder
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
+import ro.jf.funds.fund.api.model.FundSortField
 import ro.jf.funds.fund.service.domain.Fund
 import java.util.*
 
@@ -17,12 +22,33 @@ class FundRepository(
         val name = varchar("name", 50)
     }
 
-    suspend fun list(userId: UUID): List<Fund> = blockingTransaction {
-        FundTable
-            .selectAll()
+    suspend fun list(
+        userId: UUID,
+        pageRequest: PageRequest?,
+        sortRequest: SortRequest<FundSortField>?,
+    ): PagedResult<Fund> = blockingTransaction {
+        val baseQuery = FundTable.selectAll().where { FundTable.userId eq userId }
+        val total = baseQuery.count()
+
+        val funds = FundTable.selectAll()
             .where { FundTable.userId eq userId }
+            .applySorting(sortRequest)
+            .applyPagination(pageRequest)
             .toFunds()
+
+        PagedResult(funds, total)
     }
+
+    private fun Query.applySorting(sortRequest: SortRequest<FundSortField>?): Query =
+        sortRequest?.let {
+            val sortColumn = when (it.field) {
+                FundSortField.NAME -> FundTable.name
+            }
+            orderBy(sortColumn to it.order.toExposedSortOrder())
+        } ?: this
+
+    private fun Query.applyPagination(pageRequest: PageRequest?): Query =
+        pageRequest?.let { limit(it.limit).offset(it.offset.toLong()) } ?: this
 
     suspend fun findById(userId: UUID, fundId: UUID): Fund? = blockingTransaction {
         FundTable

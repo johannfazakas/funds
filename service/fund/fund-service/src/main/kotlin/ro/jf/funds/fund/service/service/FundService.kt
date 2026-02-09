@@ -4,13 +4,21 @@ import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.service.domain.Fund
 import ro.jf.funds.fund.service.persistence.FundRepository
+import ro.jf.funds.fund.api.model.FundSortField
+import ro.jf.funds.platform.api.model.PageRequest
+import ro.jf.funds.platform.api.model.SortRequest
+import ro.jf.funds.platform.jvm.persistence.PagedResult
 import java.util.*
 
 class FundService(
     private val fundRepository: FundRepository,
 ) {
-    suspend fun listFunds(userId: UUID): List<Fund> {
-        return fundRepository.list(userId)
+    suspend fun listFunds(
+        userId: UUID,
+        pageRequest: PageRequest?,
+        sortRequest: SortRequest<FundSortField>?,
+    ): PagedResult<Fund> {
+        return fundRepository.list(userId, pageRequest, sortRequest)
     }
 
     suspend fun findById(userId: UUID, fundId: UUID): Fund? {
