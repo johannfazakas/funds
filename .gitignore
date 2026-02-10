@@ -30,7 +30,7 @@ infra/local/volumes/**
 !infra/local/volumes/tempo/tempo-config.yaml
 
 # reportdata
-data/
+/data/
 
 # kotlin errors
 .kotlin/
