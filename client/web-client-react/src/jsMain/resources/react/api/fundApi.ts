@@ -1,8 +1,18 @@
-import { ListResponse } from './types';
+import { PageResponse, PaginationParams, SortParams, FundSortField } from './types';
 
 export interface Fund {
     id: string;
     name: string;
+}
+
+export interface ListFundsParams {
+    pagination?: PaginationParams;
+    sort?: SortParams<FundSortField>;
+}
+
+export interface ListFundsResult {
+    items: Fund[];
+    total: number;
 }
 
 interface CreateFundRequest {
@@ -23,13 +33,31 @@ function getBaseUrl(): string {
 
 const BASE_PATH = '/funds-api/fund/v1';
 
-export async function listFunds(userId: string): Promise<Fund[]> {
-    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/funds`, {
+export async function listFunds(
+    userId: string,
+    params?: ListFundsParams
+): Promise<ListFundsResult> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.pagination) {
+        queryParams.set('offset', params.pagination.offset.toString());
+        queryParams.set('limit', params.pagination.limit.toString());
+    }
+
+    if (params?.sort) {
+        queryParams.set('sort', params.sort.field);
+        queryParams.set('order', params.sort.order);
+    }
+
+    const queryString = queryParams.toString();
+    const url = `${getBaseUrl()}${BASE_PATH}/funds${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(url, {
         headers: { 'FUNDS_USER_ID': userId }
     });
     if (!response.ok) throw new Error(`Failed to list funds: ${response.status}`);
-    const data: ListResponse<Fund> = await response.json();
-    return data.items;
+    const data: PageResponse<Fund> = await response.json();
+    return { items: data.items, total: data.total };
 }
 
 export async function createFund(userId: string, name: string): Promise<Fund> {

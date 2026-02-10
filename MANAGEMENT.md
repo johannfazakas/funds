@@ -74,3 +74,8 @@ One idea could be to handle generating multiple requests at a higher level, mayb
 
 ### Use grpc for conversions
 It would make sense to have a bidirectional streamed channel to resolve conversions.
+
+### Make the repo understandable
+
+- [ ] expose relevant READMEs
+- [ ] offer some demo setup

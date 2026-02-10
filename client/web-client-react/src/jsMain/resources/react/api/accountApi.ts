@@ -1,4 +1,4 @@
-import { ListResponse } from './types';
+import { PageResponse, PaginationParams, SortParams, AccountSortField } from './types';
 
 export interface Account {
     id: string;
@@ -7,6 +7,16 @@ export interface Account {
         type: string;
         value: string;
     };
+}
+
+export interface ListAccountsParams {
+    pagination?: PaginationParams;
+    sort?: SortParams<AccountSortField>;
+}
+
+export interface ListAccountsResult {
+    items: Account[];
+    total: number;
 }
 
 interface CreateAccountRequest {
@@ -31,13 +41,31 @@ function getBaseUrl(): string {
 
 const BASE_PATH = '/funds-api/fund/v1';
 
-export async function listAccounts(userId: string): Promise<Account[]> {
-    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/accounts`, {
+export async function listAccounts(
+    userId: string,
+    params?: ListAccountsParams
+): Promise<ListAccountsResult> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.pagination) {
+        queryParams.set('offset', params.pagination.offset.toString());
+        queryParams.set('limit', params.pagination.limit.toString());
+    }
+
+    if (params?.sort) {
+        queryParams.set('sort', params.sort.field);
+        queryParams.set('order', params.sort.order);
+    }
+
+    const queryString = queryParams.toString();
+    const url = `${getBaseUrl()}${BASE_PATH}/accounts${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(url, {
         headers: { 'FUNDS_USER_ID': userId }
     });
     if (!response.ok) throw new Error(`Failed to list accounts: ${response.status}`);
-    const data: ListResponse<Account> = await response.json();
-    return data.items;
+    const data: PageResponse<Account> = await response.json();
+    return { items: data.items, total: data.total };
 }
 
 export async function createAccount(

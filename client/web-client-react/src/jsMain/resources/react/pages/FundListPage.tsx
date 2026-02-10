@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Fund, listFunds, createFund, deleteFund } from '../api/fundApi';
+import { FundSortField, SortOrder } from '../api/types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -21,13 +22,18 @@ import {
     DialogTitle,
 } from '../components/ui/dialog';
 import { Loader2 } from 'lucide-react';
+import { Pagination } from '../components/Pagination';
+import { SortableTableHead } from '../components/SortableTableHead';
 
 interface FundListPageProps {
     userId: string;
 }
 
+const DEFAULT_PAGE_SIZE = 10;
+
 function FundListPage({ userId }: FundListPageProps) {
     const [funds, setFunds] = useState<Fund[]>([]);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -38,22 +44,50 @@ function FundListPage({ userId }: FundListPageProps) {
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadFunds();
-    }, [userId]);
+    const [offset, setOffset] = useState(0);
+    const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+    const [sortField, setSortField] = useState<FundSortField | null>(null);
+    const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
-    const loadFunds = async () => {
+    const loadFunds = useCallback(async () => {
         setLoading(true);
         setError(null);
 
         try {
-            const fundList = await listFunds(userId);
-            setFunds(fundList);
+            const result = await listFunds(userId, {
+                pagination: { offset, limit },
+                sort: sortField ? { field: sortField, order: sortOrder } : undefined,
+            });
+            setFunds(result.items);
+            setTotal(result.total);
         } catch (err) {
             setError('Failed to load funds: ' + (err instanceof Error ? err.message : 'Unknown error'));
         } finally {
             setLoading(false);
         }
+    }, [userId, offset, limit, sortField, sortOrder]);
+
+    useEffect(() => {
+        loadFunds();
+    }, [loadFunds]);
+
+    const handleSort = (field: FundSortField) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
+        }
+        setOffset(0);
+    };
+
+    const handlePageChange = (newOffset: number) => {
+        setOffset(newOffset);
+    };
+
+    const handlePageSizeChange = (newLimit: number) => {
+        setLimit(newLimit);
+        setOffset(0);
     };
 
     const handleCreate = async (e: React.FormEvent) => {
@@ -70,6 +104,7 @@ function FundListPage({ userId }: FundListPageProps) {
             await createFund(userId, newFundName.trim());
             setShowCreateModal(false);
             setNewFundName('');
+            setOffset(0);
             await loadFunds();
         } catch (err) {
             setCreateError('Failed to create fund: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -132,7 +167,14 @@ function FundListPage({ userId }: FundListPageProps) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Name</TableHead>
+                                <SortableTableHead
+                                    field="name"
+                                    currentField={sortField}
+                                    currentOrder={sortOrder}
+                                    onSort={handleSort}
+                                >
+                                    Name
+                                </SortableTableHead>
                                 <TableHead className="w-24"></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -154,6 +196,13 @@ function FundListPage({ userId }: FundListPageProps) {
                             ))}
                         </TableBody>
                     </Table>
+                    <Pagination
+                        offset={offset}
+                        limit={limit}
+                        total={total}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
+                    />
                 </Card>
             )}
 

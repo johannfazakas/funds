@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -29,13 +29,19 @@ import {
 } from '../components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { Account, listAccounts, createAccount, deleteAccount } from '../api/accountApi';
+import { AccountSortField, SortOrder } from '../api/types';
+import { Pagination } from '../components/Pagination';
+import { SortableTableHead } from '../components/SortableTableHead';
 
 interface AccountsPageProps {
     userId: string;
 }
 
+const DEFAULT_PAGE_SIZE = 10;
+
 function AccountsPage({ userId }: AccountsPageProps) {
     const [accounts, setAccounts] = useState<Account[]>([]);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -48,22 +54,50 @@ function AccountsPage({ userId }: AccountsPageProps) {
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadAccounts();
-    }, [userId]);
+    const [offset, setOffset] = useState(0);
+    const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+    const [sortField, setSortField] = useState<AccountSortField | null>(null);
+    const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
-    const loadAccounts = async () => {
+    const loadAccounts = useCallback(async () => {
         setLoading(true);
         setError(null);
 
         try {
-            const accountList = await listAccounts(userId);
-            setAccounts(accountList);
+            const result = await listAccounts(userId, {
+                pagination: { offset, limit },
+                sort: sortField ? { field: sortField, order: sortOrder } : undefined,
+            });
+            setAccounts(result.items);
+            setTotal(result.total);
         } catch (err) {
             setError('Failed to load accounts: ' + (err instanceof Error ? err.message : 'Unknown error'));
         } finally {
             setLoading(false);
         }
+    }, [userId, offset, limit, sortField, sortOrder]);
+
+    useEffect(() => {
+        loadAccounts();
+    }, [loadAccounts]);
+
+    const handleSort = (field: AccountSortField) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
+        }
+        setOffset(0);
+    };
+
+    const handlePageChange = (newOffset: number) => {
+        setOffset(newOffset);
+    };
+
+    const handlePageSizeChange = (newLimit: number) => {
+        setLimit(newLimit);
+        setOffset(0);
     };
 
     const handleCreate = async (e: React.FormEvent) => {
@@ -91,6 +125,7 @@ function AccountsPage({ userId }: AccountsPageProps) {
             setNewAccountName('');
             setNewUnitType('currency');
             setNewUnitValue('');
+            setOffset(0);
             await loadAccounts();
         } catch (err) {
             setCreateError('Failed to create account: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -155,8 +190,22 @@ function AccountsPage({ userId }: AccountsPageProps) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Unit</TableHead>
+                                <SortableTableHead
+                                    field="name"
+                                    currentField={sortField}
+                                    currentOrder={sortOrder}
+                                    onSort={handleSort}
+                                >
+                                    Name
+                                </SortableTableHead>
+                                <SortableTableHead
+                                    field="unit"
+                                    currentField={sortField}
+                                    currentOrder={sortOrder}
+                                    onSort={handleSort}
+                                >
+                                    Unit
+                                </SortableTableHead>
                                 <TableHead className="w-24"></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -183,6 +232,13 @@ function AccountsPage({ userId }: AccountsPageProps) {
                             ))}
                         </TableBody>
                     </Table>
+                    <Pagination
+                        offset={offset}
+                        limit={limit}
+                        total={total}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
+                    />
                 </Card>
             )}
 
