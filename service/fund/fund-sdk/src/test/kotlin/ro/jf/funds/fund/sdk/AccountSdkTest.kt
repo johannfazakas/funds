@@ -24,7 +24,7 @@ class AccountSdkTest {
     private val accountSdk = AccountSdk(baseUrl = MockServerContainerExtension.baseUrl)
 
     @Test
-    fun `test list accounts`(mockServerClient: MockServerClient): Unit = runBlocking {
+    fun `given accounts exist when listing accounts then returns page with accounts`(mockServerClient: MockServerClient): Unit = runBlocking {
         val userId = uuid4()
         val accountId1 = uuid4()
         val accountId2 = uuid4()
@@ -60,6 +60,7 @@ class AccountSdkTest {
                                     })
                                 })
                             })
+                            put("total", JsonPrimitive(2))
                         }.toString()
                     )
             )
@@ -67,6 +68,7 @@ class AccountSdkTest {
         val accounts = accountSdk.listAccounts(userId)
 
         assertThat(accounts.items).hasSize(2)
+        assertThat(accounts.total).isEqualTo(2)
         assertThat(accounts.items[0].id).isEqualTo(accountId1)
         assertThat(accounts.items[0].name).isEqualTo(AccountName("Checking Account"))
         assertThat(accounts.items[0].unit).isEqualTo(Currency.RON)

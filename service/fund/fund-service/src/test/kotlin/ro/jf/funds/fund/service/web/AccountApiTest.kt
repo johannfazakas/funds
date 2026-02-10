@@ -12,7 +12,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.ListTO
+import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.jvm.config.configureContentNegotiation
 import ro.jf.funds.platform.jvm.config.configureDatabaseMigration
 import ro.jf.funds.platform.jvm.config.configureDependencies
@@ -44,7 +44,7 @@ class AccountApiTest {
     }
 
     @Test
-    fun `test list accounts`() = testApplication {
+    fun `given accounts exist when listing without pagination then returns all accounts`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
 
         val userId = randomUUID()
@@ -57,10 +57,74 @@ class AccountApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
 
-        val accounts = response.body<ListTO<AccountTO>>()
+        val accounts = response.body<PageTO<AccountTO>>()
         assertThat(accounts.items).hasSize(2)
         assertThat(accounts.items.map { it.name.value }).containsExactlyInAnyOrder("Checking Account", "Savings Account")
         assertThat(accounts.items.map { it.unit }).containsExactlyInAnyOrder(Currency.RON, Currency.EUR)
+        assertThat(accounts.total).isEqualTo(2)
+    }
+
+    @Test
+    fun `given multiple accounts when listing with offset and limit then returns correct slice`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+
+        val userId = randomUUID()
+        accountRepository.save(userId, CreateAccountTO(AccountName("Alpha"), Currency.RON))
+        accountRepository.save(userId, CreateAccountTO(AccountName("Beta"), Currency.EUR))
+        accountRepository.save(userId, CreateAccountTO(AccountName("Gamma"), Currency.USD))
+        accountRepository.save(userId, CreateAccountTO(AccountName("Delta"), Currency.RON))
+        accountRepository.save(userId, CreateAccountTO(AccountName("Epsilon"), Currency.EUR))
+
+        val response = createJsonHttpClient().get("/funds-api/fund/v1/accounts?offset=1&limit=2&sort=name&order=asc") {
+            header(USER_ID_HEADER, userId)
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+
+        val page = response.body<PageTO<AccountTO>>()
+        assertThat(page.items).hasSize(2)
+        assertThat(page.items.map { it.name.value }).containsExactly("Beta", "Delta")
+        assertThat(page.total).isEqualTo(5)
+    }
+
+    @Test
+    fun `given multiple accounts when sorting by name descending then returns sorted results`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+
+        val userId = randomUUID()
+        accountRepository.save(userId, CreateAccountTO(AccountName("Alpha"), Currency.RON))
+        accountRepository.save(userId, CreateAccountTO(AccountName("Zeta"), Currency.EUR))
+        accountRepository.save(userId, CreateAccountTO(AccountName("Beta"), Currency.USD))
+
+        val response = createJsonHttpClient().get("/funds-api/fund/v1/accounts?sort=name&order=desc") {
+            header(USER_ID_HEADER, userId)
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+
+        val page = response.body<PageTO<AccountTO>>()
+        assertThat(page.items.map { it.name.value }).containsExactly("Zeta", "Beta", "Alpha")
+        assertThat(page.total).isEqualTo(3)
+    }
+
+    @Test
+    fun `given multiple accounts when sorting by unit then returns sorted results`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+
+        val userId = randomUUID()
+        accountRepository.save(userId, CreateAccountTO(AccountName("USD Account"), Currency.USD))
+        accountRepository.save(userId, CreateAccountTO(AccountName("EUR Account"), Currency.EUR))
+        accountRepository.save(userId, CreateAccountTO(AccountName("RON Account"), Currency.RON))
+
+        val response = createJsonHttpClient().get("/funds-api/fund/v1/accounts?sort=unit&order=asc") {
+            header(USER_ID_HEADER, userId)
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+
+        val page = response.body<PageTO<AccountTO>>()
+        assertThat(page.items.map { it.unit }).containsExactly(Currency.EUR, Currency.RON, Currency.USD)
+        assertThat(page.total).isEqualTo(3)
     }
 
     @Test

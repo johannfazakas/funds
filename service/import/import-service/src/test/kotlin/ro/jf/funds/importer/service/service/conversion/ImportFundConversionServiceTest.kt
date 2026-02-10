@@ -70,8 +70,8 @@ class ImportFundConversionServiceTest {
         )
         val bankAccount = account("Revolut")
         val expensedFund = fund("Expenses")
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(bankAccount))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(bankAccount), 1))
+        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expensedFund), 1))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -113,8 +113,8 @@ class ImportFundConversionServiceTest {
         )
         val bankAccount = account("Revolut", Currency.EUR)
         val expensedFund = fund("Expenses")
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(bankAccount))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(bankAccount), 1))
+        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expensedFund), 1))
         val conversionRequest = ConversionRequest(Currency.RON, Currency.EUR, transactionDate)
         val conversionResponse = ConversionResponse(Currency.RON, Currency.EUR, transactionDate, BigDecimal.parseString("0.2"))
         whenever(conversionSdk.convert(ConversionsRequest(listOf(conversionRequest))))
@@ -163,8 +163,8 @@ class ImportFundConversionServiceTest {
         val companyAccount = account("Company")
         val expensedFund = fund("Expenses")
         val incomeFund = fund("Income")
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, companyAccount))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(cashAccount, companyAccount), 2))
+        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expensedFund, incomeFund), 2))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -222,8 +222,8 @@ class ImportFundConversionServiceTest {
         val companyAccount = account("Company", Currency.EUR)
         val expensedFund = fund("Expenses")
         val incomeFund = fund("Income")
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(cashAccount, companyAccount))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expensedFund, incomeFund))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(cashAccount, companyAccount), 2))
+        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expensedFund, incomeFund), 2))
 
         val conversionRequest = ConversionRequest(Currency.RON, Currency.EUR, transactionDate)
         val conversionResponse = ConversionResponse(Currency.RON, Currency.EUR, transactionDate, BigDecimal.parseString("0.20"))
@@ -269,8 +269,8 @@ class ImportFundConversionServiceTest {
         val account = account("BT RON", Currency.RON)
         val expenseFund = fund("Expenses")
         val incomeFund = fund("Income")
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expenseFund, incomeFund))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(account), 1))
+        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expenseFund, incomeFund), 2))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -330,8 +330,8 @@ class ImportFundConversionServiceTest {
         val ronAccount = account("Cash RON", Currency.RON)
         val expenses = fund("Expenses")
 
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(eurAccount, ronAccount))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(expenses))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(eurAccount, ronAccount), 2))
+        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expenses), 1))
 
         val conversionsRequest = ConversionsRequest(
             listOf(
@@ -393,8 +393,8 @@ class ImportFundConversionServiceTest {
                 )
             )
         )
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account("Cash RON")))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(fund("Expenses")))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(account("Cash RON")), 1))
+        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(fund("Expenses")), 1))
 
         assertThatThrownBy {
             runBlocking {
@@ -425,8 +425,8 @@ class ImportFundConversionServiceTest {
                 )
             )
         )
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(account("Revolut")))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(fund("Investments")))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(account("Revolut")), 1))
+        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(fund("Investments")), 1))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -470,8 +470,8 @@ class ImportFundConversionServiceTest {
         val brokerAccount = account("Broker USD", Currency.USD)
         val stockAccount = account("AAPL Stock", Instrument("AAPL"))
         val investmentsFund = fund("Investments")
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(brokerAccount, stockAccount))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(investmentsFund))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(brokerAccount, stockAccount), 2))
+        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(investmentsFund), 1))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -526,8 +526,8 @@ class ImportFundConversionServiceTest {
         val brokerAccount = account("Broker USD", Currency.USD)
         val stockAccount = account("AAPL Stock", Instrument("AAPL"))
         val investmentsFund = fund("Investments")
-        whenever(accountSdk.listAccounts(userId)).thenReturn(ListTO.of(brokerAccount, stockAccount))
-        whenever(fundSdk.listFunds(userId)).thenReturn(ListTO.of(investmentsFund))
+        whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(brokerAccount, stockAccount), 2))
+        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(investmentsFund), 1))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 

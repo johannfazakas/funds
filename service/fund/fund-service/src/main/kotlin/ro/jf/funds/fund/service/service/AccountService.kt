@@ -1,6 +1,10 @@
 package ro.jf.funds.fund.service.service
 
+import ro.jf.funds.platform.api.model.PageRequest
+import ro.jf.funds.platform.api.model.SortRequest
+import ro.jf.funds.platform.jvm.persistence.PagedResult
 import ro.jf.funds.fund.api.model.AccountName
+import ro.jf.funds.fund.api.model.AccountSortField
 import ro.jf.funds.fund.api.model.CreateAccountTO
 import ro.jf.funds.fund.service.domain.Account
 import ro.jf.funds.fund.service.domain.FundServiceException
@@ -10,8 +14,12 @@ import java.util.*
 class AccountService(
     private val accountRepository: AccountRepository
 ) {
-    suspend fun listAccounts(userId: UUID): List<Account> {
-        return accountRepository.list(userId)
+    suspend fun listAccounts(
+        userId: UUID,
+        pageRequest: PageRequest?,
+        sortRequest: SortRequest<AccountSortField>?,
+    ): PagedResult<Account> {
+        return accountRepository.list(userId, pageRequest, sortRequest)
     }
 
     suspend fun findAccountById(userId: UUID, accountId: UUID): Account {

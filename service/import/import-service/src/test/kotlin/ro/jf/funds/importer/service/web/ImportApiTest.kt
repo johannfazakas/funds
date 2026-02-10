@@ -21,7 +21,7 @@ import ro.jf.funds.platform.jvm.config.configureDependencies
 import ro.jf.funds.platform.jvm.error.ErrorTO
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.Label
-import ro.jf.funds.platform.api.model.ListTO
+import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.jvm.test.extension.PostgresContainerExtension
 import ro.jf.funds.platform.jvm.test.utils.configureEnvironment
 import ro.jf.funds.platform.jvm.test.utils.createJsonHttpClient
@@ -79,18 +79,20 @@ class ImportApiTest {
             )
         )
         whenever(accountSdk.listAccounts(userId)).thenReturn(
-            ListTO(
+            PageTO(
                 listOf(
                     AccountTO(randomUUID(), AccountName("ING"), Currency.RON),
-                )
+                ),
+                1
             )
         )
         whenever(fundSdk.listFunds(userId)).thenReturn(
-            ListTO(
+            PageTO(
                 listOf(
                     FundTO(randomUUID(), FundName("Expenses")),
                     FundTO(randomUUID(), FundName("Work"))
-                )
+                ),
+                2
             )
         )
         whenever(transactionSdk.createTransaction(eq(userId), any())).thenReturn(mock<TransactionTO.SingleRecord>())

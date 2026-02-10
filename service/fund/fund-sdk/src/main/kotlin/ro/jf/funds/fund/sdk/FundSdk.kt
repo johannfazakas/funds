@@ -6,6 +6,8 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import mu.KotlinLogging.logger
+import ro.jf.funds.platform.jvm.client.appendPageRequest
+import ro.jf.funds.platform.jvm.client.appendSortRequest
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.api.model.SortRequest
@@ -69,14 +71,8 @@ class FundSdk(
                 append(USER_ID_HEADER, userId.toString())
             }
             url {
-                pageRequest?.let {
-                    parameters.append("offset", it.offset.toString())
-                    parameters.append("limit", it.limit.toString())
-                }
-                sortRequest?.let {
-                    parameters.append("sort", it.field.name.lowercase())
-                    parameters.append("order", it.order.name.lowercase())
-                }
+                parameters.appendPageRequest(pageRequest)
+                parameters.appendSortRequest(sortRequest)
             }
         }
         if (response.status != HttpStatusCode.OK) {

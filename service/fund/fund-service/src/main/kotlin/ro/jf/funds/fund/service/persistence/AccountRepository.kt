@@ -3,9 +3,14 @@ package ro.jf.funds.fund.service.persistence
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import ro.jf.funds.platform.api.model.PageRequest
+import ro.jf.funds.platform.api.model.SortRequest
 import ro.jf.funds.platform.api.model.toFinancialUnit
+import ro.jf.funds.platform.jvm.persistence.PagedResult
 import ro.jf.funds.platform.jvm.persistence.blockingTransaction
+import ro.jf.funds.platform.jvm.persistence.toExposedSortOrder
 import ro.jf.funds.fund.api.model.AccountName
+import ro.jf.funds.fund.api.model.AccountSortField
 import ro.jf.funds.fund.api.model.CreateAccountTO
 import ro.jf.funds.fund.service.domain.Account
 import java.util.*
@@ -20,12 +25,34 @@ class AccountRepository(
         val unit = varchar("unit", 50)
     }
 
-    suspend fun list(userId: UUID): List<Account> = blockingTransaction {
-        AccountTable
-            .selectAll()
+    suspend fun list(
+        userId: UUID,
+        pageRequest: PageRequest?,
+        sortRequest: SortRequest<AccountSortField>?,
+    ): PagedResult<Account> = blockingTransaction {
+        val baseQuery = AccountTable.selectAll().where { AccountTable.userId eq userId }
+        val total = baseQuery.count()
+
+        val accounts = AccountTable.selectAll()
             .where { AccountTable.userId eq userId }
+            .applySorting(sortRequest)
+            .applyPagination(pageRequest)
             .map { it.toModel() }
+
+        PagedResult(accounts, total)
     }
+
+    private fun Query.applySorting(sortRequest: SortRequest<AccountSortField>?): Query =
+        sortRequest?.let {
+            val sortColumn = when (it.field) {
+                AccountSortField.NAME -> AccountTable.name
+                AccountSortField.UNIT -> AccountTable.unit
+            }
+            orderBy(sortColumn to it.order.toExposedSortOrder())
+        } ?: this
+
+    private fun Query.applyPagination(pageRequest: PageRequest?): Query =
+        pageRequest?.let { limit(it.limit).offset(it.offset.toLong()) } ?: this
 
     suspend fun findById(userId: UUID, accountId: UUID): Account? = blockingTransaction {
         AccountTable
