@@ -5,15 +5,18 @@ import io.ktor.server.routing.*
 import org.koin.ktor.ext.get
 import ro.jf.funds.fund.service.service.AccountService
 import ro.jf.funds.fund.service.service.FundService
+import ro.jf.funds.fund.service.service.RecordService
 import ro.jf.funds.fund.service.service.TransactionService
 import ro.jf.funds.fund.service.web.accountApiRouting
 import ro.jf.funds.fund.service.web.fundApiRouting
 import ro.jf.funds.fund.service.web.fundTransactionApiRouting
+import ro.jf.funds.fund.service.web.recordApiRouting
 
 fun Application.configureFundRouting() {
     routing {
         accountApiRouting(get<AccountService>())
         fundApiRouting(get<FundService>())
         fundTransactionApiRouting(get<TransactionService>())
+        recordApiRouting(get<RecordService>())
     }
 }

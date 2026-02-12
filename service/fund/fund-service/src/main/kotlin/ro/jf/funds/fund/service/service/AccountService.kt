@@ -61,7 +61,7 @@ class AccountService(
         val newUnit = request.unit
         if (newUnit != null && newUnit != existingAccount.unit) {
             val records = recordRepository.list(userId, RecordFilter(accountId = accountId))
-            if (records.isNotEmpty()) {
+            if (records.items.isNotEmpty()) {
                 throw FundServiceException.AccountHasRecords(accountId)
             }
         }
