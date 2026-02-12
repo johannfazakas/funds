@@ -12,6 +12,7 @@ import ro.jf.funds.platform.jvm.persistence.toExposedSortOrder
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.AccountSortField
 import ro.jf.funds.fund.api.model.CreateAccountTO
+import ro.jf.funds.fund.api.model.UpdateAccountTO
 import ro.jf.funds.fund.service.domain.Account
 import java.util.*
 
@@ -89,6 +90,29 @@ class AccountRepository(
     suspend fun deleteById(userId: UUID, accountId: UUID): Unit = blockingTransaction {
         AccountTable.deleteWhere { (AccountTable.userId eq userId) and (id eq accountId) }
     }
+
+    suspend fun update(userId: UUID, accountId: UUID, request: UpdateAccountTO): Account? =
+        blockingTransaction {
+            if (request.name == null && request.unit == null) {
+                return@blockingTransaction findById(userId, accountId)
+            }
+            val updated =
+                AccountTable.update({ (AccountTable.userId eq userId) and (AccountTable.id eq accountId) }) {
+                    request.name?.let { name -> it[AccountTable.name] = name.value }
+                    request.unit?.let { unit ->
+                        it[unitType] = unit.type.value
+                        it[AccountTable.unit] = unit.value
+                    }
+                }
+            if (updated > 0) {
+                AccountTable.selectAll()
+                    .where { (AccountTable.userId eq userId) and (AccountTable.id eq accountId) }
+                    .map { it.toModel() }
+                    .singleOrNull()
+            } else {
+                null
+            }
+        }
 
     suspend fun deleteAllByUserId(userId: UUID): Unit = blockingTransaction {
         AccountTable.deleteWhere { AccountTable.userId eq userId }

@@ -84,6 +84,20 @@ class FundRepository(
         FundTable.deleteWhere { (FundTable.userId eq userId) and (FundTable.id eq fundId) }
     }
 
+    suspend fun update(userId: UUID, fundId: UUID, name: FundName): Fund? = blockingTransaction {
+        val updated = FundTable.update({ (FundTable.userId eq userId) and (FundTable.id eq fundId) }) {
+            it[FundTable.name] = name.value
+        }
+        if (updated > 0) {
+            FundTable.selectAll()
+                .where { (FundTable.userId eq userId) and (FundTable.id eq fundId) }
+                .toFunds()
+                .singleOrNull()
+        } else {
+            null
+        }
+    }
+
     private fun Query.toFunds(): List<Fund> = this
         .groupBy { it[FundTable.id].value }
         .map { (_, rows) -> rows.toFund() }

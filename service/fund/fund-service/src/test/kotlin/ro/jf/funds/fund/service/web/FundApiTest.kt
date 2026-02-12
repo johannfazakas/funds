@@ -24,6 +24,8 @@ import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.fund.api.model.UpdateFundTO
+import ro.jf.funds.platform.jvm.error.ErrorTO
 import ro.jf.funds.fund.service.config.configureFundErrorHandling
 import ro.jf.funds.fund.service.config.configureFundRouting
 import ro.jf.funds.fund.service.config.fundDependencies
@@ -152,6 +154,60 @@ class FundApiTest {
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
         assertThat(fundRepository.findById(userId, fund.id)).isNull()
+    }
+
+    @Test
+    fun `given fund exists when updating name then returns updated fund`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        val userId = randomUUID()
+        val fund = fundRepository.save(userId, CreateFundTO(FundName("OldName")))
+
+        val response = createJsonHttpClient().patch("/funds-api/fund/v1/funds/${fund.id}") {
+            header(USER_ID_HEADER, userId)
+            contentType(ContentType.Application.Json)
+            setBody(UpdateFundTO(name = FundName("NewName")))
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+        val updatedFund = response.body<FundTO>()
+        assertThat(updatedFund.id).isEqualTo(fund.id)
+        assertThat(updatedFund.name).isEqualTo(FundName("NewName"))
+
+        val dbFund = fundRepository.findById(userId, fund.id)
+        assertThat(dbFund!!.name).isEqualTo(FundName("NewName"))
+    }
+
+    @Test
+    fun `given fund not found when updating then returns not found`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        val userId = randomUUID()
+        val nonExistentFundId = randomUUID()
+
+        val response = createJsonHttpClient().patch("/funds-api/fund/v1/funds/$nonExistentFundId") {
+            header(USER_ID_HEADER, userId)
+            contentType(ContentType.Application.Json)
+            setBody(UpdateFundTO(name = FundName("NewName")))
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
+    }
+
+    @Test
+    fun `given fund name already exists when updating to that name then returns conflict`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        val userId = randomUUID()
+        fundRepository.save(userId, CreateFundTO(FundName("ExistingName")))
+        val fund = fundRepository.save(userId, CreateFundTO(FundName("MyFund")))
+
+        val response = createJsonHttpClient().patch("/funds-api/fund/v1/funds/${fund.id}") {
+            header(USER_ID_HEADER, userId)
+            contentType(ContentType.Application.Json)
+            setBody(UpdateFundTO(name = FundName("ExistingName")))
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.Conflict)
+        val error = response.body<ErrorTO>()
+        assertThat(error.title).isEqualTo("Fund name already exists")
     }
 
     private fun Application.testModule() {

@@ -11,6 +11,7 @@ import ro.jf.funds.platform.jvm.web.sortRequest
 import ro.jf.funds.platform.jvm.web.userId
 import ro.jf.funds.fund.api.model.AccountSortField
 import ro.jf.funds.fund.api.model.CreateAccountTO
+import ro.jf.funds.fund.api.model.UpdateAccountTO
 import ro.jf.funds.fund.service.domain.Account
 import ro.jf.funds.fund.service.mapper.toTO
 import ro.jf.funds.fund.service.service.AccountService
@@ -28,7 +29,6 @@ fun Routing.accountApiRouting(accountService: AccountService) {
             val result = accountService.listAccounts(userId, pageRequest, sortRequest)
             call.respond(PageTO(result.items.map(Account::toTO), result.total))
         }
-
         get("/{id}") {
             val userId = call.userId()
             val accountId = call.parameters["id"]?.let(UUID::fromString) ?: error("Account id is missing.")
@@ -36,7 +36,6 @@ fun Routing.accountApiRouting(accountService: AccountService) {
             val account = accountService.findAccountById(userId, accountId)
             call.respond(HttpStatusCode.OK, account.toTO())
         }
-
         post {
             val userId = call.userId()
             val request = call.receive<CreateAccountTO>()
@@ -44,13 +43,20 @@ fun Routing.accountApiRouting(accountService: AccountService) {
             val account = accountService.createAccount(userId, request)
             call.respond(HttpStatusCode.Created, account.toTO())
         }
-
         delete("/{id}") {
             val userId = call.userId()
             val accountId = call.parameters["id"]?.let(UUID::fromString) ?: error("Account id is missing.")
             log.info { "Delete account by id $accountId from user $userId." }
             accountService.deleteAccount(userId, accountId)
             call.respond(HttpStatusCode.NoContent)
+        }
+        patch("/{id}") {
+            val userId = call.userId()
+            val accountId = call.parameters["id"]?.let(UUID::fromString) ?: error("Account id is missing.")
+            val request = call.receive<UpdateAccountTO>()
+            log.info { "Update account $accountId with $request for user $userId." }
+            val account = accountService.updateAccount(userId, accountId, request)
+            call.respond(HttpStatusCode.OK, account.toTO())
         }
     }
 }

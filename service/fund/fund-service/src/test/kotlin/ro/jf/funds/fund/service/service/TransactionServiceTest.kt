@@ -18,6 +18,7 @@ import ro.jf.funds.fund.service.domain.Transaction
 import ro.jf.funds.fund.service.domain.TransactionRecord
 import ro.jf.funds.fund.service.persistence.AccountRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
+import ro.jf.funds.fund.service.persistence.RecordRepository
 import ro.jf.funds.fund.service.persistence.TransactionRepository
 import java.util.UUID.randomUUID
 
@@ -25,9 +26,10 @@ class TransactionServiceTest {
     private val transactionRepository = mock<TransactionRepository>()
     private val accountRepository = mock<AccountRepository>()
     private val fundRepository = mock<FundRepository>()
+    private val recordRepository = mock<RecordRepository>()
 
     private val fundService = FundService(fundRepository)
-    private val accountService = AccountService(accountRepository)
+    private val accountService = AccountService(accountRepository, recordRepository)
     private val transactionService = TransactionService(transactionRepository, fundService, accountService)
 
     private val userId = randomUUID()

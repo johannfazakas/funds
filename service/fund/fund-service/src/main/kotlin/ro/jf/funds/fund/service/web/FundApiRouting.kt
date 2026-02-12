@@ -12,6 +12,7 @@ import ro.jf.funds.platform.jvm.web.userId
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundSortField
+import ro.jf.funds.fund.api.model.UpdateFundTO
 import ro.jf.funds.fund.service.domain.Fund
 import ro.jf.funds.fund.service.mapper.toTO
 import java.util.*
@@ -59,6 +60,14 @@ fun Routing.fundApiRouting(fundService: ro.jf.funds.fund.service.service.FundSer
             log.info { "Delete account by id $fundId from user $userId." }
             fundService.deleteFund(userId, fundId)
             call.respond(HttpStatusCode.NoContent)
+        }
+        patch("/{fundId}") {
+            val userId = call.userId()
+            val fundId = call.parameters["fundId"]?.let(UUID::fromString) ?: error("Fund id is missing.")
+            val request = call.receive<UpdateFundTO>()
+            log.info { "Update fund $fundId with $request for user $userId." }
+            val fund = fundService.updateFund(userId, fundId, request)
+            call.respond(HttpStatusCode.OK, fund.toTO())
         }
     }
 }
