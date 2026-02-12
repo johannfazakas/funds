@@ -10,6 +10,7 @@ import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundSortField
 import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.fund.api.model.UpdateFundTO
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.api.model.SortRequest
@@ -57,6 +58,21 @@ class FundClient(
         if (response.status != HttpStatusCode.Created) {
             log.w { "Unexpected response on create fund: $response" }
             throw Exception("Failed to create fund: ${response.status}")
+        }
+        return response.body()
+    }
+
+    suspend fun updateFund(userId: Uuid, fundId: Uuid, request: UpdateFundTO): FundTO {
+        val response = httpClient.patch("$baseUrl$BASE_PATH/funds/$fundId") {
+            headers {
+                append(USER_ID_HEADER, userId.toString())
+            }
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+        if (response.status != HttpStatusCode.OK) {
+            log.w { "Unexpected response on update fund: $response" }
+            throw Exception("Failed to update fund: ${response.status}")
         }
         return response.body()
     }

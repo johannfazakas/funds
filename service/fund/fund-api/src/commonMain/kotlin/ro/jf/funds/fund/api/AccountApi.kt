@@ -7,6 +7,7 @@ import ro.jf.funds.platform.api.model.SortRequest
 import ro.jf.funds.fund.api.model.AccountSortField
 import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.fund.api.model.CreateAccountTO
+import ro.jf.funds.fund.api.model.UpdateAccountTO
 
 interface AccountApi {
     suspend fun listAccounts(
@@ -18,6 +19,8 @@ interface AccountApi {
     suspend fun findAccountById(userId: Uuid, accountId: Uuid): AccountTO?
 
     suspend fun createAccount(userId: Uuid, request: CreateAccountTO): AccountTO
+
+    suspend fun updateAccount(userId: Uuid, accountId: Uuid, request: UpdateAccountTO): AccountTO
 
     suspend fun deleteAccountById(userId: Uuid, accountId: Uuid)
 }

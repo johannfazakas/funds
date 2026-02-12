@@ -19,6 +19,7 @@ import ro.jf.funds.fund.api.AccountApi
 import ro.jf.funds.fund.api.model.AccountSortField
 import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.fund.api.model.CreateAccountTO
+import ro.jf.funds.fund.api.model.UpdateAccountTO
 
 private val log = logger { }
 
@@ -89,6 +90,22 @@ class AccountSdk(
             }
         }
     }
+
+    override suspend fun updateAccount(userId: Uuid, accountId: Uuid, request: UpdateAccountTO): AccountTO =
+        withSuspendingSpan {
+            val response = httpClient.patch("$baseUrl$BASE_PATH/accounts/$accountId") {
+                headers {
+                    append(USER_ID_HEADER, userId.toString())
+                }
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+            if (response.status != HttpStatusCode.OK) {
+                log.warn { "Unexpected response on update account: $response" }
+                throw response.toApiException()
+            }
+            response.body()
+        }
 
     override suspend fun deleteAccountById(userId: Uuid, accountId: Uuid) = withSuspendingSpan {
         val response = httpClient.delete("$baseUrl$BASE_PATH/accounts/$accountId") {

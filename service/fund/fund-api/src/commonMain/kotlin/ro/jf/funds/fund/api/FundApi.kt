@@ -8,6 +8,7 @@ import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundSortField
 import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.fund.api.model.UpdateFundTO
 
 interface FundApi {
     suspend fun getFundById(userId: Uuid, fundId: Uuid): FundTO?
@@ -17,5 +18,6 @@ interface FundApi {
         pageRequest: PageRequest? = null,
         sortRequest: SortRequest<FundSortField>? = null,
     ): PageTO<FundTO>
+    suspend fun updateFund(userId: Uuid, fundId: Uuid, request: UpdateFundTO): FundTO
     suspend fun createFund(userId: Uuid, request: CreateFundTO): FundTO
 }

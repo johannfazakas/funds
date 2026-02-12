@@ -8,20 +8,14 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.datetime
-import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.FinancialUnit
-import ro.jf.funds.platform.api.model.Instrument
-import ro.jf.funds.platform.api.model.Label
-import ro.jf.funds.platform.api.model.UnitType
-import ro.jf.funds.platform.api.model.asLabels
-import ro.jf.funds.platform.api.model.asString
-import ro.jf.funds.platform.jvm.persistence.bigDecimal
-import ro.jf.funds.platform.jvm.persistence.blockingTransaction
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.domain.Transaction
 import ro.jf.funds.fund.service.domain.TransactionRecord
-import ro.jf.funds.fund.service.persistence.AccountRepository.AccountTable
-import ro.jf.funds.fund.service.persistence.FundRepository.FundTable
+import ro.jf.funds.fund.service.persistence.RecordRepository.RecordTable
+import ro.jf.funds.platform.api.model.*
+import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.jvm.persistence.bigDecimal
+import ro.jf.funds.platform.jvm.persistence.blockingTransaction
 import java.util.*
 import java.util.UUID.randomUUID
 
@@ -33,17 +27,6 @@ class TransactionRepository(
         val externalId = varchar("external_id", 100)
         val type = varchar("type", 50)
         val dateTime = datetime("date_time")
-    }
-
-    object RecordTable : UUIDTable("record") {
-        val userId = uuid("user_id")
-        val transactionId = uuid("transaction_id").references(TransactionTable.id)
-        val accountId = uuid("account_id").references(AccountTable.id)
-        val fundId = uuid("fund_id").references(FundTable.id)
-        val amount = bigDecimal("amount", 20, 8)
-        val unitType = varchar("unit_type", 50)
-        val unit = varchar("unit", 50)
-        val labels = varchar("labels", 100)
     }
 
     suspend fun findById(userId: UUID, transactionId: UUID): Transaction? = blockingTransaction {

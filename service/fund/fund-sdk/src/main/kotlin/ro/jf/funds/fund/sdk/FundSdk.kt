@@ -20,6 +20,7 @@ import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.fund.api.model.FundSortField
 import ro.jf.funds.fund.api.model.FundTO
+import ro.jf.funds.fund.api.model.UpdateFundTO
 
 private val log = logger { }
 
@@ -98,4 +99,19 @@ class FundSdk(
         }
         response.body()
     }
+    override suspend fun updateFund(userId: Uuid, fundId: Uuid, request: UpdateFundTO): FundTO = withSuspendingSpan {
+        val response = httpClient.patch("$baseUrl$BASE_PATH/funds/$fundId") {
+            headers {
+                append(USER_ID_HEADER, userId.toString())
+            }
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+        if (response.status != HttpStatusCode.OK) {
+            log.warn { "Unexpected response on update fund: $response" }
+            throw response.toApiException()
+        }
+        response.body()
+    }
+
 }

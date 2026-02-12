@@ -34,10 +34,12 @@ fun Application.configureFundErrorHandling() {
 
 fun FundServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is FundServiceException.FundNotFound -> HttpStatusCode.NotFound
+    is FundServiceException.FundNameAlreadyExists -> HttpStatusCode.Conflict
     is FundServiceException.TransactionFundNotFound -> HttpStatusCode.UnprocessableEntity
     is FundServiceException.AccountNameAlreadyExists -> HttpStatusCode.Conflict
     is FundServiceException.AccountNotFound -> HttpStatusCode.NotFound
     is FundServiceException.AccountNameNotFound -> HttpStatusCode.NotFound
+    is FundServiceException.AccountHasRecords -> HttpStatusCode.Conflict
     is FundServiceException.RecordAccountNotFound -> HttpStatusCode.UnprocessableEntity
     is FundServiceException.RecordFundNotFound -> HttpStatusCode.UnprocessableEntity
     is FundServiceException.AccountRecordCurrencyMismatch -> HttpStatusCode.UnprocessableEntity
@@ -55,6 +57,11 @@ fun FundServiceException.toError(): ErrorTO {
         is FundServiceException.FundNotFound -> ErrorTO(
             title = "Fund not found",
             detail = "Fund with id '${fundId}' not found"
+        )
+
+        is FundServiceException.FundNameAlreadyExists -> ErrorTO(
+            title = "Fund name already exists",
+            detail = "Fund with name '${fundName.value}' already exists"
         )
 
         is FundServiceException.TransactionFundNotFound -> ErrorTO(
@@ -75,6 +82,11 @@ fun FundServiceException.toError(): ErrorTO {
         is FundServiceException.AccountNameNotFound -> ErrorTO(
             title = "Account name not found",
             detail = "Account with name '${accountName.value}' not found"
+        )
+
+        is FundServiceException.AccountHasRecords -> ErrorTO(
+            title = "Account has records",
+            detail = "Account with id '$accountId' has transaction records and cannot change unit"
         )
 
         is FundServiceException.RecordAccountNotFound -> ErrorTO(

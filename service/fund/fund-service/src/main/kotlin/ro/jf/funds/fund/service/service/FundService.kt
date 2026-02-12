@@ -2,7 +2,9 @@ package ro.jf.funds.fund.service.service
 
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
+import ro.jf.funds.fund.api.model.UpdateFundTO
 import ro.jf.funds.fund.service.domain.Fund
+import ro.jf.funds.fund.service.domain.FundServiceException
 import ro.jf.funds.fund.service.persistence.FundRepository
 import ro.jf.funds.fund.api.model.FundSortField
 import ro.jf.funds.platform.api.model.PageRequest
@@ -35,5 +37,23 @@ class FundService(
 
     suspend fun deleteFund(userId: UUID, fundId: UUID) {
         return fundRepository.deleteById(userId, fundId)
+    }
+
+    suspend fun updateFund(userId: UUID, fundId: UUID, request: UpdateFundTO): Fund {
+        val existingFund = fundRepository.findById(userId, fundId)
+            ?: throw FundServiceException.FundNotFound(fundId)
+
+        val requestName = request.name
+        val newName = requestName ?: existingFund.name
+
+        if (requestName != null && requestName != existingFund.name) {
+            val existingWithName = fundRepository.findByName(userId, requestName)
+            if (existingWithName != null) {
+                throw FundServiceException.FundNameAlreadyExists(requestName)
+            }
+        }
+
+        return fundRepository.update(userId, fundId, newName)
+            ?: throw FundServiceException.FundNotFound(fundId)
     }
 }

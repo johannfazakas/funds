@@ -9,6 +9,7 @@ import io.ktor.http.*
 import ro.jf.funds.fund.api.model.AccountSortField
 import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.fund.api.model.CreateAccountTO
+import ro.jf.funds.fund.api.model.UpdateAccountTO
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.api.model.SortRequest
@@ -56,6 +57,21 @@ class AccountClient(
         if (response.status != HttpStatusCode.Created) {
             log.w { "Unexpected response on create account: $response" }
             throw Exception("Failed to create account: ${response.status}")
+        }
+        return response.body()
+    }
+
+    suspend fun updateAccount(userId: Uuid, accountId: Uuid, request: UpdateAccountTO): AccountTO {
+        val response = httpClient.patch("$baseUrl$BASE_PATH/accounts/$accountId") {
+            headers {
+                append(USER_ID_HEADER, userId.toString())
+            }
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+        if (response.status != HttpStatusCode.OK) {
+            log.w { "Unexpected response on update account: $response" }
+            throw Exception("Failed to update account: ${response.status}")
         }
         return response.body()
     }
