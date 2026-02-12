@@ -8,6 +8,7 @@ import java.util.*
 sealed class FundServiceException : RuntimeException() {
     class FundNotFound(val fundId: UUID) : FundServiceException()
     class FundNameAlreadyExists(val fundName: FundName) : FundServiceException()
+    class FundHasRecords(val fundId: UUID) : FundServiceException()
     class AccountHasRecords(val accountId: UUID) : FundServiceException()
     class TransactionFundNotFound(val fundId: UUID) : FundServiceException()
     class AccountNameAlreadyExists(val accountName: AccountName) : FundServiceException()

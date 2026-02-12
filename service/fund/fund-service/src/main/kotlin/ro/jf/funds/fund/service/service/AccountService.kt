@@ -43,6 +43,10 @@ class AccountService(
     }
 
     suspend fun deleteAccount(userId: UUID, accountId: UUID) {
+        val records = recordRepository.list(userId, RecordFilter(accountId = accountId))
+        if (records.items.isNotEmpty()) {
+            throw FundServiceException.AccountHasRecords(accountId)
+        }
         accountRepository.deleteById(userId, accountId)
     }
 

@@ -59,7 +59,7 @@ private val Application.fundServiceDependencies
     get() = module {
         single<AccountService> { AccountService(get(), get()) }
         single<TransactionService> { TransactionService(get(), get(), get()) }
-        single<FundService> { FundService(get()) }
+        single<FundService> { FundService(get(), get()) }
         single<RecordService> { RecordService(get()) }
         single<CreateTransactionsRequestHandler> {
             CreateTransactionsRequestHandler(

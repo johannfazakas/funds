@@ -28,7 +28,7 @@ class TransactionServiceTest {
     private val fundRepository = mock<FundRepository>()
     private val recordRepository = mock<RecordRepository>()
 
-    private val fundService = FundService(fundRepository)
+    private val fundService = FundService(fundRepository, recordRepository)
     private val accountService = AccountService(accountRepository, recordRepository)
     private val transactionService = TransactionService(transactionRepository, fundService, accountService)
 

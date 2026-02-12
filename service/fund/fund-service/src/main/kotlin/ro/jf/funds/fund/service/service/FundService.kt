@@ -2,11 +2,13 @@ package ro.jf.funds.fund.service.service
 
 import ro.jf.funds.fund.api.model.CreateFundTO
 import ro.jf.funds.fund.api.model.FundName
+import ro.jf.funds.fund.api.model.FundSortField
 import ro.jf.funds.fund.api.model.UpdateFundTO
 import ro.jf.funds.fund.service.domain.Fund
 import ro.jf.funds.fund.service.domain.FundServiceException
+import ro.jf.funds.fund.service.domain.RecordFilter
 import ro.jf.funds.fund.service.persistence.FundRepository
-import ro.jf.funds.fund.api.model.FundSortField
+import ro.jf.funds.fund.service.persistence.RecordRepository
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
 import ro.jf.funds.platform.jvm.persistence.PagedResult
@@ -14,6 +16,7 @@ import java.util.*
 
 class FundService(
     private val fundRepository: FundRepository,
+    private val recordRepository: RecordRepository,
 ) {
     suspend fun listFunds(
         userId: UUID,
@@ -36,7 +39,11 @@ class FundService(
     }
 
     suspend fun deleteFund(userId: UUID, fundId: UUID) {
-        return fundRepository.deleteById(userId, fundId)
+        val records = recordRepository.list(userId, RecordFilter(fundId = fundId))
+        if (records.items.isNotEmpty()) {
+            throw FundServiceException.FundHasRecords(fundId)
+        }
+        fundRepository.deleteById(userId, fundId)
     }
 
     suspend fun updateFund(userId: UUID, fundId: UUID, request: UpdateFundTO): Fund {

@@ -35,6 +35,7 @@ fun Application.configureFundErrorHandling() {
 fun FundServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is FundServiceException.FundNotFound -> HttpStatusCode.NotFound
     is FundServiceException.FundNameAlreadyExists -> HttpStatusCode.Conflict
+    is FundServiceException.FundHasRecords -> HttpStatusCode.Conflict
     is FundServiceException.TransactionFundNotFound -> HttpStatusCode.UnprocessableEntity
     is FundServiceException.AccountNameAlreadyExists -> HttpStatusCode.Conflict
     is FundServiceException.AccountNotFound -> HttpStatusCode.NotFound
@@ -62,6 +63,11 @@ fun FundServiceException.toError(): ErrorTO {
         is FundServiceException.FundNameAlreadyExists -> ErrorTO(
             title = "Fund name already exists",
             detail = "Fund with name '${fundName.value}' already exists"
+        )
+
+        is FundServiceException.FundHasRecords -> ErrorTO(
+            title = "Fund has records",
+            detail = "Fund with id '$fundId' has transaction records and cannot be deleted"
         )
 
         is FundServiceException.TransactionFundNotFound -> ErrorTO(
