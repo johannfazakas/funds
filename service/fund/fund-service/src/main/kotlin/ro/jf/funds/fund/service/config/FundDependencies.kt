@@ -17,6 +17,7 @@ import ro.jf.funds.fund.service.persistence.RecordRepository
 import ro.jf.funds.fund.service.persistence.TransactionRepository
 import ro.jf.funds.fund.service.service.AccountService
 import ro.jf.funds.fund.service.service.FundService
+import ro.jf.funds.fund.service.service.RecordService
 import ro.jf.funds.fund.service.service.TransactionService
 import ro.jf.funds.fund.service.service.event.CreateTransactionsRequestHandler
 import javax.sql.DataSource
@@ -59,6 +60,7 @@ private val Application.fundServiceDependencies
         single<AccountService> { AccountService(get(), get()) }
         single<TransactionService> { TransactionService(get(), get(), get()) }
         single<FundService> { FundService(get()) }
+        single<RecordService> { RecordService(get()) }
         single<CreateTransactionsRequestHandler> {
             CreateTransactionsRequestHandler(
                 get(),

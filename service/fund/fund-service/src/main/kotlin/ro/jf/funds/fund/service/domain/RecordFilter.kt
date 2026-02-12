@@ -5,4 +5,6 @@ import java.util.UUID
 data class RecordFilter(
     val accountId: UUID? = null,
     val fundId: UUID? = null,
+    val unit: String? = null,
+    val label: String? = null,
 )

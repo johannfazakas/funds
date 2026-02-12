@@ -14,7 +14,7 @@ import ro.jf.funds.fund.service.domain.TransactionRecord
 import ro.jf.funds.fund.service.persistence.RecordRepository.RecordTable
 import ro.jf.funds.platform.api.model.*
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.jvm.persistence.bigDecimal
+import ro.jf.funds.platform.jvm.persistence.applyFilterIfPresent
 import ro.jf.funds.platform.jvm.persistence.blockingTransaction
 import java.util.*
 import java.util.UUID.randomUUID
@@ -45,20 +45,8 @@ class TransactionRepository(
             .leftJoin(RecordTable)
             .select(TransactionTable.id)
             .where(toPredicate(userId, filter))
-            .let { query ->
-                if (filter.fundId != null) {
-                    query.andWhere { RecordTable.fundId eq filter.fundId!! }
-                } else {
-                    query
-                }
-            }
-            .let { query ->
-                if (filter.accountId != null) {
-                    query.andWhere { RecordTable.accountId eq filter.accountId!! }
-                } else {
-                    query
-                }
-            }
+            .applyFilterIfPresent(filter.fundId) { RecordTable.fundId eq it }
+            .applyFilterIfPresent(filter.accountId) { RecordTable.accountId eq it }
             .map { it[TransactionTable.id].value }
             .distinct()
 

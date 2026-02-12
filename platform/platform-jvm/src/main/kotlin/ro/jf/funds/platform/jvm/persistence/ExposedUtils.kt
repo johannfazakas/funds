@@ -2,9 +2,7 @@ package ro.jf.funds.platform.jvm.persistence
 
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.coroutines.Dispatchers
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.jf.funds.platform.api.model.SortOrder
 import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
@@ -33,3 +31,6 @@ fun SortOrder.toExposedSortOrder(): ExposedSortOrder = when (this) {
     SortOrder.ASC -> ExposedSortOrder.ASC
     SortOrder.DESC -> ExposedSortOrder.DESC
 }
+
+fun <T> Query.applyFilterIfPresent(value: T?, condition: SqlExpressionBuilder.(T) -> Op<Boolean>): Query =
+    if (value != null) andWhere { condition(value) } else this
