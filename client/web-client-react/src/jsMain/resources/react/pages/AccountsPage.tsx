@@ -28,7 +28,7 @@ import {
     SelectValue,
 } from '../components/ui/select';
 import { Loader2 } from 'lucide-react';
-import { Account, listAccounts, createAccount, deleteAccount } from '../api/accountApi';
+import { Account, listAccounts, createAccount, deleteAccount, updateAccount } from '../api/accountApi';
 import { AccountSortField, SortOrder } from '../api/types';
 import { Pagination } from '../components/Pagination';
 import { SortableTableHead } from '../components/SortableTableHead';
@@ -54,6 +54,13 @@ function AccountsPage({ userId }: AccountsPageProps) {
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
+    const [accountToEdit, setAccountToEdit] = useState<Account | null>(null);
+    const [editAccountName, setEditAccountName] = useState('');
+    const [editUnitType, setEditUnitType] = useState('currency');
+    const [editUnitValue, setEditUnitValue] = useState('');
+    const [editing, setEditing] = useState(false);
+    const [editError, setEditError] = useState<string | null>(null);
+
     const [offset, setOffset] = useState(0);
     const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
     const [sortField, setSortField] = useState<AccountSortField | null>(null);
@@ -71,7 +78,7 @@ function AccountsPage({ userId }: AccountsPageProps) {
             setAccounts(result.items);
             setTotal(result.total);
         } catch (err) {
-            setError('Failed to load accounts: ' + (err instanceof Error ? err.message : 'Unknown error'));
+            setError(err instanceof Error ? err.message : 'Failed to load accounts');
         } finally {
             setLoading(false);
         }
@@ -128,7 +135,7 @@ function AccountsPage({ userId }: AccountsPageProps) {
             setOffset(0);
             await loadAccounts();
         } catch (err) {
-            setCreateError('Failed to create account: ' + (err instanceof Error ? err.message : 'Unknown error'));
+            setCreateError(err instanceof Error ? err.message : 'Failed to create account');
         } finally {
             setCreating(false);
         }
@@ -145,7 +152,7 @@ function AccountsPage({ userId }: AccountsPageProps) {
             setAccountToDelete(null);
             await loadAccounts();
         } catch (err) {
-            setDeleteError('Failed to delete account: ' + (err instanceof Error ? err.message : 'Unknown error'));
+            setDeleteError(err instanceof Error ? err.message : 'Failed to delete account');
         } finally {
             setDeleting(false);
         }
@@ -157,6 +164,47 @@ function AccountsPage({ userId }: AccountsPageProps) {
         setNewUnitValue('');
         setCreateError(null);
         setShowCreateModal(true);
+    };
+
+    const openEditModal = (account: Account) => {
+        setEditAccountName(account.name);
+        setEditUnitType(account.unit.type);
+        setEditUnitValue(account.unit.value);
+        setEditError(null);
+        setAccountToEdit(account);
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!accountToEdit) return;
+
+        if (!editAccountName.trim()) {
+            setEditError('Account name cannot be empty');
+            return;
+        }
+        if (!editUnitValue.trim()) {
+            setEditError('Unit value cannot be empty');
+            return;
+        }
+
+        setEditing(true);
+        setEditError(null);
+
+        try {
+            await updateAccount(
+                userId,
+                accountToEdit.id,
+                editAccountName.trim(),
+                editUnitType,
+                editUnitValue.trim().toUpperCase(),
+            );
+            setAccountToEdit(null);
+            await loadAccounts();
+        } catch (err) {
+            setEditError(err instanceof Error ? err.message : 'Failed to update account');
+        } finally {
+            setEditing(false);
+        }
     };
 
     return (
@@ -211,7 +259,11 @@ function AccountsPage({ userId }: AccountsPageProps) {
                         </TableHeader>
                         <TableBody>
                             {accounts.map((account) => (
-                                <TableRow key={account.id}>
+                                <TableRow
+                                    key={account.id}
+                                    className="cursor-pointer hover:bg-muted/50"
+                                    onClick={() => openEditModal(account)}
+                                >
                                     <TableCell>{account.name}</TableCell>
                                     <TableCell>
                                         <Badge variant={account.unit.type === 'currency' ? 'default' : 'secondary'}>
@@ -223,7 +275,7 @@ function AccountsPage({ userId }: AccountsPageProps) {
                                             variant="ghost"
                                             size="sm"
                                             className="text-destructive hover:text-destructive"
-                                            onClick={() => { setDeleteError(null); setAccountToDelete(account); }}
+                                            onClick={(e) => { e.stopPropagation(); setDeleteError(null); setAccountToDelete(account); }}
                                         >
                                             Delete
                                         </Button>
@@ -349,6 +401,76 @@ function AccountsPage({ userId }: AccountsPageProps) {
                             )}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!accountToEdit} onOpenChange={(open) => !open && !editing && setAccountToEdit(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Account</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdate}>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="editAccountName">Account name</Label>
+                                <Input
+                                    id="editAccountName"
+                                    value={editAccountName}
+                                    onChange={(e) => setEditAccountName(e.target.value)}
+                                    disabled={editing}
+                                    placeholder="Enter account name"
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="editUnitType">Unit type</Label>
+                                <Select value={editUnitType} onValueChange={setEditUnitType} disabled={editing}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="currency">Currency</SelectItem>
+                                        <SelectItem value="instrument">Instrument</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="editUnitValue">Unit value</Label>
+                                <Input
+                                    id="editUnitValue"
+                                    value={editUnitValue}
+                                    onChange={(e) => setEditUnitValue(e.target.value)}
+                                    disabled={editing}
+                                    placeholder={editUnitType === 'currency' ? 'e.g. RON, EUR, USD' : 'e.g. BTC, AAPL'}
+                                />
+                            </div>
+                            {editError && (
+                                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                                    {editError}
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setAccountToEdit(null)}
+                                disabled={editing}
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={editing}>
+                                {editing ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    'Save'
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </div>

@@ -1,4 +1,5 @@
 import { PageResponse, PaginationParams, SortParams, AccountSortField } from './types';
+import { handleApiError } from './apiUtils';
 
 export interface Account {
     id: string;
@@ -63,7 +64,7 @@ export async function listAccounts(
     const response = await fetch(url, {
         headers: { 'FUNDS_USER_ID': userId }
     });
-    if (!response.ok) throw new Error(`Failed to list accounts: ${response.status}`);
+    if (!response.ok) await handleApiError(response, 'Failed to load accounts');
     const data: PageResponse<Account> = await response.json();
     return { items: data.items, total: data.total };
 }
@@ -85,7 +86,7 @@ export async function createAccount(
             unit: { type: unitType, value: unitValue }
         } as CreateAccountRequest)
     });
-    if (!response.ok) throw new Error(`Failed to create account: ${response.status}`);
+    if (!response.ok) await handleApiError(response, 'Failed to create account');
     return response.json();
 }
 
@@ -94,5 +95,38 @@ export async function deleteAccount(userId: string, accountId: string): Promise<
         method: 'DELETE',
         headers: { 'FUNDS_USER_ID': userId }
     });
-    if (!response.ok) throw new Error(`Failed to delete account: ${response.status}`);
+    if (!response.ok) await handleApiError(response, 'Failed to delete account');
+}
+
+interface UpdateAccountRequest {
+    name?: string;
+    unit?: {
+        type: string;
+        value: string;
+    };
+}
+
+export async function updateAccount(
+    userId: string,
+    accountId: string,
+    name?: string,
+    unitType?: string,
+    unitValue?: string
+): Promise<Account> {
+    const body: UpdateAccountRequest = {};
+    if (name !== undefined) body.name = name;
+    if (unitType !== undefined && unitValue !== undefined) {
+        body.unit = { type: unitType, value: unitValue };
+    }
+
+    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/accounts/${accountId}`, {
+        method: 'PATCH',
+        headers: {
+            'FUNDS_USER_ID': userId,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+    });
+    if (!response.ok) await handleApiError(response, 'Failed to update account');
+    return response.json();
 }

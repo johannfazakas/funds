@@ -1,4 +1,5 @@
 import { PageResponse, PaginationParams, SortParams, FundSortField } from './types';
+import { handleApiError } from './apiUtils';
 
 export interface Fund {
     id: string;
@@ -55,7 +56,7 @@ export async function listFunds(
     const response = await fetch(url, {
         headers: { 'FUNDS_USER_ID': userId }
     });
-    if (!response.ok) throw new Error(`Failed to list funds: ${response.status}`);
+    if (!response.ok) await handleApiError(response, 'Failed to load funds');
     const data: PageResponse<Fund> = await response.json();
     return { items: data.items, total: data.total };
 }
@@ -69,7 +70,7 @@ export async function createFund(userId: string, name: string): Promise<Fund> {
         },
         body: JSON.stringify({ name } as CreateFundRequest)
     });
-    if (!response.ok) throw new Error(`Failed to create fund: ${response.status}`);
+    if (!response.ok) await handleApiError(response, 'Failed to create fund');
     return response.json();
 }
 
@@ -78,5 +79,18 @@ export async function deleteFund(userId: string, fundId: string): Promise<void> 
         method: 'DELETE',
         headers: { 'FUNDS_USER_ID': userId }
     });
-    if (!response.ok) throw new Error(`Failed to delete fund: ${response.status}`);
+    if (!response.ok) await handleApiError(response, 'Failed to delete fund');
+}
+
+export async function updateFund(userId: string, fundId: string, name: string): Promise<Fund> {
+    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/funds/${fundId}`, {
+        method: 'PATCH',
+        headers: {
+            'FUNDS_USER_ID': userId,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name })
+    });
+    if (!response.ok) await handleApiError(response, 'Failed to update fund');
+    return response.json();
 }

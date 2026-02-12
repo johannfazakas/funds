@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Fund, listFunds, createFund, deleteFund } from '../api/fundApi';
+import { Fund, listFunds, createFund, deleteFund, updateFund } from '../api/fundApi';
 import { FundSortField, SortOrder } from '../api/types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -44,6 +44,11 @@ function FundListPage({ userId }: FundListPageProps) {
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
+    const [fundToEdit, setFundToEdit] = useState<Fund | null>(null);
+    const [editFundName, setEditFundName] = useState('');
+    const [editing, setEditing] = useState(false);
+    const [editError, setEditError] = useState<string | null>(null);
+
     const [offset, setOffset] = useState(0);
     const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
     const [sortField, setSortField] = useState<FundSortField | null>(null);
@@ -61,7 +66,7 @@ function FundListPage({ userId }: FundListPageProps) {
             setFunds(result.items);
             setTotal(result.total);
         } catch (err) {
-            setError('Failed to load funds: ' + (err instanceof Error ? err.message : 'Unknown error'));
+            setError(err instanceof Error ? err.message : 'Failed to load funds');
         } finally {
             setLoading(false);
         }
@@ -107,7 +112,7 @@ function FundListPage({ userId }: FundListPageProps) {
             setOffset(0);
             await loadFunds();
         } catch (err) {
-            setCreateError('Failed to create fund: ' + (err instanceof Error ? err.message : 'Unknown error'));
+            setCreateError(err instanceof Error ? err.message : 'Failed to create fund');
         } finally {
             setCreating(false);
         }
@@ -124,7 +129,7 @@ function FundListPage({ userId }: FundListPageProps) {
             setFundToDelete(null);
             await loadFunds();
         } catch (err) {
-            setDeleteError('Failed to delete fund: ' + (err instanceof Error ? err.message : 'Unknown error'));
+            setDeleteError(err instanceof Error ? err.message : 'Failed to delete fund');
         } finally {
             setDeleting(false);
         }
@@ -134,6 +139,35 @@ function FundListPage({ userId }: FundListPageProps) {
         setNewFundName('');
         setCreateError(null);
         setShowCreateModal(true);
+    };
+
+    const openEditModal = (fund: Fund) => {
+        setEditFundName(fund.name);
+        setEditError(null);
+        setFundToEdit(fund);
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!fundToEdit) return;
+
+        if (!editFundName.trim()) {
+            setEditError('Fund name cannot be empty');
+            return;
+        }
+
+        setEditing(true);
+        setEditError(null);
+
+        try {
+            await updateFund(userId, fundToEdit.id, editFundName.trim());
+            setFundToEdit(null);
+            await loadFunds();
+        } catch (err) {
+            setEditError(err instanceof Error ? err.message : 'Failed to update fund');
+        } finally {
+            setEditing(false);
+        }
     };
 
     return (
@@ -180,14 +214,18 @@ function FundListPage({ userId }: FundListPageProps) {
                         </TableHeader>
                         <TableBody>
                             {funds.map((fund) => (
-                                <TableRow key={fund.id}>
+                                <TableRow
+                                    key={fund.id}
+                                    className="cursor-pointer hover:bg-muted/50"
+                                    onClick={() => openEditModal(fund)}
+                                >
                                     <TableCell>{fund.name}</TableCell>
                                     <TableCell>
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             className="text-destructive hover:text-destructive"
-                                            onClick={() => { setDeleteError(null); setFundToDelete(fund); }}
+                                            onClick={(e) => { e.stopPropagation(); setDeleteError(null); setFundToDelete(fund); }}
                                         >
                                             Delete
                                         </Button>
@@ -291,6 +329,54 @@ function FundListPage({ userId }: FundListPageProps) {
                             )}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!fundToEdit} onOpenChange={(open) => !open && !editing && setFundToEdit(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Fund</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdate}>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="editFundName">Fund name</Label>
+                                <Input
+                                    id="editFundName"
+                                    value={editFundName}
+                                    onChange={(e) => setEditFundName(e.target.value)}
+                                    disabled={editing}
+                                    placeholder="Enter fund name"
+                                    autoFocus
+                                />
+                            </div>
+                            {editError && (
+                                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                                    {editError}
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setFundToEdit(null)}
+                                disabled={editing}
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={editing}>
+                                {editing ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    'Save'
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </div>
