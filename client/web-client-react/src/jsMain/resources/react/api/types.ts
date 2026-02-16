@@ -17,3 +17,4 @@ export interface SortParams<T extends string> {
 
 export type FundSortField = 'name';
 export type AccountSortField = 'name' | 'unit';
+export type RecordSortField = 'date' | 'amount';

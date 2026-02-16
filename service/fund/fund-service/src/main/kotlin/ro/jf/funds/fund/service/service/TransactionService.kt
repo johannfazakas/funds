@@ -19,6 +19,11 @@ class TransactionService(
     private val fundService: FundService,
     private val accountService: AccountService,
 ) {
+    suspend fun getTransaction(userId: UUID, transactionId: UUID): Transaction = withSuspendingSpan {
+        transactionRepository.findById(userId, transactionId)
+            ?: throw FundServiceException.TransactionNotFound(transactionId)
+    }
+
     suspend fun listTransactions(
         userId: UUID,
         filter: TransactionFilterTO = TransactionFilterTO.empty(),

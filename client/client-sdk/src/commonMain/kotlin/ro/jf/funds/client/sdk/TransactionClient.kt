@@ -20,6 +20,19 @@ class TransactionClient(
 ) {
     private val log = Logger.withTag("TransactionClient")
 
+    suspend fun getTransaction(userId: Uuid, transactionId: Uuid): TransactionTO {
+        val response = httpClient.get("$baseUrl$BASE_PATH/transactions/$transactionId") {
+            headers {
+                append(USER_ID_HEADER, userId.toString())
+            }
+        }
+        if (response.status != HttpStatusCode.OK) {
+            log.w { "Unexpected response on get transaction: $response" }
+            throw Exception("Failed to get transaction: ${response.status}")
+        }
+        return response.body()
+    }
+
     suspend fun listTransactions(userId: Uuid, filter: TransactionFilterTO = TransactionFilterTO.empty()): List<TransactionTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/transactions") {
             filter.fromDate?.let { parameter("fromDate", it.toString()) }

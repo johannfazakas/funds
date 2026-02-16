@@ -1,7 +1,9 @@
 package ro.jf.funds.fund.service.mapper
 
+import ro.jf.funds.fund.api.model.RecordTO
 import ro.jf.funds.fund.api.model.TransactionRecordTO
 import ro.jf.funds.fund.api.model.TransactionTO
+import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.domain.Transaction
 import ro.jf.funds.fund.service.domain.TransactionRecord
 
@@ -70,3 +72,26 @@ fun TransactionRecord.InstrumentRecord.toTO() = TransactionRecordTO.InstrumentRe
     unit = unit,
     labels = labels,
 )
+
+fun Record.toTO(): RecordTO = when (this) {
+    is Record.CurrencyRecord -> RecordTO.CurrencyRecord(
+        id = id,
+        transactionId = transactionId,
+        dateTime = dateTime,
+        accountId = accountId,
+        fundId = fundId,
+        amount = amount,
+        unit = unit,
+        labels = labels,
+    )
+    is Record.InstrumentRecord -> RecordTO.InstrumentRecord(
+        id = id,
+        transactionId = transactionId,
+        dateTime = dateTime,
+        accountId = accountId,
+        fundId = fundId,
+        amount = amount,
+        unit = unit,
+        labels = labels,
+    )
+}

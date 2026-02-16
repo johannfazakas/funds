@@ -1,8 +1,8 @@
 package ro.jf.funds.fund.service.service
 
 import ro.jf.funds.fund.api.model.RecordSortField
+import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.domain.RecordFilter
-import ro.jf.funds.fund.service.domain.TransactionRecord
 import ro.jf.funds.fund.service.persistence.RecordRepository
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
@@ -17,7 +17,7 @@ class RecordService(
         filter: RecordFilter?,
         pageRequest: PageRequest?,
         sortRequest: SortRequest<RecordSortField>?,
-    ): PagedResult<TransactionRecord> {
+    ): PagedResult<Record> {
         return recordRepository.list(userId, filter, pageRequest, sortRequest)
     }
 }

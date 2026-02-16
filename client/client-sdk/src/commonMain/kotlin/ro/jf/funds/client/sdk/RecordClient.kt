@@ -8,7 +8,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import ro.jf.funds.fund.api.model.RecordFilterTO
 import ro.jf.funds.fund.api.model.RecordSortField
-import ro.jf.funds.fund.api.model.TransactionRecordTO
+import ro.jf.funds.fund.api.model.RecordTO
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.api.model.SortRequest
@@ -27,7 +27,7 @@ class RecordClient(
         filter: RecordFilterTO? = null,
         pageRequest: PageRequest? = null,
         sortRequest: SortRequest<RecordSortField>? = null,
-    ): PageTO<TransactionRecordTO> {
+    ): PageTO<RecordTO> {
         val response = httpClient.get("$baseUrl$BASE_PATH/records") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -45,7 +45,7 @@ class RecordClient(
             log.w { "Unexpected response on list records: $response" }
             throw Exception("Failed to list records: ${response.status}")
         }
-        val records = response.body<PageTO<TransactionRecordTO>>()
+        val records = response.body<PageTO<RecordTO>>()
         log.d { "Retrieved records: $records" }
         return records
     }

@@ -1,10 +1,11 @@
 package ro.jf.funds.fund.service.persistence
 
+import kotlinx.datetime.toKotlinLocalDateTime
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import ro.jf.funds.fund.api.model.RecordSortField
+import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.domain.RecordFilter
-import ro.jf.funds.fund.service.domain.TransactionRecord
 import ro.jf.funds.fund.service.persistence.TransactionRepository.TransactionTable
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.Instrument
@@ -39,7 +40,7 @@ class RecordRepository(
         filter: RecordFilter? = null,
         pageRequest: PageRequest? = null,
         sortRequest: SortRequest<RecordSortField>? = null,
-    ): PagedResult<TransactionRecord> = blockingTransaction {
+    ): PagedResult<Record> = blockingTransaction {
         val baseQuery = (RecordTable innerJoin TransactionTable)
             .selectAll()
             .where { RecordTable.userId eq userId }
@@ -54,8 +55,10 @@ class RecordRepository(
             .applySorting(sortRequest)
             .applyPagination(pageRequest)
             .map { row ->
-                toTransactionRecord(
+                toRecord(
                     id = row[RecordTable.id].value,
+                    transactionId = row[RecordTable.transactionId],
+                    dateTime = row[TransactionTable.dateTime].toKotlinLocalDateTime(),
                     accountId = row[RecordTable.accountId],
                     fundId = row[RecordTable.fundId],
                     amount = row[RecordTable.amount],
@@ -89,25 +92,31 @@ class RecordRepository(
     private fun Query.applyPagination(pageRequest: PageRequest?): Query =
         pageRequest?.let { limit(it.limit).offset(it.offset.toLong()) } ?: this
 
-    private fun toTransactionRecord(
+    private fun toRecord(
         id: UUID,
+        transactionId: UUID,
+        dateTime: kotlinx.datetime.LocalDateTime,
         accountId: UUID,
         fundId: UUID,
         amount: com.ionspin.kotlin.bignum.decimal.BigDecimal,
         unitType: UnitType,
         unitValue: String,
         labels: List<Label>,
-    ): TransactionRecord = when (unitType) {
-        UnitType.CURRENCY -> TransactionRecord.CurrencyRecord(
+    ): Record = when (unitType) {
+        UnitType.CURRENCY -> Record.CurrencyRecord(
             id = id,
+            transactionId = transactionId,
+            dateTime = dateTime,
             accountId = accountId,
             fundId = fundId,
             amount = amount,
             unit = Currency(unitValue),
             labels = labels
         )
-        UnitType.INSTRUMENT -> TransactionRecord.InstrumentRecord(
+        UnitType.INSTRUMENT -> Record.InstrumentRecord(
             id = id,
+            transactionId = transactionId,
+            dateTime = dateTime,
             accountId = accountId,
             fundId = fundId,
             amount = amount,

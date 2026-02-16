@@ -36,6 +36,7 @@ fun FundServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is FundServiceException.FundNotFound -> HttpStatusCode.NotFound
     is FundServiceException.FundNameAlreadyExists -> HttpStatusCode.Conflict
     is FundServiceException.FundHasRecords -> HttpStatusCode.Conflict
+    is FundServiceException.TransactionNotFound -> HttpStatusCode.NotFound
     is FundServiceException.TransactionFundNotFound -> HttpStatusCode.UnprocessableEntity
     is FundServiceException.AccountNameAlreadyExists -> HttpStatusCode.Conflict
     is FundServiceException.AccountNotFound -> HttpStatusCode.NotFound
@@ -68,6 +69,11 @@ fun FundServiceException.toError(): ErrorTO {
         is FundServiceException.FundHasRecords -> ErrorTO(
             title = "Fund has records",
             detail = "Fund with id '$fundId' has transaction records and cannot be deleted"
+        )
+
+        is FundServiceException.TransactionNotFound -> ErrorTO(
+            title = "Transaction not found",
+            detail = "Transaction with id '${transactionId}' not found"
         )
 
         is FundServiceException.TransactionFundNotFound -> ErrorTO(

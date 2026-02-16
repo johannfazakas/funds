@@ -10,6 +10,7 @@ sealed class FundServiceException : RuntimeException() {
     class FundNameAlreadyExists(val fundName: FundName) : FundServiceException()
     class FundHasRecords(val fundId: UUID) : FundServiceException()
     class AccountHasRecords(val accountId: UUID) : FundServiceException()
+    class TransactionNotFound(val transactionId: UUID) : FundServiceException()
     class TransactionFundNotFound(val fundId: UUID) : FundServiceException()
     class AccountNameAlreadyExists(val accountName: AccountName) : FundServiceException()
     class AccountNotFound(val accountId: UUID) : FundServiceException()
