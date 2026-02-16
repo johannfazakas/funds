@@ -8,6 +8,7 @@ export interface TransactionRecord {
     unit: string;
     recordType: 'CURRENCY' | 'INSTRUMENT';
     labels: string[];
+    note: string | null;
 }
 
 export interface Transaction {
@@ -41,6 +42,7 @@ interface RawRecord {
     amount: string;
     unit: string;
     labels: string[];
+    note: string | null;
 }
 
 function mapRecord(raw: RawRecord): TransactionRecord {
@@ -52,6 +54,7 @@ function mapRecord(raw: RawRecord): TransactionRecord {
         unit: raw.unit,
         recordType: raw.type,
         labels: raw.labels,
+        note: raw.note,
     };
 }
 

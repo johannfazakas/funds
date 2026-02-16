@@ -68,6 +68,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             amount = creditAmount,
             unit = creditRecord.unit as Currency,
             labels = creditRecord.labels,
+            note = creditRecord.note,
         )
 
         val (debitRecord, debitTotalAmount) = transaction.records
@@ -85,6 +86,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             amount = debitAmount,
             unit = debitRecord.unit as Currency,
             labels = debitRecord.labels,
+            note = debitRecord.note,
         )
 
         val feeRecord = transaction.records.singleOrNull { it != debitRecord && it != creditRecord }
@@ -98,6 +100,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
                     amount = feeAmount,
                     unit = debitRecord.unit as Currency,
                     labels = feeRecord?.labels ?: debitRecord.labels,
+                    note = feeRecord?.note ?: debitRecord.note,
                 )
             }
 

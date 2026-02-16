@@ -20,7 +20,12 @@ class WalletImportItem(private val csvRow: CsvRow) : ImportItem() {
             .map { it.trim() }
             .filter { it.isNotBlank() }
     }
-    override val note: String by lazy { csvRow.getString(NOTE_COLUMN) }
+    override val note: String by lazy {
+        listOfNotNull(
+            csvRow.getString(NOTE_COLUMN).takeIf { it.isNotBlank() },
+            csvRow.getString(PAYEE_COLUMN).takeIf { it.isNotBlank() },
+        ).joinToString(" - ")
+    }
 
     override fun transactionId(isExchange: (ImportItem) -> Boolean): String {
         val baseId = if (isExchange(this)) {
@@ -41,6 +46,7 @@ class WalletImportItem(private val csvRow: CsvRow) : ImportItem() {
         private const val DATE_COLUMN = "date"
         private const val DATE_FORMAT = "yyyy-MM-dd HH:mm:ss"
         private const val NOTE_COLUMN = "note"
+        private const val PAYEE_COLUMN = "payee"
         private const val LABEL_DELIMITER = "|"
 
         @OptIn(FormatStringsInDatetimeFormats::class)

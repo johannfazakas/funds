@@ -127,6 +127,7 @@ sealed class TransactionRecordTO {
     abstract val amount: BigDecimal
     abstract val unit: FinancialUnit
     abstract val labels: List<Label>
+    abstract val note: String?
 
     @Serializable
     @SerialName("CURRENCY")
@@ -141,6 +142,7 @@ sealed class TransactionRecordTO {
         override val amount: BigDecimal,
         override val unit: Currency,
         override val labels: List<Label>,
+        override val note: String? = null,
     ) : TransactionRecordTO()
 
     @Serializable
@@ -156,5 +158,6 @@ sealed class TransactionRecordTO {
         override val amount: BigDecimal,
         override val unit: Instrument,
         override val labels: List<Label>,
+        override val note: String? = null,
     ) : TransactionRecordTO()
 }

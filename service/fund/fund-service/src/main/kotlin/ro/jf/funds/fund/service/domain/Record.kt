@@ -17,6 +17,7 @@ sealed class Record {
     abstract val amount: BigDecimal
     abstract val unit: FinancialUnit
     abstract val labels: List<Label>
+    abstract val note: String?
 
     data class CurrencyRecord(
         override val id: UUID,
@@ -27,6 +28,7 @@ sealed class Record {
         override val amount: BigDecimal,
         override val unit: Currency,
         override val labels: List<Label> = emptyList(),
+        override val note: String? = null,
     ) : Record()
 
     data class InstrumentRecord(
@@ -38,5 +40,6 @@ sealed class Record {
         override val amount: BigDecimal,
         override val unit: Instrument,
         override val labels: List<Label> = emptyList(),
+        override val note: String? = null,
     ) : Record()
 }

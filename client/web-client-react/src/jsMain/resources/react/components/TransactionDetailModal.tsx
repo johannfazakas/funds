@@ -59,6 +59,12 @@ function RecordCard({ record, accountsMap, fundsMap, label }: {
                         {record.unit}
                     </Badge>
                 </div>
+                {record.note && (
+                    <div className="flex justify-between items-start">
+                        <span className="text-sm text-muted-foreground">Note</span>
+                        <span className="text-sm">{record.note}</span>
+                    </div>
+                )}
                 {record.labels.length > 0 && (
                     <div className="flex justify-between items-start">
                         <span className="text-sm text-muted-foreground">Labels</span>
