@@ -1,5 +1,6 @@
 package ro.jf.funds.fund.service.domain
 
+import kotlinx.datetime.LocalDate
 import java.util.UUID
 
 data class RecordFilter(
@@ -7,4 +8,6 @@ data class RecordFilter(
     val fundId: UUID? = null,
     val unit: String? = null,
     val label: String? = null,
+    val fromDate: LocalDate? = null,
+    val toDate: LocalDate? = null,
 )

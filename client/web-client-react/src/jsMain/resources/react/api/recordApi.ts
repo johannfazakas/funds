@@ -18,6 +18,8 @@ export interface RecordFilter {
     fundId?: string;
     unit?: string;
     label?: string;
+    fromDate?: string;
+    toDate?: string;
 }
 
 export interface ListRecordsParams {
@@ -73,6 +75,12 @@ export async function listRecords(
         }
         if (params.filter.label) {
             queryParams.set('label', params.filter.label);
+        }
+        if (params.filter.fromDate) {
+            queryParams.set('fromDate', params.filter.fromDate);
+        }
+        if (params.filter.toDate) {
+            queryParams.set('toDate', params.filter.toDate);
         }
     }
 
