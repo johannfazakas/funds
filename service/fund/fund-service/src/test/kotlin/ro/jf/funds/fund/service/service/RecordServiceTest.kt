@@ -8,6 +8,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import ro.jf.funds.fund.api.model.RecordSortField
 import ro.jf.funds.fund.service.domain.RecordFilter
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.persistence.RecordRepository
@@ -132,6 +133,70 @@ class RecordServiceTest {
 
         assertThat(result.items).hasSize(1)
         assertThat(result.items.first().labels).contains(Label("groceries"))
+    }
+
+    @Test
+    fun `given filter by from date - when list records - then delegates filter to repository`(): Unit = runBlocking {
+        val fromDate = LocalDate.parse("2021-01-01")
+        val filter = RecordFilter(fromDate = fromDate)
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
+            id = recordId,
+            accountId = accountId,
+            fundId = fundId,
+            amount = BigDecimal.parseString("100.00"),
+            unit = Currency("RON"),
+            labels = emptyList()
+        )
+        whenever(recordRepository.list(userId, filter, null, null))
+            .thenReturn(PagedResult(listOf(record), 1L))
+
+        val result = recordService.listRecords(userId, filter, null, null)
+
+        assertThat(result.items).hasSize(1)
+    }
+
+    @Test
+    fun `given filter by to date - when list records - then delegates filter to repository`(): Unit = runBlocking {
+        val toDate = LocalDate.parse("2021-12-31")
+        val filter = RecordFilter(toDate = toDate)
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
+            id = recordId,
+            accountId = accountId,
+            fundId = fundId,
+            amount = BigDecimal.parseString("100.00"),
+            unit = Currency("RON"),
+            labels = emptyList()
+        )
+        whenever(recordRepository.list(userId, filter, null, null))
+            .thenReturn(PagedResult(listOf(record), 1L))
+
+        val result = recordService.listRecords(userId, filter, null, null)
+
+        assertThat(result.items).hasSize(1)
+    }
+
+    @Test
+    fun `given filter by date range - when list records - then delegates filter to repository`(): Unit = runBlocking {
+        val fromDate = LocalDate.parse("2021-01-01")
+        val toDate = LocalDate.parse("2021-12-31")
+        val filter = RecordFilter(fromDate = fromDate, toDate = toDate)
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
+            id = recordId,
+            accountId = accountId,
+            fundId = fundId,
+            amount = BigDecimal.parseString("100.00"),
+            unit = Currency("RON"),
+            labels = emptyList()
+        )
+        whenever(recordRepository.list(userId, filter, null, null))
+            .thenReturn(PagedResult(listOf(record), 1L))
+
+        val result = recordService.listRecords(userId, filter, null, null)
+
+        assertThat(result.items).hasSize(1)
     }
 
     @Test

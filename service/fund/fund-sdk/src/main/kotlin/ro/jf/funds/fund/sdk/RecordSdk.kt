@@ -41,6 +41,8 @@ class RecordSdk(
                 filter?.fundId?.let { parameters.append("fundId", it.toString()) }
                 filter?.unit?.let { parameters.append("unit", it) }
                 filter?.label?.let { parameters.append("label", it) }
+                filter?.fromDate?.let { parameters.append("fromDate", it.toString()) }
+                filter?.toDate?.let { parameters.append("toDate", it.toString()) }
                 parameters.appendPageRequest(pageRequest)
                 parameters.appendSortRequest(sortRequest)
             }

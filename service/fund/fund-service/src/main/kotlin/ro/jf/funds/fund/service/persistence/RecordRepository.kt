@@ -1,8 +1,10 @@
 package ro.jf.funds.fund.service.persistence
 
+import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDateTime
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.javatime.date
 import ro.jf.funds.fund.api.model.RecordSortField
 import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.domain.RecordFilter
@@ -78,6 +80,8 @@ class RecordRepository(
             .applyFilterIfPresent(filter.fundId) { RecordTable.fundId eq it }
             .applyFilterIfPresent(filter.unit) { RecordTable.unit eq it }
             .applyFilterIfPresent(filter.label) { RecordTable.labels like "%$it%" }
+            .applyFilterIfPresent(filter.fromDate) { TransactionTable.dateTime.date() greaterEq it.toJavaLocalDate() }
+            .applyFilterIfPresent(filter.toDate) { TransactionTable.dateTime.date() lessEq it.toJavaLocalDate() }
     }
 
     private fun Query.applySorting(sortRequest: SortRequest<RecordSortField>?): Query =

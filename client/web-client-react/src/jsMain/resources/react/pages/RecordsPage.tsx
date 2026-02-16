@@ -54,6 +54,8 @@ function RecordsPage({ userId }: RecordsPageProps) {
     const [filterFundId, setFilterFundId] = useState<string>('');
     const [filterUnit, setFilterUnit] = useState<string>('');
     const [filterLabel, setFilterLabel] = useState<string>('');
+    const [filterFromDate, setFilterFromDate] = useState<string>('');
+    const [filterToDate, setFilterToDate] = useState<string>('');
     const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -83,6 +85,8 @@ function RecordsPage({ userId }: RecordsPageProps) {
         if (filterFundId) filter.fundId = filterFundId;
         if (filterUnit.trim()) filter.unit = filterUnit.trim();
         if (filterLabel.trim()) filter.label = filterLabel.trim();
+        if (filterFromDate) filter.fromDate = filterFromDate;
+        if (filterToDate) filter.toDate = filterToDate;
 
         try {
             const result = await listRecords(userId, {
@@ -97,7 +101,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
         } finally {
             setLoading(false);
         }
-    }, [userId, offset, limit, sortField, sortOrder, filterAccountId, filterFundId, filterUnit, filterLabel]);
+    }, [userId, offset, limit, sortField, sortOrder, filterAccountId, filterFundId, filterUnit, filterLabel, filterFromDate, filterToDate]);
 
     useEffect(() => {
         loadRecords();
@@ -131,10 +135,12 @@ function RecordsPage({ userId }: RecordsPageProps) {
         setFilterFundId('');
         setFilterUnit('');
         setFilterLabel('');
+        setFilterFromDate('');
+        setFilterToDate('');
         setOffset(0);
     };
 
-    const hasActiveFilters = filterAccountId || filterFundId || filterUnit.trim() || filterLabel.trim();
+    const hasActiveFilters = filterAccountId || filterFundId || filterUnit.trim() || filterLabel.trim() || filterFromDate || filterToDate;
 
     return (
         <div>
@@ -142,7 +148,27 @@ function RecordsPage({ userId }: RecordsPageProps) {
                 <h1 className="text-2xl font-bold">Records</h1>
             </div>
 
-            <Card className="mb-6 p-4">
+            <Card className="mb-6 p-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="filterFromDate">From date</Label>
+                        <Input
+                            id="filterFromDate"
+                            type="date"
+                            value={filterFromDate}
+                            onChange={(e) => { setFilterFromDate(e.target.value); handleFilterChange(); }}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="filterToDate">To date</Label>
+                        <Input
+                            id="filterToDate"
+                            type="date"
+                            value={filterToDate}
+                            onChange={(e) => { setFilterToDate(e.target.value); handleFilterChange(); }}
+                        />
+                    </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="filterAccount">Account</Label>

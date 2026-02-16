@@ -2,6 +2,7 @@ package ro.jf.funds.fund.service.web
 
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.fund.api.model.RecordSortField
 import ro.jf.funds.fund.service.domain.Record
@@ -27,6 +28,8 @@ fun Routing.recordApiRouting(recordService: RecordService) {
                 fundId = call.request.queryParameters["fundId"]?.let(UUID::fromString),
                 unit = call.request.queryParameters["unit"],
                 label = call.request.queryParameters["label"],
+                fromDate = call.request.queryParameters["fromDate"]?.let(LocalDate::parse),
+                toDate = call.request.queryParameters["toDate"]?.let(LocalDate::parse),
             )
             log.debug { "List records for user $userId with filter $filter." }
             val result = recordService.listRecords(userId, filter, pageRequest, sortRequest)
