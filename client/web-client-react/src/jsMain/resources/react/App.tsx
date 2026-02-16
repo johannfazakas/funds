@@ -3,7 +3,7 @@ import { useState } from 'react';
 import LoginPage from './pages/LoginPage';
 import FundListPage from './pages/FundListPage';
 import AccountsPage from './pages/AccountsPage';
-import TransactionsPage from './pages/TransactionsPage';
+import RecordsPage from './pages/RecordsPage';
 import ExpensesPage from './pages/ExpensesPage';
 import Sidebar from './components/Sidebar';
 
@@ -47,7 +47,7 @@ function App() {
                 >
                     <Route path="/funds" element={<FundListPage userId={userId!} />} />
                     <Route path="/accounts" element={<AccountsPage userId={userId!} />} />
-                    <Route path="/transactions" element={<TransactionsPage userId={userId!} />} />
+                    <Route path="/records" element={<RecordsPage userId={userId!} />} />
                     <Route path="/expenses" element={<ExpensesPage userId={userId!} />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/login" />} />

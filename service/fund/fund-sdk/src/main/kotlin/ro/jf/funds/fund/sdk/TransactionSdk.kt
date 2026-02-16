@@ -22,6 +22,20 @@ class TransactionSdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
 ) : TransactionApi {
+    override suspend fun getTransaction(userId: Uuid, transactionId: Uuid): TransactionTO =
+        withSuspendingSpan {
+            val response = httpClient.get("$baseUrl$BASE_PATH/transactions/$transactionId") {
+                headers {
+                    append(USER_ID_HEADER, userId.toString())
+                }
+            }
+            if (response.status != HttpStatusCode.OK) {
+                log.warn { "Unexpected response on get transaction: $response" }
+                throw response.toApiException()
+            }
+            response.body<TransactionTO>()
+        }
+
     override suspend fun createTransaction(userId: Uuid, transaction: CreateTransactionTO): TransactionTO =
         withSuspendingSpan {
             val response = httpClient.post("$baseUrl$BASE_PATH/transactions") {

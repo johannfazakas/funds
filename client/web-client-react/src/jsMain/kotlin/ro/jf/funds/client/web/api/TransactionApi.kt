@@ -22,6 +22,14 @@ object TransactionApi {
     private val fundServiceUrl: String = config?.fundServiceUrl as? String ?: "http://localhost:5253"
     private val transactionClient = TransactionClient(baseUrl = fundServiceUrl)
 
+    fun getTransaction(
+        userId: String,
+        transactionId: String,
+    ): Promise<JsTransaction> = GlobalScope.promise {
+        val transaction = transactionClient.getTransaction(uuidFrom(userId), uuidFrom(transactionId))
+        JsTransaction(transaction)
+    }
+
     fun listTransactions(
         userId: String,
         fromDate: String?,

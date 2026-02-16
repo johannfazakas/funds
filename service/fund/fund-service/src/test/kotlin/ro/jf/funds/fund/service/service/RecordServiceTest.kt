@@ -8,7 +8,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import ro.jf.funds.fund.api.model.RecordSortField
 import ro.jf.funds.fund.service.domain.RecordFilter
-import ro.jf.funds.fund.service.domain.TransactionRecord
+import kotlinx.datetime.LocalDateTime
+import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.persistence.RecordRepository
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.Label
@@ -23,13 +24,16 @@ class RecordServiceTest {
     private val recordService = RecordService(recordRepository)
 
     private val userId = randomUUID()
+    private val transactionId = randomUUID()
     private val accountId = randomUUID()
     private val fundId = randomUUID()
     private val recordId = randomUUID()
+    private val dateTime = LocalDateTime.parse("2021-09-01T12:00:00")
 
     @Test
     fun `given no filter - when list records - then returns all records`(): Unit = runBlocking {
-        val record = TransactionRecord.CurrencyRecord(
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
             id = recordId,
             accountId = accountId,
             fundId = fundId,
@@ -50,7 +54,8 @@ class RecordServiceTest {
     @Test
     fun `given filter by account - when list records - then delegates filter to repository`(): Unit = runBlocking {
         val filter = RecordFilter(accountId = accountId)
-        val record = TransactionRecord.CurrencyRecord(
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
             id = recordId,
             accountId = accountId,
             fundId = fundId,
@@ -70,7 +75,8 @@ class RecordServiceTest {
     @Test
     fun `given filter by fund - when list records - then delegates filter to repository`(): Unit = runBlocking {
         val filter = RecordFilter(fundId = fundId)
-        val record = TransactionRecord.CurrencyRecord(
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
             id = recordId,
             accountId = accountId,
             fundId = fundId,
@@ -90,7 +96,8 @@ class RecordServiceTest {
     @Test
     fun `given filter by unit - when list records - then delegates filter to repository`(): Unit = runBlocking {
         val filter = RecordFilter(unit = "RON")
-        val record = TransactionRecord.CurrencyRecord(
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
             id = recordId,
             accountId = accountId,
             fundId = fundId,
@@ -109,7 +116,8 @@ class RecordServiceTest {
     @Test
     fun `given filter by label - when list records - then delegates filter to repository`(): Unit = runBlocking {
         val filter = RecordFilter(label = "groceries")
-        val record = TransactionRecord.CurrencyRecord(
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
             id = recordId,
             accountId = accountId,
             fundId = fundId,
@@ -129,7 +137,8 @@ class RecordServiceTest {
     @Test
     fun `given pagination - when list records - then delegates pagination to repository`(): Unit = runBlocking {
         val pageRequest = PageRequest(offset = 10, limit = 5)
-        val record = TransactionRecord.CurrencyRecord(
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
             id = recordId,
             accountId = accountId,
             fundId = fundId,
@@ -149,7 +158,8 @@ class RecordServiceTest {
     @Test
     fun `given sort by date descending - when list records - then delegates sorting to repository`(): Unit = runBlocking {
         val sortRequest = SortRequest(RecordSortField.DATE, SortOrder.DESC)
-        val record = TransactionRecord.CurrencyRecord(
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
             id = recordId,
             accountId = accountId,
             fundId = fundId,
@@ -168,7 +178,8 @@ class RecordServiceTest {
     @Test
     fun `given sort by amount ascending - when list records - then delegates sorting to repository`(): Unit = runBlocking {
         val sortRequest = SortRequest(RecordSortField.AMOUNT, SortOrder.ASC)
-        val record = TransactionRecord.CurrencyRecord(
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
             id = recordId,
             accountId = accountId,
             fundId = fundId,
@@ -189,7 +200,8 @@ class RecordServiceTest {
         val filter = RecordFilter(accountId = accountId, unit = "RON")
         val pageRequest = PageRequest(offset = 0, limit = 10)
         val sortRequest = SortRequest(RecordSortField.DATE, SortOrder.DESC)
-        val record = TransactionRecord.CurrencyRecord(
+        val record = Record.CurrencyRecord(
+            transactionId = transactionId, dateTime = dateTime,
             id = recordId,
             accountId = accountId,
             fundId = fundId,

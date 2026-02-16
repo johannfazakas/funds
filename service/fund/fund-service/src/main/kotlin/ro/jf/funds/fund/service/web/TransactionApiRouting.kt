@@ -26,6 +26,14 @@ fun Routing.fundTransactionApiRouting(transactionService: TransactionService) {
                 val transactions = transactionService.listTransactions(userId, filter)
                 call.respond(transactions.toListTO(Transaction::toTO))
             }
+            get("/{transactionId}") {
+                val userId = call.userId()
+                val transactionId =
+                    call.parameters["transactionId"]?.let(UUID::fromString) ?: error("Transaction id is missing.")
+                log.debug { "Get transaction by user id $userId and transaction id $transactionId." }
+                val transaction = transactionService.getTransaction(userId, transactionId)
+                call.respond(transaction.toTO())
+            }
             post {
                 val userId = call.userId()
                 val request = call.receive<CreateTransactionTO>()

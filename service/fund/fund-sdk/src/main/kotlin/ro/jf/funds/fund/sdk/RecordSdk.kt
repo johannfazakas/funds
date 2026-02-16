@@ -9,7 +9,7 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.fund.api.RecordApi
 import ro.jf.funds.fund.api.model.RecordFilterTO
 import ro.jf.funds.fund.api.model.RecordSortField
-import ro.jf.funds.fund.api.model.TransactionRecordTO
+import ro.jf.funds.fund.api.model.RecordTO
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.api.model.SortRequest
@@ -31,7 +31,7 @@ class RecordSdk(
         filter: RecordFilterTO?,
         pageRequest: PageRequest?,
         sortRequest: SortRequest<RecordSortField>?,
-    ): PageTO<TransactionRecordTO> = withSuspendingSpan {
+    ): PageTO<RecordTO> = withSuspendingSpan {
         val response = httpClient.get("$baseUrl$BASE_PATH/records") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
@@ -49,7 +49,7 @@ class RecordSdk(
             log.warn { "Unexpected response on list records: $response" }
             throw response.toApiException()
         }
-        val records = response.body<PageTO<TransactionRecordTO>>()
+        val records = response.body<PageTO<RecordTO>>()
         log.debug { "Retrieved records: $records" }
         records
     }

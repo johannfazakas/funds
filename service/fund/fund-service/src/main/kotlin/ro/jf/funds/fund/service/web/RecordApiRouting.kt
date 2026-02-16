@@ -4,6 +4,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.fund.api.model.RecordSortField
+import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.domain.RecordFilter
 import ro.jf.funds.fund.service.mapper.toTO
 import ro.jf.funds.fund.service.service.RecordService
@@ -29,7 +30,7 @@ fun Routing.recordApiRouting(recordService: RecordService) {
             )
             log.debug { "List records for user $userId with filter $filter." }
             val result = recordService.listRecords(userId, filter, pageRequest, sortRequest)
-            call.respond(PageTO(result.items.map { it.toTO() }, result.total))
+            call.respond(PageTO(result.items.map(Record::toTO), result.total))
         }
     }
 }

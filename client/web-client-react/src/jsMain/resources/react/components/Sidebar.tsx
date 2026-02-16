@@ -44,7 +44,7 @@ function Sidebar({ onLogout }: SidebarProps) {
                         Accounts
                     </NavLink>
                     <NavLink
-                        to="/transactions"
+                        to="/records"
                         className={({ isActive }) =>
                             cn(
                                 "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
@@ -54,7 +54,7 @@ function Sidebar({ onLogout }: SidebarProps) {
                             )
                         }
                     >
-                        Transactions
+                        Records
                     </NavLink>
 
                     <p className="px-2 py-1.5 mt-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
