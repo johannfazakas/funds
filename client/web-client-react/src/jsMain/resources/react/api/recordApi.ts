@@ -11,6 +11,7 @@ export interface Record {
     amount: string;
     unit: string;
     labels: string[];
+    note: string | null;
 }
 
 export interface RecordFilter {

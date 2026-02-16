@@ -26,4 +26,5 @@ data class ImportParsedRecord(
     val unit: FinancialUnit,
     val amount: BigDecimal,
     val labels: List<Label> = emptyList(),
+    val note: String? = null,
 )

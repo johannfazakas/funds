@@ -181,6 +181,7 @@ class TransactionRepository(
                 this[RecordTable.unitType] = it.second.unit.type.value
                 this[RecordTable.unit] = it.second.unit.value
                 this[RecordTable.labels] = it.second.labels.asString()
+                this[RecordTable.note] = it.second.note
             }
 
         return transactionIdsToRecordRequest
@@ -194,7 +195,8 @@ class TransactionRepository(
                     amount = storedRecord[RecordTable.amount],
                     unitType = request.unit.type,
                     unitValue = storedRecord[RecordTable.unit],
-                    labels = storedRecord[RecordTable.labels].asLabels()
+                    labels = storedRecord[RecordTable.labels].asLabels(),
+                    note = storedRecord[RecordTable.note],
                 )
                 transactionId to record
             }
@@ -215,6 +217,7 @@ class TransactionRepository(
             it[unit] = record.unit.value
             it[unitType] = record.unit.type.value
             it[labels] = record.labels.asString()
+            it[note] = record.note
         }
         return toTransactionRecord(
             id = insertResult[RecordTable.id].value,
@@ -223,7 +226,8 @@ class TransactionRepository(
             amount = insertResult[RecordTable.amount],
             unitType = record.unit.type,
             unitValue = insertResult[RecordTable.unit],
-            labels = insertResult[RecordTable.labels].asLabels()
+            labels = insertResult[RecordTable.labels].asLabels(),
+            note = insertResult[RecordTable.note],
         )
     }
 
@@ -239,6 +243,7 @@ class TransactionRepository(
         unitType: UnitType,
         unitValue: String,
         labels: List<Label>,
+        note: String?,
     ): TransactionRecord = when (unitType) {
         UnitType.CURRENCY -> TransactionRecord.CurrencyRecord(
             id = id,
@@ -246,7 +251,8 @@ class TransactionRepository(
             fundId = fundId,
             amount = amount,
             unit = Currency(unitValue),
-            labels = labels
+            labels = labels,
+            note = note,
         )
         UnitType.INSTRUMENT -> TransactionRecord.InstrumentRecord(
             id = id,
@@ -254,7 +260,8 @@ class TransactionRepository(
             fundId = fundId,
             amount = amount,
             unit = Instrument(unitValue),
-            labels = labels
+            labels = labels,
+            note = note,
         )
     }
 
@@ -301,7 +308,8 @@ class TransactionRepository(
             amount = row[RecordTable.amount],
             unitType = UnitType.entries.first { it.value == row[RecordTable.unitType] },
             unitValue = row[RecordTable.unit],
-            labels = row[RecordTable.labels].asLabels()
+            labels = row[RecordTable.labels].asLabels(),
+            note = row[RecordTable.note],
         )
     }
 

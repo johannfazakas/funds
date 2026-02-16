@@ -22,6 +22,7 @@ sealed class RecordTO {
     abstract val amount: BigDecimal
     abstract val unit: FinancialUnit
     abstract val labels: List<Label>
+    abstract val note: String?
 
     @Serializable
     @SerialName("CURRENCY")
@@ -39,6 +40,7 @@ sealed class RecordTO {
         override val amount: BigDecimal,
         override val unit: Currency,
         override val labels: List<Label>,
+        override val note: String? = null,
     ) : RecordTO()
 
     @Serializable
@@ -57,5 +59,6 @@ sealed class RecordTO {
         override val amount: BigDecimal,
         override val unit: Instrument,
         override val labels: List<Label>,
+        override val note: String? = null,
     ) : RecordTO()
 }

@@ -63,18 +63,20 @@ abstract class ImportParser {
         val fundMatcher = importConfiguration.fundMatchers.getFundMatcher(importAccountName, item.labels)
         val labels = importConfiguration.labelMatchers.getLabelMatchers(item.labels).map { it.label }
 
+        val note = item.note.takeIf { it.isNotBlank() }
+
         return when (fundMatcher) {
             is ByAccount, is ByLabel, is ByAccountLabel ->
-                listOf(ImportParsedRecord(accountName, fundMatcher.fundName, item.unit, item.amount, labels))
+                listOf(ImportParsedRecord(accountName, fundMatcher.fundName, item.unit, item.amount, labels, note))
 
             is ByAccountLabelWithPostTransfer ->
-                listOf(ImportParsedRecord(accountName, fundMatcher.initialFundName, item.unit, item.amount, labels))
+                listOf(ImportParsedRecord(accountName, fundMatcher.initialFundName, item.unit, item.amount, labels, note))
 
             is ByAccountLabelWithPreTransfer ->
-                listOf(ImportParsedRecord(accountName, fundMatcher.fundName, item.unit, item.amount, labels))
+                listOf(ImportParsedRecord(accountName, fundMatcher.fundName, item.unit, item.amount, labels, note))
 
             is ByLabelWithPostTransfer ->
-                listOf(ImportParsedRecord(accountName, fundMatcher.initialFundName, item.unit, item.amount, labels))
+                listOf(ImportParsedRecord(accountName, fundMatcher.initialFundName, item.unit, item.amount, labels, note))
         }
     }
 

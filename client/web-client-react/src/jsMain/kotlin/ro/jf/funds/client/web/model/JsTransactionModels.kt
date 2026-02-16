@@ -46,6 +46,7 @@ data class JsTransactionRecord(
     val unitValue: String,
     val recordType: String,
     val labels: Array<String>,
+    val note: String?,
 ) {
     @JsName("fromCurrencyRecord")
     constructor(to: TransactionRecordTO.CurrencyRecord) : this(
@@ -57,6 +58,7 @@ data class JsTransactionRecord(
         unitValue = to.unit.value,
         recordType = "CURRENCY",
         labels = to.labels.map { it.value }.toTypedArray(),
+        note = to.note,
     )
 
     @JsName("fromInstrumentRecord")
@@ -69,6 +71,7 @@ data class JsTransactionRecord(
         unitValue = to.unit.value,
         recordType = "INSTRUMENT",
         labels = to.labels.map { it.value }.toTypedArray(),
+        note = to.note,
     )
 
     @JsName("fromTransactionRecordTO")
@@ -81,5 +84,6 @@ data class JsTransactionRecord(
         unitValue = to.unit.value,
         recordType = when (to) { is TransactionRecordTO.CurrencyRecord -> "CURRENCY"; is TransactionRecordTO.InstrumentRecord -> "INSTRUMENT" },
         labels = to.labels.map { it.value }.toTypedArray(),
+        note = to.note,
     )
 }

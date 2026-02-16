@@ -5,7 +5,6 @@ import { listAccounts, Account } from '../api/accountApi';
 import { RecordSortField, SortOrder } from '../api/types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import {
@@ -148,97 +147,73 @@ function RecordsPage({ userId }: RecordsPageProps) {
                 <h1 className="text-2xl font-bold">Records</h1>
             </div>
 
-            <Card className="mb-6 p-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="filterFromDate">From date</Label>
-                        <Input
-                            id="filterFromDate"
-                            type="date"
-                            value={filterFromDate}
-                            onChange={(e) => { setFilterFromDate(e.target.value); handleFilterChange(); }}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="filterToDate">To date</Label>
-                        <Input
-                            id="filterToDate"
-                            type="date"
-                            value={filterToDate}
-                            onChange={(e) => { setFilterToDate(e.target.value); handleFilterChange(); }}
-                        />
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="filterAccount">Account</Label>
-                        <Select
-                            value={filterAccountId}
-                            onValueChange={(value) => { setFilterAccountId(value === 'all' ? '' : value); handleFilterChange(); }}
-                        >
-                            <SelectTrigger id="filterAccount">
-                                <SelectValue placeholder="All accounts" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All accounts</SelectItem>
-                                {accounts.map(account => (
-                                    <SelectItem key={account.id} value={account.id}>
-                                        {account.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="filterFund">Fund</Label>
-                        <Select
-                            value={filterFundId}
-                            onValueChange={(value) => { setFilterFundId(value === 'all' ? '' : value); handleFilterChange(); }}
-                        >
-                            <SelectTrigger id="filterFund">
-                                <SelectValue placeholder="All funds" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All funds</SelectItem>
-                                {funds.map(fund => (
-                                    <SelectItem key={fund.id} value={fund.id}>
-                                        {fund.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="filterUnit">Unit</Label>
-                        <Input
-                            id="filterUnit"
-                            value={filterUnit}
-                            onChange={(e) => setFilterUnit(e.target.value)}
-                            onBlur={handleFilterChange}
-                            onKeyDown={(e) => e.key === 'Enter' && handleFilterChange()}
-                            placeholder="e.g. USD, EUR, BTC"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="filterLabel">Label</Label>
-                        <Input
-                            id="filterLabel"
-                            value={filterLabel}
-                            onChange={(e) => setFilterLabel(e.target.value)}
-                            onBlur={handleFilterChange}
-                            onKeyDown={(e) => e.key === 'Enter' && handleFilterChange()}
-                            placeholder="Search labels..."
-                        />
-                    </div>
-                </div>
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+                <Input
+                    type="date"
+                    value={filterFromDate}
+                    onChange={(e) => { setFilterFromDate(e.target.value); handleFilterChange(); }}
+                    className="w-36"
+                />
+                <Input
+                    type="date"
+                    value={filterToDate}
+                    onChange={(e) => { setFilterToDate(e.target.value); handleFilterChange(); }}
+                    className="w-36"
+                />
+                <Select
+                    value={filterAccountId}
+                    onValueChange={(value) => { setFilterAccountId(value === 'all' ? '' : value); handleFilterChange(); }}
+                >
+                    <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All accounts</SelectItem>
+                        {accounts.map(account => (
+                            <SelectItem key={account.id} value={account.id}>
+                                {account.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Select
+                    value={filterFundId}
+                    onValueChange={(value) => { setFilterFundId(value === 'all' ? '' : value); handleFilterChange(); }}
+                >
+                    <SelectTrigger className="w-36">
+                        <SelectValue placeholder="Fund" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All funds</SelectItem>
+                        {funds.map(fund => (
+                            <SelectItem key={fund.id} value={fund.id}>
+                                {fund.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Input
+                    value={filterUnit}
+                    onChange={(e) => setFilterUnit(e.target.value)}
+                    onBlur={handleFilterChange}
+                    onKeyDown={(e) => e.key === 'Enter' && handleFilterChange()}
+                    placeholder="Unit"
+                    className="w-28"
+                />
+                <Input
+                    value={filterLabel}
+                    onChange={(e) => setFilterLabel(e.target.value)}
+                    onBlur={handleFilterChange}
+                    onKeyDown={(e) => e.key === 'Enter' && handleFilterChange()}
+                    placeholder="Label"
+                    className="w-28"
+                />
                 {hasActiveFilters && (
-                    <div className="mt-4 flex justify-end">
-                        <Button variant="outline" size="sm" onClick={clearFilters}>
-                            Clear filters
-                        </Button>
-                    </div>
+                    <Button variant="outline" size="sm" onClick={clearFilters}>
+                        Clear
+                    </Button>
                 )}
-            </Card>
+            </div>
 
             {loading && (
                 <div className="flex justify-center p-8">
@@ -284,6 +259,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
                                 </SortableTableHead>
                                 <TableHead>Unit</TableHead>
                                 <TableHead>Labels</TableHead>
+                                <TableHead>Note</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -309,6 +285,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
                                             ))}
                                         </div>
                                     </TableCell>
+                                    <TableCell className="text-muted-foreground text-sm">{record.note}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

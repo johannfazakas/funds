@@ -85,6 +85,7 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
             amount = instrumentRecord.amount,
             unit = instrumentRecord.unit as Instrument,
             labels = instrumentRecord.labels,
+            note = instrumentRecord.note,
         )
         return when (transactionType) {
             TransactionType.OPEN_POSITION -> listOf(

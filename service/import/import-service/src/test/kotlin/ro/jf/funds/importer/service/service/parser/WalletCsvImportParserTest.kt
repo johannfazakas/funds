@@ -108,21 +108,24 @@ class WalletCsvImportParserTest {
                 FundName("Expenses"),
                 Currency.EUR,
                 BigDecimal.parseString("-1.89"),
-                listOf(Label("Exchange"))
+                listOf(Label("Exchange")),
+                note = "exchange",
             ),
             ImportParsedRecord(
                 AccountName("Cash RON"),
                 FundName("Expenses"),
                 Currency.RON,
                 BigDecimal.parseString("-1434.00"),
-                listOf(Label("Exchange"))
+                listOf(Label("Exchange")),
+                note = "exchange",
             ),
             ImportParsedRecord(
                 AccountName("Cash EUR"),
                 FundName("Expenses"),
                 Currency.EUR,
                 BigDecimal.parseString("301.24"),
-                listOf(Label("Exchange"))
+                listOf(Label("Exchange")),
+                note = "exchange",
             )
         )
     }

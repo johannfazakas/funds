@@ -35,6 +35,7 @@ class RecordRepository(
         val unitType = varchar("unit_type", 50)
         val unit = varchar("unit", 50)
         val labels = varchar("labels", 100)
+        val note = varchar("note", 500).nullable()
     }
 
     suspend fun list(
@@ -66,7 +67,8 @@ class RecordRepository(
                     amount = row[RecordTable.amount],
                     unitType = UnitType.entries.first { it.value == row[RecordTable.unitType] },
                     unitValue = row[RecordTable.unit],
-                    labels = row[RecordTable.labels].asLabels()
+                    labels = row[RecordTable.labels].asLabels(),
+                    note = row[RecordTable.note],
                 )
             }
 
@@ -106,6 +108,7 @@ class RecordRepository(
         unitType: UnitType,
         unitValue: String,
         labels: List<Label>,
+        note: String?,
     ): Record = when (unitType) {
         UnitType.CURRENCY -> Record.CurrencyRecord(
             id = id,
@@ -115,7 +118,8 @@ class RecordRepository(
             fundId = fundId,
             amount = amount,
             unit = Currency(unitValue),
-            labels = labels
+            labels = labels,
+            note = note,
         )
         UnitType.INSTRUMENT -> Record.InstrumentRecord(
             id = id,
@@ -125,7 +129,8 @@ class RecordRepository(
             fundId = fundId,
             amount = amount,
             unit = Instrument(unitValue),
-            labels = labels
+            labels = labels,
+            note = note,
         )
     }
 }
