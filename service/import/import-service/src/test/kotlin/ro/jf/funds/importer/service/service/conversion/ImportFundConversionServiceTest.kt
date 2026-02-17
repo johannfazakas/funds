@@ -4,14 +4,17 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import ro.jf.funds.platform.api.model.*
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
+import ro.jf.funds.fund.sdk.LabelSdk
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionResponse
 import ro.jf.funds.conversion.api.model.ConversionsRequest
@@ -30,6 +33,8 @@ class ImportFundConversionServiceTest {
     private val accountService = AccountService(accountSdk)
     private val fundSdk = mock<FundSdk>()
     private val fundService = FundService(fundSdk)
+    private val labelSdk = mock<LabelSdk>()
+    private val labelService = LabelService(labelSdk)
     private val conversionSdk = mock<ConversionSdk>()
     private val importTransactionConverterRegistry = ImportTransactionConverterRegistry(
         listOf(
@@ -43,11 +48,21 @@ class ImportFundConversionServiceTest {
         ImportFundConversionService(
             accountService,
             fundService,
+            labelService,
             importTransactionConverterRegistry,
             conversionSdk,
         )
 
     private val userId: UUID = randomUUID()
+
+    private val allLabels = listOf("one", "two", "Basic", "work_income", "basic", "exchange", "finance", "stock_purchase", "stock_sale")
+        .map { LabelTO(randomUUID(), it) }
+
+    @BeforeEach
+    fun setUp(): Unit = runBlocking {
+        whenever(labelSdk.listLabels(any())).thenReturn(allLabels)
+        Unit
+    }
 
     @Test
     fun `should map single record import transactions`(): Unit = runBlocking {

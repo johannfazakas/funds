@@ -30,6 +30,7 @@ import ro.jf.funds.client.notebook.model.InitialBalances
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.sdk.FundSdk
+import ro.jf.funds.fund.sdk.LabelSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
@@ -47,6 +48,7 @@ class FundsClient(
     private val userSdk: UserSdk = UserSdk(),
     private val accountSdk: AccountSdk = AccountSdk(),
     private val fundSdk: FundSdk = FundSdk(),
+    private val labelSdk: LabelSdk = LabelSdk(),
     private val transactionSdk: TransactionSdk = TransactionSdk(),
     private val importSdk: ImportSdk = ImportSdk(),
     private val reportingSdk: ReportingSdk = ReportingSdk(),
@@ -78,6 +80,15 @@ class FundsClient(
             .filter { it.name !in existingFundNames }
             .map { fundSdk.createFund(user.id, it) }
         existingFunds + newFunds
+    }
+
+    fun provisionLabels(user: UserTO, labels: List<CreateLabelTO>): List<LabelTO> = run {
+        val existingLabels = labelSdk.listLabels(user.id)
+        val existingLabelNames = existingLabels.map { it.name }.toSet()
+        val newLabels = labels
+            .filter { it.name !in existingLabelNames }
+            .map { labelSdk.createLabel(user.id, it) }
+        existingLabels + newLabels
     }
 
     fun provisionInitialBalances(

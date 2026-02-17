@@ -29,8 +29,10 @@ import ro.jf.funds.platform.jvm.test.utils.dbConfig
 import ro.jf.funds.platform.jvm.test.utils.kafkaConfig
 import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
 import ro.jf.funds.fund.api.model.*
+import ro.jf.funds.fund.api.model.LabelTO
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
+import ro.jf.funds.fund.sdk.LabelSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.conversion.api.model.ConversionsRequest
 import ro.jf.funds.conversion.api.model.ConversionsResponse
@@ -48,6 +50,7 @@ import javax.sql.DataSource
 class ImportApiTest {
     private val accountSdk: AccountSdk = mock()
     private val fundSdk: FundSdk = mock()
+    private val labelSdk: LabelSdk = mock()
     private val conversionSdk: ConversionSdk = mock()
     private val transactionSdk: TransactionSdk = mock()
 
@@ -77,6 +80,9 @@ class ImportApiTest {
                 LabelMatcherTO(listOf("C&T - Gas & Parking"), Label("Transport")),
                 LabelMatcherTO(listOf("Work Income"), Label("Income")),
             )
+        )
+        whenever(labelSdk.listLabels(any())).thenReturn(
+            listOf("Basic", "Transport", "Income").map { LabelTO(randomUUID(), it) }
         )
         whenever(accountSdk.listAccounts(userId)).thenReturn(
             PageTO(
@@ -241,6 +247,7 @@ class ImportApiTest {
         val importAppTestModule = org.koin.dsl.module {
             single<AccountSdk> { accountSdk }
             single<FundSdk> { fundSdk }
+            single<LabelSdk> { labelSdk }
             single<TransactionSdk> { transactionSdk }
             single<ConversionSdk> { conversionSdk }
         }
