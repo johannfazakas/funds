@@ -17,6 +17,7 @@ private val log = logger { }
 class ImportFundConversionService(
     private val accountService: AccountService,
     private val fundService: FundService,
+    private val labelService: LabelService,
     private val converterRegistry: ImportTransactionConverterRegistry,
     private val conversionSdk: ConversionSdk,
 ) {
@@ -27,6 +28,13 @@ class ImportFundConversionService(
         log.info { "Handling import >> user = $userId items size = ${parsedTransactions.size}." }
         val accountStore = accountService.getAccountStore(userId)
         val fundStore = fundService.getFundStore(userId)
+        val labelStore = labelService.getLabelStore(userId)
+        parsedTransactions
+            .flatMap { it.records }
+            .flatMap { it.labels }
+            .map { it.value }
+            .distinct()
+            .forEach { labelStore[it] }
         parsedTransactions.toFundTransactions(accountStore, fundStore).let(::CreateTransactionsTO)
     }
 

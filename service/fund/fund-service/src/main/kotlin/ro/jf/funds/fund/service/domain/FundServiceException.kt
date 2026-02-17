@@ -23,4 +23,7 @@ sealed class FundServiceException : RuntimeException() {
         val accountUnit: FinancialUnit,
         val recordUnit: FinancialUnit
     ) : FundServiceException()
+    class LabelNotFound(val labelId: UUID) : FundServiceException()
+    class LabelNameAlreadyExists(val labelName: String) : FundServiceException()
+    class LabelHasRecords(val labelId: UUID) : FundServiceException()
 }

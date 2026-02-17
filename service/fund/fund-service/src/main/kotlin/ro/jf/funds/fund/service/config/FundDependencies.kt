@@ -13,10 +13,12 @@ import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.fund.service.persistence.AccountRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
+import ro.jf.funds.fund.service.persistence.LabelRepository
 import ro.jf.funds.fund.service.persistence.RecordRepository
 import ro.jf.funds.fund.service.persistence.TransactionRepository
 import ro.jf.funds.fund.service.service.AccountService
 import ro.jf.funds.fund.service.service.FundService
+import ro.jf.funds.fund.service.service.LabelService
 import ro.jf.funds.fund.service.service.RecordService
 import ro.jf.funds.fund.service.service.TransactionService
 import ro.jf.funds.fund.service.service.event.CreateTransactionsRequestHandler
@@ -41,6 +43,7 @@ private val Application.fundPersistenceDependencies
         single<Database> { Database.connect(datasource = get()) }
         single<FundRepository> { FundRepository(get()) }
         single<AccountRepository> { AccountRepository(get()) }
+        single<LabelRepository> { LabelRepository(get()) }
         single<RecordRepository> { RecordRepository(get()) }
         single<TransactionRepository> { TransactionRepository(get()) }
     }
@@ -60,6 +63,7 @@ private val Application.fundServiceDependencies
         single<AccountService> { AccountService(get(), get()) }
         single<TransactionService> { TransactionService(get(), get(), get()) }
         single<FundService> { FundService(get(), get()) }
+        single<LabelService> { LabelService(get(), get()) }
         single<RecordService> { RecordService(get()) }
         single<CreateTransactionsRequestHandler> {
             CreateTransactionsRequestHandler(

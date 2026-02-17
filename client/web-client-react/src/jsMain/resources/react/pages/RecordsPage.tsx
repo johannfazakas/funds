@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Record, RecordFilter, listRecords } from '../api/recordApi';
 import { listFunds, Fund } from '../api/fundApi';
 import { listAccounts, Account } from '../api/accountApi';
+import { listLabels, Label } from '../api/labelApi';
 import { RecordSortField, SortOrder } from '../api/types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -41,6 +42,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
 
     const [funds, setFunds] = useState<Fund[]>([]);
     const [accounts, setAccounts] = useState<Account[]>([]);
+    const [labels, setLabels] = useState<Label[]>([]);
     const [fundsMap, setFundsMap] = useState<Map<string, string>>(new Map());
     const [accountsMap, setAccountsMap] = useState<Map<string, string>>(new Map());
 
@@ -60,12 +62,14 @@ function RecordsPage({ userId }: RecordsPageProps) {
     useEffect(() => {
         const loadReferenceData = async () => {
             try {
-                const [fundsResult, accountsResult] = await Promise.all([
+                const [fundsResult, accountsResult, labelsResult] = await Promise.all([
                     listFunds(userId, { pagination: { offset: 0, limit: 1000 } }),
                     listAccounts(userId, { pagination: { offset: 0, limit: 1000 } }),
+                    listLabels(userId),
                 ]);
                 setFunds(fundsResult.items);
                 setAccounts(accountsResult.items);
+                setLabels(labelsResult);
                 setFundsMap(new Map(fundsResult.items.map(f => [f.id, f.name])));
                 setAccountsMap(new Map(accountsResult.items.map(a => [a.id, a.name])));
             } catch {
@@ -83,7 +87,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
         if (filterAccountId) filter.accountId = filterAccountId;
         if (filterFundId) filter.fundId = filterFundId;
         if (filterUnit.trim()) filter.unit = filterUnit.trim();
-        if (filterLabel.trim()) filter.label = filterLabel.trim();
+        if (filterLabel) filter.label = filterLabel;
         if (filterFromDate) filter.fromDate = filterFromDate;
         if (filterToDate) filter.toDate = filterToDate;
 
@@ -139,7 +143,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
         setOffset(0);
     };
 
-    const hasActiveFilters = filterAccountId || filterFundId || filterUnit.trim() || filterLabel.trim() || filterFromDate || filterToDate;
+    const hasActiveFilters = filterAccountId || filterFundId || filterUnit.trim() || filterLabel || filterFromDate || filterToDate;
 
     return (
         <div>
@@ -200,14 +204,22 @@ function RecordsPage({ userId }: RecordsPageProps) {
                     placeholder="Unit"
                     className="w-28"
                 />
-                <Input
+                <Select
                     value={filterLabel}
-                    onChange={(e) => setFilterLabel(e.target.value)}
-                    onBlur={handleFilterChange}
-                    onKeyDown={(e) => e.key === 'Enter' && handleFilterChange()}
-                    placeholder="Label"
-                    className="w-28"
-                />
+                    onValueChange={(value) => { setFilterLabel(value === 'all' ? '' : value); handleFilterChange(); }}
+                >
+                    <SelectTrigger className="w-36">
+                        <SelectValue placeholder="Label" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All labels</SelectItem>
+                        {labels.map(label => (
+                            <SelectItem key={label.id} value={label.name}>
+                                {label.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
                 {hasActiveFilters && (
                     <Button variant="outline" size="sm" onClick={clearFilters}>
                         Clear
