@@ -48,6 +48,21 @@ function getBaseUrl(): string {
 
 const BASE_PATH = '/funds-api/fund/v1';
 
+export interface FinancialUnit {
+    type: 'currency' | 'instrument';
+    value: string;
+}
+
+export async function listFinancialUnits(userId: string): Promise<FinancialUnit[]> {
+    const url = `${getBaseUrl()}${BASE_PATH}/records/financial-units`;
+    const response = await fetch(url, {
+        headers: { 'FUNDS_USER_ID': userId }
+    });
+    if (!response.ok) await handleApiError(response, 'Failed to load financial units');
+    const data: PageResponse<FinancialUnit> = await response.json();
+    return data.items;
+}
+
 export async function listRecords(
     userId: string,
     params?: ListRecordsParams

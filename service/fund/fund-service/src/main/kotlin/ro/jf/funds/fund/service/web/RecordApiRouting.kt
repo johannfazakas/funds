@@ -19,6 +19,11 @@ private val log = logger { }
 
 fun Routing.recordApiRouting(recordService: RecordService) {
     route("/funds-api/fund/v1/records") {
+        get("/financial-units") {
+            val userId = call.userId()
+            val financialUnits = recordService.listFinancialUnits(userId)
+            call.respond(PageTO(financialUnits, financialUnits.size.toLong()))
+        }
         get {
             val userId = call.userId()
             val pageRequest = call.pageRequest()
