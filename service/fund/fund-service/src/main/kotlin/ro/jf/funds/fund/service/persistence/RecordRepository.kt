@@ -10,12 +10,14 @@ import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.domain.RecordFilter
 import ro.jf.funds.fund.service.persistence.TransactionRepository.TransactionTable
 import ro.jf.funds.platform.api.model.Currency
+import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.api.model.Instrument
 import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
 import ro.jf.funds.platform.api.model.UnitType
 import ro.jf.funds.platform.api.model.asLabels
+import ro.jf.funds.platform.api.model.toFinancialUnit
 import ro.jf.funds.platform.jvm.persistence.PagedResult
 import ro.jf.funds.platform.jvm.persistence.applyFilterIfPresent
 import ro.jf.funds.platform.jvm.persistence.bigDecimal
@@ -36,6 +38,19 @@ class RecordRepository(
         val unit = varchar("unit", 50)
         val labels = varchar("labels", 100)
         val note = varchar("note", 500).nullable()
+    }
+
+    suspend fun listDistinctFinancialUnits(userId: UUID): List<FinancialUnit> = blockingTransaction {
+        RecordTable
+            .select(RecordTable.unitType, RecordTable.unit)
+            .where { RecordTable.userId eq userId }
+            .withDistinct()
+            .map { row ->
+                toFinancialUnit(
+                    UnitType.entries.first { it.value == row[RecordTable.unitType] },
+                    row[RecordTable.unit]
+                )
+            }
     }
 
     suspend fun list(

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Record, RecordFilter, listRecords } from '../api/recordApi';
+import { Record, RecordFilter, FinancialUnit, listRecords, listFinancialUnits } from '../api/recordApi';
 import { listFunds, Fund } from '../api/fundApi';
 import { listAccounts, Account } from '../api/accountApi';
 import { listLabels, Label } from '../api/labelApi';
@@ -19,7 +19,9 @@ import {
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from '../components/ui/select';
@@ -43,6 +45,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
     const [funds, setFunds] = useState<Fund[]>([]);
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [labels, setLabels] = useState<Label[]>([]);
+    const [financialUnits, setFinancialUnits] = useState<FinancialUnit[]>([]);
     const [fundsMap, setFundsMap] = useState<Map<string, string>>(new Map());
     const [accountsMap, setAccountsMap] = useState<Map<string, string>>(new Map());
 
@@ -62,14 +65,16 @@ function RecordsPage({ userId }: RecordsPageProps) {
     useEffect(() => {
         const loadReferenceData = async () => {
             try {
-                const [fundsResult, accountsResult, labelsResult] = await Promise.all([
+                const [fundsResult, accountsResult, labelsResult, financialUnitsResult] = await Promise.all([
                     listFunds(userId, { pagination: { offset: 0, limit: 1000 } }),
                     listAccounts(userId, { pagination: { offset: 0, limit: 1000 } }),
                     listLabels(userId),
+                    listFinancialUnits(userId),
                 ]);
                 setFunds(fundsResult.items);
                 setAccounts(accountsResult.items);
                 setLabels(labelsResult);
+                setFinancialUnits(financialUnitsResult);
                 setFundsMap(new Map(fundsResult.items.map(f => [f.id, f.name])));
                 setAccountsMap(new Map(accountsResult.items.map(a => [a.id, a.name])));
             } catch {
@@ -196,14 +201,37 @@ function RecordsPage({ userId }: RecordsPageProps) {
                         ))}
                     </SelectContent>
                 </Select>
-                <Input
+                <Select
                     value={filterUnit}
-                    onChange={(e) => setFilterUnit(e.target.value)}
-                    onBlur={handleFilterChange}
-                    onKeyDown={(e) => e.key === 'Enter' && handleFilterChange()}
-                    placeholder="Unit"
-                    className="w-28"
-                />
+                    onValueChange={(value) => { setFilterUnit(value === 'all' ? '' : value); handleFilterChange(); }}
+                >
+                    <SelectTrigger className="w-28">
+                        <SelectValue placeholder="Unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All units</SelectItem>
+                        {financialUnits.some(u => u.type === 'currency') && (
+                            <SelectGroup>
+                                <SelectLabel>Currencies</SelectLabel>
+                                {financialUnits.filter(u => u.type === 'currency').map(u => (
+                                    <SelectItem key={`${u.type}-${u.value}`} value={u.value}>
+                                        {u.value}
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        )}
+                        {financialUnits.some(u => u.type === 'instrument') && (
+                            <SelectGroup>
+                                <SelectLabel>Instruments</SelectLabel>
+                                {financialUnits.filter(u => u.type === 'instrument').map(u => (
+                                    <SelectItem key={`${u.type}-${u.value}`} value={u.value}>
+                                        {u.value}
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        )}
+                    </SelectContent>
+                </Select>
                 <Select
                     value={filterLabel}
                     onValueChange={(value) => { setFilterLabel(value === 'all' ? '' : value); handleFilterChange(); }}
