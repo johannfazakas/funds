@@ -276,7 +276,16 @@ function RecordsPage({ userId }: RecordsPageProps) {
 
             {!loading && !error && records.length > 0 && (
                 <Card>
-                    <Table>
+                    <Table className="table-fixed">
+                        <colgroup>
+                            <col style={{ width: '12.5%' }} />
+                            <col style={{ width: '12.5%' }} />
+                            <col style={{ width: '12.5%' }} />
+                            <col style={{ width: '12.5%' }} />
+                            <col style={{ width: '25%' }} />
+                            <col style={{ width: '12.5%' }} />
+                            <col style={{ width: '12.5%' }} />
+                        </colgroup>
                         <TableHeader>
                             <TableRow>
                                 <SortableTableHead
@@ -287,8 +296,11 @@ function RecordsPage({ userId }: RecordsPageProps) {
                                 >
                                     Date
                                 </SortableTableHead>
-                                <TableHead>Account</TableHead>
                                 <TableHead>Fund</TableHead>
+                                <TableHead>Account</TableHead>
+                                <TableHead>Labels</TableHead>
+                                <TableHead>Note</TableHead>
+                                <TableHead>Unit</TableHead>
                                 <SortableTableHead
                                     field="amount"
                                     currentField={sortField}
@@ -297,25 +309,14 @@ function RecordsPage({ userId }: RecordsPageProps) {
                                 >
                                     Amount
                                 </SortableTableHead>
-                                <TableHead>Unit</TableHead>
-                                <TableHead>Labels</TableHead>
-                                <TableHead>Note</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {records.map((record) => (
                                 <TableRow key={record.id} className="cursor-pointer" onClick={() => setSelectedTransactionId(record.transactionId)}>
                                     <TableCell className="text-muted-foreground">{record.dateTime.substring(0, 10)}</TableCell>
-                                    <TableCell>{accountsMap.get(record.accountId) || record.accountId}</TableCell>
                                     <TableCell>{fundsMap.get(record.fundId) || record.fundId}</TableCell>
-                                    <TableCell className={parseFloat(record.amount) < 0 ? 'text-destructive' : 'text-green-600'}>
-                                        {parseFloat(record.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={record.type === 'CURRENCY' ? 'default' : 'secondary'}>
-                                            {record.unit}
-                                        </Badge>
-                                    </TableCell>
+                                    <TableCell>{accountsMap.get(record.accountId) || record.accountId}</TableCell>
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">
                                             {record.labels.map((label, idx) => (
@@ -325,7 +326,17 @@ function RecordsPage({ userId }: RecordsPageProps) {
                                             ))}
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-muted-foreground text-sm">{record.note}</TableCell>
+                                    <TableCell className="text-muted-foreground text-sm">
+                                        <span className="block truncate" title={record.note ?? undefined}>{record.note}</span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={record.type === 'CURRENCY' ? 'default' : 'secondary'}>
+                                            {record.unit}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className={parseFloat(record.amount) < 0 ? 'text-destructive' : 'text-green-600'}>
+                                        {parseFloat(record.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

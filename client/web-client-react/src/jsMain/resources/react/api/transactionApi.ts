@@ -75,8 +75,8 @@ function mapTransaction(raw: any): Transaction {
             break;
         case 'OPEN_POSITION':
         case 'CLOSE_POSITION':
-            records.push(mapRecord(raw.currencyRecord));
-            records.push(mapRecord(raw.instrumentRecord));
+            records.push({...mapRecord(raw.currencyRecord), recordType: 'CURRENCY'});
+            records.push({...mapRecord(raw.instrumentRecord), recordType: 'INSTRUMENT'});
             break;
     }
     return {
