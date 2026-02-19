@@ -2,9 +2,12 @@ package ro.jf.funds.fund.service.persistence
 
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDateTime
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.javatime.date
+import org.jetbrains.exposed.sql.json.json
+import org.jetbrains.exposed.sql.json.contains
 import ro.jf.funds.fund.api.model.RecordSortField
 import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.domain.RecordFilter
@@ -16,7 +19,6 @@ import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
 import ro.jf.funds.platform.api.model.UnitType
-import ro.jf.funds.platform.api.model.asLabels
 import ro.jf.funds.platform.api.model.toFinancialUnit
 import ro.jf.funds.platform.jvm.persistence.PagedResult
 import ro.jf.funds.platform.jvm.persistence.applyFilterIfPresent
@@ -36,7 +38,7 @@ class RecordRepository(
         val amount = bigDecimal("amount", 20, 8)
         val unitType = varchar("unit_type", 50)
         val unit = varchar("unit", 50)
-        val labels = varchar("labels", 100)
+        val labels = json<List<String>>("labels", Json.Default)
         val note = varchar("note", 500).nullable()
     }
 
@@ -82,7 +84,7 @@ class RecordRepository(
                     amount = row[RecordTable.amount],
                     unitType = UnitType.entries.first { it.value == row[RecordTable.unitType] },
                     unitValue = row[RecordTable.unit],
-                    labels = row[RecordTable.labels].asLabels(),
+                    labels = row[RecordTable.labels].map { Label(it) },
                     note = row[RecordTable.note],
                 )
             }
@@ -96,7 +98,7 @@ class RecordRepository(
             .applyFilterIfPresent(filter.accountId) { RecordTable.accountId eq it }
             .applyFilterIfPresent(filter.fundId) { RecordTable.fundId eq it }
             .applyFilterIfPresent(filter.unit) { RecordTable.unit eq it }
-            .applyFilterIfPresent(filter.label) { RecordTable.labels like "%$it%" }
+            .applyFilterIfPresent(filter.label) { RecordTable.labels.contains(listOf(it)) }
             .applyFilterIfPresent(filter.fromDate) { TransactionTable.dateTime.date() greaterEq it.toJavaLocalDate() }
             .applyFilterIfPresent(filter.toDate) { TransactionTable.dateTime.date() lessEq it.toJavaLocalDate() }
     }
