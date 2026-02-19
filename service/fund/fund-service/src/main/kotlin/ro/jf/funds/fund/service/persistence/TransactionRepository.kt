@@ -180,7 +180,7 @@ class TransactionRepository(
                 this[RecordTable.amount] = it.second.amount
                 this[RecordTable.unitType] = it.second.unit.type.value
                 this[RecordTable.unit] = it.second.unit.value
-                this[RecordTable.labels] = it.second.labels.asString()
+                this[RecordTable.labels] = it.second.labels.map { it.value }
                 this[RecordTable.note] = it.second.note
             }
 
@@ -195,7 +195,7 @@ class TransactionRepository(
                     amount = storedRecord[RecordTable.amount],
                     unitType = request.unit.type,
                     unitValue = storedRecord[RecordTable.unit],
-                    labels = storedRecord[RecordTable.labels].asLabels(),
+                    labels = storedRecord[RecordTable.labels].map { Label(it) },
                     note = storedRecord[RecordTable.note],
                 )
                 transactionId to record
@@ -216,7 +216,7 @@ class TransactionRepository(
             it[amount] = record.amount
             it[unit] = record.unit.value
             it[unitType] = record.unit.type.value
-            it[labels] = record.labels.asString()
+            it[labels] = record.labels.map { it.value }
             it[note] = record.note
         }
         return toTransactionRecord(
@@ -226,7 +226,7 @@ class TransactionRepository(
             amount = insertResult[RecordTable.amount],
             unitType = record.unit.type,
             unitValue = insertResult[RecordTable.unit],
-            labels = insertResult[RecordTable.labels].asLabels(),
+            labels = insertResult[RecordTable.labels].map { Label(it) },
             note = insertResult[RecordTable.note],
         )
     }
@@ -308,7 +308,7 @@ class TransactionRepository(
             amount = row[RecordTable.amount],
             unitType = UnitType.entries.first { it.value == row[RecordTable.unitType] },
             unitValue = row[RecordTable.unit],
-            labels = row[RecordTable.labels].asLabels(),
+            labels = row[RecordTable.labels].map { Label(it) },
             note = row[RecordTable.note],
         )
     }
