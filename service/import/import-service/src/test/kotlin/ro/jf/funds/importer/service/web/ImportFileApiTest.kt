@@ -231,6 +231,40 @@ class ImportFileApiTest {
         }
 
     @Test
+    fun `given existing import file - when deleting - then should return no content`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
+
+        val httpClient = createJsonHttpClient()
+        val userId = randomUUID()
+        val importFileId = randomUUID()
+        whenever(importFileService.deleteImportFile(eq(userId), eq(importFileId)))
+            .thenReturn(true)
+
+        val response = httpClient.delete("/funds-api/import/v1/import-files/$importFileId") {
+            header(USER_ID_HEADER, userId.toString())
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.NoContent)
+    }
+
+    @Test
+    fun `given no import file - when deleting - then should return not found`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
+
+        val httpClient = createJsonHttpClient()
+        val userId = randomUUID()
+        val importFileId = randomUUID()
+        whenever(importFileService.deleteImportFile(eq(userId), eq(importFileId)))
+            .thenReturn(false)
+
+        val response = httpClient.delete("/funds-api/import/v1/import-files/$importFileId") {
+            header(USER_ID_HEADER, userId.toString())
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
+    }
+
+    @Test
     fun `given no import file - when requesting download url - then should return not found`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 

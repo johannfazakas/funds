@@ -58,6 +58,18 @@ fun Routing.importFileApiRouting(
             }
         }
 
+        delete("/{importFileId}") {
+            val userId = call.userId()
+            val importFileId = UUID.fromString(call.parameters["importFileId"])
+            log.info { "Delete import file $importFileId for user $userId." }
+            val deleted = importFileService.deleteImportFile(userId, importFileId)
+            if (deleted) {
+                call.respond(HttpStatusCode.NoContent)
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
+        }
+
         get("/{importFileId}/download") {
             val userId = call.userId()
             val importFileId = UUID.fromString(call.parameters["importFileId"])

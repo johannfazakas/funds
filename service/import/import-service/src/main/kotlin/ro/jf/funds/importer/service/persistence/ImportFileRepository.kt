@@ -2,6 +2,7 @@ package ro.jf.funds.importer.service.persistence
 
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import ro.jf.funds.importer.service.domain.CreateImportFileCommand
 import ro.jf.funds.importer.service.domain.ImportFile
@@ -61,6 +62,13 @@ class ImportFileRepository(
             .selectAll()
             .where { ImportFileTable.userId eq userId }
             .map { it.toImportFile() }
+    }
+
+    suspend fun delete(userId: UUID, importFileId: UUID): Boolean = blockingTransaction {
+        val deleted = ImportFileTable.deleteWhere {
+            (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)
+        }
+        deleted > 0
     }
 
     suspend fun deleteAll(): Unit = blockingTransaction {

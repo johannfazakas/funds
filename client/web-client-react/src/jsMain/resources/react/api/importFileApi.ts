@@ -76,6 +76,20 @@ export async function confirmUpload(
     return response.json();
 }
 
+export async function deleteImportFile(
+    userId: string,
+    importFileId: string
+): Promise<void> {
+    const response = await fetch(
+        `${getBaseUrl()}${BASE_PATH}/import-files/${importFileId}`,
+        {
+            method: 'DELETE',
+            headers: { 'FUNDS_USER_ID': userId }
+        }
+    );
+    if (!response.ok) await handleApiError(response, 'Failed to delete import file');
+}
+
 export async function getDownloadUrl(
     userId: string,
     importFileId: string
