@@ -6,6 +6,7 @@ import {
     createImportFile,
     confirmUpload,
     getDownloadUrl,
+    deleteImportFile,
 } from '../api/importFileApi';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -24,6 +25,7 @@ import {
     DialogContent,
     DialogFooter,
     DialogHeader,
+    DialogDescription,
     DialogTitle,
 } from '../components/ui/dialog';
 import {
@@ -33,7 +35,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../components/ui/select';
-import { Loader2, Download } from 'lucide-react';
+import { Badge } from '../components/ui/badge';
+import { Loader2, Download, Trash2 } from 'lucide-react';
 
 interface ImportsPageProps {
     userId: string;
@@ -50,6 +53,10 @@ function ImportsPage({ userId }: ImportsPageProps) {
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [fileToDelete, setFileToDelete] = useState<ImportFile | null>(null);
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const loadImportFiles = useCallback(async () => {
         setLoading(true);
@@ -112,6 +119,21 @@ function ImportsPage({ userId }: ImportsPageProps) {
         }
     };
 
+    const handleDelete = async () => {
+        if (!fileToDelete) return;
+        setDeleting(true);
+        setDeleteError(null);
+        try {
+            await deleteImportFile(userId, fileToDelete.importFileId);
+            setFileToDelete(null);
+            await loadImportFiles();
+        } catch (err) {
+            setDeleteError(err instanceof Error ? err.message : 'Failed to delete file');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     const handleDownload = async (importFile: ImportFile) => {
         try {
             const url = await getDownloadUrl(userId, importFile.importFileId);
@@ -162,18 +184,44 @@ function ImportsPage({ userId }: ImportsPageProps) {
                             {importFiles.map((file) => (
                                 <TableRow key={file.importFileId}>
                                     <TableCell>{file.fileName}</TableCell>
-                                    <TableCell>{file.type}</TableCell>
-                                    <TableCell>{file.status}</TableCell>
                                     <TableCell>
-                                        {file.status === 'UPLOADED' && (
+                                        <Badge className={
+                                            file.type === 'WALLET_CSV'
+                                                ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800'
+                                                : 'bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900 dark:text-violet-200 dark:border-violet-800'
+                                        }>
+                                            {file.type === 'WALLET_CSV' ? 'Wallet CSV' : 'Funds Format CSV'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge className={
+                                            file.status === 'UPLOADED'
+                                                ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800'
+                                                : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-800'
+                                        }>
+                                            {file.status === 'UPLOADED' ? 'Uploaded' : 'Pending'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex justify-end gap-1">
+                                            {file.status === 'UPLOADED' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleDownload(file)}
+                                                >
+                                                    <Download className="h-4 w-4" />
+                                                </Button>
+                                            )}
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => handleDownload(file)}
+                                                className="text-destructive hover:text-destructive"
+                                                onClick={() => { setDeleteError(null); setFileToDelete(file); }}
                                             >
-                                                <Download className="h-4 w-4" />
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
-                                        )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -244,6 +292,46 @@ function ImportsPage({ userId }: ImportsPageProps) {
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!fileToDelete} onOpenChange={(open) => !open && !deleting && setFileToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Import File</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete "<strong>{fileToDelete?.fileName}</strong>"?
+                        </DialogDescription>
+                    </DialogHeader>
+                    {deleteError && (
+                        <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                            {deleteError}
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setFileToDelete(null)}
+                            disabled={deleting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDelete}
+                            disabled={deleting}
+                        >
+                            {deleting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete'
+                            )}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

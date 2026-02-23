@@ -5,6 +5,7 @@ import aws.sdk.kotlin.services.s3.model.GetObjectRequest
 import aws.sdk.kotlin.services.s3.model.HeadObjectRequest
 import aws.sdk.kotlin.services.s3.model.NoSuchKey
 import aws.sdk.kotlin.services.s3.model.NotFound
+import aws.sdk.kotlin.services.s3.model.DeleteObjectRequest
 import aws.sdk.kotlin.services.s3.model.PutObjectRequest
 import aws.sdk.kotlin.services.s3.presigners.presignGetObject
 import aws.sdk.kotlin.services.s3.presigners.presignPutObject
@@ -45,6 +46,12 @@ class ImportFileService(
         return importFileRepository.listByUserId(userId)
     }
 
+    suspend fun deleteImportFile(userId: UUID, importFileId: UUID): Boolean {
+        val importFile = importFileRepository.findById(userId, importFileId) ?: return false
+        deleteS3Object(importFile.s3Key)
+        return importFileRepository.delete(userId, importFileId)
+    }
+
     suspend fun generateDownloadUrl(userId: UUID, importFileId: UUID): String? {
         val importFile = importFileRepository.findById(userId, importFileId) ?: return null
         return generateDownloadUrl(importFile.s3Key)
@@ -66,6 +73,13 @@ class ImportFileService(
         }
         val presigned = s3Client.presignGetObject(request, presignedUrlExpiration)
         return presigned.url.toString().toPublicUrl()
+    }
+
+    private suspend fun deleteS3Object(s3Key: String) {
+        s3Client.deleteObject(DeleteObjectRequest {
+            this.bucket = this@ImportFileService.bucket
+            this.key = s3Key
+        })
     }
 
     private fun String.toPublicUrl(): String =
