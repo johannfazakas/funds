@@ -17,6 +17,7 @@ kotlin-csv = "1.10.0"
 kotlin-logging = "3.0.5"
 uuid = "0.8.4"
 bignum = "0.3.10"
+aws-sdk-kotlin = "1.4.119"
 logback = "1.4.14"
 opentelemetry = "1.48.0"
 opentelemetry-semconv = "1.32.0"
@@ -93,6 +94,7 @@ jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 poi = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
 big-math = { module = "ch.obermuhlner:big-math", version.ref = "big-math" }
 kotlin-statistics = { module = "org.nield:kotlin-statistics", version.ref = "kotlin-statistics" }
+aws-s3 = { module = "aws.sdk.kotlin:s3", version.ref = "aws-sdk-kotlin" }
 
 # kobweb / compose html
 kobweb-core = { module = "com.varabyte.kobweb:kobweb-core", version.ref = "kobweb" }

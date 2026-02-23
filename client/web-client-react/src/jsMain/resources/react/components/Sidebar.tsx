@@ -69,6 +69,19 @@ function Sidebar({ onLogout }: SidebarProps) {
                     >
                         Labels
                     </NavLink>
+                    <NavLink
+                        to="/imports"
+                        className={({ isActive }) =>
+                            cn(
+                                "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
+                                isActive
+                                    ? "bg-accent text-accent-foreground font-medium"
+                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                            )
+                        }
+                    >
+                        Imports
+                    </NavLink>
 
                     <p className="px-2 py-1.5 mt-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Reports
