@@ -40,8 +40,8 @@ class ImportServiceTest {
         val importType = ImportFileTypeTO.WALLET_CSV
         val configuration = ImportConfigurationTO(importType, emptyList(), emptyList())
         val importFiles = listOf(
-            ImportFile("fileName1", "fileContent1"),
-            ImportFile("fileName2", "fileContent2")
+            RawImportFile("fileName1", "fileContent1"),
+            RawImportFile("fileName2", "fileContent2")
         )
         whenever(importParserRegistry[importType]).thenReturn(importParser)
         val importItems1 = mock<List<ImportParsedTransaction>>()
@@ -81,7 +81,7 @@ class ImportServiceTest {
         val importType = ImportFileTypeTO.WALLET_CSV
         val configuration = ImportConfigurationTO(importType, emptyList(), emptyList())
         val importFiles = listOf(
-            ImportFile("fileName1", "fileContent1")
+            RawImportFile("fileName1", "fileContent1")
         )
         whenever(importParserRegistry[importType]).thenReturn(importParser)
         val reason = "parse error"

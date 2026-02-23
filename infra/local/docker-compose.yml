@@ -75,6 +75,17 @@ services:
       - postgres
       - kafka
 
+  localstack:
+    image: localstack/localstack:latest
+    container_name: ff_localstack
+    ports:
+      - '4566:4566'
+    environment:
+      - SERVICES=s3
+    volumes:
+      - ./volumes/localstack/init:/etc/localstack/init/ready.d
+      - ./volumes/localstack/data:/var/lib/localstack
+
   import-service:
     image: funds/import-service:latest
     container_name: ff_import
@@ -85,10 +96,17 @@ services:
       - CONVERSION_BASE_URL=http://ff_conversion:5231
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_import
       - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
+      - S3_ENDPOINT=http://localstack:4566
+      - S3_PUBLIC_ENDPOINT=http://localhost:4566
+      - S3_REGION=us-east-1
+      - S3_BUCKET=imports
+      - S3_ACCESS_KEY=test
+      - S3_SECRET_KEY=test
       - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres
       - kafka
+      - localstack
 
   reporting-service:
     image: funds/reporting-service:latest
@@ -106,17 +124,19 @@ services:
       - kafka
 
   client-web:
-    image: funds/client-web:latest
+    image: funds/web-client-react:latest
     container_name: ff_client_web
     ports:
       - '5070:80'
     environment:
       - USER_SERVICE_URL=http://localhost:5247
       - FUND_SERVICE_URL=http://localhost:5253
+      - IMPORT_SERVICE_URL=http://localhost:5207
       - REPORTING_SERVICE_URL=http://localhost:5212
     depends_on:
       - user-service
       - fund-service
+      - import-service
       - reporting-service
 
   otel-collector:

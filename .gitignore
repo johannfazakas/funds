@@ -28,6 +28,9 @@ infra/local/volumes/**
 !infra/local/volumes/otel-collector/otel-collector-config.yaml
 !infra/local/volumes/postgres/init/*
 !infra/local/volumes/tempo/tempo-config.yaml
+!infra/local/volumes/localstack/
+!infra/local/volumes/localstack/init/
+!infra/local/volumes/localstack/init/*
 
 # reportdata
 /data/

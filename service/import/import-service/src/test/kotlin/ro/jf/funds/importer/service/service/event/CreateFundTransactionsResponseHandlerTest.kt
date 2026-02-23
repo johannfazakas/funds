@@ -89,5 +89,12 @@ class CreateFundTransactionsResponseHandlerTest {
             "integration.account-service.base-url" to "localhost:8765",
             "integration.fund-service.base-url" to "localhost:8765",
             "integration.conversion-service.base-url" to "localhost:8765",
+            "s3.endpoint" to "http://localhost:4566",
+            "s3.public-endpoint" to "http://localhost:4566",
+            "s3.region" to "us-east-1",
+            "s3.bucket" to "imports",
+            "s3.access-key" to "test",
+            "s3.secret-key" to "test",
+            "s3.presigned-url-expiration" to "15m",
         )
 }

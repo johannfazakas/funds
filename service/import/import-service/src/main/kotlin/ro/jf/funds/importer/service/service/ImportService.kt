@@ -10,7 +10,7 @@ import ro.jf.funds.platform.jvm.event.Producer
 import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
-import ro.jf.funds.importer.service.domain.ImportFile
+import ro.jf.funds.importer.service.domain.RawImportFile
 import ro.jf.funds.importer.service.domain.ImportTask
 import ro.jf.funds.importer.service.domain.StartImportTaskCommand
 import ro.jf.funds.importer.service.domain.UpdateImportTaskPartCommand
@@ -27,7 +27,7 @@ class ImportService(
     private val importFundConversionService: ImportFundConversionService,
     private val createFundTransactionsProducer: Producer<CreateTransactionsTO>,
 ) {
-    suspend fun startImport(userId: UUID, configuration: ImportConfigurationTO, files: List<ImportFile>): ImportTask =
+    suspend fun startImport(userId: UUID, configuration: ImportConfigurationTO, files: List<RawImportFile>): ImportTask =
         withSuspendingSpan {
             log.info { "Importing files >> user = $userId configuration = $configuration files count = ${files.size}." }
             val importTask =
@@ -49,7 +49,7 @@ class ImportService(
     private suspend fun startFileImport(
         userId: UUID,
         importTask: ImportTask,
-        file: ImportFile,
+        file: RawImportFile,
         configuration: ImportConfigurationTO,
     ) {
         val importTaskPart = importTask.findPartByName(file.name)

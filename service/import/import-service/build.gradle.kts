@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":service:fund:fund-sdk"))
     implementation(project(":service:conversion:conversion-sdk"))
     implementation(libs.kotlin.csv)
+    implementation(libs.aws.s3)
     testImplementation(project(":platform:platform-jvm-test"))
 }
 

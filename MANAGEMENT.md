@@ -2,6 +2,11 @@
 
 ## Functional Tasks
 
+### Improved import
+
+Store files
+Retry import
+
 ### Calculate interest rate when positions are closed
 
 ### Decouple Report View from Report Data requests
@@ -43,11 +48,6 @@ Cons:
 ### Integrate automatic linting
 
 Integrate ktlint maybe. It could be applied automatically using Claude Code hooks.
-
-### Keep transactions and their records in the same table
-
-This would make more sense, records should be directly attached and depend on transaction lifecycle.
-GIN index could be used to filter by fundId.
 
 ### Investigate and understand the Exposed potential bug
 
