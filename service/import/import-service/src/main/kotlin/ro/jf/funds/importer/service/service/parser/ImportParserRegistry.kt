@@ -9,6 +9,6 @@ class ImportParserRegistry(
     operator fun get(importType: ImportFileTypeTO): ImportParser =
         when (importType) {
             ImportFileTypeTO.WALLET_CSV -> walletCsvImportParser
-            ImportFileTypeTO.FUNDS_FORMAT -> fundsFormatImportParser
+            ImportFileTypeTO.FUNDS_FORMAT_CSV -> fundsFormatImportParser
         }
 }

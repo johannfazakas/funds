@@ -42,6 +42,8 @@ import ro.jf.funds.importer.service.config.configureImportErrorHandling
 import ro.jf.funds.importer.service.config.configureImportEventHandling
 import ro.jf.funds.importer.service.config.configureImportRouting
 import ro.jf.funds.importer.service.config.importDependencyModules
+import ro.jf.funds.importer.service.persistence.ImportFileRepository
+import ro.jf.funds.importer.service.service.ImportFileService
 import java.io.File
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
@@ -53,10 +55,12 @@ class ImportApiTest {
     private val labelSdk: LabelSdk = mock()
     private val conversionSdk: ConversionSdk = mock()
     private val transactionSdk: TransactionSdk = mock()
+    private val importFileRepository: ImportFileRepository = mock()
+    private val importFileService: ImportFileService = mock()
 
     @Test
     fun `test valid import`() = testApplication {
-        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
@@ -129,7 +133,7 @@ class ImportApiTest {
 
     @Test
     fun `test invalid import with missing configuration`(): Unit = testApplication {
-        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
@@ -155,7 +159,7 @@ class ImportApiTest {
 
     @Test
     fun `test invalid import with bad csv file`(): Unit = testApplication {
-        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
@@ -200,7 +204,7 @@ class ImportApiTest {
 
     @Test
     fun `test invalid import with missing account matcher`() = testApplication {
-        configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
@@ -250,6 +254,8 @@ class ImportApiTest {
             single<LabelSdk> { labelSdk }
             single<TransactionSdk> { transactionSdk }
             single<ConversionSdk> { conversionSdk }
+            single<ImportFileRepository> { importFileRepository }
+            single<ImportFileService> { importFileService }
         }
         configureDependencies(*importDependencyModules, importAppTestModule)
         configureImportErrorHandling()
@@ -259,3 +265,14 @@ class ImportApiTest {
         configureImportRouting()
     }
 }
+
+private val s3Config
+    get() = io.ktor.server.config.MapApplicationConfig(
+        "s3.endpoint" to "http://localhost:4566",
+        "s3.public-endpoint" to "http://localhost:4566",
+        "s3.region" to "us-east-1",
+        "s3.bucket" to "imports",
+        "s3.access-key" to "test",
+        "s3.secret-key" to "test",
+        "s3.presigned-url-expiration" to "15m",
+    )

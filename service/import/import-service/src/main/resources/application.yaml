@@ -22,6 +22,14 @@ integration:
     base-url: "$FUND_BASE_URL:http://localhost:5253"
   conversion-service:
     base-url: "$CONVERSION_BASE_URL:http://localhost:5231"
+s3:
+  endpoint: "$S3_ENDPOINT:http://localhost:4566"
+  public-endpoint: "$S3_PUBLIC_ENDPOINT:http://localhost:4566"
+  region: "$S3_REGION:us-east-1"
+  bucket: "$S3_BUCKET:imports"
+  access-key: "$S3_ACCESS_KEY:test"
+  secret-key: "$S3_SECRET_KEY:test"
+  presigned-url-expiration: "$S3_PRESIGNED_URL_EXPIRATION:15m"
 observability:
   enabled: true
   otel-collector:

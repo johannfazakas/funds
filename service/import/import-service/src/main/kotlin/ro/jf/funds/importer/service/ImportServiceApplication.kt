@@ -11,6 +11,7 @@ import ro.jf.funds.importer.service.config.configureImportErrorHandling
 import ro.jf.funds.importer.service.config.configureImportEventHandling
 import ro.jf.funds.importer.service.config.configureImportRouting
 import ro.jf.funds.importer.service.config.importDependencyModules
+import ro.jf.funds.platform.jvm.config.configureCors
 import javax.sql.DataSource
 
 fun main(args: Array<String>) {
@@ -22,6 +23,7 @@ fun Application.module() {
     configureDependencies(*importDependencyModules)
     configureImportErrorHandling()
     configureContentNegotiation()
+    configureCors()
     configureDatabaseMigration(get<DataSource>())
     configureImportEventHandling()
     configureImportRouting()

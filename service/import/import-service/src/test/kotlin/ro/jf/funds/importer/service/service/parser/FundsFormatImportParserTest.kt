@@ -31,7 +31,7 @@ class FundsFormatImportParserTest {
             ),
         )
         val importConfiguration = ImportConfigurationTO(
-            fileType = ImportFileTypeTO.FUNDS_FORMAT,
+            fileType = ImportFileTypeTO.FUNDS_FORMAT_CSV,
             accountMatchers = listOf(
                 AccountMatcherTO.ByName(listOf("BT EUR"), AccountName("BT EUR")),
                 AccountMatcherTO.ByName(listOf("XTB EUR"), AccountName("XTB EUR")),

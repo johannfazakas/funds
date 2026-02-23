@@ -15,7 +15,7 @@ import mu.KotlinLogging.logger
 import ro.jf.funds.platform.jvm.web.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
-import ro.jf.funds.importer.service.domain.ImportFile
+import ro.jf.funds.importer.service.domain.RawImportFile
 import ro.jf.funds.importer.service.domain.exception.MissingImportConfigurationException
 import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.web.mapper.toTO
@@ -92,6 +92,6 @@ private fun List<ImportPart>.importConfigurationPart(): ImportConfigurationTO = 
     ?.let { json -> Json.decodeFromString<ImportConfigurationTO>(json) }
     ?: throw MissingImportConfigurationException("Missing import configuration")
 
-private fun List<ImportPart>.rawFileParts(): List<ImportFile> = this
+private fun List<ImportPart>.rawFileParts(): List<RawImportFile> = this
     .filter { it.name != null && it.contentType == ContentType.Text.CSV }
-    .mapNotNull { part -> part.name?.let { ImportFile(it, part.content) } }
+    .mapNotNull { part -> part.name?.let { RawImportFile(it, part.content) } }
