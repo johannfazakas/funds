@@ -34,7 +34,10 @@ import ro.jf.funds.platform.jvm.test.utils.configureEnvironment
 import ro.jf.funds.platform.jvm.test.utils.createJsonHttpClient
 import ro.jf.funds.platform.jvm.test.utils.dbConfig
 import ro.jf.funds.platform.jvm.test.utils.kafkaConfig
+import ro.jf.funds.platform.api.model.PageTO
+import ro.jf.funds.platform.jvm.persistence.PagedResult
 import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
+import java.time.LocalDateTime
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
@@ -63,6 +66,7 @@ class ImportFileApiTest {
                 type = ImportFileTypeTO.WALLET_CSV,
                 s3Key = "$userId/test.csv",
                 status = ImportFileStatus.PENDING,
+                createdAt = LocalDateTime.now(),
             )
             whenever(importFileService.createImportFile(eq(userId), eq("test.csv"), eq(ImportFileTypeTO.WALLET_CSV)))
                 .thenReturn(CreateImportFileResponse(importFile, "https://s3.example.com/upload-url"))
@@ -96,6 +100,7 @@ class ImportFileApiTest {
                 type = ImportFileTypeTO.WALLET_CSV,
                 s3Key = "$userId/test.csv",
                 status = ImportFileStatus.UPLOADED,
+                createdAt = LocalDateTime.now(),
             )
             whenever(importFileService.confirmUpload(eq(userId), eq(importFileId)))
                 .thenReturn(importFile)
@@ -130,15 +135,18 @@ class ImportFileApiTest {
     }
 
     @Test
-    fun `given stored import files - when listing - then should return import file list`() = testApplication {
+    fun `given stored import files - when listing - then should return paginated import file list`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
-        whenever(importFileService.listImportFiles(userId)).thenReturn(
-            listOf(
-                ImportFile(randomUUID(), userId, "file1.csv", ImportFileTypeTO.WALLET_CSV, "$userId/file1.csv", ImportFileStatus.PENDING),
-                ImportFile(randomUUID(), userId, "file2.csv", ImportFileTypeTO.FUNDS_FORMAT_CSV, "$userId/file2.csv", ImportFileStatus.UPLOADED),
+        whenever(importFileService.listImportFiles(eq(userId), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
+            PagedResult(
+                listOf(
+                    ImportFile(randomUUID(), userId, "file1.csv", ImportFileTypeTO.WALLET_CSV, "$userId/file1.csv", ImportFileStatus.PENDING, LocalDateTime.now()),
+                    ImportFile(randomUUID(), userId, "file2.csv", ImportFileTypeTO.FUNDS_FORMAT_CSV, "$userId/file2.csv", ImportFileStatus.UPLOADED, LocalDateTime.now()),
+                ),
+                2L
             )
         )
 
@@ -147,29 +155,34 @@ class ImportFileApiTest {
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-        val responseBody = response.body<List<ImportFileTO>>()
-        assertThat(responseBody).hasSize(2)
-        assertThat(responseBody[0].fileName).isEqualTo("file1.csv")
-        assertThat(responseBody[0].status).isEqualTo(ImportFileStatusTO.PENDING)
-        assertThat(responseBody[1].fileName).isEqualTo("file2.csv")
-        assertThat(responseBody[1].status).isEqualTo(ImportFileStatusTO.UPLOADED)
+        val responseBody = response.body<PageTO<ImportFileTO>>()
+        assertThat(responseBody.total).isEqualTo(2L)
+        assertThat(responseBody.items).hasSize(2)
+        assertThat(responseBody.items[0].fileName).isEqualTo("file1.csv")
+        assertThat(responseBody.items[0].status).isEqualTo(ImportFileStatusTO.PENDING)
+        assertThat(responseBody.items[0].createdAt).isNotNull()
+        assertThat(responseBody.items[1].fileName).isEqualTo("file2.csv")
+        assertThat(responseBody.items[1].status).isEqualTo(ImportFileStatusTO.UPLOADED)
     }
 
     @Test
-    fun `given no import files - when listing - then should return empty list`() = testApplication {
+    fun `given no import files - when listing - then should return empty page`() = testApplication {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
-        whenever(importFileService.listImportFiles(userId)).thenReturn(emptyList())
+        whenever(importFileService.listImportFiles(eq(userId), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
+            PagedResult(emptyList(), 0L)
+        )
 
         val response = httpClient.get("/funds-api/import/v1/import-files") {
             header(USER_ID_HEADER, userId.toString())
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-        val responseBody = response.body<List<ImportFileTO>>()
-        assertThat(responseBody).isEmpty()
+        val responseBody = response.body<PageTO<ImportFileTO>>()
+        assertThat(responseBody.total).isEqualTo(0L)
+        assertThat(responseBody.items).isEmpty()
     }
 
     @Test
@@ -179,7 +192,7 @@ class ImportFileApiTest {
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
         val importFileId = randomUUID()
-        val importFile = ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, "$userId/test.csv", ImportFileStatus.UPLOADED)
+        val importFile = ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, "$userId/test.csv", ImportFileStatus.UPLOADED, LocalDateTime.now())
         whenever(importFileService.getImportFile(eq(userId), eq(importFileId)))
             .thenReturn(importFile)
 

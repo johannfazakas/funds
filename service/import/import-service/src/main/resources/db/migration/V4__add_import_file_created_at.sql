@@ -1,0 +1,1 @@
+ALTER TABLE import_file ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT now();

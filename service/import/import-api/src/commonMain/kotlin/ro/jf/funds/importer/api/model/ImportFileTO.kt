@@ -11,4 +11,5 @@ data class ImportFileTO(
     val fileName: String,
     val type: ImportFileTypeTO,
     val status: ImportFileStatusTO,
+    val createdAt: String,
 )

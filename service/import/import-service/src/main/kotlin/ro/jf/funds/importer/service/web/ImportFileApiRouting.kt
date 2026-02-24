@@ -6,10 +6,14 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.importer.api.model.*
-import ro.jf.funds.importer.service.domain.ImportFile
-import ro.jf.funds.importer.service.domain.ImportFileStatus
 import ro.jf.funds.importer.service.domain.CreateImportFileResponse
+import ro.jf.funds.importer.service.domain.ImportFile
+import ro.jf.funds.importer.service.domain.ImportFileFilter
+import ro.jf.funds.importer.service.domain.ImportFileStatus
 import ro.jf.funds.importer.service.service.ImportFileService
+import ro.jf.funds.platform.api.model.PageTO
+import ro.jf.funds.platform.jvm.web.pageRequest
+import ro.jf.funds.platform.jvm.web.sortRequest
 import ro.jf.funds.platform.jvm.web.userId
 import java.util.*
 
@@ -41,9 +45,15 @@ fun Routing.importFileApiRouting(
 
         get {
             val userId = call.userId()
+            val pageRequest = call.pageRequest()
+            val sortRequest = call.sortRequest<ImportFileSortField>()
+            val filter = ImportFileFilter(
+                type = call.request.queryParameters["type"]?.let { runCatching { ImportFileTypeTO.valueOf(it) }.getOrNull() },
+                status = call.request.queryParameters["status"]?.let { runCatching { ImportFileStatus.valueOf(it) }.getOrNull() },
+            )
             log.info { "List import files for user $userId." }
-            val files = importFileService.listImportFiles(userId)
-            call.respond(HttpStatusCode.OK, files.map { it.toTO() })
+            val result = importFileService.listImportFiles(userId, filter, pageRequest, sortRequest)
+            call.respond(HttpStatusCode.OK, PageTO(result.items.map { it.toTO() }, result.total))
         }
 
         get("/{importFileId}") {
@@ -97,6 +107,7 @@ private fun ImportFile.toTO() = ImportFileTO(
     fileName = fileName,
     type = type,
     status = status.toTO(),
+    createdAt = createdAt.toString(),
 )
 
 private fun ImportFileStatus.toTO() = when (this) {

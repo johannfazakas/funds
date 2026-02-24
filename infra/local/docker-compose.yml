@@ -40,6 +40,17 @@ services:
     volumes:
       - ./volumes/kafka/data:/bitnami/kafka
 
+  localstack:
+    image: localstack/localstack:latest
+    container_name: ff_localstack
+    ports:
+      - '4566:4566'
+    environment:
+      - SERVICES=s3
+    volumes:
+      - ./volumes/localstack/init:/etc/localstack/init/ready.d
+      - ./volumes/localstack/data:/var/lib/localstack
+
   user-service:
     image: funds/user-service:latest
     container_name: ff_user
@@ -74,17 +85,6 @@ services:
     depends_on:
       - postgres
       - kafka
-
-  localstack:
-    image: localstack/localstack:latest
-    container_name: ff_localstack
-    ports:
-      - '4566:4566'
-    environment:
-      - SERVICES=s3
-    volumes:
-      - ./volumes/localstack/init:/etc/localstack/init/ready.d
-      - ./volumes/localstack/data:/var/lib/localstack
 
   import-service:
     image: funds/import-service:latest
@@ -122,22 +122,6 @@ services:
     depends_on:
       - postgres
       - kafka
-
-  client-web:
-    image: funds/web-client-react:latest
-    container_name: ff_client_web
-    ports:
-      - '5070:80'
-    environment:
-      - USER_SERVICE_URL=http://localhost:5247
-      - FUND_SERVICE_URL=http://localhost:5253
-      - IMPORT_SERVICE_URL=http://localhost:5207
-      - REPORTING_SERVICE_URL=http://localhost:5212
-    depends_on:
-      - user-service
-      - fund-service
-      - import-service
-      - reporting-service
 
   otel-collector:
     profiles: [observability]
