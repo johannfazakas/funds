@@ -2,12 +2,15 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import {
     ImportFile,
     ImportFileType,
+    ImportFileStatus,
+    ImportFileSortField,
     listImportFiles,
     createImportFile,
     confirmUpload,
     getDownloadUrl,
     deleteImportFile,
 } from '../api/importFileApi';
+import { SortOrder } from '../api/types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -37,15 +40,28 @@ import {
 } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
 import { Loader2, Download, Trash2 } from 'lucide-react';
+import { Pagination } from '../components/Pagination';
+import { SortableTableHead } from '../components/SortableTableHead';
 
 interface ImportsPageProps {
     userId: string;
 }
 
+const DEFAULT_PAGE_SIZE = 10;
+
 function ImportsPage({ userId }: ImportsPageProps) {
     const [importFiles, setImportFiles] = useState<ImportFile[]>([]);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const [offset, setOffset] = useState(0);
+    const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+    const [sortField, setSortField] = useState<ImportFileSortField | null>(null);
+    const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+    const [filterType, setFilterType] = useState<string>('');
+    const [filterStatus, setFilterStatus] = useState<string>('');
 
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [fileType, setFileType] = useState<ImportFileType>('WALLET_CSV');
@@ -62,18 +78,58 @@ function ImportsPage({ userId }: ImportsPageProps) {
         setLoading(true);
         setError(null);
         try {
-            const files = await listImportFiles(userId);
-            setImportFiles(files);
+            const filter: { type?: ImportFileType; status?: ImportFileStatus } = {};
+            if (filterType) filter.type = filterType as ImportFileType;
+            if (filterStatus) filter.status = filterStatus as ImportFileStatus;
+
+            const result = await listImportFiles(userId, {
+                pagination: { offset, limit },
+                sort: sortField ? { field: sortField, order: sortOrder } : undefined,
+                filter: Object.keys(filter).length > 0 ? filter : undefined,
+            });
+            setImportFiles(result.items);
+            setTotal(result.total);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load import files');
         } finally {
             setLoading(false);
         }
-    }, [userId]);
+    }, [userId, offset, limit, sortField, sortOrder, filterType, filterStatus]);
 
     useEffect(() => {
         loadImportFiles();
     }, [loadImportFiles]);
+
+    const handleSort = (field: ImportFileSortField) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('desc');
+        }
+        setOffset(0);
+    };
+
+    const handlePageChange = (newOffset: number) => {
+        setOffset(newOffset);
+    };
+
+    const handlePageSizeChange = (newLimit: number) => {
+        setLimit(newLimit);
+        setOffset(0);
+    };
+
+    const handleFilterChange = () => {
+        setOffset(0);
+    };
+
+    const clearFilters = () => {
+        setFilterType('');
+        setFilterStatus('');
+        setOffset(0);
+    };
+
+    const hasActiveFilters = filterType || filterStatus;
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -143,11 +199,57 @@ function ImportsPage({ userId }: ImportsPageProps) {
         }
     };
 
+    const formatDateTime = (dateTime: string) => {
+        const date = new Date(dateTime);
+        if (isNaN(date.getTime())) return dateTime;
+        return date.toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Imports</h1>
                 <Button onClick={openUploadModal}>Upload Files</Button>
+            </div>
+
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+                <Select
+                    value={filterType}
+                    onValueChange={(value) => { setFilterType(value === 'all' ? '' : value); handleFilterChange(); }}
+                >
+                    <SelectTrigger className="w-44">
+                        <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All types</SelectItem>
+                        <SelectItem value="WALLET_CSV">Wallet CSV</SelectItem>
+                        <SelectItem value="FUNDS_FORMAT_CSV">Funds Format CSV</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select
+                    value={filterStatus}
+                    onValueChange={(value) => { setFilterStatus(value === 'all' ? '' : value); handleFilterChange(); }}
+                >
+                    <SelectTrigger className="w-36">
+                        <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All statuses</SelectItem>
+                        <SelectItem value="PENDING">Pending</SelectItem>
+                        <SelectItem value="UPLOADED">Uploaded</SelectItem>
+                    </SelectContent>
+                </Select>
+                {hasActiveFilters && (
+                    <Button variant="outline" size="sm" onClick={clearFilters}>
+                        Clear
+                    </Button>
+                )}
             </div>
 
             {loading && (
@@ -165,7 +267,7 @@ function ImportsPage({ userId }: ImportsPageProps) {
 
             {!loading && !error && importFiles.length === 0 && (
                 <div className="text-center text-muted-foreground py-8">
-                    No import files yet — upload one to get started.
+                    {hasActiveFilters ? 'No import files match the current filters.' : 'No import files yet — upload one to get started.'}
                 </div>
             )}
 
@@ -174,9 +276,24 @@ function ImportsPage({ userId }: ImportsPageProps) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>File Name</TableHead>
+                                <SortableTableHead
+                                    field="FILE_NAME"
+                                    currentField={sortField}
+                                    currentOrder={sortOrder}
+                                    onSort={handleSort}
+                                >
+                                    File Name
+                                </SortableTableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead>Status</TableHead>
+                                <SortableTableHead
+                                    field="CREATED_AT"
+                                    currentField={sortField}
+                                    currentOrder={sortOrder}
+                                    onSort={handleSort}
+                                >
+                                    Created At
+                                </SortableTableHead>
                                 <TableHead className="w-24"></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -201,6 +318,9 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                         }>
                                             {file.status === 'UPLOADED' ? 'Uploaded' : 'Pending'}
                                         </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {formatDateTime(file.createdAt)}
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
@@ -227,6 +347,13 @@ function ImportsPage({ userId }: ImportsPageProps) {
                             ))}
                         </TableBody>
                     </Table>
+                    <Pagination
+                        offset={offset}
+                        limit={limit}
+                        total={total}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
+                    />
                 </Card>
             )}
 

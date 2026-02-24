@@ -1,13 +1,32 @@
+import { PageResponse, PaginationParams, SortParams } from './types';
 import { handleApiError } from './apiUtils';
 
 export type ImportFileType = 'WALLET_CSV' | 'FUNDS_FORMAT_CSV';
 export type ImportFileStatus = 'PENDING' | 'UPLOADED';
+export type ImportFileSortField = 'FILE_NAME' | 'CREATED_AT';
 
 export interface ImportFile {
     importFileId: string;
     fileName: string;
     type: ImportFileType;
     status: ImportFileStatus;
+    createdAt: string;
+}
+
+export interface ImportFileFilter {
+    type?: ImportFileType;
+    status?: ImportFileStatus;
+}
+
+export interface ListImportFilesParams {
+    pagination?: PaginationParams;
+    sort?: SortParams<ImportFileSortField>;
+    filter?: ImportFileFilter;
+}
+
+export interface ListImportFilesResult {
+    items: ImportFile[];
+    total: number;
 }
 
 export interface CreateImportFileResponse {
@@ -36,12 +55,38 @@ function getBaseUrl(): string {
 
 const BASE_PATH = '/funds-api/import/v1';
 
-export async function listImportFiles(userId: string): Promise<ImportFile[]> {
-    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/import-files`, {
+export async function listImportFiles(
+    userId: string,
+    params?: ListImportFilesParams
+): Promise<ListImportFilesResult> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.pagination) {
+        queryParams.set('offset', params.pagination.offset.toString());
+        queryParams.set('limit', params.pagination.limit.toString());
+    }
+
+    if (params?.sort) {
+        queryParams.set('sort', params.sort.field);
+        queryParams.set('order', params.sort.order);
+    }
+
+    if (params?.filter?.type) {
+        queryParams.set('type', params.filter.type);
+    }
+    if (params?.filter?.status) {
+        queryParams.set('status', params.filter.status);
+    }
+
+    const queryString = queryParams.toString();
+    const url = `${getBaseUrl()}${BASE_PATH}/import-files${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(url, {
         headers: { 'FUNDS_USER_ID': userId }
     });
     if (!response.ok) await handleApiError(response, 'Failed to load import files');
-    return response.json();
+    const data: PageResponse<ImportFile> = await response.json();
+    return { items: data.items, total: data.total };
 }
 
 export async function createImportFile(

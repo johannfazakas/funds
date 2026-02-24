@@ -9,11 +9,16 @@ import aws.sdk.kotlin.services.s3.model.DeleteObjectRequest
 import aws.sdk.kotlin.services.s3.model.PutObjectRequest
 import aws.sdk.kotlin.services.s3.presigners.presignGetObject
 import aws.sdk.kotlin.services.s3.presigners.presignPutObject
+import ro.jf.funds.importer.api.model.ImportFileSortField
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import ro.jf.funds.importer.service.domain.CreateImportFileCommand
 import ro.jf.funds.importer.service.domain.CreateImportFileResponse
 import ro.jf.funds.importer.service.domain.ImportFile
+import ro.jf.funds.importer.service.domain.ImportFileFilter
 import ro.jf.funds.importer.service.persistence.ImportFileRepository
+import ro.jf.funds.platform.api.model.PageRequest
+import ro.jf.funds.platform.api.model.SortRequest
+import ro.jf.funds.platform.jvm.persistence.PagedResult
 import java.util.*
 import kotlin.time.Duration
 
@@ -42,8 +47,13 @@ class ImportFileService(
         return importFileRepository.findById(userId, importFileId)
     }
 
-    suspend fun listImportFiles(userId: UUID): List<ImportFile> {
-        return importFileRepository.listByUserId(userId)
+    suspend fun listImportFiles(
+        userId: UUID,
+        filter: ImportFileFilter? = null,
+        pageRequest: PageRequest? = null,
+        sortRequest: SortRequest<ImportFileSortField>? = null,
+    ): PagedResult<ImportFile> {
+        return importFileRepository.list(userId, filter, pageRequest, sortRequest)
     }
 
     suspend fun deleteImportFile(userId: UUID, importFileId: UUID): Boolean {
