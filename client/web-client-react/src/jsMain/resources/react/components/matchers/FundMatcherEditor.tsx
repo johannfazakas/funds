@@ -2,45 +2,46 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { SearchableSelect } from '../ui/searchable-select';
 import { Plus, X } from 'lucide-react';
 import { SortableRow } from './SortableRow';
-
-const FUND_MATCHER_TYPES = [
-    { value: 'by_account', label: 'By Account' },
-    { value: 'by_label', label: 'By Label' },
-    { value: 'by_account_label', label: 'By Account & Label' },
-    { value: 'by_label_with_post_transfer', label: 'By Label (Post Transfer)' },
-    { value: 'by_account_label_with_post_transfer', label: 'By Account & Label (Post Transfer)' },
-    { value: 'by_account_label_with_pre_transfer', label: 'By Account & Label (Pre Transfer)' },
-];
-
-export interface FundMatcherRow {
-    type: string;
-    fundName: string;
-    importAccountName?: string;
-    importLabel?: string;
-    initialFundName?: string;
-}
+import { FundMatcher } from '../../api/importConfigurationApi';
 
 interface FundMatcherEditorProps {
-    matchers: FundMatcherRow[];
-    onChange: (matchers: FundMatcherRow[]) => void;
+    matchers: FundMatcher[];
+    onChange: (matchers: FundMatcher[]) => void;
     fundNames: string[];
     disabled?: boolean;
 }
 
-function hasAccountName(type: string): boolean {
-    return type.includes('account');
+function AddFieldButton({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs text-muted-foreground border border-dashed rounded-full hover:bg-muted/50 hover:text-foreground disabled:opacity-50 shrink-0"
+        >
+            <Plus className="h-2.5 w-2.5" />{label}
+        </button>
+    );
 }
 
-function hasLabel(type: string): boolean {
-    return type.includes('label');
-}
-
-function hasTransfer(type: string): boolean {
-    return type.includes('transfer');
+function RemovableField({ label, children, onRemove, disabled }: { label: string; children: React.ReactNode; onRemove: () => void; disabled?: boolean }) {
+    return (
+        <div className="flex items-center gap-1 flex-1 min-w-0">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{label}</span>
+            {children}
+            <button
+                type="button"
+                onClick={onRemove}
+                disabled={disabled}
+                className="text-muted-foreground hover:text-destructive shrink-0 p-0.5"
+            >
+                <X className="h-2.5 w-2.5" />
+            </button>
+        </div>
+    );
 }
 
 export function FundMatcherEditor({ matchers, onChange, fundNames, disabled }: FundMatcherEditorProps) {
@@ -62,7 +63,7 @@ export function FundMatcherEditor({ matchers, onChange, fundNames, disabled }: F
         onChange(next);
     };
 
-    const updateMatcher = (index: number, updated: FundMatcherRow) => {
+    const updateMatcher = (index: number, updated: FundMatcher) => {
         const next = [...matchers];
         next[index] = updated;
         onChange(next);
@@ -73,107 +74,105 @@ export function FundMatcherEditor({ matchers, onChange, fundNames, disabled }: F
     };
 
     const addMatcher = () => {
-        onChange([...matchers, { type: 'by_account', fundName: '', importAccountName: '' }]);
-    };
-
-    const handleTypeChange = (index: number, type: string) => {
-        const current = matchers[index];
-        const updated: FundMatcherRow = { type, fundName: current.fundName };
-        if (hasAccountName(type)) {
-            updated.importAccountName = current.importAccountName || '';
-        }
-        if (hasLabel(type)) {
-            updated.importLabel = current.importLabel || '';
-        }
-        if (hasTransfer(type)) {
-            updated.initialFundName = current.initialFundName || '';
-        }
-        updateMatcher(index, updated);
+        onChange([...matchers, { fundName: '', importAccountName: '' }]);
     };
 
     return (
         <div className="space-y-1.5">
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-                    {matchers.map((matcher, index) => (
-                        <SortableRow key={ids[index]} id={ids[index]} disabled={disabled}>
-                            <div className="flex items-center gap-1 shrink-0" style={{ minWidth: '200px' }}>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">type</span>
-                                <Select
-                                    value={matcher.type}
-                                    onValueChange={(type) => handleTypeChange(index, type)}
+                    {matchers.map((matcher, index) => {
+                        const hasAccount = matcher.importAccountName !== undefined;
+                        const hasLabel = matcher.importLabel !== undefined;
+                        const hasIntermediary = matcher.intermediaryFundName !== undefined;
+
+                        return (
+                            <SortableRow key={ids[index]} id={ids[index]} disabled={disabled}>
+                                <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
+                                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">fund</span>
+                                        <SearchableSelect
+                                            value={matcher.fundName}
+                                            onValueChange={(name) => updateMatcher(index, { ...matcher, fundName: name })}
+                                            options={fundNames}
+                                            placeholder="Select fund"
+                                            disabled={disabled}
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                    {hasAccount && (
+                                        <RemovableField
+                                            label="account"
+                                            onRemove={() => updateMatcher(index, { ...matcher, importAccountName: undefined })}
+                                            disabled={disabled}
+                                        >
+                                            <Input
+                                                value={matcher.importAccountName || ''}
+                                                onChange={(e) => updateMatcher(index, { ...matcher, importAccountName: e.target.value })}
+                                                placeholder="Import account"
+                                                disabled={disabled}
+                                                className="h-8 text-sm"
+                                            />
+                                        </RemovableField>
+                                    )}
+                                    {hasLabel && (
+                                        <RemovableField
+                                            label="label"
+                                            onRemove={() => updateMatcher(index, { ...matcher, importLabel: undefined })}
+                                            disabled={disabled}
+                                        >
+                                            <Input
+                                                value={matcher.importLabel || ''}
+                                                onChange={(e) => updateMatcher(index, { ...matcher, importLabel: e.target.value })}
+                                                placeholder="Import label"
+                                                disabled={disabled}
+                                                className="h-8 text-sm"
+                                            />
+                                        </RemovableField>
+                                    )}
+                                    {hasIntermediary && (
+                                        <RemovableField
+                                            label="intermediary"
+                                            onRemove={() => updateMatcher(index, { ...matcher, intermediaryFundName: undefined })}
+                                            disabled={disabled}
+                                        >
+                                            <SearchableSelect
+                                                value={matcher.intermediaryFundName || ''}
+                                                onValueChange={(name) => updateMatcher(index, { ...matcher, intermediaryFundName: name })}
+                                                options={fundNames}
+                                                placeholder="Select fund"
+                                                disabled={disabled}
+                                                className="h-8 text-sm"
+                                            />
+                                        </RemovableField>
+                                    )}
+                                    {(!hasAccount || !hasLabel || !hasIntermediary) && (
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            {!hasAccount && (
+                                                <AddFieldButton label="account" onClick={() => updateMatcher(index, { ...matcher, importAccountName: '' })} disabled={disabled} />
+                                            )}
+                                            {!hasLabel && (
+                                                <AddFieldButton label="label" onClick={() => updateMatcher(index, { ...matcher, importLabel: '' })} disabled={disabled} />
+                                            )}
+                                            {!hasIntermediary && (
+                                                <AddFieldButton label="transfer" onClick={() => updateMatcher(index, { ...matcher, intermediaryFundName: '' })} disabled={disabled} />
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-6 p-0 shrink-0 text-muted-foreground hover:text-destructive"
+                                    onClick={() => removeMatcher(index)}
                                     disabled={disabled}
                                 >
-                                    <SelectTrigger className="h-8">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {FUND_MATCHER_TYPES.map(t => (
-                                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            {hasAccountName(matcher.type) && (
-                                <div className="flex items-center gap-1 flex-1 min-w-0">
-                                    <span className="text-xs text-muted-foreground whitespace-nowrap">import acct</span>
-                                    <Input
-                                        value={matcher.importAccountName || ''}
-                                        onChange={(e) => updateMatcher(index, { ...matcher, importAccountName: e.target.value })}
-                                        placeholder="Import account name"
-                                        disabled={disabled}
-                                        className="h-8 text-sm"
-                                    />
-                                </div>
-                            )}
-                            {hasLabel(matcher.type) && (
-                                <div className="flex items-center gap-1 flex-1 min-w-0">
-                                    <span className="text-xs text-muted-foreground whitespace-nowrap">import label</span>
-                                    <Input
-                                        value={matcher.importLabel || ''}
-                                        onChange={(e) => updateMatcher(index, { ...matcher, importLabel: e.target.value })}
-                                        placeholder="Import label"
-                                        disabled={disabled}
-                                        className="h-8 text-sm"
-                                    />
-                                </div>
-                            )}
-                            <div className="flex items-center gap-1 flex-1 min-w-0">
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">fund</span>
-                                <SearchableSelect
-                                    value={matcher.fundName}
-                                    onValueChange={(name) => updateMatcher(index, { ...matcher, fundName: name })}
-                                    options={fundNames}
-                                    placeholder="Select fund"
-                                    disabled={disabled}
-                                    className="h-8 text-sm"
-                                />
-                            </div>
-                            {hasTransfer(matcher.type) && (
-                                <div className="flex items-center gap-1 flex-1 min-w-0">
-                                    <span className="text-xs text-muted-foreground whitespace-nowrap">initial</span>
-                                    <SearchableSelect
-                                        value={matcher.initialFundName || ''}
-                                        onValueChange={(name) => updateMatcher(index, { ...matcher, initialFundName: name })}
-                                        options={fundNames}
-                                        placeholder="Select fund"
-                                        disabled={disabled}
-                                        className="h-8 text-sm"
-                                    />
-                                </div>
-                            )}
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-6 p-0 shrink-0 text-muted-foreground hover:text-destructive"
-                                onClick={() => removeMatcher(index)}
-                                disabled={disabled}
-                            >
-                                <X className="h-3.5 w-3.5" />
-                            </Button>
-                        </SortableRow>
-                    ))}
+                                    <X className="h-3.5 w-3.5" />
+                                </Button>
+                            </SortableRow>
+                        );
+                    })}
                 </SortableContext>
             </DndContext>
             <Button type="button" variant="outline" size="sm" onClick={addMatcher} disabled={disabled}>

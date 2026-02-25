@@ -3,6 +3,7 @@ import {
     ImportConfiguration,
     ImportConfigurationSortField,
     AccountMatcher,
+    FundMatcher,
     ExchangeMatcher,
     listImportConfigurations,
     createImportConfiguration,
@@ -35,12 +36,9 @@ import { Pagination } from '../components/Pagination';
 import { SortableTableHead } from '../components/SortableTableHead';
 import {
     MatchersEditor,
-    fundMatchersToRows,
-    rowsToFundMatchers,
     labelMatchersToRows,
     rowsToLabelMatchers,
 } from '../components/matchers/MatchersEditor';
-import { FundMatcherRow } from '../components/matchers/FundMatcherEditor';
 import { LabelMatcherRow } from '../components/matchers/LabelMatcherEditor';
 
 interface ImportConfigurationsPageProps {
@@ -63,7 +61,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newName, setNewName] = useState('');
     const [newAccountMatcherRows, setNewAccountMatcherRows] = useState<AccountMatcher[]>([]);
-    const [newFundMatcherRows, setNewFundMatcherRows] = useState<FundMatcherRow[]>([]);
+    const [newFundMatchers, setNewFundMatchers] = useState<FundMatcher[]>([]);
     const [newExchangeMatchers, setNewExchangeMatchers] = useState<ExchangeMatcher[]>([]);
     const [newLabelMatcherRows, setNewLabelMatcherRows] = useState<LabelMatcherRow[]>([]);
     const [creating, setCreating] = useState(false);
@@ -72,7 +70,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
     const [configToEdit, setConfigToEdit] = useState<ImportConfiguration | null>(null);
     const [editName, setEditName] = useState('');
     const [editAccountMatcherRows, setEditAccountMatcherRows] = useState<AccountMatcher[]>([]);
-    const [editFundMatcherRows, setEditFundMatcherRows] = useState<FundMatcherRow[]>([]);
+    const [editFundMatchers, setEditFundMatchers] = useState<FundMatcher[]>([]);
     const [editExchangeMatchers, setEditExchangeMatchers] = useState<ExchangeMatcher[]>([]);
     const [editLabelMatcherRows, setEditLabelMatcherRows] = useState<LabelMatcherRow[]>([]);
     const [editing, setEditing] = useState(false);
@@ -125,7 +123,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
     const openCreateModal = () => {
         setNewName('');
         setNewAccountMatcherRows([]);
-        setNewFundMatcherRows([]);
+        setNewFundMatchers([]);
         setNewExchangeMatchers([]);
         setNewLabelMatcherRows([]);
         setCreateError(null);
@@ -145,7 +143,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
             await createImportConfiguration(userId, {
                 name: newName.trim(),
                 accountMatchers: newAccountMatcherRows,
-                fundMatchers: rowsToFundMatchers(newFundMatcherRows),
+                fundMatchers: newFundMatchers,
                 exchangeMatchers: newExchangeMatchers,
                 labelMatchers: rowsToLabelMatchers(newLabelMatcherRows),
             });
@@ -163,7 +161,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
         setConfigToEdit(config);
         setEditName(config.name);
         setEditAccountMatcherRows([...config.accountMatchers]);
-        setEditFundMatcherRows(fundMatchersToRows(config.fundMatchers));
+        setEditFundMatchers([...config.fundMatchers]);
         setEditExchangeMatchers([...config.exchangeMatchers]);
         setEditLabelMatcherRows(labelMatchersToRows(config.labelMatchers));
         setEditError(null);
@@ -183,7 +181,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
             await updateImportConfiguration(userId, configToEdit.importConfigurationId, {
                 name: editName.trim(),
                 accountMatchers: editAccountMatcherRows,
-                fundMatchers: rowsToFundMatchers(editFundMatcherRows),
+                fundMatchers: editFundMatchers,
                 exchangeMatchers: editExchangeMatchers,
                 labelMatchers: rowsToLabelMatchers(editLabelMatcherRows),
             });
@@ -327,7 +325,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
             )}
 
             <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-                <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-7xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>New Import Configuration</DialogTitle>
                     </DialogHeader>
@@ -348,11 +346,11 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
                                 <MatchersEditor
                                     userId={userId}
                                     accountMatchers={newAccountMatcherRows}
-                                    fundMatcherRows={newFundMatcherRows}
+                                    fundMatchers={newFundMatchers}
                                     exchangeMatchers={newExchangeMatchers}
                                     labelMatcherRows={newLabelMatcherRows}
                                     onAccountMatchersChange={setNewAccountMatcherRows}
-                                    onFundMatcherRowsChange={setNewFundMatcherRows}
+                                    onFundMatchersChange={setNewFundMatchers}
                                     onExchangeMatchersChange={setNewExchangeMatchers}
                                     onLabelMatcherRowsChange={setNewLabelMatcherRows}
                                     disabled={creating}
@@ -389,7 +387,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
             </Dialog>
 
             <Dialog open={!!configToEdit} onOpenChange={(open) => !open && !editing && setConfigToEdit(null)}>
-                <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-7xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Edit Import Configuration</DialogTitle>
                     </DialogHeader>
@@ -409,11 +407,11 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
                                 <MatchersEditor
                                     userId={userId}
                                     accountMatchers={editAccountMatcherRows}
-                                    fundMatcherRows={editFundMatcherRows}
+                                    fundMatchers={editFundMatchers}
                                     exchangeMatchers={editExchangeMatchers}
                                     labelMatcherRows={editLabelMatcherRows}
                                     onAccountMatchersChange={setEditAccountMatcherRows}
-                                    onFundMatcherRowsChange={setEditFundMatcherRows}
+                                    onFundMatchersChange={setEditFundMatchers}
                                     onExchangeMatchersChange={setEditExchangeMatchers}
                                     onLabelMatcherRowsChange={setEditLabelMatcherRows}
                                     disabled={editing}

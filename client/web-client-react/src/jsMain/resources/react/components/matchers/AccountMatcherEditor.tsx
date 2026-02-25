@@ -53,16 +53,6 @@ export function AccountMatcherEditor({ matchers, onChange, accountNames, disable
                 <SortableContext items={ids} strategy={verticalListSortingStrategy}>
                     {matchers.map((matcher, index) => (
                         <SortableRow key={ids[index]} id={ids[index]} disabled={disabled}>
-                            <div className="flex items-center gap-1 flex-1 min-w-0">
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">import</span>
-                                <Input
-                                    value={matcher.importAccountName}
-                                    onChange={(e) => updateMatcher(index, { ...matcher, importAccountName: e.target.value })}
-                                    placeholder="Import account name"
-                                    disabled={disabled}
-                                    className="h-8 text-sm"
-                                />
-                            </div>
                             {!matcher.skipped && (
                                 <div className="flex items-center gap-1 flex-1 min-w-0">
                                     <span className="text-xs text-muted-foreground whitespace-nowrap">account</span>
@@ -76,6 +66,16 @@ export function AccountMatcherEditor({ matchers, onChange, accountNames, disable
                                     />
                                 </div>
                             )}
+                            <div className="flex items-center gap-1 flex-1 min-w-0">
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">import</span>
+                                <Input
+                                    value={matcher.importAccountName}
+                                    onChange={(e) => updateMatcher(index, { ...matcher, importAccountName: e.target.value })}
+                                    placeholder="Import account name"
+                                    disabled={disabled}
+                                    className="h-8 text-sm"
+                                />
+                            </div>
                             <label className="flex items-center gap-1.5 shrink-0 cursor-pointer">
                                 <input
                                     type="checkbox"

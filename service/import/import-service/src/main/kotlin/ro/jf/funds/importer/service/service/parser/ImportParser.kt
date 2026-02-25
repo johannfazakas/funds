@@ -1,6 +1,5 @@
 package ro.jf.funds.importer.service.service.parser
 
-import ro.jf.funds.importer.api.model.FundMatcherTO.*
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.service.domain.*
 
@@ -62,22 +61,9 @@ abstract class ImportParser {
             .accountName ?: return null
         val fundMatcher = importConfiguration.fundMatchers.getFundMatcher(importAccountName, item.labels)
         val labels = importConfiguration.labelMatchers.getLabelMatchers(item.labels).map { it.label }
-
         val note = item.note.takeIf { it.isNotBlank() }
-
-        return when (fundMatcher) {
-            is ByAccount, is ByLabel, is ByAccountLabel ->
-                listOf(ImportParsedRecord(accountName, fundMatcher.fundName, item.unit, item.amount, labels, note))
-
-            is ByAccountLabelWithPostTransfer ->
-                listOf(ImportParsedRecord(accountName, fundMatcher.initialFundName, item.unit, item.amount, labels, note))
-
-            is ByAccountLabelWithPreTransfer ->
-                listOf(ImportParsedRecord(accountName, fundMatcher.fundName, item.unit, item.amount, labels, note))
-
-            is ByLabelWithPostTransfer ->
-                listOf(ImportParsedRecord(accountName, fundMatcher.initialFundName, item.unit, item.amount, labels, note))
-        }
+        val recordFund = fundMatcher.intermediaryFundName ?: fundMatcher.fundName
+        return listOf(ImportParsedRecord(accountName, recordFund, item.unit, item.amount, labels, note))
     }
 
     private fun extractImplicitTransferRecords(
@@ -88,30 +74,12 @@ abstract class ImportParser {
         val accountName = importConfiguration.accountMatchers.getAccountMatcher(importAccountName)
             .accountName ?: return null
         val fundMatcher = importConfiguration.fundMatchers.getFundMatcher(importAccountName, item.labels)
+        val intermediary = fundMatcher.intermediaryFundName ?: return emptyList()
         val amount = item.amount
-
-        return when (fundMatcher) {
-            is ByAccount, is ByLabel, is ByAccountLabel ->
-                emptyList()
-
-            is ByAccountLabelWithPostTransfer ->
-                listOf(
-                    ImportParsedRecord(accountName, fundMatcher.initialFundName, item.unit, amount.negate()),
-                    ImportParsedRecord(accountName, fundMatcher.fundName, item.unit, amount)
-                )
-
-            is ByAccountLabelWithPreTransfer ->
-                listOf(
-                    ImportParsedRecord(accountName, fundMatcher.initialFundName, item.unit, amount),
-                    ImportParsedRecord(accountName, fundMatcher.fundName, item.unit, amount.negate())
-                )
-
-            is ByLabelWithPostTransfer ->
-                listOf(
-                    ImportParsedRecord(accountName, fundMatcher.initialFundName, item.unit, amount.negate()),
-                    ImportParsedRecord(accountName, fundMatcher.fundName, item.unit, amount)
-                )
-        }
+        return listOf(
+            ImportParsedRecord(accountName, intermediary, item.unit, amount.negate()),
+            ImportParsedRecord(accountName, fundMatcher.fundName, item.unit, amount)
+        )
     }
 
     private fun isExchange(importConfiguration: ImportConfigurationTO, item: ImportItem): Boolean =

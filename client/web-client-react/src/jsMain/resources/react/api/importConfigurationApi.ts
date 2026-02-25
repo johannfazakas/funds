@@ -10,11 +10,10 @@ export interface AccountMatcher {
 }
 
 export interface FundMatcher {
-    type: string;
     fundName: string;
-    importAccountNames?: string[];
-    importLabels?: string[];
-    initialFundName?: string;
+    importAccountName?: string;
+    importLabel?: string;
+    intermediaryFundName?: string;
 }
 
 export interface ExchangeMatcher {
