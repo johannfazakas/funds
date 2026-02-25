@@ -3,6 +3,7 @@ import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinat
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { SearchableSelect } from '../ui/searchable-select';
 import { Plus, X } from 'lucide-react';
 import { SortableRow } from './SortableRow';
 
@@ -139,38 +140,26 @@ export function FundMatcherEditor({ matchers, onChange, fundNames, disabled }: F
                             )}
                             <div className="flex items-center gap-1 flex-1 min-w-0">
                                 <span className="text-xs text-muted-foreground whitespace-nowrap">fund</span>
-                                <Select
+                                <SearchableSelect
                                     value={matcher.fundName}
                                     onValueChange={(name) => updateMatcher(index, { ...matcher, fundName: name })}
+                                    options={fundNames}
+                                    placeholder="Select fund"
                                     disabled={disabled}
-                                >
-                                    <SelectTrigger className="h-8">
-                                        <SelectValue placeholder="Select fund" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {fundNames.map(name => (
-                                            <SelectItem key={name} value={name}>{name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    className="h-8 text-sm"
+                                />
                             </div>
                             {hasTransfer(matcher.type) && (
                                 <div className="flex items-center gap-1 flex-1 min-w-0">
                                     <span className="text-xs text-muted-foreground whitespace-nowrap">initial</span>
-                                    <Select
+                                    <SearchableSelect
                                         value={matcher.initialFundName || ''}
                                         onValueChange={(name) => updateMatcher(index, { ...matcher, initialFundName: name })}
+                                        options={fundNames}
+                                        placeholder="Select fund"
                                         disabled={disabled}
-                                    >
-                                        <SelectTrigger className="h-8">
-                                            <SelectValue placeholder="Select fund" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {fundNames.map(name => (
-                                                <SelectItem key={name} value={name}>{name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        className="h-8 text-sm"
+                                    />
                                 </div>
                             )}
                             <Button

@@ -4,9 +4,9 @@ import { handleApiError } from './apiUtils';
 export type ImportConfigurationSortField = 'NAME' | 'CREATED_AT';
 
 export interface AccountMatcher {
-    type: string;
-    importAccountNames: string[];
+    importAccountName: string;
     accountName?: string;
+    skipped?: boolean;
 }
 
 export interface FundMatcher {

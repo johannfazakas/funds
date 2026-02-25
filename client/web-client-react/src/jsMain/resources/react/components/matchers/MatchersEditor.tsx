@@ -4,29 +4,11 @@ import { listAccounts } from '../../api/accountApi';
 import { listFunds } from '../../api/fundApi';
 import { listLabels } from '../../api/labelApi';
 import { Badge } from '../ui/badge';
-import { AccountMatcherEditor, AccountMatcherRow } from './AccountMatcherEditor';
+import { AccountMatcherEditor } from './AccountMatcherEditor';
 import { FundMatcherEditor, FundMatcherRow } from './FundMatcherEditor';
 import { ExchangeMatcherEditor } from './ExchangeMatcherEditor';
 import { LabelMatcherEditor, LabelMatcherRow } from './LabelMatcherEditor';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-
-export function accountMatchersToRows(matchers: AccountMatcher[]): AccountMatcherRow[] {
-    return matchers.flatMap(m =>
-        m.importAccountNames.map(name => ({
-            type: m.type,
-            importAccountName: name,
-            accountName: m.accountName,
-        }))
-    );
-}
-
-export function rowsToAccountMatchers(rows: AccountMatcherRow[]): AccountMatcher[] {
-    return rows.map(r => ({
-        type: r.type,
-        importAccountNames: [r.importAccountName],
-        ...(r.type === 'by_name' ? { accountName: r.accountName } : {}),
-    }));
-}
 
 export function fundMatchersToRows(matchers: FundMatcher[]): FundMatcherRow[] {
     const rows: FundMatcherRow[] = [];
@@ -83,11 +65,11 @@ export function rowsToLabelMatchers(rows: LabelMatcherRow[]): LabelMatcher[] {
 
 interface MatchersEditorProps {
     userId: string;
-    accountMatcherRows: AccountMatcherRow[];
+    accountMatchers: AccountMatcher[];
     fundMatcherRows: FundMatcherRow[];
     exchangeMatchers: ExchangeMatcher[];
     labelMatcherRows: LabelMatcherRow[];
-    onAccountMatcherRowsChange: (rows: AccountMatcherRow[]) => void;
+    onAccountMatchersChange: (matchers: AccountMatcher[]) => void;
     onFundMatcherRowsChange: (rows: FundMatcherRow[]) => void;
     onExchangeMatchersChange: (matchers: ExchangeMatcher[]) => void;
     onLabelMatcherRowsChange: (rows: LabelMatcherRow[]) => void;
@@ -122,11 +104,11 @@ function CollapsibleSection({ title, count, defaultOpen = false, children }: Sec
 
 export function MatchersEditor({
     userId,
-    accountMatcherRows,
+    accountMatchers,
     fundMatcherRows,
     exchangeMatchers,
     labelMatcherRows,
-    onAccountMatcherRowsChange,
+    onAccountMatchersChange,
     onFundMatcherRowsChange,
     onExchangeMatchersChange,
     onLabelMatcherRowsChange,
@@ -150,8 +132,8 @@ export function MatchersEditor({
 
     return (
         <div className="space-y-2">
-            <CollapsibleSection title="Account Matchers" count={accountMatcherRows.length}>
-                <AccountMatcherEditor matchers={accountMatcherRows} onChange={onAccountMatcherRowsChange} accountNames={accountNames} disabled={disabled} />
+            <CollapsibleSection title="Account Matchers" count={accountMatchers.length}>
+                <AccountMatcherEditor matchers={accountMatchers} onChange={onAccountMatchersChange} accountNames={accountNames} disabled={disabled} />
             </CollapsibleSection>
             <CollapsibleSection title="Fund Matchers" count={fundMatcherRows.length}>
                 <FundMatcherEditor matchers={fundMatcherRows} onChange={onFundMatcherRowsChange} fundNames={fundNames} disabled={disabled} />

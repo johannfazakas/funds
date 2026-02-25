@@ -1,25 +1,15 @@
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { AccountMatcher } from '../../api/importConfigurationApi';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { SearchableSelect } from '../ui/searchable-select';
 import { Plus, X } from 'lucide-react';
 import { SortableRow } from './SortableRow';
 
-const ACCOUNT_MATCHER_TYPES = [
-    { value: 'by_name', label: 'By Name' },
-    { value: 'skipped', label: 'Skipped' },
-];
-
-export interface AccountMatcherRow {
-    type: string;
-    importAccountName: string;
-    accountName?: string;
-}
-
 interface AccountMatcherEditorProps {
-    matchers: AccountMatcherRow[];
-    onChange: (matchers: AccountMatcherRow[]) => void;
+    matchers: AccountMatcher[];
+    onChange: (matchers: AccountMatcher[]) => void;
     accountNames: string[];
     disabled?: boolean;
 }
@@ -43,7 +33,7 @@ export function AccountMatcherEditor({ matchers, onChange, accountNames, disable
         onChange(next);
     };
 
-    const updateMatcher = (index: number, updated: AccountMatcherRow) => {
+    const updateMatcher = (index: number, updated: AccountMatcher) => {
         const next = [...matchers];
         next[index] = updated;
         onChange(next);
@@ -54,7 +44,7 @@ export function AccountMatcherEditor({ matchers, onChange, accountNames, disable
     };
 
     const addMatcher = () => {
-        onChange([...matchers, { type: 'by_name', importAccountName: '', accountName: '' }]);
+        onChange([...matchers, { importAccountName: '', accountName: '' }]);
     };
 
     return (
@@ -63,28 +53,6 @@ export function AccountMatcherEditor({ matchers, onChange, accountNames, disable
                 <SortableContext items={ids} strategy={verticalListSortingStrategy}>
                     {matchers.map((matcher, index) => (
                         <SortableRow key={ids[index]} id={ids[index]} disabled={disabled}>
-                            <div className="flex items-center gap-1 w-32 shrink-0">
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">type</span>
-                                <Select
-                                    value={matcher.type}
-                                    onValueChange={(type) => {
-                                        const updated: AccountMatcherRow = type === 'skipped'
-                                            ? { type, importAccountName: matcher.importAccountName }
-                                            : { type, importAccountName: matcher.importAccountName, accountName: matcher.accountName || '' };
-                                        updateMatcher(index, updated);
-                                    }}
-                                    disabled={disabled}
-                                >
-                                    <SelectTrigger className="h-8">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {ACCOUNT_MATCHER_TYPES.map(t => (
-                                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
                             <div className="flex items-center gap-1 flex-1 min-w-0">
                                 <span className="text-xs text-muted-foreground whitespace-nowrap">import</span>
                                 <Input
@@ -95,25 +63,33 @@ export function AccountMatcherEditor({ matchers, onChange, accountNames, disable
                                     className="h-8 text-sm"
                                 />
                             </div>
-                            {matcher.type === 'by_name' && (
+                            {!matcher.skipped && (
                                 <div className="flex items-center gap-1 flex-1 min-w-0">
                                     <span className="text-xs text-muted-foreground whitespace-nowrap">account</span>
-                                    <Select
+                                    <SearchableSelect
                                         value={matcher.accountName || ''}
                                         onValueChange={(name) => updateMatcher(index, { ...matcher, accountName: name })}
+                                        options={accountNames}
+                                        placeholder="Select account"
                                         disabled={disabled}
-                                    >
-                                        <SelectTrigger className="h-8">
-                                            <SelectValue placeholder="Select account" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {accountNames.map(name => (
-                                                <SelectItem key={name} value={name}>{name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        className="h-8 text-sm"
+                                    />
                                 </div>
                             )}
+                            <label className="flex items-center gap-1.5 shrink-0 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={matcher.skipped || false}
+                                    onChange={(e) => updateMatcher(index, {
+                                        importAccountName: matcher.importAccountName,
+                                        skipped: e.target.checked,
+                                        ...(e.target.checked ? {} : { accountName: matcher.accountName || '' }),
+                                    })}
+                                    disabled={disabled}
+                                    className="h-3.5 w-3.5"
+                                />
+                                <span className="text-xs text-muted-foreground">skip</span>
+                            </label>
                             <Button
                                 type="button"
                                 variant="ghost"

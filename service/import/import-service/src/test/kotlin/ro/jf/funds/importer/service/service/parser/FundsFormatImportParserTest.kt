@@ -35,9 +35,9 @@ class FundsFormatImportParserTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(
-                AccountMatcherTO.ByName(listOf("BT EUR"), AccountName("BT EUR")),
-                AccountMatcherTO.ByName(listOf("XTB EUR"), AccountName("XTB EUR")),
-                AccountMatcherTO.ByName(listOf("XTB EUNL"), AccountName("XTB EUNL")),
+                AccountMatcherTO("BT EUR", AccountName("BT EUR")),
+                AccountMatcherTO("XTB EUR", AccountName("XTB EUR")),
+                AccountMatcherTO("XTB EUNL", AccountName("XTB EUNL")),
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByAccount(listOf("BT EUR"), FundName("Expenses")),

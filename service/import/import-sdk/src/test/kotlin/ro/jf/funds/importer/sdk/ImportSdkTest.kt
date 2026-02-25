@@ -37,7 +37,7 @@ class ImportSdkTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(
-                AccountMatcherTO.ByName(listOf("Cash RON"), AccountName("Cash"))
+                AccountMatcherTO("Cash RON", AccountName("Cash"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))
@@ -88,7 +88,7 @@ class ImportSdkTest {
                 importConfigurationId = uuid4(),
                 name = "test-config",
                 accountMatchers = listOf(
-                    AccountMatcherTO.ByName(listOf("Cash RON"), AccountName("Cash"))
+                    AccountMatcherTO("Cash RON", AccountName("Cash"))
                 ),
                 fundMatchers = listOf(
                     FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))
@@ -132,7 +132,7 @@ class ImportSdkTest {
                 importConfigurationId = uuid4(),
                 name = "test-config",
                 accountMatchers = listOf(
-                    AccountMatcherTO.ByName(listOf("Cash RON"), AccountName("Cash"))
+                    AccountMatcherTO("Cash RON", AccountName("Cash"))
                 ),
                 fundMatchers = listOf(
                     FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))

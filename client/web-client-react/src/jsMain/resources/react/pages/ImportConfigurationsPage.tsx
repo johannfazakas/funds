@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
     ImportConfiguration,
     ImportConfigurationSortField,
+    AccountMatcher,
     ExchangeMatcher,
     listImportConfigurations,
     createImportConfiguration,
@@ -34,14 +35,11 @@ import { Pagination } from '../components/Pagination';
 import { SortableTableHead } from '../components/SortableTableHead';
 import {
     MatchersEditor,
-    accountMatchersToRows,
-    rowsToAccountMatchers,
     fundMatchersToRows,
     rowsToFundMatchers,
     labelMatchersToRows,
     rowsToLabelMatchers,
 } from '../components/matchers/MatchersEditor';
-import { AccountMatcherRow } from '../components/matchers/AccountMatcherEditor';
 import { FundMatcherRow } from '../components/matchers/FundMatcherEditor';
 import { LabelMatcherRow } from '../components/matchers/LabelMatcherEditor';
 
@@ -64,7 +62,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newName, setNewName] = useState('');
-    const [newAccountMatcherRows, setNewAccountMatcherRows] = useState<AccountMatcherRow[]>([]);
+    const [newAccountMatcherRows, setNewAccountMatcherRows] = useState<AccountMatcher[]>([]);
     const [newFundMatcherRows, setNewFundMatcherRows] = useState<FundMatcherRow[]>([]);
     const [newExchangeMatchers, setNewExchangeMatchers] = useState<ExchangeMatcher[]>([]);
     const [newLabelMatcherRows, setNewLabelMatcherRows] = useState<LabelMatcherRow[]>([]);
@@ -73,7 +71,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
 
     const [configToEdit, setConfigToEdit] = useState<ImportConfiguration | null>(null);
     const [editName, setEditName] = useState('');
-    const [editAccountMatcherRows, setEditAccountMatcherRows] = useState<AccountMatcherRow[]>([]);
+    const [editAccountMatcherRows, setEditAccountMatcherRows] = useState<AccountMatcher[]>([]);
     const [editFundMatcherRows, setEditFundMatcherRows] = useState<FundMatcherRow[]>([]);
     const [editExchangeMatchers, setEditExchangeMatchers] = useState<ExchangeMatcher[]>([]);
     const [editLabelMatcherRows, setEditLabelMatcherRows] = useState<LabelMatcherRow[]>([]);
@@ -146,7 +144,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
         try {
             await createImportConfiguration(userId, {
                 name: newName.trim(),
-                accountMatchers: rowsToAccountMatchers(newAccountMatcherRows),
+                accountMatchers: newAccountMatcherRows,
                 fundMatchers: rowsToFundMatchers(newFundMatcherRows),
                 exchangeMatchers: newExchangeMatchers,
                 labelMatchers: rowsToLabelMatchers(newLabelMatcherRows),
@@ -164,7 +162,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
     const openEditModal = (config: ImportConfiguration) => {
         setConfigToEdit(config);
         setEditName(config.name);
-        setEditAccountMatcherRows(accountMatchersToRows(config.accountMatchers));
+        setEditAccountMatcherRows([...config.accountMatchers]);
         setEditFundMatcherRows(fundMatchersToRows(config.fundMatchers));
         setEditExchangeMatchers([...config.exchangeMatchers]);
         setEditLabelMatcherRows(labelMatchersToRows(config.labelMatchers));
@@ -184,7 +182,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
         try {
             await updateImportConfiguration(userId, configToEdit.importConfigurationId, {
                 name: editName.trim(),
-                accountMatchers: rowsToAccountMatchers(editAccountMatcherRows),
+                accountMatchers: editAccountMatcherRows,
                 fundMatchers: rowsToFundMatchers(editFundMatcherRows),
                 exchangeMatchers: editExchangeMatchers,
                 labelMatchers: rowsToLabelMatchers(editLabelMatcherRows),
@@ -349,11 +347,11 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
                                 <Label>Matchers</Label>
                                 <MatchersEditor
                                     userId={userId}
-                                    accountMatcherRows={newAccountMatcherRows}
+                                    accountMatchers={newAccountMatcherRows}
                                     fundMatcherRows={newFundMatcherRows}
                                     exchangeMatchers={newExchangeMatchers}
                                     labelMatcherRows={newLabelMatcherRows}
-                                    onAccountMatcherRowsChange={setNewAccountMatcherRows}
+                                    onAccountMatchersChange={setNewAccountMatcherRows}
                                     onFundMatcherRowsChange={setNewFundMatcherRows}
                                     onExchangeMatchersChange={setNewExchangeMatchers}
                                     onLabelMatcherRowsChange={setNewLabelMatcherRows}
@@ -410,11 +408,11 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
                                 <Label>Matchers</Label>
                                 <MatchersEditor
                                     userId={userId}
-                                    accountMatcherRows={editAccountMatcherRows}
+                                    accountMatchers={editAccountMatcherRows}
                                     fundMatcherRows={editFundMatcherRows}
                                     exchangeMatchers={editExchangeMatchers}
                                     labelMatcherRows={editLabelMatcherRows}
-                                    onAccountMatcherRowsChange={setEditAccountMatcherRows}
+                                    onAccountMatchersChange={setEditAccountMatcherRows}
                                     onFundMatcherRowsChange={setEditFundMatcherRows}
                                     onExchangeMatchersChange={setEditExchangeMatchers}
                                     onLabelMatcherRowsChange={setEditLabelMatcherRows}
