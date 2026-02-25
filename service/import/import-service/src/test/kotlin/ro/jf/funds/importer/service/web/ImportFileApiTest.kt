@@ -23,8 +23,10 @@ import ro.jf.funds.importer.service.config.configureImportEventHandling
 import ro.jf.funds.importer.service.config.importDependencyModules
 import ro.jf.funds.importer.service.domain.ImportFile
 import ro.jf.funds.importer.service.domain.ImportFileStatus
+import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
 import ro.jf.funds.importer.service.persistence.ImportFileRepository
 import ro.jf.funds.importer.service.domain.CreateImportFileResponse
+import ro.jf.funds.importer.service.service.ImportConfigurationService
 import ro.jf.funds.importer.service.service.ImportFileService
 import ro.jf.funds.platform.jvm.config.configureContentNegotiation
 import ro.jf.funds.platform.jvm.config.configureDatabaseMigration
@@ -45,6 +47,8 @@ import javax.sql.DataSource
 class ImportFileApiTest {
     private val importFileService: ImportFileService = mock()
     private val importFileRepository: ImportFileRepository = mock()
+    private val importConfigurationService: ImportConfigurationService = mock()
+    private val importConfigurationRepository: ImportConfigurationRepository = mock()
     private val accountSdk: AccountSdk = mock()
     private val fundSdk: FundSdk = mock()
     private val labelSdk: LabelSdk = mock()
@@ -143,8 +147,8 @@ class ImportFileApiTest {
         whenever(importFileService.listImportFiles(eq(userId), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
             PagedResult(
                 listOf(
-                    ImportFile(randomUUID(), userId, "file1.csv", ImportFileTypeTO.WALLET_CSV, "$userId/file1.csv", ImportFileStatus.PENDING, LocalDateTime.now()),
-                    ImportFile(randomUUID(), userId, "file2.csv", ImportFileTypeTO.FUNDS_FORMAT_CSV, "$userId/file2.csv", ImportFileStatus.UPLOADED, LocalDateTime.now()),
+                    ImportFile(randomUUID(), userId, "file1.csv", ImportFileTypeTO.WALLET_CSV, "$userId/file1.csv", ImportFileStatus.PENDING, null, null, LocalDateTime.now()),
+                    ImportFile(randomUUID(), userId, "file2.csv", ImportFileTypeTO.FUNDS_FORMAT_CSV, "$userId/file2.csv", ImportFileStatus.UPLOADED, null, null, LocalDateTime.now()),
                 ),
                 2L
             )
@@ -192,7 +196,7 @@ class ImportFileApiTest {
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
         val importFileId = randomUUID()
-        val importFile = ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, "$userId/test.csv", ImportFileStatus.UPLOADED, LocalDateTime.now())
+        val importFile = ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, "$userId/test.csv", ImportFileStatus.UPLOADED, null, null, LocalDateTime.now())
         whenever(importFileService.getImportFile(eq(userId), eq(importFileId)))
             .thenReturn(importFile)
 
@@ -303,6 +307,8 @@ class ImportFileApiTest {
             single<ConversionSdk> { conversionSdk }
             single<ImportFileRepository> { importFileRepository }
             single<ImportFileService> { importFileService }
+            single<ImportConfigurationRepository> { importConfigurationRepository }
+            single<ImportConfigurationService> { importConfigurationService }
         }
         configureDependencies(*importDependencyModules, testOverrides)
         configureImportErrorHandling()

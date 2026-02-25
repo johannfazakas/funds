@@ -11,5 +11,13 @@ data class ImportFileTO(
     val fileName: String,
     val type: ImportFileTypeTO,
     val status: ImportFileStatusTO,
+    val importConfiguration: ImportFileConfigurationTO? = null,
     val createdAt: String,
+)
+
+@Serializable
+data class ImportFileConfigurationTO(
+    @Serializable(with = UuidSerializer::class)
+    val id: Uuid,
+    val name: String,
 )

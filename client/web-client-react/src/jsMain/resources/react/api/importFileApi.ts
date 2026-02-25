@@ -5,11 +5,17 @@ export type ImportFileType = 'WALLET_CSV' | 'FUNDS_FORMAT_CSV';
 export type ImportFileStatus = 'PENDING' | 'UPLOADED';
 export type ImportFileSortField = 'FILE_NAME' | 'CREATED_AT';
 
+export interface ImportFileConfiguration {
+    id: string;
+    name: string;
+}
+
 export interface ImportFile {
     importFileId: string;
     fileName: string;
     type: ImportFileType;
     status: ImportFileStatus;
+    importConfiguration?: ImportFileConfiguration;
     createdAt: string;
 }
 

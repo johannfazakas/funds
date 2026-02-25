@@ -8,6 +8,7 @@ import org.mockito.kotlin.*
 import ro.jf.funds.platform.jvm.event.Event
 import ro.jf.funds.platform.jvm.event.Producer
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
+import com.benasher44.uuid.uuid4
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import ro.jf.funds.importer.service.domain.*
@@ -16,6 +17,7 @@ import ro.jf.funds.importer.service.service.conversion.ImportFundConversionServi
 import ro.jf.funds.importer.service.service.parser.ImportParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
 import java.util.UUID.randomUUID
+import kotlinx.datetime.LocalDateTime
 
 class ImportServiceTest {
     private val importParserRegistry = mock<ImportParserRegistry>()
@@ -38,7 +40,11 @@ class ImportServiceTest {
     @Test
     fun `should produce fund transactions request`(): Unit = runBlocking {
         val importType = ImportFileTypeTO.WALLET_CSV
-        val configuration = ImportConfigurationTO(importType, emptyList(), emptyList())
+        val configuration = ImportConfigurationTO(
+            importConfigurationId = uuid4(),
+            name = "test-config",
+            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
+        )
         val importFiles = listOf(
             RawImportFile("fileName1", "fileContent1"),
             RawImportFile("fileName2", "fileContent2")
@@ -61,7 +67,7 @@ class ImportServiceTest {
         whenever(importFundConversionService.mapToFundRequest(userId, importItems2))
             .thenReturn(fundTransactions2)
 
-        val importTask = importService.startImport(userId, configuration, importFiles)
+        val importTask = importService.startImport(userId, importType, configuration, importFiles)
 
         assertThat(importTask.taskId).isEqualTo(importTaskId)
         assertThat(importTask.parts).hasSize(2)
@@ -79,7 +85,11 @@ class ImportServiceTest {
     @Test
     fun `should retrieve failed task on parse exception`(): Unit = runBlocking {
         val importType = ImportFileTypeTO.WALLET_CSV
-        val configuration = ImportConfigurationTO(importType, emptyList(), emptyList())
+        val configuration = ImportConfigurationTO(
+            importConfigurationId = uuid4(),
+            name = "test-config",
+            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
+        )
         val importFiles = listOf(
             RawImportFile("fileName1", "fileContent1")
         )
@@ -102,7 +112,7 @@ class ImportServiceTest {
                 )
             }))
 
-        val importTask = importService.startImport(userId, configuration, importFiles)
+        val importTask = importService.startImport(userId, importType, configuration, importFiles)
 
         assertThat(importTask.taskId).isEqualTo(importTaskId)
         assertThat(importTask.parts).hasSize(1)

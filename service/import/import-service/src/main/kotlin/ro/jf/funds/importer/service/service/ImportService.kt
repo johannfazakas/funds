@@ -10,6 +10,7 @@ import ro.jf.funds.platform.jvm.event.Producer
 import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
+import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import ro.jf.funds.importer.service.domain.RawImportFile
 import ro.jf.funds.importer.service.domain.ImportTask
 import ro.jf.funds.importer.service.domain.StartImportTaskCommand
@@ -27,7 +28,12 @@ class ImportService(
     private val importFundConversionService: ImportFundConversionService,
     private val createFundTransactionsProducer: Producer<CreateTransactionsTO>,
 ) {
-    suspend fun startImport(userId: UUID, configuration: ImportConfigurationTO, files: List<RawImportFile>): ImportTask =
+    suspend fun startImport(
+        userId: UUID,
+        fileType: ImportFileTypeTO,
+        configuration: ImportConfigurationTO,
+        files: List<RawImportFile>,
+    ): ImportTask =
         withSuspendingSpan {
             log.info { "Importing files >> user = $userId configuration = $configuration files count = ${files.size}." }
             val importTask =
@@ -35,7 +41,7 @@ class ImportService(
             try {
                 coroutineScope {
                     files
-                        .map { file -> launch { startFileImport(userId, importTask, file, configuration) } }
+                        .map { file -> launch { startFileImport(userId, importTask, file, fileType, configuration) } }
                         .joinAll()
                 }
             } catch (exception: Exception) {
@@ -50,13 +56,14 @@ class ImportService(
         userId: UUID,
         importTask: ImportTask,
         file: RawImportFile,
+        fileType: ImportFileTypeTO,
         configuration: ImportConfigurationTO,
     ) {
         val importTaskPart = importTask.findPartByName(file.name)
             ?: error("Import file ${file.name} not found")
         try {
             val importItems =
-                importParserRegistry[configuration.fileType].parse(configuration, listOf(file.content))
+                importParserRegistry[fileType].parse(configuration, listOf(file.content))
             val fundTransactions = importFundConversionService.mapToFundRequest(userId, importItems)
             createFundTransactionsProducer.send(Event(userId, fundTransactions, importTaskPart.taskPartId))
         } catch (e: Exception) {

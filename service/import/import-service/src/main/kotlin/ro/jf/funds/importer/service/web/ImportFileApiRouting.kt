@@ -107,6 +107,9 @@ private fun ImportFile.toTO() = ImportFileTO(
     fileName = fileName,
     type = type,
     status = status.toTO(),
+    importConfiguration = if (importConfigurationId != null && importConfigurationName != null) {
+        ImportFileConfigurationTO(id = importConfigurationId, name = importConfigurationName)
+    } else null,
     createdAt = createdAt.toString(),
 )
 

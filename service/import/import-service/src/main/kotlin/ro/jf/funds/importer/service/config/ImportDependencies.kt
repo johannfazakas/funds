@@ -18,8 +18,10 @@ import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.LabelSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
+import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
 import ro.jf.funds.importer.service.persistence.ImportFileRepository
 import ro.jf.funds.importer.service.persistence.ImportTaskRepository
+import ro.jf.funds.importer.service.service.ImportConfigurationService
 import ro.jf.funds.importer.service.service.ImportFileService
 import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.service.conversion.*
@@ -64,6 +66,7 @@ private val Application.importPersistenceDependencies
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
         single<ImportTaskRepository> { ImportTaskRepository(get()) }
+        single<ImportConfigurationRepository> { ImportConfigurationRepository(get()) }
         single<ImportFileRepository> { ImportFileRepository(get()) }
     }
 
@@ -125,6 +128,7 @@ private val Application.importServiceDependencies
         single<InvestmentTransactionConverter> { InvestmentTransactionConverter() } bind ImportTransactionConverter::class
         single<ImportTransactionConverterRegistry> { ImportTransactionConverterRegistry(getAll()) }
         single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get(), get(), get()) }
+        single<ImportConfigurationService> { ImportConfigurationService(get()) }
         single<ImportFileService> {
             ImportFileService(
                 get(),

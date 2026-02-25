@@ -7,6 +7,7 @@ import RecordsPage from './pages/RecordsPage';
 import LabelsPage from './pages/LabelsPage';
 import ExpensesPage from './pages/ExpensesPage';
 import ImportsPage from './pages/ImportsPage';
+import ImportConfigurationsPage from './pages/ImportConfigurationsPage';
 import Sidebar from './components/Sidebar';
 
 function App() {
@@ -52,6 +53,7 @@ function App() {
                     <Route path="/records" element={<RecordsPage userId={userId!} />} />
                     <Route path="/labels" element={<LabelsPage userId={userId!} />} />
                     <Route path="/imports" element={<ImportsPage userId={userId!} />} />
+                    <Route path="/import-configurations" element={<ImportConfigurationsPage userId={userId!} />} />
                     <Route path="/expenses" element={<ExpensesPage userId={userId!} />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/login" />} />
