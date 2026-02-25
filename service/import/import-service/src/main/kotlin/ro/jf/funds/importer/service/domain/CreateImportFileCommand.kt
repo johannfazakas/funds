@@ -8,4 +8,5 @@ data class CreateImportFileCommand(
     val fileName: String,
     val type: ImportFileTypeTO,
     val s3Key: String,
+    val importConfigurationId: UUID? = null,
 )

@@ -16,10 +16,13 @@ data class ImportFile(
     val type: ImportFileTypeTO,
     val s3Key: String,
     val status: ImportFileStatus,
+    val importConfigurationId: UUID? = null,
+    val importConfigurationName: String? = null,
     val createdAt: LocalDateTime,
 )
 
 data class ImportFileFilter(
     val type: ImportFileTypeTO? = null,
     val status: ImportFileStatus? = null,
+    val importConfigurationId: UUID? = null,
 )

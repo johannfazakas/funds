@@ -8,6 +8,7 @@ import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.platform.api.model.Instrument
 import ro.jf.funds.fund.api.model.FundName
+import com.benasher44.uuid.uuid4
 import ro.jf.funds.importer.api.model.*
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 
@@ -31,7 +32,8 @@ class FundsFormatImportParserTest {
             ),
         )
         val importConfiguration = ImportConfigurationTO(
-            fileType = ImportFileTypeTO.FUNDS_FORMAT_CSV,
+            importConfigurationId = uuid4(),
+            name = "test-config",
             accountMatchers = listOf(
                 AccountMatcherTO.ByName(listOf("BT EUR"), AccountName("BT EUR")),
                 AccountMatcherTO.ByName(listOf("XTB EUR"), AccountName("XTB EUR")),
@@ -43,7 +45,8 @@ class FundsFormatImportParserTest {
             ),
             labelMatchers = listOf(
                 LabelMatcherTO(listOf("investment"), Label("investment")),
-            )
+            ),
+            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
 
         val importTransactions = fundsFormatImportParser.parse(importConfiguration, listOf(fileContent))

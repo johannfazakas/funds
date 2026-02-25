@@ -19,6 +19,7 @@ import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.api.model.*
 import java.io.File
+import kotlinx.datetime.LocalDateTime
 
 @ExtendWith(MockServerContainerExtension::class)
 class ImportSdkTest {
@@ -33,13 +34,15 @@ class ImportSdkTest {
             File("src/test/resources/mock/import-file-2.csv"),
         )
         val importConfiguration = ImportConfigurationTO(
-            fileType = ImportFileTypeTO.WALLET_CSV,
+            importConfigurationId = uuid4(),
+            name = "test-config",
             accountMatchers = listOf(
                 AccountMatcherTO.ByName(listOf("Cash RON"), AccountName("Cash"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))
-            )
+            ),
+            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
         mockServerClient
             .`when`(
@@ -63,6 +66,7 @@ class ImportSdkTest {
 
         val response = importSdk.import(
             userId = userId,
+            fileType = ImportFileTypeTO.WALLET_CSV,
             importConfiguration = importConfiguration,
             csvFiles = files
         )
@@ -81,13 +85,15 @@ class ImportSdkTest {
                 File("src/test/resources/mock/import-file-2.csv"),
             )
             val importConfiguration = ImportConfigurationTO(
-                fileType = ImportFileTypeTO.WALLET_CSV,
+                importConfigurationId = uuid4(),
+                name = "test-config",
                 accountMatchers = listOf(
                     AccountMatcherTO.ByName(listOf("Cash RON"), AccountName("Cash"))
                 ),
                 fundMatchers = listOf(
                     FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))
-                )
+                ),
+                createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
             )
             mockServerClient
                 .`when`(
@@ -109,7 +115,7 @@ class ImportSdkTest {
                         )
                 )
 
-            assertThatThrownBy { runBlocking { importSdk.import(userId, importConfiguration, files) } }
+            assertThatThrownBy { runBlocking { importSdk.import(userId, ImportFileTypeTO.WALLET_CSV, importConfiguration, files) } }
                 .isInstanceOf(ApiException::class.java)
                 .extracting("statusCode").isEqualTo(400)
         }
@@ -123,13 +129,15 @@ class ImportSdkTest {
                 File("src/test/resources/mock/import-file-2.csv"),
             )
             val importConfiguration = ImportConfigurationTO(
-                fileType = ImportFileTypeTO.WALLET_CSV,
+                importConfigurationId = uuid4(),
+                name = "test-config",
                 accountMatchers = listOf(
                     AccountMatcherTO.ByName(listOf("Cash RON"), AccountName("Cash"))
                 ),
                 fundMatchers = listOf(
                     FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))
-                )
+                ),
+                createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
             )
             mockServerClient
                 .`when`(
@@ -151,7 +159,7 @@ class ImportSdkTest {
                         )
                 )
 
-            assertThatThrownBy { runBlocking { importSdk.import(userId, importConfiguration, files) } }
+            assertThatThrownBy { runBlocking { importSdk.import(userId, ImportFileTypeTO.WALLET_CSV, importConfiguration, files) } }
                 .isInstanceOf(ApiException::class.java)
                 .extracting("statusCode").isEqualTo(422)
         }

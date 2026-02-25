@@ -14,6 +14,7 @@ import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
 import ro.jf.funds.platform.jvm.web.createHttpClient
 import ro.jf.funds.platform.jvm.web.toApiException
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
+import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
 import java.io.File
 
@@ -27,14 +28,16 @@ class ImportSdk(
 ) {
     suspend fun import(
         userId: Uuid,
+        fileType: ImportFileTypeTO,
         importConfiguration: ImportConfigurationTO,
         csvFile: File,
     ): ImportTaskTO {
-        return import(userId, importConfiguration, listOf(csvFile))
+        return import(userId, fileType, importConfiguration, listOf(csvFile))
     }
 
     suspend fun import(
         userId: Uuid,
+        fileType: ImportFileTypeTO,
         importConfiguration: ImportConfigurationTO,
         csvFiles: List<File>,
     ): ImportTaskTO = withSuspendingSpan {
@@ -50,6 +53,7 @@ class ImportSdk(
                                 append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
                             })
                         }
+                        append("fileType", fileType.name)
                         append("configuration", Json.encodeToString(importConfiguration), Headers.build {
                             append(HttpHeaders.ContentType, ContentType.Application.Json)
                         })

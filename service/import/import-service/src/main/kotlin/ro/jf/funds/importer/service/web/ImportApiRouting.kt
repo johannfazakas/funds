@@ -14,6 +14,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging.logger
 import ro.jf.funds.platform.jvm.web.userId
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
+import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
 import ro.jf.funds.importer.service.domain.RawImportFile
 import ro.jf.funds.importer.service.domain.exception.MissingImportConfigurationException
@@ -35,8 +36,9 @@ fun Routing.importApiRouting(
 
             val importFiles = requestParts.rawFileParts()
 
+            val fileType: ImportFileTypeTO = requestParts.fileTypePart()
             val importConfiguration: ImportConfigurationTO = requestParts.importConfigurationPart()
-            val importTask = importService.startImport(userId, importConfiguration, importFiles).toTO()
+            val importTask = importService.startImport(userId, fileType, importConfiguration, importFiles).toTO()
             val statusCode = when (importTask.status) {
                 ImportTaskTO.Status.FAILED -> HttpStatusCode.BadRequest
                 else -> HttpStatusCode.Accepted
@@ -85,6 +87,12 @@ private suspend fun ApplicationCall.readMultipartData(): List<ImportPart> = rece
         }
     }
     .toList()
+
+private fun List<ImportPart>.fileTypePart(): ImportFileTypeTO = this
+    .singleOrNull { it.name == "fileType" }
+    ?.content
+    ?.let { runCatching { ImportFileTypeTO.valueOf(it) }.getOrNull() }
+    ?: throw IllegalArgumentException("Missing or invalid fileType")
 
 private fun List<ImportPart>.importConfigurationPart(): ImportConfigurationTO = this
     .singleOrNull { it.name == "configuration" && it.contentType == ContentType.Application.Json }

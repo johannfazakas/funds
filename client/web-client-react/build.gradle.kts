@@ -70,6 +70,9 @@ kotlin {
                 implementation(npm("@radix-ui/react-select", "2.0.0"))
                 implementation(npm("@radix-ui/react-label", "2.0.2"))
                 implementation(npm("@radix-ui/react-slot", "1.0.2"))
+                implementation(npm("@dnd-kit/core", "6.1.0"))
+                implementation(npm("@dnd-kit/sortable", "8.0.0"))
+                implementation(npm("@dnd-kit/utilities", "3.2.2"))
                 implementation(devNpm("tailwindcss-animate", "1.0.7"))
             }
         }

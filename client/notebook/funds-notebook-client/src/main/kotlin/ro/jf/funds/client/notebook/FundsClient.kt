@@ -33,6 +33,7 @@ import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.LabelSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.importer.api.model.ImportConfigurationTO
+import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import ro.jf.funds.importer.api.model.ImportTaskTO
 import ro.jf.funds.importer.sdk.ImportSdk
 import ro.jf.funds.reporting.api.model.*
@@ -123,10 +124,11 @@ class FundsClient(
 
     fun importTransactions(
         user: UserTO,
+        fileType: ImportFileTypeTO,
         importConfiguration: ImportConfigurationTO,
         csvFiles: List<File>,
     ): ImportTaskTO = run {
-        var importTask = importSdk.import(user.id, importConfiguration, csvFiles)
+        var importTask = importSdk.import(user.id, fileType, importConfiguration, csvFiles)
         val now: Instant = Clock.System.now()
         val timeout = 120.seconds
         while (importTask.status == ImportTaskTO.Status.IN_PROGRESS && Clock.System.now() - now < timeout) {

@@ -44,9 +44,13 @@ import ro.jf.funds.importer.service.config.configureImportRouting
 import ro.jf.funds.importer.service.config.importDependencyModules
 import ro.jf.funds.importer.service.persistence.ImportFileRepository
 import ro.jf.funds.importer.service.service.ImportFileService
+import com.benasher44.uuid.uuid4
+import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
+import ro.jf.funds.importer.service.service.ImportConfigurationService
 import java.io.File
 import java.util.UUID.randomUUID
 import javax.sql.DataSource
+import kotlinx.datetime.LocalDateTime
 
 @ExtendWith(PostgresContainerExtension::class)
 class ImportApiTest {
@@ -57,6 +61,8 @@ class ImportApiTest {
     private val transactionSdk: TransactionSdk = mock()
     private val importFileRepository: ImportFileRepository = mock()
     private val importFileService: ImportFileService = mock()
+    private val importConfigurationService: ImportConfigurationService = mock()
+    private val importConfigurationRepository: ImportConfigurationRepository = mock()
 
     @Test
     fun `test valid import`() = testApplication {
@@ -66,7 +72,8 @@ class ImportApiTest {
         val userId = randomUUID()
         val csvFile = File("src/test/resources/data/wallet_export.csv")
         val importConfiguration = ImportConfigurationTO(
-            fileType = ImportFileTypeTO.WALLET_CSV,
+            importConfigurationId = uuid4(),
+            name = "test-config",
             accountMatchers = listOf(
                 AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING"))
             ),
@@ -83,7 +90,8 @@ class ImportApiTest {
                 LabelMatcherTO(listOf("Basic - Food"), Label("Basic")),
                 LabelMatcherTO(listOf("C&T - Gas & Parking"), Label("Transport")),
                 LabelMatcherTO(listOf("Work Income"), Label("Income")),
-            )
+            ),
+            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
         whenever(labelSdk.listLabels(any())).thenReturn(
             listOf("Basic", "Transport", "Income").map { LabelTO(randomUUID(), it) }
@@ -118,6 +126,7 @@ class ImportApiTest {
                             append(HttpHeaders.ContentType, ContentType.Text.CSV)
                             append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
                         })
+                        append("fileType", "WALLET_CSV")
                         append("configuration", Json.encodeToString(importConfiguration), Headers.build {
                             append(HttpHeaders.ContentType, ContentType.Application.Json)
                         })
@@ -148,6 +157,7 @@ class ImportApiTest {
                             append(HttpHeaders.ContentType, ContentType.Text.CSV)
                             append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
                         })
+                        append("fileType", "WALLET_CSV")
                     }
                 ))
         }
@@ -165,7 +175,8 @@ class ImportApiTest {
         val userId = randomUUID()
         val csvFile = File("src/test/resources/data/invalid_export.csv")
         val importConfiguration = ImportConfigurationTO(
-            fileType = ImportFileTypeTO.WALLET_CSV,
+            importConfigurationId = uuid4(),
+            name = "test-config",
             accountMatchers = listOf(
                 AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING"))
             ),
@@ -177,7 +188,8 @@ class ImportApiTest {
                     FundName("Work"),
                     FundName("Expenses")
                 ),
-            )
+            ),
+            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
 
         val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
@@ -189,6 +201,7 @@ class ImportApiTest {
                             append(HttpHeaders.ContentType, ContentType.Text.CSV)
                             append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
                         })
+                        append("fileType", "WALLET_CSV")
                         append("configuration", Json.encodeToString(importConfiguration), Headers.build {
                             append(HttpHeaders.ContentType, ContentType.Application.Json)
                         })
@@ -210,7 +223,8 @@ class ImportApiTest {
         val userId = randomUUID()
         val csvFile = File("src/test/resources/data/wallet_export.csv")
         val importConfiguration = ImportConfigurationTO(
-            fileType = ImportFileTypeTO.WALLET_CSV,
+            importConfigurationId = uuid4(),
+            name = "test-config",
             accountMatchers = listOf(
                 AccountMatcherTO.ByName(listOf("Something else"), AccountName("ING"))
             ),
@@ -222,7 +236,8 @@ class ImportApiTest {
                     FundName("Work"),
                     FundName("Expenses")
                 ),
-            )
+            ),
+            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
 
         val response = httpClient.post("/funds-api/import/v1/imports/tasks") {
@@ -234,6 +249,7 @@ class ImportApiTest {
                             append(HttpHeaders.ContentType, ContentType.Text.CSV)
                             append(HttpHeaders.ContentDisposition, "filename=\"${csvFile.name}\"")
                         })
+                        append("fileType", "WALLET_CSV")
                         append("configuration", Json.encodeToString(importConfiguration), Headers.build {
                             append(HttpHeaders.ContentType, ContentType.Application.Json)
                         })
@@ -256,6 +272,8 @@ class ImportApiTest {
             single<ConversionSdk> { conversionSdk }
             single<ImportFileRepository> { importFileRepository }
             single<ImportFileService> { importFileService }
+            single<ImportConfigurationRepository> { importConfigurationRepository }
+            single<ImportConfigurationService> { importConfigurationService }
         }
         configureDependencies(*importDependencyModules, importAppTestModule)
         configureImportErrorHandling()
