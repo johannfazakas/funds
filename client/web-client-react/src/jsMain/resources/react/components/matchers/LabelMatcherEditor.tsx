@@ -58,22 +58,22 @@ export function LabelMatcherEditor({ matchers, onChange, labelNames, disabled }:
                     {matchers.map((matcher, index) => (
                         <SortableRow key={ids[index]} id={ids[index]} disabled={disabled}>
                             <div className="flex items-center gap-1 flex-1 min-w-0">
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">import</span>
-                                <Input
-                                    value={matcher.importLabel}
-                                    onChange={(e) => updateMatcher(index, { ...matcher, importLabel: e.target.value })}
-                                    placeholder="Import label"
-                                    disabled={disabled}
-                                    className="h-8 text-sm"
-                                />
-                            </div>
-                            <div className="flex items-center gap-1 flex-1 min-w-0">
                                 <span className="text-xs text-muted-foreground whitespace-nowrap">label</span>
                                 <SearchableSelect
                                     value={matcher.label}
                                     onValueChange={(name) => updateMatcher(index, { ...matcher, label: name })}
                                     options={labelNames}
                                     placeholder="Select label"
+                                    disabled={disabled}
+                                    className="h-8 text-sm"
+                                />
+                            </div>
+                            <div className="flex items-center gap-1 flex-1 min-w-0">
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">import</span>
+                                <Input
+                                    value={matcher.importLabel}
+                                    onChange={(e) => updateMatcher(index, { ...matcher, importLabel: e.target.value })}
+                                    placeholder="Import label"
                                     disabled={disabled}
                                     className="h-8 text-sm"
                                 />

@@ -27,7 +27,7 @@ class WalletCsvImportParserTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
-            fundMatchers = listOf(FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses"))),
+            fundMatchers = listOf(FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food")),
             labelMatchers = listOf(LabelMatcherTO(listOf("Basic - Food"), Label("Basic"))),
             exchangeMatchers = emptyList(),
             createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
@@ -60,9 +60,10 @@ class WalletCsvImportParserTest {
                 AccountMatcherTO("Cash RON", AccountName("Cash"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses")),
-                FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Income")),
-                FundMatcherTO.ByAccount(listOf("ING old", "Cash RON"), FundName("Expenses"))
+                FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food"),
+                FundMatcherTO(FundName("Income"), importLabel = "Basic - Food"),
+                FundMatcherTO(FundName("Expenses"), importAccountName = "ING old"),
+                FundMatcherTO(FundName("Expenses"), importAccountName = "Cash RON")
             ),
             exchangeMatchers = emptyList(),
             createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
@@ -97,7 +98,8 @@ class WalletCsvImportParserTest {
                 AccountMatcherTO("Cash RON", AccountName("Cash RON"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByAccount(listOf("Euro", "Cash RON"), FundName("Expenses"))
+                FundMatcherTO(FundName("Expenses"), importAccountName = "Euro"),
+                FundMatcherTO(FundName("Expenses"), importAccountName = "Cash RON")
             ),
             exchangeMatchers = listOf(ExchangeMatcherTO.ByLabel("Exchange")),
             labelMatchers = listOf(LabelMatcherTO(listOf("Exchange"), Label("Exchange"))),
@@ -150,9 +152,7 @@ class WalletCsvImportParserTest {
                 AccountMatcherTO("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabelWithPostTransfer(
-                    importLabels = listOf("Gift income"), FundName("Gift income"), FundName("Expenses")
-                ),
+                FundMatcherTO(FundName("Expenses"), importLabel = "Gift income", intermediaryFundName = FundName("Gift income")),
             ),
             exchangeMatchers = emptyList(),
             labelMatchers = listOf(LabelMatcherTO(listOf("Gift income"), Label("gifts"))),
@@ -199,12 +199,7 @@ class WalletCsvImportParserTest {
                 AccountMatcherTO("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByAccountLabelWithPostTransfer(
-                    listOf("ING old"),
-                    importLabels = listOf("Work Income"),
-                    FundName("Work"),
-                    FundName("Expenses")
-                ),
+                FundMatcherTO(FundName("Expenses"), importAccountName = "ING old", importLabel = "Work Income", intermediaryFundName = FundName("Work")),
             ),
             exchangeMatchers = emptyList(),
             labelMatchers = listOf(LabelMatcherTO(listOf("Work Income"), Label("Work"))),
@@ -249,8 +244,8 @@ class WalletCsvImportParserTest {
             name = "test-config",
             accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses")),
-                FundMatcherTO.ByAccount(listOf("ING old"), FundName("Savings"))
+                FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food"),
+                FundMatcherTO(FundName("Savings"), importAccountName = "ING old")
             ),
             exchangeMatchers = emptyList(),
             labelMatchers = listOf(LabelMatcherTO(listOf("Basic - Food"), Label("Basic"))),
@@ -272,7 +267,7 @@ class WalletCsvImportParserTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(AccountMatcherTO("ING new", AccountName("ING"))),
-            fundMatchers = listOf(FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses"))),
+            fundMatchers = listOf(FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food")),
             exchangeMatchers = emptyList(),
             createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
@@ -291,7 +286,7 @@ class WalletCsvImportParserTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
-            fundMatchers = listOf(FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses"))),
+            fundMatchers = listOf(FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food")),
             exchangeMatchers = emptyList(),
             createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
@@ -315,9 +310,10 @@ class WalletCsvImportParserTest {
                 AccountMatcherTO("Skipped account", skipped = true)
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses")),
-                FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Income")),
-                FundMatcherTO.ByAccount(listOf("ING old", "Cash RON"), FundName("Expenses"))
+                FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food"),
+                FundMatcherTO(FundName("Income"), importLabel = "Basic - Food"),
+                FundMatcherTO(FundName("Expenses"), importAccountName = "ING old"),
+                FundMatcherTO(FundName("Expenses"), importAccountName = "Cash RON")
             ),
             exchangeMatchers = emptyList(),
             createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),

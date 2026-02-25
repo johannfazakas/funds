@@ -15,14 +15,9 @@ fun List<FundMatcherTO>.getFundMatcher(importAccountName: String, importLabels: 
         ?: throw ImportDataException("No fund matcher found for import account name: $importAccountName, import labels: $importLabels.")
 
 fun FundMatcherTO.matches(importAccountName: String, importLabels: List<String>): Boolean {
-    return when (this) {
-        is FundMatcherTO.ByAccount -> importAccountName in this.importAccountNames
-        is FundMatcherTO.ByLabel -> this.importLabels.any { it in importLabels }
-        is FundMatcherTO.ByAccountLabel -> importAccountName in this.importAccountNames && this.importLabels.any { it in importLabels }
-        is FundMatcherTO.ByLabelWithPostTransfer -> this.importLabels.any { it in importLabels }
-        is FundMatcherTO.ByAccountLabelWithPostTransfer -> importAccountName in this.importAccountNames && this.importLabels.any { it in importLabels }
-        is FundMatcherTO.ByAccountLabelWithPreTransfer -> importAccountName in this.importAccountNames && this.importLabels.any { it in importLabels }
-    }
+    val accountMatch = this.importAccountName == null || this.importAccountName == importAccountName
+    val labelMatch = this.importLabel == null || this.importLabel in importLabels
+    return accountMatch && labelMatch
 }
 
 fun List<LabelMatcherTO>.getLabelMatchers(importLabels: List<String>): List<LabelMatcherTO> =

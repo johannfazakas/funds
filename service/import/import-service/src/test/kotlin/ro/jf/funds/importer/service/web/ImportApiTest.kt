@@ -78,13 +78,10 @@ class ImportApiTest {
                 AccountMatcherTO("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabel(listOf("Basic - Food", "Gifts", "C&T - Gas & Parking"), FundName("Expenses")),
-                FundMatcherTO.ByAccountLabelWithPostTransfer(
-                    listOf("ING old"),
-                    listOf("Work Income"),
-                    FundName("Work"),
-                    FundName("Expenses")
-                ),
+                FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food"),
+                FundMatcherTO(FundName("Expenses"), importLabel = "Gifts"),
+                FundMatcherTO(FundName("Expenses"), importLabel = "C&T - Gas & Parking"),
+                FundMatcherTO(FundName("Expenses"), importAccountName = "ING old", importLabel = "Work Income", intermediaryFundName = FundName("Work")),
             ),
             labelMatchers = listOf(
                 LabelMatcherTO(listOf("Basic - Food"), Label("Basic")),
@@ -181,13 +178,10 @@ class ImportApiTest {
                 AccountMatcherTO("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabel(listOf("Basic - Food", "Gifts", "C&T - Gas & Parking"), FundName("Expenses")),
-                FundMatcherTO.ByAccountLabelWithPostTransfer(
-                    listOf("ING old"),
-                    listOf("Work Income"),
-                    FundName("Work"),
-                    FundName("Expenses")
-                ),
+                FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food"),
+                FundMatcherTO(FundName("Expenses"), importLabel = "Gifts"),
+                FundMatcherTO(FundName("Expenses"), importLabel = "C&T - Gas & Parking"),
+                FundMatcherTO(FundName("Expenses"), importAccountName = "ING old", importLabel = "Work Income", intermediaryFundName = FundName("Work")),
             ),
             createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
@@ -229,13 +223,10 @@ class ImportApiTest {
                 AccountMatcherTO("Something else", AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByLabel(listOf("Basic - Food", "Gifts", "C&T - Gas & Parking"), FundName("Expenses")),
-                FundMatcherTO.ByAccountLabelWithPostTransfer(
-                    listOf("ING old"),
-                    listOf("Work Income"),
-                    FundName("Work"),
-                    FundName("Expenses")
-                ),
+                FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food"),
+                FundMatcherTO(FundName("Expenses"), importLabel = "Gifts"),
+                FundMatcherTO(FundName("Expenses"), importLabel = "C&T - Gas & Parking"),
+                FundMatcherTO(FundName("Expenses"), importAccountName = "ING old", importLabel = "Work Income", intermediaryFundName = FundName("Work")),
             ),
             createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )

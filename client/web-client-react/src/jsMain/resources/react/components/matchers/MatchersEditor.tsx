@@ -5,47 +5,10 @@ import { listFunds } from '../../api/fundApi';
 import { listLabels } from '../../api/labelApi';
 import { Badge } from '../ui/badge';
 import { AccountMatcherEditor } from './AccountMatcherEditor';
-import { FundMatcherEditor, FundMatcherRow } from './FundMatcherEditor';
+import { FundMatcherEditor } from './FundMatcherEditor';
 import { ExchangeMatcherEditor } from './ExchangeMatcherEditor';
 import { LabelMatcherEditor, LabelMatcherRow } from './LabelMatcherEditor';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-
-export function fundMatchersToRows(matchers: FundMatcher[]): FundMatcherRow[] {
-    const rows: FundMatcherRow[] = [];
-    for (const m of matchers) {
-        const names = m.importAccountNames || [];
-        const labels = m.importLabels || [];
-        const hasAccount = m.type.includes('account');
-        const hasLabel = m.type.includes('label');
-        const items = hasAccount ? names : hasLabel ? labels : [''];
-        for (const item of items.length > 0 ? items : ['']) {
-            rows.push({
-                type: m.type,
-                fundName: m.fundName,
-                importAccountName: hasAccount ? item : undefined,
-                importLabel: hasLabel && !hasAccount ? item : (hasLabel ? (labels[0] || '') : undefined),
-                initialFundName: m.initialFundName,
-            });
-        }
-    }
-    return rows;
-}
-
-export function rowsToFundMatchers(rows: FundMatcherRow[]): FundMatcher[] {
-    return rows.map(r => {
-        const m: FundMatcher = { type: r.type, fundName: r.fundName };
-        if (r.type.includes('account') && r.importAccountName !== undefined) {
-            m.importAccountNames = [r.importAccountName];
-        }
-        if (r.type.includes('label') && r.importLabel !== undefined) {
-            m.importLabels = [r.importLabel];
-        }
-        if (r.type.includes('transfer') && r.initialFundName !== undefined) {
-            m.initialFundName = r.initialFundName;
-        }
-        return m;
-    });
-}
 
 export function labelMatchersToRows(matchers: LabelMatcher[]): LabelMatcherRow[] {
     return matchers.flatMap(m =>
@@ -66,11 +29,11 @@ export function rowsToLabelMatchers(rows: LabelMatcherRow[]): LabelMatcher[] {
 interface MatchersEditorProps {
     userId: string;
     accountMatchers: AccountMatcher[];
-    fundMatcherRows: FundMatcherRow[];
+    fundMatchers: FundMatcher[];
     exchangeMatchers: ExchangeMatcher[];
     labelMatcherRows: LabelMatcherRow[];
     onAccountMatchersChange: (matchers: AccountMatcher[]) => void;
-    onFundMatcherRowsChange: (rows: FundMatcherRow[]) => void;
+    onFundMatchersChange: (matchers: FundMatcher[]) => void;
     onExchangeMatchersChange: (matchers: ExchangeMatcher[]) => void;
     onLabelMatcherRowsChange: (rows: LabelMatcherRow[]) => void;
     disabled?: boolean;
@@ -105,11 +68,11 @@ function CollapsibleSection({ title, count, defaultOpen = false, children }: Sec
 export function MatchersEditor({
     userId,
     accountMatchers,
-    fundMatcherRows,
+    fundMatchers,
     exchangeMatchers,
     labelMatcherRows,
     onAccountMatchersChange,
-    onFundMatcherRowsChange,
+    onFundMatchersChange,
     onExchangeMatchersChange,
     onLabelMatcherRowsChange,
     disabled,
@@ -135,14 +98,14 @@ export function MatchersEditor({
             <CollapsibleSection title="Account Matchers" count={accountMatchers.length}>
                 <AccountMatcherEditor matchers={accountMatchers} onChange={onAccountMatchersChange} accountNames={accountNames} disabled={disabled} />
             </CollapsibleSection>
-            <CollapsibleSection title="Fund Matchers" count={fundMatcherRows.length}>
-                <FundMatcherEditor matchers={fundMatcherRows} onChange={onFundMatcherRowsChange} fundNames={fundNames} disabled={disabled} />
-            </CollapsibleSection>
-            <CollapsibleSection title="Exchange Matchers" count={exchangeMatchers.length}>
-                <ExchangeMatcherEditor matchers={exchangeMatchers} onChange={onExchangeMatchersChange} disabled={disabled} />
+            <CollapsibleSection title="Fund Matchers" count={fundMatchers.length}>
+                <FundMatcherEditor matchers={fundMatchers} onChange={onFundMatchersChange} fundNames={fundNames} disabled={disabled} />
             </CollapsibleSection>
             <CollapsibleSection title="Label Matchers" count={labelMatcherRows.length}>
                 <LabelMatcherEditor matchers={labelMatcherRows} onChange={onLabelMatcherRowsChange} labelNames={labelNames} disabled={disabled} />
+            </CollapsibleSection>
+            <CollapsibleSection title="Exchange Matchers" count={exchangeMatchers.length}>
+                <ExchangeMatcherEditor matchers={exchangeMatchers} onChange={onExchangeMatchersChange} disabled={disabled} />
             </CollapsibleSection>
         </div>
     );

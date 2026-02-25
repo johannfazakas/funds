@@ -40,7 +40,7 @@ class ImportSdkTest {
                 AccountMatcherTO("Cash RON", AccountName("Cash"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))
+                FundMatcherTO(FundName("Expenses"), importAccountName = "Cash RON")
             ),
             createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
@@ -91,7 +91,7 @@ class ImportSdkTest {
                     AccountMatcherTO("Cash RON", AccountName("Cash"))
                 ),
                 fundMatchers = listOf(
-                    FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))
+                    FundMatcherTO(FundName("Expenses"), importAccountName = "Cash RON")
                 ),
                 createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
             )
@@ -135,7 +135,7 @@ class ImportSdkTest {
                     AccountMatcherTO("Cash RON", AccountName("Cash"))
                 ),
                 fundMatchers = listOf(
-                    FundMatcherTO.ByAccount(listOf("Cash RON"), FundName("Expenses"))
+                    FundMatcherTO(FundName("Expenses"), importAccountName = "Cash RON")
                 ),
                 createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
             )

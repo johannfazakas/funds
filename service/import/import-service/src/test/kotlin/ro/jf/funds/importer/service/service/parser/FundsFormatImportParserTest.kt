@@ -40,8 +40,9 @@ class FundsFormatImportParserTest {
                 AccountMatcherTO("XTB EUNL", AccountName("XTB EUNL")),
             ),
             fundMatchers = listOf(
-                FundMatcherTO.ByAccount(listOf("BT EUR"), FundName("Expenses")),
-                FundMatcherTO.ByAccount(listOf("XTB EUR", "XTB EUNL"), FundName("Investments")),
+                FundMatcherTO(FundName("Expenses"), importAccountName = "BT EUR"),
+                FundMatcherTO(FundName("Investments"), importAccountName = "XTB EUR"),
+                FundMatcherTO(FundName("Investments"), importAccountName = "XTB EUNL"),
             ),
             labelMatchers = listOf(
                 LabelMatcherTO(listOf("investment"), Label("investment")),

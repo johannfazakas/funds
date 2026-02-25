@@ -7,6 +7,8 @@
 Store files
 Retry import
 
+### Colors for Funds, Accounts, Labels
+
 ### Calculate interest rate when positions are closed
 
 ### Decouple Report View from Report Data requests

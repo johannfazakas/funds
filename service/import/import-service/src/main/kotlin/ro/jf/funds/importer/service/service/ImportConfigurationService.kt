@@ -1,6 +1,7 @@
 package ro.jf.funds.importer.service.service
 
 import ro.jf.funds.importer.api.model.AccountMatcherTO
+import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.ImportConfigurationSortField
 import ro.jf.funds.importer.service.domain.CreateImportConfigurationCommand
 import ro.jf.funds.importer.service.domain.ImportConfiguration
@@ -22,6 +23,7 @@ class ImportConfigurationService(
         matchers: ImportConfigurationMatchersTO,
     ): ImportConfiguration {
         validateAccountMatchers(matchers.accountMatchers)
+        validateFundMatchers(matchers.fundMatchers)
         return importConfigurationRepository.create(CreateImportConfigurationCommand(userId, name, matchers))
     }
 
@@ -42,12 +44,23 @@ class ImportConfigurationService(
         importConfigurationId: UUID,
         command: UpdateImportConfigurationCommand,
     ): ImportConfiguration? {
-        command.matchers?.let { validateAccountMatchers(it.accountMatchers) }
+        command.matchers?.let {
+            validateAccountMatchers(it.accountMatchers)
+            validateFundMatchers(it.fundMatchers)
+        }
         return importConfigurationRepository.update(userId, importConfigurationId, command)
     }
 
     suspend fun deleteImportConfiguration(userId: UUID, importConfigurationId: UUID): Boolean {
         return importConfigurationRepository.delete(userId, importConfigurationId)
+    }
+
+    private fun validateFundMatchers(matchers: List<FundMatcherTO>) {
+        matchers.forEach { matcher ->
+            if (matcher.importAccountName == null && matcher.importLabel == null) {
+                throw ImportConfigurationValidationException("Fund matcher for '${matcher.fundName}' must have at least importAccountName or importLabel.")
+            }
+        }
     }
 
     private fun validateAccountMatchers(matchers: List<AccountMatcherTO>) {
