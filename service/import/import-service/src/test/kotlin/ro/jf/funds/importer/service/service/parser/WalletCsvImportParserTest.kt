@@ -26,7 +26,7 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             importConfigurationId = uuid4(),
             name = "test-config",
-            accountMatchers = listOf(AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING"))),
+            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
             fundMatchers = listOf(FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses"))),
             labelMatchers = listOf(LabelMatcherTO(listOf("Basic - Food"), Label("Basic"))),
             exchangeMatchers = emptyList(),
@@ -56,8 +56,8 @@ class WalletCsvImportParserTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(
-                AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING")),
-                AccountMatcherTO.ByName(listOf("Cash RON"), AccountName("Cash"))
+                AccountMatcherTO("ING old", AccountName("ING")),
+                AccountMatcherTO("Cash RON", AccountName("Cash"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses")),
@@ -93,8 +93,8 @@ class WalletCsvImportParserTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(
-                AccountMatcherTO.ByName(listOf("Euro"), AccountName("Cash EUR")),
-                AccountMatcherTO.ByName(listOf("Cash RON"), AccountName("Cash RON"))
+                AccountMatcherTO("Euro", AccountName("Cash EUR")),
+                AccountMatcherTO("Cash RON", AccountName("Cash RON"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByAccount(listOf("Euro", "Cash RON"), FundName("Expenses"))
@@ -147,7 +147,7 @@ class WalletCsvImportParserTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(
-                AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING"))
+                AccountMatcherTO("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabelWithPostTransfer(
@@ -196,7 +196,7 @@ class WalletCsvImportParserTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(
-                AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING"))
+                AccountMatcherTO("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByAccountLabelWithPostTransfer(
@@ -247,7 +247,7 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             importConfigurationId = uuid4(),
             name = "test-config",
-            accountMatchers = listOf(AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING"))),
+            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses")),
                 FundMatcherTO.ByAccount(listOf("ING old"), FundName("Savings"))
@@ -271,7 +271,7 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             importConfigurationId = uuid4(),
             name = "test-config",
-            accountMatchers = listOf(AccountMatcherTO.ByName(listOf("ING new"), AccountName("ING"))),
+            accountMatchers = listOf(AccountMatcherTO("ING new", AccountName("ING"))),
             fundMatchers = listOf(FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses"))),
             exchangeMatchers = emptyList(),
             createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
@@ -290,7 +290,7 @@ class WalletCsvImportParserTest {
         val importConfiguration = ImportConfigurationTO(
             importConfigurationId = uuid4(),
             name = "test-config",
-            accountMatchers = listOf(AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING"))),
+            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
             fundMatchers = listOf(FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses"))),
             exchangeMatchers = emptyList(),
             createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
@@ -311,8 +311,8 @@ class WalletCsvImportParserTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(
-                AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING")),
-                AccountMatcherTO.Skipped(listOf("Skipped account"))
+                AccountMatcherTO("ING old", AccountName("ING")),
+                AccountMatcherTO("Skipped account", skipped = true)
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel(listOf("Basic - Food"), FundName("Expenses")),

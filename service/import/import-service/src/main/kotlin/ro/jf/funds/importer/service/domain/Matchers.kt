@@ -7,7 +7,7 @@ import ro.jf.funds.importer.api.model.LabelMatcherTO
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 
 fun List<AccountMatcherTO>.getAccountMatcher(importAccountName: String): AccountMatcherTO =
-    firstOrNull { importAccountName in it.importAccountNames }
+    firstOrNull { importAccountName == it.importAccountName }
         ?: throw ImportDataException("Account name not matched: $importAccountName")
 
 fun List<FundMatcherTO>.getFundMatcher(importAccountName: String, importLabels: List<String>): FundMatcherTO =

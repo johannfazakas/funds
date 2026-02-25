@@ -7,3 +7,5 @@ class ImportFormatException(message: String, cause: Throwable? = null) : ImportS
 class ImportDataException(message: String, cause: Throwable? = null) : ImportServiceException(message, cause)
 
 class MissingImportConfigurationException(message: String) : ImportServiceException(message)
+
+class ImportConfigurationValidationException(message: String) : ImportServiceException(message)

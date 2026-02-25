@@ -7,6 +7,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.platform.jvm.error.ErrorTO
+import ro.jf.funds.importer.service.domain.exception.ImportConfigurationValidationException
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import ro.jf.funds.importer.service.domain.exception.ImportFormatException
 import ro.jf.funds.importer.service.domain.exception.ImportServiceException
@@ -37,6 +38,7 @@ fun ImportServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is ImportDataException -> HttpStatusCode.UnprocessableEntity
     is ImportFormatException -> HttpStatusCode.BadRequest
     is MissingImportConfigurationException -> HttpStatusCode.BadRequest
+    is ImportConfigurationValidationException -> HttpStatusCode.BadRequest
 }
 
 fun ImportServiceException.toError(): ErrorTO {
@@ -54,6 +56,11 @@ fun ImportServiceException.toError(): ErrorTO {
         is MissingImportConfigurationException -> ErrorTO(
             title = "Missing import configuration",
             detail = message ?: "Missing import configuration",
+        )
+
+        is ImportConfigurationValidationException -> ErrorTO(
+            title = "Import configuration validation error",
+            detail = message ?: "Import configuration validation error",
         )
     }
 }

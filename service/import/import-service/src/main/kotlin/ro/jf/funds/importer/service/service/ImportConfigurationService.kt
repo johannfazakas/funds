@@ -1,10 +1,12 @@
 package ro.jf.funds.importer.service.service
 
+import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.ImportConfigurationSortField
 import ro.jf.funds.importer.service.domain.CreateImportConfigurationCommand
 import ro.jf.funds.importer.service.domain.ImportConfiguration
 import ro.jf.funds.importer.service.domain.ImportConfigurationMatchersTO
 import ro.jf.funds.importer.service.domain.UpdateImportConfigurationCommand
+import ro.jf.funds.importer.service.domain.exception.ImportConfigurationValidationException
 import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
@@ -19,6 +21,7 @@ class ImportConfigurationService(
         name: String,
         matchers: ImportConfigurationMatchersTO,
     ): ImportConfiguration {
+        validateAccountMatchers(matchers.accountMatchers)
         return importConfigurationRepository.create(CreateImportConfigurationCommand(userId, name, matchers))
     }
 
@@ -39,10 +42,22 @@ class ImportConfigurationService(
         importConfigurationId: UUID,
         command: UpdateImportConfigurationCommand,
     ): ImportConfiguration? {
+        command.matchers?.let { validateAccountMatchers(it.accountMatchers) }
         return importConfigurationRepository.update(userId, importConfigurationId, command)
     }
 
     suspend fun deleteImportConfiguration(userId: UUID, importConfigurationId: UUID): Boolean {
         return importConfigurationRepository.delete(userId, importConfigurationId)
+    }
+
+    private fun validateAccountMatchers(matchers: List<AccountMatcherTO>) {
+        matchers.forEach { matcher ->
+            if (matcher.skipped && matcher.accountName != null) {
+                throw ImportConfigurationValidationException("Skipped account matcher '${matcher.importAccountName}' must not have an accountName.")
+            }
+            if (!matcher.skipped && matcher.accountName == null) {
+                throw ImportConfigurationValidationException("Non-skipped account matcher '${matcher.importAccountName}' must have an accountName.")
+            }
+        }
     }
 }

@@ -68,6 +68,8 @@ kotlin {
                 implementation(npm("lucide-react", "0.344.0"))
                 implementation(npm("@radix-ui/react-dialog", "1.0.5"))
                 implementation(npm("@radix-ui/react-select", "2.0.0"))
+                implementation(npm("@radix-ui/react-popover", "1.0.7"))
+                implementation(npm("cmdk", "0.2.1"))
                 implementation(npm("@radix-ui/react-label", "2.0.2"))
                 implementation(npm("@radix-ui/react-slot", "1.0.2"))
                 implementation(npm("@dnd-kit/core", "6.1.0"))

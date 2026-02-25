@@ -75,7 +75,7 @@ class ImportApiTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(
-                AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING"))
+                AccountMatcherTO("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel(listOf("Basic - Food", "Gifts", "C&T - Gas & Parking"), FundName("Expenses")),
@@ -178,7 +178,7 @@ class ImportApiTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(
-                AccountMatcherTO.ByName(listOf("ING old"), AccountName("ING"))
+                AccountMatcherTO("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel(listOf("Basic - Food", "Gifts", "C&T - Gas & Parking"), FundName("Expenses")),
@@ -226,7 +226,7 @@ class ImportApiTest {
             importConfigurationId = uuid4(),
             name = "test-config",
             accountMatchers = listOf(
-                AccountMatcherTO.ByName(listOf("Something else"), AccountName("ING"))
+                AccountMatcherTO("Something else", AccountName("ING"))
             ),
             fundMatchers = listOf(
                 FundMatcherTO.ByLabel(listOf("Basic - Food", "Gifts", "C&T - Gas & Parking"), FundName("Expenses")),

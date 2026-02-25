@@ -2,7 +2,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { SearchableSelect } from '../ui/searchable-select';
 import { Plus, X } from 'lucide-react';
 import { SortableRow } from './SortableRow';
 
@@ -69,20 +69,14 @@ export function LabelMatcherEditor({ matchers, onChange, labelNames, disabled }:
                             </div>
                             <div className="flex items-center gap-1 flex-1 min-w-0">
                                 <span className="text-xs text-muted-foreground whitespace-nowrap">label</span>
-                                <Select
+                                <SearchableSelect
                                     value={matcher.label}
                                     onValueChange={(name) => updateMatcher(index, { ...matcher, label: name })}
+                                    options={labelNames}
+                                    placeholder="Select label"
                                     disabled={disabled}
-                                >
-                                    <SelectTrigger className="h-8">
-                                        <SelectValue placeholder="Select label" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {labelNames.map(name => (
-                                            <SelectItem key={name} value={name}>{name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    className="h-8 text-sm"
+                                />
                             </div>
                             <Button
                                 type="button"
