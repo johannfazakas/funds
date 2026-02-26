@@ -6,4 +6,6 @@ import kotlinx.serialization.Serializable
 enum class ImportFileStatusTO {
     PENDING,
     UPLOADED,
+    IMPORTING,
+    IMPORTED,
 }

@@ -1,28 +1,27 @@
 package ro.jf.funds.importer.service.service.parser
 
-import ro.jf.funds.importer.api.model.ImportConfigurationTO
 import ro.jf.funds.importer.service.domain.*
 
 abstract class ImportParser {
-    fun parse(importConfiguration: ImportConfigurationTO, files: List<String>): List<ImportParsedTransaction> {
+    fun parse(matchers: ImportMatchers, files: List<String>): List<ImportParsedTransaction> {
         return parseItems(files)
-            .groupBy { it.transactionId { item -> isExchange(importConfiguration, item) } }
-            .flatMap { (transactionId, items) -> toTransactions(importConfiguration, transactionId, items) }
+            .groupBy { it.transactionId { item -> isExchange(matchers, item) } }
+            .flatMap { (transactionId, items) -> toTransactions(matchers, transactionId, items) }
     }
 
     protected abstract fun parseItems(files: List<String>): List<ImportItem>
 
     private fun toTransactions(
-        importConfiguration: ImportConfigurationTO,
+        matchers: ImportMatchers,
         transactionId: String,
         items: List<ImportItem>,
     ): List<ImportParsedTransaction> {
         return sequence {
             val mainRecords =
-                extractRecords(items) { extractMainRecords(importConfiguration, it) }
+                extractRecords(items) { extractMainRecords(matchers, it) }
                     ?: return@sequence
             val implicitTransferRecords =
-                extractRecords(items) { extractImplicitTransferRecords(importConfiguration, it) }
+                extractRecords(items) { extractImplicitTransferRecords(matchers, it) }
             val dateTime = items.minOf { it.dateTime }
             yield(
                 ImportParsedTransaction(
@@ -53,27 +52,27 @@ abstract class ImportParser {
     }
 
     private fun extractMainRecords(
-        importConfiguration: ImportConfigurationTO,
+        matchers: ImportMatchers,
         item: ImportItem,
     ): List<ImportParsedRecord>? {
         val importAccountName = item.accountName
-        val accountName = importConfiguration.accountMatchers.getAccountMatcher(importAccountName)
+        val accountName = matchers.getAccountMatcher(importAccountName)
             .accountName ?: return null
-        val fundMatcher = importConfiguration.fundMatchers.getFundMatcher(importAccountName, item.labels)
-        val labels = importConfiguration.labelMatchers.getLabelMatchers(item.labels).map { it.label }
+        val fundMatcher = matchers.getFundMatcher(importAccountName, item.labels)
+        val labels = matchers.getLabelMatchers(item.labels).map { it.label }
         val note = item.note.takeIf { it.isNotBlank() }
         val recordFund = fundMatcher.intermediaryFundName ?: fundMatcher.fundName
         return listOf(ImportParsedRecord(accountName, recordFund, item.unit, item.amount, labels, note))
     }
 
     private fun extractImplicitTransferRecords(
-        importConfiguration: ImportConfigurationTO,
+        matchers: ImportMatchers,
         item: ImportItem,
     ): List<ImportParsedRecord>? {
         val importAccountName = item.accountName
-        val accountName = importConfiguration.accountMatchers.getAccountMatcher(importAccountName)
+        val accountName = matchers.getAccountMatcher(importAccountName)
             .accountName ?: return null
-        val fundMatcher = importConfiguration.fundMatchers.getFundMatcher(importAccountName, item.labels)
+        val fundMatcher = matchers.getFundMatcher(importAccountName, item.labels)
         val intermediary = fundMatcher.intermediaryFundName ?: return emptyList()
         val amount = item.amount
         return listOf(
@@ -82,6 +81,6 @@ abstract class ImportParser {
         )
     }
 
-    private fun isExchange(importConfiguration: ImportConfigurationTO, item: ImportItem): Boolean =
-        importConfiguration.exchangeMatchers.getExchangeMatcher(item.labels) != null
+    private fun isExchange(matchers: ImportMatchers, item: ImportItem): Boolean =
+        matchers.getExchangeMatcher(item.labels) != null
 }

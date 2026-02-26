@@ -8,12 +8,10 @@ import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.fund.api.model.FundName
-import com.benasher44.uuid.uuid4
-import ro.jf.funds.importer.api.model.*
+import ro.jf.funds.importer.service.domain.*
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
-import kotlinx.datetime.LocalDateTime
 
 class WalletCsvImportParserTest {
     private val walletCsvImportParser = WalletCsvImportParser(CsvParser())
@@ -23,17 +21,14 @@ class WalletCsvImportParserTest {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "-13.80", "Basic - Food", "2019-01-31 02:00:49")
         )
-        val importConfiguration = ImportConfigurationTO(
-            importConfigurationId = uuid4(),
-            name = "test-config",
-            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
-            fundMatchers = listOf(FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food")),
-            labelMatchers = listOf(LabelMatcherTO(listOf("Basic - Food"), Label("Basic"))),
+        val matchers = ImportMatchers(
+            accountMatchers = listOf(AccountMatcher("ING old", AccountName("ING"))),
+            fundMatchers = listOf(FundMatcher(FundName("Expenses"), importLabel = "Basic - Food")),
+            labelMatchers = listOf(LabelMatcher(listOf("Basic - Food"), Label("Basic"))),
             exchangeMatchers = emptyList(),
-            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
 
-        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionExternalId).isNotNull()
@@ -52,24 +47,21 @@ class WalletCsvImportParserTest {
             WalletCsvRowContent("ING old", "RON", "-400.00", "", "2019-01-31 02:00:49"),
             WalletCsvRowContent("Cash RON", "RON", "400.00", "", "2019-01-31 02:00:49")
         )
-        val importConfiguration = ImportConfigurationTO(
-            importConfigurationId = uuid4(),
-            name = "test-config",
+        val matchers = ImportMatchers(
             accountMatchers = listOf(
-                AccountMatcherTO("ING old", AccountName("ING")),
-                AccountMatcherTO("Cash RON", AccountName("Cash"))
+                AccountMatcher("ING old", AccountName("ING")),
+                AccountMatcher("Cash RON", AccountName("Cash"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food"),
-                FundMatcherTO(FundName("Income"), importLabel = "Basic - Food"),
-                FundMatcherTO(FundName("Expenses"), importAccountName = "ING old"),
-                FundMatcherTO(FundName("Expenses"), importAccountName = "Cash RON")
+                FundMatcher(FundName("Expenses"), importLabel = "Basic - Food"),
+                FundMatcher(FundName("Income"), importLabel = "Basic - Food"),
+                FundMatcher(FundName("Expenses"), importAccountName = "ING old"),
+                FundMatcher(FundName("Expenses"), importAccountName = "Cash RON")
             ),
             exchangeMatchers = emptyList(),
-            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
 
-        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionExternalId).isNotNull()
@@ -90,23 +82,20 @@ class WalletCsvImportParserTest {
             WalletCsvRowContent("Cash RON", "RON", "-1434.00", "Exchange", "2019-04-23 21:45:49", "exchange"),
             WalletCsvRowContent("Euro", "EUR", "301.24", "Exchange", "2019-04-23 21:45:49", "exchange"),
         )
-        val importConfiguration = ImportConfigurationTO(
-            importConfigurationId = uuid4(),
-            name = "test-config",
+        val matchers = ImportMatchers(
             accountMatchers = listOf(
-                AccountMatcherTO("Euro", AccountName("Cash EUR")),
-                AccountMatcherTO("Cash RON", AccountName("Cash RON"))
+                AccountMatcher("Euro", AccountName("Cash EUR")),
+                AccountMatcher("Cash RON", AccountName("Cash RON"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO(FundName("Expenses"), importAccountName = "Euro"),
-                FundMatcherTO(FundName("Expenses"), importAccountName = "Cash RON")
+                FundMatcher(FundName("Expenses"), importAccountName = "Euro"),
+                FundMatcher(FundName("Expenses"), importAccountName = "Cash RON")
             ),
-            exchangeMatchers = listOf(ExchangeMatcherTO.ByLabel("Exchange")),
-            labelMatchers = listOf(LabelMatcherTO(listOf("Exchange"), Label("Exchange"))),
-            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
+            exchangeMatchers = listOf(ExchangeMatcher.ByLabel("Exchange")),
+            labelMatchers = listOf(LabelMatcher(listOf("Exchange"), Label("Exchange"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionExternalId).isNotNull()
@@ -145,21 +134,18 @@ class WalletCsvImportParserTest {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "740.00", "Gift income", "2019-01-06 02:00:23")
         )
-        val importConfiguration = ImportConfigurationTO(
-            importConfigurationId = uuid4(),
-            name = "test-config",
+        val matchers = ImportMatchers(
             accountMatchers = listOf(
-                AccountMatcherTO("ING old", AccountName("ING"))
+                AccountMatcher("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO(FundName("Expenses"), importLabel = "Gift income", intermediaryFundName = FundName("Gift income")),
+                FundMatcher(FundName("Expenses"), importLabel = "Gift income", intermediaryFundName = FundName("Gift income")),
             ),
             exchangeMatchers = emptyList(),
-            labelMatchers = listOf(LabelMatcherTO(listOf("Gift income"), Label("gifts"))),
-            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
+            labelMatchers = listOf(LabelMatcher(listOf("Gift income"), Label("gifts"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(2)
 
@@ -192,21 +178,18 @@ class WalletCsvImportParserTest {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "6740.00", "Work Income", "2019-01-06 02:00:23")
         )
-        val importConfiguration = ImportConfigurationTO(
-            importConfigurationId = uuid4(),
-            name = "test-config",
+        val matchers = ImportMatchers(
             accountMatchers = listOf(
-                AccountMatcherTO("ING old", AccountName("ING"))
+                AccountMatcher("ING old", AccountName("ING"))
             ),
             fundMatchers = listOf(
-                FundMatcherTO(FundName("Expenses"), importAccountName = "ING old", importLabel = "Work Income", intermediaryFundName = FundName("Work")),
+                FundMatcher(FundName("Expenses"), importAccountName = "ING old", importLabel = "Work Income", intermediaryFundName = FundName("Work")),
             ),
             exchangeMatchers = emptyList(),
-            labelMatchers = listOf(LabelMatcherTO(listOf("Work Income"), Label("Work"))),
-            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
+            labelMatchers = listOf(LabelMatcher(listOf("Work Income"), Label("Work"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(2)
 
@@ -239,20 +222,17 @@ class WalletCsvImportParserTest {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "-13.80", "Basic - Food", "2019-01-31 02:00:49")
         )
-        val importConfiguration = ImportConfigurationTO(
-            importConfigurationId = uuid4(),
-            name = "test-config",
-            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
+        val matchers = ImportMatchers(
+            accountMatchers = listOf(AccountMatcher("ING old", AccountName("ING"))),
             fundMatchers = listOf(
-                FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food"),
-                FundMatcherTO(FundName("Savings"), importAccountName = "ING old")
+                FundMatcher(FundName("Expenses"), importLabel = "Basic - Food"),
+                FundMatcher(FundName("Savings"), importAccountName = "ING old")
             ),
             exchangeMatchers = emptyList(),
-            labelMatchers = listOf(LabelMatcherTO(listOf("Basic - Food"), Label("Basic"))),
-            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
+            labelMatchers = listOf(LabelMatcher(listOf("Basic - Food"), Label("Basic"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Expenses"))
@@ -263,16 +243,13 @@ class WalletCsvImportParserTest {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "-13.80", "Basic - Food", "2019-01-31 02:00:49")
         )
-        val importConfiguration = ImportConfigurationTO(
-            importConfigurationId = uuid4(),
-            name = "test-config",
-            accountMatchers = listOf(AccountMatcherTO("ING new", AccountName("ING"))),
-            fundMatchers = listOf(FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food")),
+        val matchers = ImportMatchers(
+            accountMatchers = listOf(AccountMatcher("ING new", AccountName("ING"))),
+            fundMatchers = listOf(FundMatcher(FundName("Expenses"), importLabel = "Basic - Food")),
             exchangeMatchers = emptyList(),
-            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
 
-        assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
+        assertThatThrownBy { walletCsvImportParser.parse(matchers, listOf(fileContent)) }
             .isInstanceOf(ImportDataException::class.java)
             .hasMessage("Account name not matched: ING old")
     }
@@ -282,16 +259,13 @@ class WalletCsvImportParserTest {
         val fileContent = """
             account;category;currency;amount;ref_currency_amount;type;payment_type;payment_type_local;note;date;gps_latitude;gps_longitude;gps_accuracy_in_meters;warranty_in_month;transfer;payee;labels;envelope_id;custom_category
         """.trimIndent()
-        val importConfiguration = ImportConfigurationTO(
-            importConfigurationId = uuid4(),
-            name = "test-config",
-            accountMatchers = listOf(AccountMatcherTO("ING old", AccountName("ING"))),
-            fundMatchers = listOf(FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food")),
+        val matchers = ImportMatchers(
+            accountMatchers = listOf(AccountMatcher("ING old", AccountName("ING"))),
+            fundMatchers = listOf(FundMatcher(FundName("Expenses"), importLabel = "Basic - Food")),
             exchangeMatchers = emptyList(),
-            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
 
-        assertThatThrownBy { walletCsvImportParser.parse(importConfiguration, listOf(fileContent)) }
+        assertThatThrownBy { walletCsvImportParser.parse(matchers, listOf(fileContent)) }
             .isInstanceOf(ImportDataException::class.java)
             .hasMessage("No import reportdata")
     }
@@ -302,24 +276,21 @@ class WalletCsvImportParserTest {
             WalletCsvRowContent("ING old", "RON", "-400.00", "", "2019-01-31 02:00:49"),
             WalletCsvRowContent("Skipped account", "RON", "400.00", "", "2019-01-31 02:00:49")
         )
-        val importConfiguration = ImportConfigurationTO(
-            importConfigurationId = uuid4(),
-            name = "test-config",
+        val matchers = ImportMatchers(
             accountMatchers = listOf(
-                AccountMatcherTO("ING old", AccountName("ING")),
-                AccountMatcherTO("Skipped account", skipped = true)
+                AccountMatcher("ING old", AccountName("ING")),
+                AccountMatcher("Skipped account", skipped = true)
             ),
             fundMatchers = listOf(
-                FundMatcherTO(FundName("Expenses"), importLabel = "Basic - Food"),
-                FundMatcherTO(FundName("Income"), importLabel = "Basic - Food"),
-                FundMatcherTO(FundName("Expenses"), importAccountName = "ING old"),
-                FundMatcherTO(FundName("Expenses"), importAccountName = "Cash RON")
+                FundMatcher(FundName("Expenses"), importLabel = "Basic - Food"),
+                FundMatcher(FundName("Income"), importLabel = "Basic - Food"),
+                FundMatcher(FundName("Expenses"), importAccountName = "ING old"),
+                FundMatcher(FundName("Expenses"), importAccountName = "Cash RON")
             ),
             exchangeMatchers = emptyList(),
-            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
 
-        val importTransactions = walletCsvImportParser.parse(importConfiguration, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(0)
     }

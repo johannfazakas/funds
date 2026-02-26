@@ -1,11 +1,26 @@
 package ro.jf.funds.importer.service.domain.exception
 
-sealed class ImportServiceException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+import java.util.*
 
-class ImportFormatException(message: String, cause: Throwable? = null) : ImportServiceException(message, cause)
+sealed class ImportServiceException : RuntimeException {
+    constructor() : super()
+    constructor(message: String) : super(message)
+    constructor(message: String, cause: Throwable) : super(message, cause)
+}
 
-class ImportDataException(message: String, cause: Throwable? = null) : ImportServiceException(message, cause)
+class ImportFormatException : ImportServiceException {
+    constructor(message: String) : super(message)
+    constructor(message: String, cause: Throwable) : super(message, cause)
+}
 
-class MissingImportConfigurationException(message: String) : ImportServiceException(message)
+class ImportDataException(message: String) : ImportServiceException(message)
+
+class MissingImportConfigurationException : ImportServiceException()
 
 class ImportConfigurationValidationException(message: String) : ImportServiceException(message)
+
+class ImportFileNotFoundException(val importFileId: UUID) : ImportServiceException()
+
+class ImportFileNotUploadedException(val importFileId: UUID) : ImportServiceException()
+
+class ImportConfigurationNotFoundException(val importConfigurationId: UUID) : ImportServiceException()

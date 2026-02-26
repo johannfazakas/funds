@@ -40,6 +40,7 @@ import ro.jf.funds.platform.jvm.web.createHttpClient
 import javax.sql.DataSource
 import kotlin.time.Duration
 
+
 private const val FUND_SERVICE_BASE_URL_PROPERTY = "integration.fund-service.base-url"
 private const val CONVERSION_SERVICE_BASE_URL_PROPERTY = "integration.conversion-service.base-url"
 private const val S3_ENDPOINT_PROPERTY = "s3.endpoint"
@@ -129,16 +130,15 @@ private val Application.importServiceDependencies
         single<ImportTransactionConverterRegistry> { ImportTransactionConverterRegistry(getAll()) }
         single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get(), get(), get()) }
         single<ImportConfigurationService> { ImportConfigurationService(get()) }
-        single<ImportFileService> {
-            ImportFileService(
-                get(),
-                get(),
-                environment.getStringProperty(S3_BUCKET_PROPERTY),
-                environment.getStringProperty(S3_ENDPOINT_PROPERTY),
-                environment.getStringProperty(S3_PUBLIC_ENDPOINT_PROPERTY),
-                Duration.parse(environment.getStringProperty(S3_PRESIGNED_URL_EXPIRATION_PROPERTY)),
+        single<S3Configuration> {
+            S3Configuration(
+                bucket = environment.getStringProperty(S3_BUCKET_PROPERTY),
+                endpoint = environment.getStringProperty(S3_ENDPOINT_PROPERTY),
+                publicEndpoint = environment.getStringProperty(S3_PUBLIC_ENDPOINT_PROPERTY),
+                presignedUrlExpiration = Duration.parse(environment.getStringProperty(S3_PRESIGNED_URL_EXPIRATION_PROPERTY)),
             )
         }
+        single<ImportFileService> { ImportFileService(get(), get(), get(), get(), get()) }
         single<ImportService> { ImportService(get(), get(), get(), get()) }
         single<CreateFundTransactionsResponseHandler> {
             CreateFundTransactionsResponseHandler(get())

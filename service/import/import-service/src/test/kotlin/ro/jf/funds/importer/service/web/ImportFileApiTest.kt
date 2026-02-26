@@ -21,13 +21,19 @@ import ro.jf.funds.importer.service.config.configureImportErrorHandling
 import ro.jf.funds.importer.service.config.configureImportRouting
 import ro.jf.funds.importer.service.config.configureImportEventHandling
 import ro.jf.funds.importer.service.config.importDependencyModules
+import ro.jf.funds.importer.service.domain.CreateImportFileCommand
 import ro.jf.funds.importer.service.domain.ImportFile
 import ro.jf.funds.importer.service.domain.ImportFileStatus
+import ro.jf.funds.importer.service.domain.ImportTask
+import ro.jf.funds.importer.service.domain.ImportTaskPart
+import ro.jf.funds.importer.service.domain.ImportTaskPartStatus
+import ro.jf.funds.importer.service.domain.exception.ImportFileNotFoundException
 import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
 import ro.jf.funds.importer.service.persistence.ImportFileRepository
 import ro.jf.funds.importer.service.domain.CreateImportFileResponse
 import ro.jf.funds.importer.service.service.ImportConfigurationService
 import ro.jf.funds.importer.service.service.ImportFileService
+import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.platform.jvm.config.configureContentNegotiation
 import ro.jf.funds.platform.jvm.config.configureDatabaseMigration
 import ro.jf.funds.platform.jvm.config.configureDependencies
@@ -54,31 +60,33 @@ class ImportFileApiTest {
     private val labelSdk: LabelSdk = mock()
     private val conversionSdk: ConversionSdk = mock()
     private val transactionSdk: TransactionSdk = mock()
+    private val importService: ImportService = mock()
 
     @Test
-    fun `given file name - when creating import file - then should return import file with upload url`() =
+    fun `given file name and configuration - when creating import file - then should return import file with upload url`() =
         testApplication {
             configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
             val httpClient = createJsonHttpClient()
             val userId = randomUUID()
             val importFileId = randomUUID()
+            val configurationId = randomUUID()
             val importFile = ImportFile(
                 importFileId = importFileId,
                 userId = userId,
                 fileName = "test.csv",
                 type = ImportFileTypeTO.WALLET_CSV,
-                s3Key = "$userId/test.csv",
                 status = ImportFileStatus.PENDING,
+                importConfigurationId = configurationId,
                 createdAt = LocalDateTime.now(),
             )
-            whenever(importFileService.createImportFile(eq(userId), eq("test.csv"), eq(ImportFileTypeTO.WALLET_CSV)))
+            whenever(importFileService.createImportFile(any<CreateImportFileCommand>()))
                 .thenReturn(CreateImportFileResponse(importFile, "https://s3.example.com/upload-url"))
 
             val response = httpClient.post("/funds-api/import/v1/import-files") {
                 header(USER_ID_HEADER, userId.toString())
                 contentType(ContentType.Application.Json)
-                setBody(CreateImportFileRequestTO(fileName = "test.csv", type = ImportFileTypeTO.WALLET_CSV))
+                setBody(CreateImportFileRequest(fileName = "test.csv", type = ImportFileTypeTO.WALLET_CSV, importConfigurationId = com.benasher44.uuid.Uuid.fromString(configurationId.toString())))
             }
 
             assertThat(response.status).isEqualTo(HttpStatusCode.Created)
@@ -97,13 +105,14 @@ class ImportFileApiTest {
             val httpClient = createJsonHttpClient()
             val userId = randomUUID()
             val importFileId = randomUUID()
+            val configurationId = randomUUID()
             val importFile = ImportFile(
                 importFileId = importFileId,
                 userId = userId,
                 fileName = "test.csv",
                 type = ImportFileTypeTO.WALLET_CSV,
-                s3Key = "$userId/test.csv",
                 status = ImportFileStatus.UPLOADED,
+                importConfigurationId = configurationId,
                 createdAt = LocalDateTime.now(),
             )
             whenever(importFileService.confirmUpload(eq(userId), eq(importFileId)))
@@ -128,7 +137,7 @@ class ImportFileApiTest {
         val userId = randomUUID()
         val importFileId = randomUUID()
         whenever(importFileService.confirmUpload(eq(userId), eq(importFileId)))
-            .thenReturn(null)
+            .thenThrow(ImportFileNotFoundException(importFileId))
 
         val response =
             httpClient.post("/funds-api/import/v1/import-files/$importFileId/confirm-upload") {
@@ -144,11 +153,12 @@ class ImportFileApiTest {
 
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
+        val configurationId = randomUUID()
         whenever(importFileService.listImportFiles(eq(userId), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
             PagedResult(
                 listOf(
-                    ImportFile(randomUUID(), userId, "file1.csv", ImportFileTypeTO.WALLET_CSV, "$userId/file1.csv", ImportFileStatus.PENDING, null, null, LocalDateTime.now()),
-                    ImportFile(randomUUID(), userId, "file2.csv", ImportFileTypeTO.FUNDS_FORMAT_CSV, "$userId/file2.csv", ImportFileStatus.UPLOADED, null, null, LocalDateTime.now()),
+                    ImportFile(randomUUID(), userId, "file1.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.PENDING, configurationId, LocalDateTime.now()),
+                    ImportFile(randomUUID(), userId, "file2.csv", ImportFileTypeTO.FUNDS_FORMAT_CSV, ImportFileStatus.UPLOADED, configurationId, LocalDateTime.now()),
                 ),
                 2L
             )
@@ -196,7 +206,8 @@ class ImportFileApiTest {
         val httpClient = createJsonHttpClient()
         val userId = randomUUID()
         val importFileId = randomUUID()
-        val importFile = ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, "$userId/test.csv", ImportFileStatus.UPLOADED, null, null, LocalDateTime.now())
+        val configurationId = randomUUID()
+        val importFile = ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.UPLOADED, configurationId, LocalDateTime.now())
         whenever(importFileService.getImportFile(eq(userId), eq(importFileId)))
             .thenReturn(importFile)
 
@@ -298,6 +309,50 @@ class ImportFileApiTest {
         assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
     }
 
+    @Test
+    fun `given uploaded file with configuration - when triggering import - then should return accepted import file`() =
+        testApplication {
+            configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
+
+            val httpClient = createJsonHttpClient()
+            val userId = randomUUID()
+            val importFileId = randomUUID()
+            val configurationId = randomUUID()
+            val importTaskId = randomUUID()
+            val importTask = ImportTask(importTaskId, userId, listOf(ImportTaskPart(randomUUID(), "test.csv", ImportTaskPartStatus.IN_PROGRESS)))
+            whenever(importFileService.importFile(eq(userId), eq(importFileId)))
+                .thenReturn(ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.IMPORTING, configurationId, LocalDateTime.now(), importTask))
+
+            val response = httpClient.post("/funds-api/import/v1/import-files/$importFileId/import") {
+                header(USER_ID_HEADER, userId.toString())
+            }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.Accepted)
+            val responseBody = response.body<ImportFileTO>()
+            assertThat(responseBody.importFileId.toString()).isEqualTo(importFileId.toString())
+            assertThat(responseBody.status).isEqualTo(ImportFileStatusTO.IMPORTING)
+            assertThat(responseBody.importTask).isNotNull
+            assertThat(responseBody.importTask!!.taskId.toString()).isEqualTo(importTaskId.toString())
+            assertThat(responseBody.importTask!!.status).isEqualTo(ImportTaskTO.Status.IN_PROGRESS)
+        }
+
+    @Test
+    fun `given no file - when triggering import - then should return not found`() = testApplication {
+        configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
+
+        val httpClient = createJsonHttpClient()
+        val userId = randomUUID()
+        val importFileId = randomUUID()
+        whenever(importFileService.importFile(eq(userId), eq(importFileId)))
+            .thenThrow(ImportFileNotFoundException(importFileId))
+
+        val response = httpClient.post("/funds-api/import/v1/import-files/$importFileId/import") {
+            header(USER_ID_HEADER, userId.toString())
+        }
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)
+    }
+
     private fun Application.testModule() {
         val testOverrides = org.koin.dsl.module {
             single<AccountSdk> { accountSdk }
@@ -309,6 +364,7 @@ class ImportFileApiTest {
             single<ImportFileService> { importFileService }
             single<ImportConfigurationRepository> { importConfigurationRepository }
             single<ImportConfigurationService> { importConfigurationService }
+            single<ImportService> { importService }
         }
         configureDependencies(*importDependencyModules, testOverrides)
         configureImportErrorHandling()

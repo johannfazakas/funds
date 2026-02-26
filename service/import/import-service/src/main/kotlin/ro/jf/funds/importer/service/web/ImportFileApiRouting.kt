@@ -6,11 +6,12 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.importer.api.model.*
-import ro.jf.funds.importer.service.domain.CreateImportFileResponse
-import ro.jf.funds.importer.service.domain.ImportFile
+import ro.jf.funds.importer.service.domain.CreateImportFileCommand
 import ro.jf.funds.importer.service.domain.ImportFileFilter
 import ro.jf.funds.importer.service.domain.ImportFileStatus
 import ro.jf.funds.importer.service.service.ImportFileService
+import ro.jf.funds.importer.service.web.mapper.toCreateTO
+import ro.jf.funds.importer.service.web.mapper.toTO
 import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.jvm.web.pageRequest
 import ro.jf.funds.platform.jvm.web.sortRequest
@@ -25,10 +26,16 @@ fun Routing.importFileApiRouting(
     route("/funds-api/import/v1/import-files") {
         post {
             val userId = call.userId()
-            val request = call.receive<CreateImportFileRequestTO>()
+            val request = call.receive<CreateImportFileRequest>()
             log.info { "Create import file for user $userId, file ${request.fileName}." }
-            val response = importFileService.createImportFile(userId, request.fileName, request.type)
-            call.respond(HttpStatusCode.Created, response.toTO())
+            val command = CreateImportFileCommand(
+                userId = userId,
+                fileName = request.fileName,
+                type = request.type,
+                importConfigurationId = UUID.fromString(request.importConfigurationId.toString()),
+            )
+            val response = importFileService.createImportFile(command)
+            call.respond(HttpStatusCode.Created, response.toCreateTO())
         }
 
         post("/{importFileId}/confirm-upload") {
@@ -36,11 +43,15 @@ fun Routing.importFileApiRouting(
             val importFileId = UUID.fromString(call.parameters["importFileId"])
             log.info { "Confirm upload for import file $importFileId, user $userId." }
             val importFile = importFileService.confirmUpload(userId, importFileId)
-            if (importFile != null) {
-                call.respond(HttpStatusCode.OK, importFile.toTO())
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
+            call.respond(HttpStatusCode.OK, importFile.toTO())
+        }
+
+        post("/{importFileId}/import") {
+            val userId = call.userId()
+            val importFileId = UUID.fromString(call.parameters["importFileId"])
+            log.info { "Import file $importFileId for user $userId." }
+            val importFile = importFileService.importFile(userId, importFileId)
+            call.respond(HttpStatusCode.Accepted, importFile.toTO())
         }
 
         get {
@@ -92,28 +103,4 @@ fun Routing.importFileApiRouting(
             }
         }
     }
-}
-
-private fun CreateImportFileResponse.toTO() = CreateImportFileResponseTO(
-    importFileId = importFile.importFileId,
-    fileName = importFile.fileName,
-    type = importFile.type,
-    status = importFile.status.toTO(),
-    uploadUrl = uploadUrl,
-)
-
-private fun ImportFile.toTO() = ImportFileTO(
-    importFileId = importFileId,
-    fileName = fileName,
-    type = type,
-    status = status.toTO(),
-    importConfiguration = if (importConfigurationId != null && importConfigurationName != null) {
-        ImportFileConfigurationTO(id = importConfigurationId, name = importConfigurationName)
-    } else null,
-    createdAt = createdAt.toString(),
-)
-
-private fun ImportFileStatus.toTO() = when (this) {
-    ImportFileStatus.PENDING -> ImportFileStatusTO.PENDING
-    ImportFileStatus.UPLOADED -> ImportFileStatusTO.UPLOADED
 }

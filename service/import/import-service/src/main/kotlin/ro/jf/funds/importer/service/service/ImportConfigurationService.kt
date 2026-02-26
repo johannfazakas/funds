@@ -1,11 +1,11 @@
 package ro.jf.funds.importer.service.service
 
-import ro.jf.funds.importer.api.model.AccountMatcherTO
-import ro.jf.funds.importer.api.model.FundMatcherTO
 import ro.jf.funds.importer.api.model.ImportConfigurationSortField
+import ro.jf.funds.importer.service.domain.AccountMatcher
 import ro.jf.funds.importer.service.domain.CreateImportConfigurationCommand
+import ro.jf.funds.importer.service.domain.FundMatcher
 import ro.jf.funds.importer.service.domain.ImportConfiguration
-import ro.jf.funds.importer.service.domain.ImportConfigurationMatchersTO
+import ro.jf.funds.importer.service.domain.ImportMatchers
 import ro.jf.funds.importer.service.domain.UpdateImportConfigurationCommand
 import ro.jf.funds.importer.service.domain.exception.ImportConfigurationValidationException
 import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
@@ -20,7 +20,7 @@ class ImportConfigurationService(
     suspend fun createImportConfiguration(
         userId: UUID,
         name: String,
-        matchers: ImportConfigurationMatchersTO,
+        matchers: ImportMatchers,
     ): ImportConfiguration {
         validateAccountMatchers(matchers.accountMatchers)
         validateFundMatchers(matchers.fundMatchers)
@@ -55,7 +55,7 @@ class ImportConfigurationService(
         return importConfigurationRepository.delete(userId, importConfigurationId)
     }
 
-    private fun validateFundMatchers(matchers: List<FundMatcherTO>) {
+    private fun validateFundMatchers(matchers: List<FundMatcher>) {
         matchers.forEach { matcher ->
             if (matcher.importAccountName == null && matcher.importLabel == null) {
                 throw ImportConfigurationValidationException("Fund matcher for '${matcher.fundName}' must have at least importAccountName or importLabel.")
@@ -63,7 +63,7 @@ class ImportConfigurationService(
         }
     }
 
-    private fun validateAccountMatchers(matchers: List<AccountMatcherTO>) {
+    private fun validateAccountMatchers(matchers: List<AccountMatcher>) {
         matchers.forEach { matcher ->
             if (matcher.skipped && matcher.accountName != null) {
                 throw ImportConfigurationValidationException("Skipped account matcher '${matcher.importAccountName}' must not have an accountName.")

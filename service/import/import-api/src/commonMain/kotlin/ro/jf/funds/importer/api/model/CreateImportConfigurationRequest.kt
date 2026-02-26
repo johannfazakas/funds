@@ -3,7 +3,7 @@ package ro.jf.funds.importer.api.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class CreateImportConfigurationRequestTO(
+data class CreateImportConfigurationRequest(
     val name: String,
     val accountMatchers: List<AccountMatcherTO> = emptyList(),
     val fundMatchers: List<FundMatcherTO> = emptyList(),

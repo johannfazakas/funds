@@ -20,6 +20,7 @@ import ro.jf.funds.importer.service.domain.RawImportFile
 import ro.jf.funds.importer.service.domain.exception.MissingImportConfigurationException
 import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.web.mapper.toTO
+import ro.jf.funds.importer.service.web.mapper.toImportMatchers
 import java.util.*
 
 private val log = logger { }
@@ -38,7 +39,8 @@ fun Routing.importApiRouting(
 
             val fileType: ImportFileTypeTO = requestParts.fileTypePart()
             val importConfiguration: ImportConfigurationTO = requestParts.importConfigurationPart()
-            val importTask = importService.startImport(userId, fileType, importConfiguration, importFiles).toTO()
+            val matchers = importConfiguration.toImportMatchers()
+            val importTask = importService.startImport(userId, fileType, matchers, importFiles).toTO()
             val statusCode = when (importTask.status) {
                 ImportTaskTO.Status.FAILED -> HttpStatusCode.BadRequest
                 else -> HttpStatusCode.Accepted
@@ -98,7 +100,7 @@ private fun List<ImportPart>.importConfigurationPart(): ImportConfigurationTO = 
     .singleOrNull { it.name == "configuration" && it.contentType == ContentType.Application.Json }
     ?.content
     ?.let { json -> Json.decodeFromString<ImportConfigurationTO>(json) }
-    ?: throw MissingImportConfigurationException("Missing import configuration")
+    ?: throw MissingImportConfigurationException()
 
 private fun List<ImportPart>.rawFileParts(): List<RawImportFile> = this
     .filter { it.name != null && it.contentType == ContentType.Text.CSV }
