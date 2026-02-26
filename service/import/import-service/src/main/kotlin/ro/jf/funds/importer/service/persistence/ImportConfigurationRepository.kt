@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.json.json
 import ro.jf.funds.importer.api.model.ImportConfigurationSortField
 import ro.jf.funds.importer.service.domain.CreateImportConfigurationCommand
 import ro.jf.funds.importer.service.domain.ImportConfiguration
-import ro.jf.funds.importer.service.domain.ImportConfigurationMatchersTO
+import ro.jf.funds.importer.service.domain.ImportMatchers
 import ro.jf.funds.importer.service.domain.UpdateImportConfigurationCommand
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
@@ -25,7 +25,7 @@ class ImportConfigurationRepository(
     object ImportConfigurationTable : UUIDTable("import_configuration") {
         val userId = uuid("user_id")
         val name = varchar("name", 255)
-        val matchers = json<ImportConfigurationMatchersTO>("matchers", Json.Default)
+        val matchers = json<ImportMatchers>("matchers", Json.Default)
         val createdAt = datetime("created_at")
     }
 

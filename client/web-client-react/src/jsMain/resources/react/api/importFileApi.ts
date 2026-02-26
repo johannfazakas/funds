@@ -2,12 +2,14 @@ import { PageResponse, PaginationParams, SortParams } from './types';
 import { handleApiError } from './apiUtils';
 
 export type ImportFileType = 'WALLET_CSV' | 'FUNDS_FORMAT_CSV';
-export type ImportFileStatus = 'PENDING' | 'UPLOADED';
+export type ImportFileStatus = 'PENDING' | 'UPLOADED' | 'IMPORTING' | 'IMPORTED';
 export type ImportFileSortField = 'FILE_NAME' | 'CREATED_AT';
+export type ImportTaskStatus = 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
 
-export interface ImportFileConfiguration {
-    id: string;
-    name: string;
+export interface ImportTask {
+    taskId: string;
+    status: ImportTaskStatus;
+    reason?: string;
 }
 
 export interface ImportFile {
@@ -15,8 +17,9 @@ export interface ImportFile {
     fileName: string;
     type: ImportFileType;
     status: ImportFileStatus;
-    importConfiguration?: ImportFileConfiguration;
+    importConfigurationId: string;
     createdAt: string;
+    importTask?: ImportTask;
 }
 
 export interface ImportFileFilter {
@@ -98,7 +101,8 @@ export async function listImportFiles(
 export async function createImportFile(
     userId: string,
     fileName: string,
-    type: ImportFileType
+    type: ImportFileType,
+    importConfigurationId: string
 ): Promise<CreateImportFileResponse> {
     const response = await fetch(`${getBaseUrl()}${BASE_PATH}/import-files`, {
         method: 'POST',
@@ -106,7 +110,7 @@ export async function createImportFile(
             'FUNDS_USER_ID': userId,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ fileName, type })
+        body: JSON.stringify({ fileName, type, importConfigurationId })
     });
     if (!response.ok) await handleApiError(response, 'Failed to create import file');
     return response.json();
@@ -124,6 +128,21 @@ export async function confirmUpload(
         }
     );
     if (!response.ok) await handleApiError(response, 'Failed to confirm upload');
+    return response.json();
+}
+
+export async function importFile(
+    userId: string,
+    importFileId: string
+): Promise<ImportFile> {
+    const response = await fetch(
+        `${getBaseUrl()}${BASE_PATH}/import-files/${importFileId}/import`,
+        {
+            method: 'POST',
+            headers: { 'FUNDS_USER_ID': userId }
+        }
+    );
+    if (!response.ok) await handleApiError(response, 'Failed to import file');
     return response.json();
 }
 

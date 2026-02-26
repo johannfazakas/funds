@@ -5,14 +5,9 @@ import kotlinx.serialization.Serializable
 import ro.jf.funds.platform.api.serialization.UuidSerializer
 
 @Serializable
-data class ImportFileTO(
-    @Serializable(with = UuidSerializer::class)
-    val importFileId: Uuid,
+data class CreateImportFileRequest(
     val fileName: String,
     val type: ImportFileTypeTO,
-    val status: ImportFileStatusTO,
     @Serializable(with = UuidSerializer::class)
     val importConfigurationId: Uuid,
-    val createdAt: String,
-    val importTask: ImportTaskTO? = null,
 )

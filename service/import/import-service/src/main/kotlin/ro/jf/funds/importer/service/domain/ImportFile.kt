@@ -6,7 +6,9 @@ import java.util.*
 
 enum class ImportFileStatus {
     PENDING,
-    UPLOADED
+    UPLOADED,
+    IMPORTING,
+    IMPORTED,
 }
 
 data class ImportFile(
@@ -14,12 +16,13 @@ data class ImportFile(
     val userId: UUID,
     val fileName: String,
     val type: ImportFileTypeTO,
-    val s3Key: String,
     val status: ImportFileStatus,
-    val importConfigurationId: UUID? = null,
-    val importConfigurationName: String? = null,
+    val importConfigurationId: UUID,
     val createdAt: LocalDateTime,
-)
+    val importTask: ImportTask? = null,
+) {
+    val s3Key: String get() = "$userId/$fileName"
+}
 
 data class ImportFileFilter(
     val type: ImportFileTypeTO? = null,

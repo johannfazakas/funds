@@ -26,11 +26,9 @@ class ImportFileRepository(
         val userId = uuid("user_id")
         val fileName = varchar("file_name", 255)
         val type = varchar("type", 50)
-        val s3Key = varchar("s3_key", 512)
         val status = varchar("status", 50)
         val importConfigurationId = uuid("import_configuration_id")
             .references(ImportConfigurationRepository.ImportConfigurationTable.id)
-            .nullable()
         val createdAt = datetime("created_at")
     }
 
@@ -40,7 +38,6 @@ class ImportFileRepository(
             it[userId] = command.userId
             it[fileName] = command.fileName
             it[type] = command.type.name
-            it[s3Key] = command.s3Key
             it[status] = ImportFileStatus.PENDING.name
             it[importConfigurationId] = command.importConfigurationId
             it[createdAt] = now
@@ -50,11 +47,19 @@ class ImportFileRepository(
             userId = command.userId,
             fileName = command.fileName,
             type = command.type,
-            s3Key = command.s3Key,
             status = ImportFileStatus.PENDING,
             importConfigurationId = command.importConfigurationId,
             createdAt = now,
         )
+    }
+
+    suspend fun updateStatus(userId: UUID, importFileId: UUID, status: ImportFileStatus): Boolean = blockingTransaction {
+        val updated = ImportFileTable.update({
+            (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)
+        }) {
+            it[ImportFileTable.status] = status.name
+        }
+        updated > 0
     }
 
     suspend fun confirmUpload(userId: UUID, importFileId: UUID): ImportFile? = blockingTransaction {
@@ -69,8 +74,6 @@ class ImportFileRepository(
 
     suspend fun findById(userId: UUID, importFileId: UUID): ImportFile? = blockingTransaction {
         ImportFileTable
-            .join(ImportConfigurationRepository.ImportConfigurationTable, JoinType.LEFT,
-                ImportFileTable.importConfigurationId, ImportConfigurationRepository.ImportConfigurationTable.id)
             .selectAll()
             .where { (ImportFileTable.userId eq userId) and (ImportFileTable.id eq importFileId) }
             .singleOrNull()
@@ -83,17 +86,13 @@ class ImportFileRepository(
         pageRequest: PageRequest? = null,
         sortRequest: SortRequest<ImportFileSortField>? = null,
     ): PagedResult<ImportFile> = blockingTransaction {
-        val baseQuery = ImportFileTable
-            .join(ImportConfigurationRepository.ImportConfigurationTable, JoinType.LEFT,
-                ImportFileTable.importConfigurationId, ImportConfigurationRepository.ImportConfigurationTable.id)
-
-        val total = baseQuery
+        val total = ImportFileTable
             .selectAll()
             .where { ImportFileTable.userId eq userId }
             .applyFiltering(filter)
             .count()
 
-        val items = baseQuery
+        val items = ImportFileTable
             .selectAll()
             .where { ImportFileTable.userId eq userId }
             .applyFiltering(filter)
@@ -120,10 +119,8 @@ class ImportFileRepository(
         userId = this[ImportFileTable.userId],
         fileName = this[ImportFileTable.fileName],
         type = ImportFileTypeTO.valueOf(this[ImportFileTable.type]),
-        s3Key = this[ImportFileTable.s3Key],
         status = ImportFileStatus.valueOf(this[ImportFileTable.status]),
         importConfigurationId = this[ImportFileTable.importConfigurationId],
-        importConfigurationName = this.getOrNull(ImportConfigurationRepository.ImportConfigurationTable.name),
         createdAt = this[ImportFileTable.createdAt],
     )
 

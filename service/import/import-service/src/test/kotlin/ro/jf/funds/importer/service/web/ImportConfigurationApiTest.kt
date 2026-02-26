@@ -22,7 +22,7 @@ import ro.jf.funds.importer.service.config.configureImportRouting
 import ro.jf.funds.importer.service.config.configureImportEventHandling
 import ro.jf.funds.importer.service.config.importDependencyModules
 import ro.jf.funds.importer.service.domain.ImportConfiguration
-import ro.jf.funds.importer.service.domain.ImportConfigurationMatchersTO
+import ro.jf.funds.importer.service.domain.ImportMatchers
 import ro.jf.funds.importer.service.domain.UpdateImportConfigurationCommand
 import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
 import ro.jf.funds.importer.service.persistence.ImportFileRepository
@@ -64,7 +64,7 @@ class ImportConfigurationApiTest {
             val userId = randomUUID()
             val configId = randomUUID()
             val now = LocalDateTime.now()
-            val matchers = ImportConfigurationMatchersTO()
+            val matchers = ImportMatchers()
 
             whenever(
                 importConfigurationService.createImportConfiguration(
@@ -77,7 +77,7 @@ class ImportConfigurationApiTest {
             val response = httpClient.post("/funds-api/import/v1/import-configurations") {
                 header(USER_ID_HEADER, userId.toString())
                 contentType(ContentType.Application.Json)
-                setBody(CreateImportConfigurationRequestTO(name = "My Config"))
+                setBody(CreateImportConfigurationRequest(name = "My Config"))
             }
 
             assertThat(response.status).isEqualTo(HttpStatusCode.Created)
@@ -100,8 +100,8 @@ class ImportConfigurationApiTest {
             ).thenReturn(
                 PagedResult(
                     listOf(
-                        ImportConfiguration(randomUUID(), userId, "Config A", ImportConfigurationMatchersTO(), now),
-                        ImportConfiguration(randomUUID(), userId, "Config B", ImportConfigurationMatchersTO(), now),
+                        ImportConfiguration(randomUUID(), userId, "Config A", ImportMatchers(), now),
+                        ImportConfiguration(randomUUID(), userId, "Config B", ImportMatchers(), now),
                     ),
                     2L
                 )
@@ -150,7 +150,7 @@ class ImportConfigurationApiTest {
         val now = LocalDateTime.now()
 
         whenever(importConfigurationService.getImportConfiguration(eq(userId), eq(configId)))
-            .thenReturn(ImportConfiguration(configId, userId, "My Config", ImportConfigurationMatchersTO(), now))
+            .thenReturn(ImportConfiguration(configId, userId, "My Config", ImportMatchers(), now))
 
         val response = httpClient.get("/funds-api/import/v1/import-configurations/$configId") {
             header(USER_ID_HEADER, userId.toString())
@@ -195,13 +195,13 @@ class ImportConfigurationApiTest {
                     eq(userId), eq(configId), any()
                 )
             ).thenReturn(
-                ImportConfiguration(configId, userId, "Updated Config", ImportConfigurationMatchersTO(), now)
+                ImportConfiguration(configId, userId, "Updated Config", ImportMatchers(), now)
             )
 
             val response = httpClient.put("/funds-api/import/v1/import-configurations/$configId") {
                 header(USER_ID_HEADER, userId.toString())
                 contentType(ContentType.Application.Json)
-                setBody(UpdateImportConfigurationRequestTO(name = "Updated Config"))
+                setBody(UpdateImportConfigurationRequest(name = "Updated Config"))
             }
 
             assertThat(response.status).isEqualTo(HttpStatusCode.OK)
@@ -224,7 +224,7 @@ class ImportConfigurationApiTest {
         val response = httpClient.put("/funds-api/import/v1/import-configurations/$configId") {
             header(USER_ID_HEADER, userId.toString())
             contentType(ContentType.Application.Json)
-            setBody(UpdateImportConfigurationRequestTO(name = "Updated Config"))
+            setBody(UpdateImportConfigurationRequest(name = "Updated Config"))
         }
 
         assertThat(response.status).isEqualTo(HttpStatusCode.NotFound)

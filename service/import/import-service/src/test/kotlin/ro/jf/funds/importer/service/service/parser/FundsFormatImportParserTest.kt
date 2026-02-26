@@ -8,15 +8,14 @@ import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.platform.api.model.Instrument
 import ro.jf.funds.fund.api.model.FundName
-import com.benasher44.uuid.uuid4
-import ro.jf.funds.importer.api.model.*
+import ro.jf.funds.importer.service.domain.*
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 
 class FundsFormatImportParserTest {
     private val fundsFormatImportParser = FundsFormatImportParser(CsvParser())
 
     @Test
-    fun `should parse investment transactions`() {
+    fun `given investment transactions - when parsing - then should return parsed transactions`() {
         val fileContent = generateFileContent(
             FundsFormatCsvRowContent(
                 "2022-04-04", "BT EUR", "-2970.0", "RON", "currency", "transfer XTB 600 EUR", "investment"
@@ -31,26 +30,23 @@ class FundsFormatImportParserTest {
                 "2022-04-05", "XTB EUNL", "7", "EUNL", "instrument", "buy 7 x EUNL", ""
             ),
         )
-        val importConfiguration = ImportConfigurationTO(
-            importConfigurationId = uuid4(),
-            name = "test-config",
+        val matchers = ImportMatchers(
             accountMatchers = listOf(
-                AccountMatcherTO("BT EUR", AccountName("BT EUR")),
-                AccountMatcherTO("XTB EUR", AccountName("XTB EUR")),
-                AccountMatcherTO("XTB EUNL", AccountName("XTB EUNL")),
+                AccountMatcher("BT EUR", AccountName("BT EUR")),
+                AccountMatcher("XTB EUR", AccountName("XTB EUR")),
+                AccountMatcher("XTB EUNL", AccountName("XTB EUNL")),
             ),
             fundMatchers = listOf(
-                FundMatcherTO(FundName("Expenses"), importAccountName = "BT EUR"),
-                FundMatcherTO(FundName("Investments"), importAccountName = "XTB EUR"),
-                FundMatcherTO(FundName("Investments"), importAccountName = "XTB EUNL"),
+                FundMatcher(FundName("Expenses"), importAccountName = "BT EUR"),
+                FundMatcher(FundName("Investments"), importAccountName = "XTB EUR"),
+                FundMatcher(FundName("Investments"), importAccountName = "XTB EUNL"),
             ),
             labelMatchers = listOf(
-                LabelMatcherTO(listOf("investment"), Label("investment")),
+                LabelMatcher(listOf("investment"), Label("investment")),
             ),
-            createdAt = LocalDateTime.parse("2026-01-01T00:00:00"),
         )
 
-        val importTransactions = fundsFormatImportParser.parse(importConfiguration, listOf(fileContent))
+        val importTransactions = fundsFormatImportParser.parse(matchers, listOf(fileContent))
 
         assertThat(importTransactions).hasSize(2)
         val transfer = importTransactions[0]

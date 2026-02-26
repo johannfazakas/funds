@@ -1,19 +1,16 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
     ImportFile,
     ImportFileType,
     ImportFileStatus,
     ImportFileSortField,
     listImportFiles,
-    createImportFile,
-    confirmUpload,
     getDownloadUrl,
     deleteImportFile,
+    importFile,
 } from '../api/importFileApi';
 import { SortOrder } from '../api/types';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
 import { Card } from '../components/ui/card';
 import {
     Table,
@@ -39,9 +36,10 @@ import {
     SelectValue,
 } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
-import { Loader2, Download, Trash2 } from 'lucide-react';
+import { Loader2, Download, Trash2, Play } from 'lucide-react';
 import { Pagination } from '../components/Pagination';
 import { SortableTableHead } from '../components/SortableTableHead';
+import { UploadImportFileModal } from '../components/UploadImportFileModal';
 
 interface ImportsPageProps {
     userId: string;
@@ -64,15 +62,11 @@ function ImportsPage({ userId }: ImportsPageProps) {
     const [filterStatus, setFilterStatus] = useState<string>('');
 
     const [showUploadModal, setShowUploadModal] = useState(false);
-    const [fileType, setFileType] = useState<ImportFileType>('WALLET_CSV');
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-    const [uploading, setUploading] = useState(false);
-    const [uploadError, setUploadError] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [fileToDelete, setFileToDelete] = useState<ImportFile | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [importingFileId, setImportingFileId] = useState<string | null>(null);
 
     const loadImportFiles = useCallback(async () => {
         setLoading(true);
@@ -131,50 +125,6 @@ function ImportsPage({ userId }: ImportsPageProps) {
 
     const hasActiveFilters = filterType || filterStatus;
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            setSelectedFiles(Array.from(e.target.files));
-        }
-    };
-
-    const openUploadModal = () => {
-        setFileType('WALLET_CSV');
-        setSelectedFiles([]);
-        setUploadError(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-        setShowUploadModal(true);
-    };
-
-    const handleUpload = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (selectedFiles.length === 0) {
-            setUploadError('Please select at least one file');
-            return;
-        }
-
-        setUploading(true);
-        setUploadError(null);
-
-        try {
-            for (const file of selectedFiles) {
-                const createResponse = await createImportFile(userId, file.name, fileType);
-                await fetch(createResponse.uploadUrl, {
-                    method: 'PUT',
-                    body: file,
-                });
-                await confirmUpload(userId, createResponse.importFileId);
-            }
-            setShowUploadModal(false);
-            await loadImportFiles();
-        } catch (err) {
-            setUploadError(err instanceof Error ? err.message : 'Failed to upload files');
-        } finally {
-            setUploading(false);
-        }
-    };
-
     const handleDelete = async () => {
         if (!fileToDelete) return;
         setDeleting(true);
@@ -199,6 +149,19 @@ function ImportsPage({ userId }: ImportsPageProps) {
         }
     };
 
+    const handleImport = async (file: ImportFile) => {
+        setImportingFileId(file.importFileId);
+        setError(null);
+        try {
+            await importFile(userId, file.importFileId);
+            await loadImportFiles();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to import file');
+        } finally {
+            setImportingFileId(null);
+        }
+    };
+
     const formatDateTime = (dateTime: string) => {
         const date = new Date(dateTime);
         if (isNaN(date.getTime())) return dateTime;
@@ -215,7 +178,7 @@ function ImportsPage({ userId }: ImportsPageProps) {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Imports</h1>
-                <Button onClick={openUploadModal}>Upload Files</Button>
+                <Button onClick={() => setShowUploadModal(true)}>Upload Files</Button>
             </div>
 
             <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -243,6 +206,8 @@ function ImportsPage({ userId }: ImportsPageProps) {
                         <SelectItem value="all">All statuses</SelectItem>
                         <SelectItem value="PENDING">Pending</SelectItem>
                         <SelectItem value="UPLOADED">Uploaded</SelectItem>
+                        <SelectItem value="IMPORTING">Importing</SelectItem>
+                        <SelectItem value="IMPORTED">Imported</SelectItem>
                     </SelectContent>
                 </Select>
                 {hasActiveFilters && (
@@ -311,13 +276,22 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge className={
-                                            file.status === 'UPLOADED'
-                                                ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800'
-                                                : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-800'
-                                        }>
-                                            {file.status === 'UPLOADED' ? 'Uploaded' : 'Pending'}
-                                        </Badge>
+                                        <div className="flex flex-col gap-1">
+                                            <Badge className={
+                                                file.status === 'IMPORTED'
+                                                    ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800'
+                                                    : file.status === 'IMPORTING'
+                                                        ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-800'
+                                                        : file.status === 'UPLOADED'
+                                                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800'
+                                                            : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-800'
+                                            }>
+                                                {file.status === 'IMPORTED' ? 'Imported' : file.status === 'IMPORTING' ? 'Importing' : file.status === 'UPLOADED' ? 'Uploaded' : 'Pending'}
+                                            </Badge>
+                                            {file.importTask?.status === 'FAILED' && file.importTask.reason && (
+                                                <span className="text-xs text-destructive">{file.importTask.reason}</span>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {formatDateTime(file.createdAt)}
@@ -325,6 +299,20 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
                                             {file.status === 'UPLOADED' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleImport(file)}
+                                                    disabled={importingFileId === file.importFileId}
+                                                >
+                                                    {importingFileId === file.importFileId ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <Play className="h-4 w-4" />
+                                                    )}
+                                                </Button>
+                                            )}
+                                            {(file.status === 'UPLOADED' || file.status === 'PENDING') && (
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -357,70 +345,12 @@ function ImportsPage({ userId }: ImportsPageProps) {
                 </Card>
             )}
 
-            <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Upload Import File</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleUpload}>
-                        <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="file">Files</Label>
-                                <Input
-                                    id="file"
-                                    type="file"
-                                    multiple
-                                    ref={fileInputRef}
-                                    onChange={handleFileSelect}
-                                    disabled={uploading}
-                                    accept=".csv"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="fileType">Type</Label>
-                                <Select
-                                    value={fileType}
-                                    onValueChange={(value) => setFileType(value as ImportFileType)}
-                                    disabled={uploading}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="WALLET_CSV">Wallet CSV</SelectItem>
-                                        <SelectItem value="FUNDS_FORMAT_CSV">Funds Format CSV</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            {uploadError && (
-                                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
-                                    {uploadError}
-                                </div>
-                            )}
-                        </div>
-                        <DialogFooter>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setShowUploadModal(false)}
-                                disabled={uploading}
-                            >
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={uploading || selectedFiles.length === 0}>
-                                {uploading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Uploading...
-                                    </>
-                                ) : (
-                                    'Upload'
-                                )}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+            <UploadImportFileModal
+                userId={userId}
+                open={showUploadModal}
+                onOpenChange={setShowUploadModal}
+                onUploaded={loadImportFiles}
+            />
 
             <Dialog open={!!fileToDelete} onOpenChange={(open) => !open && !deleting && setFileToDelete(null)}>
                 <DialogContent>
