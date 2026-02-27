@@ -2,14 +2,12 @@ import { PageResponse, PaginationParams, SortParams } from './types';
 import { handleApiError } from './apiUtils';
 
 export type ImportFileType = 'WALLET_CSV' | 'FUNDS_FORMAT_CSV';
-export type ImportFileStatus = 'PENDING' | 'UPLOADED' | 'IMPORTING' | 'IMPORTED';
+export type ImportFileStatus = 'PENDING' | 'UPLOADED' | 'IMPORTING' | 'IMPORTED' | 'IMPORT_FAILED';
 export type ImportFileSortField = 'FILE_NAME' | 'CREATED_AT';
-export type ImportTaskStatus = 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
 
-export interface ImportTask {
-    taskId: string;
-    status: ImportTaskStatus;
-    reason?: string;
+export interface ImportFileError {
+    title: string;
+    detail?: string;
 }
 
 export interface ImportFile {
@@ -19,7 +17,7 @@ export interface ImportFile {
     status: ImportFileStatus;
     importConfigurationId: string;
     createdAt: string;
-    importTask?: ImportTask;
+    errors?: ImportFileError[];
 }
 
 export interface ImportFileFilter {

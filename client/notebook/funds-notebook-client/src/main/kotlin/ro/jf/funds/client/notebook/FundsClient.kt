@@ -32,9 +32,7 @@ import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.LabelSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
-import ro.jf.funds.importer.api.model.ImportConfigurationTO
-import ro.jf.funds.importer.api.model.ImportFileTypeTO
-import ro.jf.funds.importer.api.model.ImportTaskTO
+import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.sdk.ImportSdk
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.sdk.ReportingSdk
@@ -125,17 +123,38 @@ class FundsClient(
     fun importTransactions(
         user: UserTO,
         fileType: ImportFileTypeTO,
-        importConfiguration: ImportConfigurationTO,
+        configurationRequest: CreateImportConfigurationRequest,
         csvFiles: List<File>,
-    ): ImportTaskTO = run {
-        var importTask = importSdk.import(user.id, fileType, importConfiguration, csvFiles)
-        val now: Instant = Clock.System.now()
-        val timeout = 120.seconds
-        while (importTask.status == ImportTaskTO.Status.IN_PROGRESS && Clock.System.now() - now < timeout) {
-            delay(500)
-            importTask = importSdk.getImportTask(user.id, importTask.taskId)
+    ): List<ImportFileTO> = run {
+        val existingConfigurations = importSdk.listImportConfigurations(user.id)
+        val configuration = existingConfigurations.items.firstOrNull { it.name == configurationRequest.name }
+            ?: importSdk.createImportConfiguration(user.id, configurationRequest)
+
+        val importFiles = csvFiles.map { csvFile ->
+            val createResponse = importSdk.createImportFile(
+                user.id,
+                CreateImportFileRequest(
+                    fileName = csvFile.name,
+                    type = fileType,
+                    importConfigurationId = configuration.importConfigurationId,
+                )
+            )
+            importSdk.uploadFile(createResponse.uploadUrl, csvFile.readBytes())
+            importSdk.confirmUpload(user.id, createResponse.importFileId)
+            importSdk.importFile(user.id, createResponse.importFileId)
+            createResponse.importFileId
         }
-        importTask
+
+        val timeout = 120.seconds
+        val now: Instant = Clock.System.now()
+        importFiles.map { importFileId ->
+            var importFile = importSdk.getImportFile(user.id, importFileId)
+            while (importFile.status == ImportFileStatusTO.IMPORTING && Clock.System.now() - now < timeout) {
+                delay(500)
+                importFile = importSdk.getImportFile(user.id, importFileId)
+            }
+            importFile
+        }
     }
 
     fun createReportView(

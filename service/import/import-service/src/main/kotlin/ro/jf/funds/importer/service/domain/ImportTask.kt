@@ -5,6 +5,7 @@ import java.util.*
 data class ImportTask(
     val taskId: UUID,
     val userId: UUID,
+    val importFileId: UUID? = null,
     val parts: List<ImportTaskPart>,
 ) {
     fun findPartByName(name: String): ImportTaskPart? =

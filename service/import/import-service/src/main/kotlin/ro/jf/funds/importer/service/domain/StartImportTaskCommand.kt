@@ -5,6 +5,7 @@ import java.util.*
 data class StartImportTaskCommand(
     val userId: UUID,
     val partNames: List<String>,
+    val importFileId: UUID? = null,
 ) {
     init {
         require(partNames.isNotEmpty()) { "At least one part name must be provided." }

@@ -208,6 +208,7 @@ function ImportsPage({ userId }: ImportsPageProps) {
                         <SelectItem value="UPLOADED">Uploaded</SelectItem>
                         <SelectItem value="IMPORTING">Importing</SelectItem>
                         <SelectItem value="IMPORTED">Imported</SelectItem>
+                        <SelectItem value="IMPORT_FAILED">Failed</SelectItem>
                     </SelectContent>
                 </Select>
                 {hasActiveFilters && (
@@ -277,19 +278,21 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-1">
-                                            <Badge className={
+                                            <Badge className={`w-fit ${
                                                 file.status === 'IMPORTED'
                                                     ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800'
                                                     : file.status === 'IMPORTING'
                                                         ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-800'
-                                                        : file.status === 'UPLOADED'
-                                                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800'
-                                                            : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-800'
-                                            }>
-                                                {file.status === 'IMPORTED' ? 'Imported' : file.status === 'IMPORTING' ? 'Importing' : file.status === 'UPLOADED' ? 'Uploaded' : 'Pending'}
+                                                        : file.status === 'IMPORT_FAILED'
+                                                            ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-800'
+                                                            : file.status === 'UPLOADED'
+                                                                ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800'
+                                                                : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-800'
+                                            }`}>
+                                                {file.status === 'IMPORTED' ? 'Imported' : file.status === 'IMPORTING' ? 'Importing' : file.status === 'IMPORT_FAILED' ? 'Failed' : file.status === 'UPLOADED' ? 'Uploaded' : 'Pending'}
                                             </Badge>
-                                            {file.importTask?.status === 'FAILED' && file.importTask.reason && (
-                                                <span className="text-xs text-destructive">{file.importTask.reason}</span>
+                                            {file.status === 'IMPORT_FAILED' && file.errors && file.errors.length > 0 && (
+                                                <span className="text-xs text-destructive">{file.errors.map(e => e.detail || e.title).join(', ')}</span>
                                             )}
                                         </div>
                                     </TableCell>
@@ -312,7 +315,7 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                                     )}
                                                 </Button>
                                             )}
-                                            {(file.status === 'UPLOADED' || file.status === 'PENDING') && (
+                                            {file.status !== 'PENDING' && (
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"

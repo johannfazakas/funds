@@ -14,6 +14,8 @@ import org.koin.dsl.module
 import ro.jf.funds.conversion.sdk.ConversionSdk
 import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
+import ro.jf.funds.importer.api.event.ImportEvents
+import ro.jf.funds.importer.api.model.ImportFileCommandTO
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.LabelSdk
@@ -27,6 +29,7 @@ import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.service.conversion.*
 import ro.jf.funds.importer.service.service.conversion.strategy.*
 import ro.jf.funds.importer.service.service.event.CreateFundTransactionsResponseHandler
+import ro.jf.funds.importer.service.service.event.ImportFileCommandHandler
 import ro.jf.funds.importer.service.service.parser.CsvParser
 import ro.jf.funds.importer.service.service.parser.FundsFormatImportParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
@@ -51,7 +54,10 @@ private const val S3_SECRET_KEY_PROPERTY = "s3.secret-key"
 private const val S3_PUBLIC_ENDPOINT_PROPERTY = "s3.public-endpoint"
 private const val S3_PRESIGNED_URL_EXPIRATION_PROPERTY = "s3.presigned-url-expiration"
 
+val CREATE_FUND_TRANSACTIONS_REQUEST_PRODUCER = StringQualifier("CreateFundTransactionsRequestProducer")
+val IMPORT_FILE_COMMAND_PRODUCER = StringQualifier("ImportFileCommandProducer")
 val CREATE_FUND_TRANSACTIONS_RESPONSE_CONSUMER = StringQualifier("CreateFundTransactionsResponse")
+val IMPORT_FILE_COMMAND_CONSUMER = StringQualifier("ImportFileCommand")
 
 val Application.importDependencyModules
     get() = arrayOf(
@@ -109,8 +115,11 @@ private val Application.importEventProducerDependencies
     get() = module {
         single<TopicSupplier> { TopicSupplier(environment.getEnvironmentProperty()) }
         single<ProducerProperties> { ProducerProperties.fromEnv(environment) }
-        single<Producer<CreateTransactionsTO>> {
+        single<Producer<CreateTransactionsTO>>(CREATE_FUND_TRANSACTIONS_REQUEST_PRODUCER) {
             createProducer(get(), get<TopicSupplier>().topic(FundEvents.FundTransactionsBatchRequest))
+        }
+        single<Producer<ImportFileCommandTO>>(IMPORT_FILE_COMMAND_PRODUCER) {
+            createProducer(get(), get<TopicSupplier>().topic(ImportEvents.ImportFileCommand))
         }
     }
 
@@ -138,10 +147,11 @@ private val Application.importServiceDependencies
                 presignedUrlExpiration = Duration.parse(environment.getStringProperty(S3_PRESIGNED_URL_EXPIRATION_PROPERTY)),
             )
         }
-        single<ImportFileService> { ImportFileService(get(), get(), get(), get(), get()) }
-        single<ImportService> { ImportService(get(), get(), get(), get()) }
+        single<ImportFileService> { ImportFileService(get(), get(IMPORT_FILE_COMMAND_PRODUCER), get(), get()) }
+        single<ImportService> { ImportService(get(), get(), get(), get(CREATE_FUND_TRANSACTIONS_REQUEST_PRODUCER)) }
+        single<ImportFileCommandHandler> { ImportFileCommandHandler(get(), get(), get(), get(), get()) }
         single<CreateFundTransactionsResponseHandler> {
-            CreateFundTransactionsResponseHandler(get())
+            CreateFundTransactionsResponseHandler(get(), get(), get())
         }
     }
 
@@ -155,6 +165,13 @@ private val Application.importEventConsumerDependencies
                 get(),
                 get<TopicSupplier>().topic(FundEvents.FundTransactionsBatchResponse),
                 get<CreateFundTransactionsResponseHandler>()
+            )
+        }
+        single<Consumer<ImportFileCommandTO>>(IMPORT_FILE_COMMAND_CONSUMER) {
+            createConsumer(
+                get(),
+                get<TopicSupplier>().topic(ImportEvents.ImportFileCommand),
+                get<ImportFileCommandHandler>()
             )
         }
     }

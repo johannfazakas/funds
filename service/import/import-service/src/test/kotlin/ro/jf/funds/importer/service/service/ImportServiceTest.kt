@@ -50,7 +50,7 @@ class ImportServiceTest {
         val createdImportTask = ImportTask(
             importTaskId,
             userId,
-            importFiles.map { ImportTaskPart(randomUUID(), it.name, ImportTaskPartStatus.IN_PROGRESS) })
+            parts = importFiles.map { ImportTaskPart(randomUUID(), it.name, ImportTaskPartStatus.IN_PROGRESS) })
         whenever(importTaskRepository.startImportTask(StartImportTaskCommand(userId, importFiles.map { it.name })))
             .thenReturn(createdImportTask)
         val fundTransactions1 = mock<CreateTransactionsTO>()
@@ -89,7 +89,7 @@ class ImportServiceTest {
         val createdImportTask = ImportTask(
             importTaskId,
             userId,
-            importFiles.map { ImportTaskPart(randomUUID(), it.name, ImportTaskPartStatus.IN_PROGRESS) }
+            parts = importFiles.map { ImportTaskPart(randomUUID(), it.name, ImportTaskPartStatus.IN_PROGRESS) }
         )
         whenever(importTaskRepository.startImportTask(StartImportTaskCommand(userId, importFiles.map { it.name })))
             .thenReturn(createdImportTask)

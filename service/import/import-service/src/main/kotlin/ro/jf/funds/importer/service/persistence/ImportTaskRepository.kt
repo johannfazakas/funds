@@ -11,6 +11,9 @@ class ImportTaskRepository(
 ) {
     object ImportTaskTable : UUIDTable("import_task") {
         val userId = uuid("user_id")
+        val importFileId = uuid("import_file_id")
+            .references(ImportFileRepository.ImportFileTable.id)
+            .nullable()
     }
 
     object ImportTaskPartTable : UUIDTable("import_task_part") {
@@ -38,6 +41,7 @@ class ImportTaskRepository(
     suspend fun startImportTask(command: StartImportTaskCommand): ImportTask = blockingTransaction {
         val task = ImportTaskTable.insert {
             it[ImportTaskTable.userId] = command.userId
+            it[ImportTaskTable.importFileId] = command.importFileId
         }
         val taskId = task[ImportTaskTable.id].value
         val taskParts = ImportTaskPartTable
@@ -60,6 +64,21 @@ class ImportTaskRepository(
         )
     }
 
+    suspend fun findImportTaskByPartId(taskPartId: UUID): ImportTask? = blockingTransaction {
+        val taskId = ImportTaskPartTable
+            .selectAll()
+            .where { ImportTaskPartTable.id eq taskPartId }
+            .singleOrNull()
+            ?.get(ImportTaskPartTable.taskId)
+            ?.value
+            ?: return@blockingTransaction null
+        (ImportTaskTable leftJoin ImportTaskPartTable)
+            .selectAll()
+            .where { ImportTaskTable.id eq taskId }
+            .toImportTasks()
+            .singleOrNull()
+    }
+
     suspend fun updateTaskPart(command: UpdateImportTaskPartCommand) = blockingTransaction {
         ImportTaskPartTable.update({ ImportTaskPartTable.id eq command.taskPartId }) {
             it[status] = command.status.name
@@ -78,6 +97,7 @@ class ImportTaskRepository(
     private fun List<ResultRow>.toImportTask() = ImportTask(
         taskId = this.first()[ImportTaskTable.id].value,
         userId = this.first()[ImportTaskTable.userId],
+        importFileId = this.first()[ImportTaskTable.importFileId],
         parts = this.map { row ->
             ImportTaskPart(
                 taskPartId = row[ImportTaskPartTable.id].value,

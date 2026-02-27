@@ -1,9 +1,11 @@
 package ro.jf.funds.importer.service.persistence
 
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.javatime.datetime
+import org.jetbrains.exposed.sql.json.json
 import ro.jf.funds.importer.api.model.ImportFileSortField
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import ro.jf.funds.importer.service.domain.CreateImportFileCommand
@@ -12,6 +14,7 @@ import ro.jf.funds.importer.service.domain.ImportFileFilter
 import ro.jf.funds.importer.service.domain.ImportFileStatus
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
+import ro.jf.funds.platform.jvm.error.ErrorTO
 import ro.jf.funds.platform.jvm.persistence.PagedResult
 import ro.jf.funds.platform.jvm.persistence.applyFilterIfPresent
 import ro.jf.funds.platform.jvm.persistence.blockingTransaction
@@ -30,6 +33,7 @@ class ImportFileRepository(
         val importConfigurationId = uuid("import_configuration_id")
             .references(ImportConfigurationRepository.ImportConfigurationTable.id)
         val createdAt = datetime("created_at")
+        val errors = json<List<ErrorTO>>("errors", Json.Default).nullable()
     }
 
     suspend fun create(command: CreateImportFileCommand): ImportFile = blockingTransaction {
@@ -58,6 +62,21 @@ class ImportFileRepository(
             (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)
         }) {
             it[ImportFileTable.status] = status.name
+        }
+        updated > 0
+    }
+
+    suspend fun updateStatusWithErrors(
+        userId: UUID,
+        importFileId: UUID,
+        status: ImportFileStatus,
+        errors: List<ErrorTO>,
+    ): Boolean = blockingTransaction {
+        val updated = ImportFileTable.update({
+            (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)
+        }) {
+            it[ImportFileTable.status] = status.name
+            it[ImportFileTable.errors] = errors
         }
         updated > 0
     }
@@ -122,6 +141,7 @@ class ImportFileRepository(
         status = ImportFileStatus.valueOf(this[ImportFileTable.status]),
         importConfigurationId = this[ImportFileTable.importConfigurationId],
         createdAt = this[ImportFileTable.createdAt],
+        errors = this[ImportFileTable.errors] ?: emptyList(),
     )
 
     private fun Query.applyFiltering(filter: ImportFileFilter?): Query {

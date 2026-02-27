@@ -1,36 +1,35 @@
 package ro.jf.funds.importer.service.service
 
 import aws.sdk.kotlin.services.s3.S3Client
+import aws.sdk.kotlin.services.s3.model.DeleteObjectRequest
 import aws.sdk.kotlin.services.s3.model.GetObjectRequest
-import aws.smithy.kotlin.runtime.content.toByteArray
 import aws.sdk.kotlin.services.s3.model.HeadObjectRequest
 import aws.sdk.kotlin.services.s3.model.NoSuchKey
 import aws.sdk.kotlin.services.s3.model.NotFound
-import aws.sdk.kotlin.services.s3.model.DeleteObjectRequest
 import aws.sdk.kotlin.services.s3.model.PutObjectRequest
 import aws.sdk.kotlin.services.s3.presigners.presignGetObject
 import aws.sdk.kotlin.services.s3.presigners.presignPutObject
+import ro.jf.funds.importer.api.model.ImportFileCommandTO
 import ro.jf.funds.importer.api.model.ImportFileSortField
+import ro.jf.funds.importer.service.config.S3Configuration
 import ro.jf.funds.importer.service.domain.CreateImportFileCommand
 import ro.jf.funds.importer.service.domain.CreateImportFileResponse
 import ro.jf.funds.importer.service.domain.ImportFile
 import ro.jf.funds.importer.service.domain.ImportFileFilter
 import ro.jf.funds.importer.service.domain.ImportFileStatus
-import ro.jf.funds.importer.service.domain.RawImportFile
-import ro.jf.funds.importer.service.config.S3Configuration
-import ro.jf.funds.importer.service.domain.exception.ImportConfigurationNotFoundException
 import ro.jf.funds.importer.service.domain.exception.ImportFileNotFoundException
-import ro.jf.funds.importer.service.domain.exception.ImportFileNotUploadedException
+import ro.jf.funds.importer.service.domain.exception.ImportFileStatusConflictException
 import ro.jf.funds.importer.service.persistence.ImportFileRepository
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
+import ro.jf.funds.platform.jvm.event.Event
+import ro.jf.funds.platform.jvm.event.Producer
 import ro.jf.funds.platform.jvm.persistence.PagedResult
 import java.util.*
 
 class ImportFileService(
     private val importFileRepository: ImportFileRepository,
-    private val importConfigurationService: ImportConfigurationService,
-    private val importService: ImportService,
+    private val importFileCommandProducer: Producer<ImportFileCommandTO>,
     private val s3Client: S3Client,
     private val s3Configuration: S3Configuration,
 ) {
@@ -44,7 +43,7 @@ class ImportFileService(
         val existing = importFileRepository.findById(userId, importFileId)
             ?: throw ImportFileNotFoundException(importFileId)
         if (!exists(existing.s3Key))
-            throw ImportFileNotUploadedException(importFileId)
+            throw ImportFileStatusConflictException(importFileId)
         return importFileRepository.confirmUpload(userId, importFileId)
             ?: throw ImportFileNotFoundException(importFileId)
     }
@@ -71,31 +70,20 @@ class ImportFileService(
     suspend fun importFile(userId: UUID, importFileId: UUID): ImportFile {
         val importFile = importFileRepository.findById(userId, importFileId)
             ?: throw ImportFileNotFoundException(importFileId)
-        val content = getFileContent(importFile)
-        val configuration = importConfigurationService.getImportConfiguration(userId, importFile.importConfigurationId)
-            ?: throw ImportConfigurationNotFoundException(importFile.importConfigurationId)
+        if (importFile.status != ImportFileStatus.UPLOADED) {
+            throw ImportFileStatusConflictException(importFileId)
+        }
         importFileRepository.updateStatus(userId, importFileId, ImportFileStatus.IMPORTING)
-        val importTask = importService.startImport(
-            userId,
-            importFile.type,
-            configuration.matchers,
-            listOf(RawImportFile(importFile.fileName, content)),
+        val command = ImportFileCommandTO(
+            importFileId = com.benasher44.uuid.Uuid.fromString(importFileId.toString()),
         )
-        return importFile.copy(status = ImportFileStatus.IMPORTING, importTask = importTask)
+        importFileCommandProducer.send(Event(userId, command))
+        return importFile.copy(status = ImportFileStatus.IMPORTING)
     }
 
     suspend fun generateDownloadUrl(userId: UUID, importFileId: UUID): String? {
         val importFile = importFileRepository.findById(userId, importFileId) ?: return null
         return generateDownloadUrl(importFile.s3Key)
-    }
-
-    private suspend fun getFileContent(importFile: ImportFile): String {
-        return s3Client.getObject(GetObjectRequest {
-            this.bucket = s3Configuration.bucket
-            this.key = importFile.s3Key
-        }) { response ->
-            response.body?.toByteArray()?.decodeToString() ?: ""
-        }
     }
 
     private suspend fun generateUploadUrl(s3Key: String): String {
