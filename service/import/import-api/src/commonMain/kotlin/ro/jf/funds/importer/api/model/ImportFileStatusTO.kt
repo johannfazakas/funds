@@ -8,4 +8,5 @@ enum class ImportFileStatusTO {
     UPLOADED,
     IMPORTING,
     IMPORTED,
+    IMPORT_FAILED,
 }

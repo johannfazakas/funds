@@ -14,5 +14,5 @@ data class ImportFileTO(
     @Serializable(with = UuidSerializer::class)
     val importConfigurationId: Uuid,
     val createdAt: String,
-    val importTask: ImportTaskTO? = null,
+    val errors: List<ImportFileErrorTO> = emptyList(),
 )

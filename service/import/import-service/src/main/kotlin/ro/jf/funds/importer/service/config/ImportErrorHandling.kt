@@ -36,7 +36,7 @@ fun ImportServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is MissingImportConfigurationException -> HttpStatusCode.BadRequest
     is ImportConfigurationValidationException -> HttpStatusCode.BadRequest
     is ImportFileNotFoundException -> HttpStatusCode.NotFound
-    is ImportFileNotUploadedException -> HttpStatusCode.Conflict
+    is ImportFileStatusConflictException -> HttpStatusCode.Conflict
     is ImportConfigurationNotFoundException -> HttpStatusCode.NotFound
 }
 
@@ -61,9 +61,9 @@ fun ImportServiceException.toError(): ErrorTO = when (this) {
         title = "Import file not found",
         detail = "Import file $importFileId not found",
     )
-    is ImportFileNotUploadedException -> ErrorTO(
-        title = "Import file not uploaded",
-        detail = "Import file $importFileId has not been uploaded to storage",
+    is ImportFileStatusConflictException -> ErrorTO(
+        title = "Import file status conflict",
+        detail = "Import file $importFileId is not in the expected status",
     )
     is ImportConfigurationNotFoundException -> ErrorTO(
         title = "Import configuration not found",

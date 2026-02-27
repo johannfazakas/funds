@@ -33,11 +33,12 @@ class ImportService(
         fileType: ImportFileTypeTO,
         matchers: ImportMatchers,
         files: List<RawImportFile>,
+        importFileId: UUID? = null,
     ): ImportTask =
         withSuspendingSpan {
             log.info { "Importing files >> user = $userId matchers = $matchers files count = ${files.size}." }
             val importTask =
-                importTaskRepository.startImportTask(StartImportTaskCommand(userId, files.map { it.name }))
+                importTaskRepository.startImportTask(StartImportTaskCommand(userId, files.map { it.name }, importFileId))
             try {
                 coroutineScope {
                     files

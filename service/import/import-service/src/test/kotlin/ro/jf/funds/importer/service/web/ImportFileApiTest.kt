@@ -24,16 +24,12 @@ import ro.jf.funds.importer.service.config.importDependencyModules
 import ro.jf.funds.importer.service.domain.CreateImportFileCommand
 import ro.jf.funds.importer.service.domain.ImportFile
 import ro.jf.funds.importer.service.domain.ImportFileStatus
-import ro.jf.funds.importer.service.domain.ImportTask
-import ro.jf.funds.importer.service.domain.ImportTaskPart
-import ro.jf.funds.importer.service.domain.ImportTaskPartStatus
 import ro.jf.funds.importer.service.domain.exception.ImportFileNotFoundException
 import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
 import ro.jf.funds.importer.service.persistence.ImportFileRepository
 import ro.jf.funds.importer.service.domain.CreateImportFileResponse
 import ro.jf.funds.importer.service.service.ImportConfigurationService
 import ro.jf.funds.importer.service.service.ImportFileService
-import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.platform.jvm.config.configureContentNegotiation
 import ro.jf.funds.platform.jvm.config.configureDatabaseMigration
 import ro.jf.funds.platform.jvm.config.configureDependencies
@@ -60,8 +56,6 @@ class ImportFileApiTest {
     private val labelSdk: LabelSdk = mock()
     private val conversionSdk: ConversionSdk = mock()
     private val transactionSdk: TransactionSdk = mock()
-    private val importService: ImportService = mock()
-
     @Test
     fun `given file name and configuration - when creating import file - then should return import file with upload url`() =
         testApplication {
@@ -318,10 +312,8 @@ class ImportFileApiTest {
             val userId = randomUUID()
             val importFileId = randomUUID()
             val configurationId = randomUUID()
-            val importTaskId = randomUUID()
-            val importTask = ImportTask(importTaskId, userId, listOf(ImportTaskPart(randomUUID(), "test.csv", ImportTaskPartStatus.IN_PROGRESS)))
             whenever(importFileService.importFile(eq(userId), eq(importFileId)))
-                .thenReturn(ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.IMPORTING, configurationId, LocalDateTime.now(), importTask))
+                .thenReturn(ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.IMPORTING, configurationId, LocalDateTime.now()))
 
             val response = httpClient.post("/funds-api/import/v1/import-files/$importFileId/import") {
                 header(USER_ID_HEADER, userId.toString())
@@ -331,9 +323,7 @@ class ImportFileApiTest {
             val responseBody = response.body<ImportFileTO>()
             assertThat(responseBody.importFileId.toString()).isEqualTo(importFileId.toString())
             assertThat(responseBody.status).isEqualTo(ImportFileStatusTO.IMPORTING)
-            assertThat(responseBody.importTask).isNotNull
-            assertThat(responseBody.importTask!!.taskId.toString()).isEqualTo(importTaskId.toString())
-            assertThat(responseBody.importTask!!.status).isEqualTo(ImportTaskTO.Status.IN_PROGRESS)
+            assertThat(responseBody.errors).isEmpty()
         }
 
     @Test
@@ -364,7 +354,6 @@ class ImportFileApiTest {
             single<ImportFileService> { importFileService }
             single<ImportConfigurationRepository> { importConfigurationRepository }
             single<ImportConfigurationService> { importConfigurationService }
-            single<ImportService> { importService }
         }
         configureDependencies(*importDependencyModules, testOverrides)
         configureImportErrorHandling()
