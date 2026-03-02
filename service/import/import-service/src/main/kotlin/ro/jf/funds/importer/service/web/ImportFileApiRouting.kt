@@ -54,6 +54,14 @@ fun Routing.importFileApiRouting(
             call.respond(HttpStatusCode.Accepted, importFile.toTO())
         }
 
+        post("/{importFileId}/revert") {
+            val userId = call.userId()
+            val importFileId = UUID.fromString(call.parameters["importFileId"])
+            log.info { "Revert import file $importFileId for user $userId." }
+            val importFile = importFileService.revertImportFile(userId, importFileId)
+            call.respond(HttpStatusCode.OK, importFile.toTO())
+        }
+
         get {
             val userId = call.userId()
             val pageRequest = call.pageRequest()

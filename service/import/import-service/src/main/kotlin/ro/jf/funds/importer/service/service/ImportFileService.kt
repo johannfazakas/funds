@@ -9,6 +9,7 @@ import aws.sdk.kotlin.services.s3.model.NotFound
 import aws.sdk.kotlin.services.s3.model.PutObjectRequest
 import aws.sdk.kotlin.services.s3.presigners.presignGetObject
 import aws.sdk.kotlin.services.s3.presigners.presignPutObject
+import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.importer.api.model.ImportFileCommandTO
 import ro.jf.funds.importer.api.model.ImportFileSortField
 import ro.jf.funds.importer.service.config.S3Configuration
@@ -30,6 +31,7 @@ import java.util.*
 class ImportFileService(
     private val importFileRepository: ImportFileRepository,
     private val importFileCommandProducer: Producer<ImportFileCommandTO>,
+    private val transactionSdk: TransactionSdk,
     private val s3Client: S3Client,
     private val s3Configuration: S3Configuration,
 ) {
@@ -79,6 +81,21 @@ class ImportFileService(
         )
         importFileCommandProducer.send(Event(userId, command))
         return importFile.copy(status = ImportFileStatus.IMPORTING)
+    }
+
+    suspend fun revertImportFile(userId: UUID, importFileId: UUID): ImportFile {
+        val importFile = importFileRepository.findById(userId, importFileId)
+            ?: throw ImportFileNotFoundException(importFileId)
+        if (importFile.status != ImportFileStatus.IMPORTED) {
+            throw ImportFileStatusConflictException(importFileId)
+        }
+        val source = "import-file-$importFileId"
+        transactionSdk.deleteTransactionsBySource(
+            com.benasher44.uuid.Uuid.fromString(userId.toString()),
+            source,
+        )
+        importFileRepository.updateStatus(userId, importFileId, ImportFileStatus.UPLOADED)
+        return importFile.copy(status = ImportFileStatus.UPLOADED)
     }
 
     suspend fun generateDownloadUrl(userId: UUID, importFileId: UUID): String? {

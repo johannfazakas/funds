@@ -87,4 +87,16 @@ class TransactionSdk(
             throw response.toApiException()
         }
     }
+
+    override suspend fun deleteTransactionsBySource(userId: Uuid, source: String) = withSuspendingSpan {
+        val response = httpClient.delete("$baseUrl$BASE_PATH/transactions/source/$source") {
+            headers {
+                append(USER_ID_HEADER, userId.toString())
+            }
+        }
+        if (!response.status.isSuccess()) {
+            log.warn { "Unexpected response on delete transactions by source: $response" }
+            throw response.toApiException()
+        }
+    }
 }

@@ -16,6 +16,7 @@ import ro.jf.funds.platform.api.serialization.UuidSerializer
 @Serializable
 data class CreateTransactionsTO(
     val transactions: List<CreateTransactionTO>,
+    val source: String? = null,
 )
 
 @Serializable
