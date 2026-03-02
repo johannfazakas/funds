@@ -3,13 +3,13 @@ package ro.jf.funds.importer.service.service.parser
 import ro.jf.funds.importer.service.domain.*
 
 abstract class ImportParser {
-    fun parse(matchers: ImportMatchers, files: List<String>): List<ImportParsedTransaction> {
-        return parseItems(files)
+    fun parse(matchers: ImportMatchers, content: String): List<ImportParsedTransaction> {
+        return parseItems(content)
             .groupBy { it.transactionId { item -> isExchange(matchers, item) } }
             .flatMap { (transactionId, items) -> toTransactions(matchers, transactionId, items) }
     }
 
-    protected abstract fun parseItems(files: List<String>): List<ImportItem>
+    protected abstract fun parseItems(content: String): List<ImportItem>
 
     private fun toTransactions(
         matchers: ImportMatchers,

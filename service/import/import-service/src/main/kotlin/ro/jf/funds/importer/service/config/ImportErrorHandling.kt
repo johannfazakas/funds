@@ -33,7 +33,6 @@ fun Application.configureImportErrorHandling() {
 fun ImportServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is ImportDataException -> HttpStatusCode.UnprocessableEntity
     is ImportFormatException -> HttpStatusCode.BadRequest
-    is MissingImportConfigurationException -> HttpStatusCode.BadRequest
     is ImportConfigurationValidationException -> HttpStatusCode.BadRequest
     is ImportFileNotFoundException -> HttpStatusCode.NotFound
     is ImportFileStatusConflictException -> HttpStatusCode.Conflict
@@ -48,10 +47,6 @@ fun ImportServiceException.toError(): ErrorTO = when (this) {
     is ImportFormatException -> ErrorTO(
         title = "Import format error",
         detail = message ?: "Import format error",
-    )
-    is MissingImportConfigurationException -> ErrorTO(
-        title = "Missing import configuration",
-        detail = "Missing import configuration",
     )
     is ImportConfigurationValidationException -> ErrorTO(
         title = "Import configuration validation error",

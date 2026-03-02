@@ -6,8 +6,8 @@ class WalletCsvImportParser(
     private val csvParser: CsvParser,
 ) : ImportParser() {
 
-    override fun parseItems(files: List<String>): List<ImportItem> {
-        val items = files.flatMap { csvParser.parse(it) }.map { WalletImportItem(it) }
+    override fun parseItems(content: String): List<ImportItem> {
+        val items = csvParser.parse(content).map { WalletImportItem(it) }
         if (items.isEmpty())
             throw ImportDataException("No import reportdata")
         return items

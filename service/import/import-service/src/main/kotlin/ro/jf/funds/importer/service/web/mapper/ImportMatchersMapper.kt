@@ -9,8 +9,6 @@ import ro.jf.funds.importer.service.domain.ExchangeMatcher
 import ro.jf.funds.importer.service.domain.FundMatcher
 import ro.jf.funds.importer.service.domain.ImportMatchers
 import ro.jf.funds.importer.service.domain.LabelMatcher
-import ro.jf.funds.importer.api.model.ImportConfigurationTO
-
 fun ImportMatchers.toMatcherTOs() = MatcherTOs(
     accountMatchers = accountMatchers.map { it.toTO() },
     fundMatchers = fundMatchers.map { it.toTO() },
@@ -69,13 +67,6 @@ fun LabelMatcher.toTO() = LabelMatcherTO(
     label = label,
 )
 
-fun ImportConfigurationTO.toImportMatchers() = ImportMatchers(
-    accountMatchers = accountMatchers.map { it.toDomain() },
-    fundMatchers = fundMatchers.map { it.toDomain() },
-    exchangeMatchers = exchangeMatchers.map { it.toDomain() },
-    labelMatchers = labelMatchers.map { it.toDomain() },
-)
-
 fun toImportMatchers(
     accountMatchers: List<AccountMatcherTO>,
     fundMatchers: List<FundMatcherTO>,
@@ -87,3 +78,4 @@ fun toImportMatchers(
     exchangeMatchers = exchangeMatchers.map { it.toDomain() },
     labelMatchers = labelMatchers.map { it.toDomain() },
 )
+

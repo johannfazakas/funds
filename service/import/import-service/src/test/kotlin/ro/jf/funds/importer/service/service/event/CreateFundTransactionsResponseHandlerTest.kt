@@ -9,6 +9,13 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
+import ro.jf.funds.importer.api.model.ImportFileTypeTO
+import ro.jf.funds.importer.service.domain.CreateImportFileCommand
+import ro.jf.funds.importer.service.domain.ImportFileStatus
+import ro.jf.funds.importer.service.domain.ImportMatchers
+import ro.jf.funds.importer.service.domain.CreateImportConfigurationCommand
+import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
+import ro.jf.funds.importer.service.persistence.ImportFileRepository
 import ro.jf.funds.platform.jvm.error.ErrorTO
 import ro.jf.funds.platform.jvm.event.*
 import ro.jf.funds.platform.jvm.model.GenericResponse
@@ -19,17 +26,15 @@ import ro.jf.funds.platform.jvm.test.utils.dbConfig
 import ro.jf.funds.platform.jvm.test.utils.kafkaConfig
 import ro.jf.funds.platform.jvm.test.utils.testTopicSupplier
 import ro.jf.funds.fund.api.event.FundEvents
-import ro.jf.funds.importer.service.domain.ImportTaskPartStatus
-import ro.jf.funds.importer.service.domain.StartImportTaskCommand
 import ro.jf.funds.importer.service.module
-import ro.jf.funds.importer.service.persistence.ImportTaskRepository
 import java.time.Duration
 import java.util.UUID.randomUUID
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(KafkaContainerExtension::class)
 class CreateFundTransactionsResponseHandlerTest {
-    private val importTaskRepository = ImportTaskRepository(PostgresContainerExtension.connection)
+    private val importConfigurationRepository = ImportConfigurationRepository(PostgresContainerExtension.connection)
+    private val importFileRepository = ImportFileRepository(PostgresContainerExtension.connection)
     private val createTransactionsResponseTopic =
         testTopicSupplier.topic(FundEvents.FundTransactionsBatchResponse)
     private val fundTransactionsResponseProducer = createProducer<GenericResponse>(
@@ -41,46 +46,56 @@ class CreateFundTransactionsResponseHandlerTest {
 
     @AfterEach
     fun tearDown() = runBlocking {
-        importTaskRepository.deleteAll()
+        importFileRepository.deleteAll()
+        importConfigurationRepository.deleteAll()
     }
 
     @Test
-    fun `should complete task on success`(): Unit = testApplication {
+    fun `given success response should mark import file as imported`(): Unit = testApplication {
         configureEnvironment(Application::module, dbConfig, kafkaConfig, integrationConfig)
         startApplication()
 
-        val importTaskCommand = StartImportTaskCommand(userId, listOf("part1", "part2"))
-        val importTask = importTaskRepository.startImportTask(importTaskCommand)
-        val response = Event<GenericResponse>(userId, GenericResponse.Success, importTask.parts[0].taskPartId)
+        val configuration = importConfigurationRepository.create(
+            CreateImportConfigurationCommand(userId, "test-config", ImportMatchers())
+        )
+        val importFile = importFileRepository.create(
+            CreateImportFileCommand(userId, "test.csv", ImportFileTypeTO.WALLET_CSV, configuration.importConfigurationId)
+        )
+        importFileRepository.updateStatus(userId, importFile.importFileId, ImportFileStatus.IMPORTING)
+
+        val response = Event<GenericResponse>(userId, GenericResponse.Success, importFile.importFileId)
         fundTransactionsResponseProducer.send(response)
 
         await().atMost(Duration.ofSeconds(5)).untilAsserted {
-            val task = runBlocking { importTaskRepository.findImportTaskById(userId, importTask.taskId) }
-            assertThat(task).isNotNull
-            assertThat(task?.parts).isNotNull
-            assertThat(task?.findPartByName("part1")).isNotNull
-            assertThat(task?.findPartByName("part1")?.status).isEqualTo(ImportTaskPartStatus.COMPLETED)
+            val file = runBlocking { importFileRepository.findById(userId, importFile.importFileId) }
+            assertThat(file).isNotNull
+            assertThat(file?.status).isEqualTo(ImportFileStatus.IMPORTED)
         }
     }
 
     @Test
-    fun `should fail task on error`(): Unit = testApplication {
+    fun `given error response should mark import file as failed`(): Unit = testApplication {
         configureEnvironment(Application::module, dbConfig, kafkaConfig, integrationConfig)
         startApplication()
 
-        val importTaskCommand = StartImportTaskCommand(userId, listOf("part1", "part2"))
-        val importTask = importTaskRepository.startImportTask(importTaskCommand)
+        val configuration = importConfigurationRepository.create(
+            CreateImportConfigurationCommand(userId, "test-config", ImportMatchers())
+        )
+        val importFile = importFileRepository.create(
+            CreateImportFileCommand(userId, "test.csv", ImportFileTypeTO.WALLET_CSV, configuration.importConfigurationId)
+        )
+        importFileRepository.updateStatus(userId, importFile.importFileId, ImportFileStatus.IMPORTING)
+
         val reason = ErrorTO("Title", "Detail")
-        val response =
-            Event<GenericResponse>(userId, GenericResponse.Error(reason), importTask.parts[0].taskPartId)
+        val response = Event<GenericResponse>(userId, GenericResponse.Error(reason), importFile.importFileId)
         fundTransactionsResponseProducer.send(response)
 
         await().atMost(Duration.ofSeconds(5)).untilAsserted {
-            val task = runBlocking { importTaskRepository.findImportTaskById(userId, importTask.taskId) }
-            assertThat(task).isNotNull
-            assertThat(task?.findPartByName("part1")).isNotNull
-            assertThat(task?.findPartByName("part1")?.status).isEqualTo(ImportTaskPartStatus.FAILED)
-            assertThat(task?.findPartByName("part1")?.reason).isEqualTo(reason.detail)
+            val file = runBlocking { importFileRepository.findById(userId, importFile.importFileId) }
+            assertThat(file).isNotNull
+            assertThat(file?.status).isEqualTo(ImportFileStatus.IMPORT_FAILED)
+            assertThat(file?.errors).hasSize(1)
+            assertThat(file?.errors?.first()?.detail).isEqualTo("Detail")
         }
     }
 

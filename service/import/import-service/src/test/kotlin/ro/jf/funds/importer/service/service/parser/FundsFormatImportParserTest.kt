@@ -46,7 +46,7 @@ class FundsFormatImportParserTest {
             ),
         )
 
-        val importTransactions = fundsFormatImportParser.parse(matchers, listOf(fileContent))
+        val importTransactions = fundsFormatImportParser.parse(matchers, fileContent)
 
         assertThat(importTransactions).hasSize(2)
         val transfer = importTransactions[0]

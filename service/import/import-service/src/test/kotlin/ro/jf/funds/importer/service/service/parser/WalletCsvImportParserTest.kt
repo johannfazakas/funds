@@ -28,7 +28,7 @@ class WalletCsvImportParserTest {
             exchangeMatchers = emptyList(),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionExternalId).isNotNull()
@@ -61,7 +61,7 @@ class WalletCsvImportParserTest {
             exchangeMatchers = emptyList(),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionExternalId).isNotNull()
@@ -95,7 +95,7 @@ class WalletCsvImportParserTest {
             labelMatchers = listOf(LabelMatcher(listOf("Exchange"), Label("Exchange"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionExternalId).isNotNull()
@@ -145,7 +145,7 @@ class WalletCsvImportParserTest {
             labelMatchers = listOf(LabelMatcher(listOf("Gift income"), Label("gifts"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
 
         assertThat(importTransactions).hasSize(2)
 
@@ -189,7 +189,7 @@ class WalletCsvImportParserTest {
             labelMatchers = listOf(LabelMatcher(listOf("Work Income"), Label("Work"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
 
         assertThat(importTransactions).hasSize(2)
 
@@ -232,7 +232,7 @@ class WalletCsvImportParserTest {
             labelMatchers = listOf(LabelMatcher(listOf("Basic - Food"), Label("Basic"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
 
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Expenses"))
@@ -249,7 +249,7 @@ class WalletCsvImportParserTest {
             exchangeMatchers = emptyList(),
         )
 
-        assertThatThrownBy { walletCsvImportParser.parse(matchers, listOf(fileContent)) }
+        assertThatThrownBy { walletCsvImportParser.parse(matchers, fileContent) }
             .isInstanceOf(ImportDataException::class.java)
             .hasMessage("Account name not matched: ING old")
     }
@@ -265,7 +265,7 @@ class WalletCsvImportParserTest {
             exchangeMatchers = emptyList(),
         )
 
-        assertThatThrownBy { walletCsvImportParser.parse(matchers, listOf(fileContent)) }
+        assertThatThrownBy { walletCsvImportParser.parse(matchers, fileContent) }
             .isInstanceOf(ImportDataException::class.java)
             .hasMessage("No import reportdata")
     }
@@ -290,7 +290,7 @@ class WalletCsvImportParserTest {
             exchangeMatchers = emptyList(),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, listOf(fileContent))
+        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
 
         assertThat(importTransactions).hasSize(0)
     }

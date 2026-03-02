@@ -4,8 +4,13 @@
 
 ### Improved import
 
-Store files
-Retry import
+- [x] Store files
+- [ ] Retry import
+  - [ ] Re-upload
+  - [ ] Revert previous import
+  - [ ] Re-import with new import configuration
+- [ ] Use only kmp-compatible uuid
+- [ ] UI display for imports menu
 
 ### Colors for Funds, Accounts, Labels
 

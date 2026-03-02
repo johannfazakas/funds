@@ -6,8 +6,8 @@ class FundsFormatImportParser(
     private val csvParser: CsvParser,
 ) : ImportParser() {
 
-    override fun parseItems(files: List<String>): List<ImportItem> {
-        val items = files.flatMap { csvParser.parse(it) }.map { FundsFormatImportItem(it) }
+    override fun parseItems(content: String): List<ImportItem> {
+        val items = csvParser.parse(content).map { FundsFormatImportItem(it) }
         if (items.isEmpty())
             throw ImportDataException("No import reportdata")
         return items

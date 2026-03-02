@@ -15,8 +15,6 @@ class ImportFormatException : ImportServiceException {
 
 class ImportDataException(message: String) : ImportServiceException(message)
 
-class MissingImportConfigurationException : ImportServiceException()
-
 class ImportConfigurationValidationException(message: String) : ImportServiceException(message)
 
 class ImportFileNotFoundException(val importFileId: UUID) : ImportServiceException()
