@@ -30,6 +30,7 @@ interface UploadImportFileModalProps {
 export function UploadImportFileModal({ userId, open, onOpenChange, onUploaded }: UploadImportFileModalProps) {
     const [fileType, setFileType] = useState<ImportFileType>('WALLET_CSV');
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [fileNames, setFileNames] = useState<string[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +42,7 @@ export function UploadImportFileModal({ userId, open, onOpenChange, onUploaded }
         if (!open) return;
         setFileType('WALLET_CSV');
         setSelectedFiles([]);
+        setFileNames([]);
         setUploadError(null);
         setSelectedConfigurationId('');
         if (fileInputRef.current) {
@@ -53,7 +55,9 @@ export function UploadImportFileModal({ userId, open, onOpenChange, onUploaded }
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setSelectedFiles(Array.from(e.target.files));
+            const files = Array.from(e.target.files);
+            setSelectedFiles(files);
+            setFileNames(files.map(f => f.name));
         }
     };
 
@@ -72,8 +76,10 @@ export function UploadImportFileModal({ userId, open, onOpenChange, onUploaded }
         setUploadError(null);
 
         try {
-            for (const file of selectedFiles) {
-                const createResponse = await createImportFile(userId, file.name, fileType, selectedConfigurationId);
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const fileName = fileNames[i];
+                const createResponse = await createImportFile(userId, fileName, fileType, selectedConfigurationId);
                 await fetch(createResponse.uploadUrl, {
                     method: 'PUT',
                     body: file,
@@ -109,6 +115,28 @@ export function UploadImportFileModal({ userId, open, onOpenChange, onUploaded }
                                 accept=".csv"
                             />
                         </div>
+                        {selectedFiles.length > 0 && (
+                            <div className="space-y-2">
+                                <Label>File Names</Label>
+                                {selectedFiles.map((file, index) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                        <span className="text-sm text-muted-foreground truncate min-w-0 flex-shrink-0 max-w-[40%]">
+                                            {file.name}
+                                        </span>
+                                        <Input
+                                            value={fileNames[index] || ''}
+                                            onChange={(e) => {
+                                                const updated = [...fileNames];
+                                                updated[index] = e.target.value;
+                                                setFileNames(updated);
+                                            }}
+                                            disabled={uploading}
+                                            className="flex-1"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <Label htmlFor="fileType">Type</Label>
                             <Select
