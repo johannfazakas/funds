@@ -102,8 +102,9 @@ class ImportFileCommandHandlerTest {
         val parsedTransactions = listOf<ImportParsedTransaction>()
         whenever(importParserRegistry[ImportFileTypeTO.WALLET_CSV]).thenReturn(parser)
         whenever(parser.parse(matchers, "csv-content")).thenReturn(parsedTransactions)
-        val fundTransactions = mock<CreateTransactionsTO>()
-        whenever(importFundConversionService.mapToFundRequest(userId, parsedTransactions))
+        val source = "import-file-$importFileId"
+        val fundTransactions = CreateTransactionsTO(transactions = emptyList(), source = source)
+        whenever(importFundConversionService.mapToFundRequest(userId, parsedTransactions, source))
             .thenReturn(fundTransactions)
 
         handler.handle(createEvent())

@@ -144,7 +144,7 @@ private val Application.importServiceDependencies
                 presignedUrlExpiration = Duration.parse(environment.getStringProperty(S3_PRESIGNED_URL_EXPIRATION_PROPERTY)),
             )
         }
-        single<ImportFileService> { ImportFileService(get(), get(IMPORT_FILE_COMMAND_PRODUCER), get(), get()) }
+        single<ImportFileService> { ImportFileService(get(), get(IMPORT_FILE_COMMAND_PRODUCER), get(), get(), get()) }
         single<ImportFileCommandHandler> {
             ImportFileCommandHandler(get(), get(), get(), get(), get(CREATE_FUND_TRANSACTIONS_REQUEST_PRODUCER), get(), get())
         }

@@ -49,6 +49,13 @@ fun Routing.fundTransactionApiRouting(transactionService: TransactionService) {
                 transactionService.deleteTransaction(userId, transactionId)
                 call.respond(HttpStatusCode.NoContent)
             }
+            delete("/source/{source}") {
+                val userId = call.userId()
+                val source = call.parameters["source"] ?: error("Source is missing.")
+                log.debug { "Delete transactions by source $source for user $userId." }
+                transactionService.deleteTransactionsBySource(userId, source)
+                call.respond(HttpStatusCode.NoContent)
+            }
         }
     }
 }

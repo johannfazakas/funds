@@ -43,7 +43,7 @@ class ImportFileCommandHandler(
 
             val fundTransactions = importParserRegistry[importFile.type]
                 .parse(configuration.matchers, content)
-                .let { importFundConversionService.mapToFundRequest(userId, it) }
+                .let { importFundConversionService.mapToFundRequest(userId, it, "import-file-$importFileId") }
             createFundTransactionsProducer.send(Event(userId, fundTransactions, importFileId))
         } catch (e: Exception) {
             log.warn(e) { "Error handling import file command >> importFileId=$importFileId" }

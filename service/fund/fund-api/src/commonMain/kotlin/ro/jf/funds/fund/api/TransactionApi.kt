@@ -15,4 +15,5 @@ interface TransactionApi {
     ): ListTO<TransactionTO>
 
     suspend fun deleteTransaction(userId: Uuid, transactionId: Uuid)
+    suspend fun deleteTransactionsBySource(userId: Uuid, source: String)
 }

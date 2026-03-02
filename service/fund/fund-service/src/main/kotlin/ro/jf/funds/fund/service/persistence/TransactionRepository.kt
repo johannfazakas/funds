@@ -6,6 +6,7 @@ import kotlinx.datetime.toKotlinLocalDateTime
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.datetime
 import ro.jf.funds.fund.api.model.*
@@ -27,6 +28,7 @@ class TransactionRepository(
         val externalId = varchar("external_id", 100)
         val type = varchar("type", 50)
         val dateTime = datetime("date_time")
+        val transactionSource = varchar("source", 200).nullable()
     }
 
     suspend fun findById(userId: UUID, transactionId: UUID): Transaction? = blockingTransaction {
@@ -77,6 +79,7 @@ class TransactionRepository(
                 this[TransactionTable.externalId] = command.externalId
                 this[TransactionTable.type] = command.type.name
                 this[TransactionTable.dateTime] = command.dateTime.toJavaLocalDateTime()
+                this[TransactionTable.transactionSource] = requests.source
             }
 
         val transactionRequestsByExternalId = requests.transactions.associateBy { it.externalId }
@@ -106,6 +109,17 @@ class TransactionRepository(
     suspend fun deleteByUserId(userId: UUID): Unit = blockingTransaction {
         RecordTable.deleteWhere { RecordTable.userId eq userId }
         TransactionTable.deleteWhere { TransactionTable.userId eq userId }
+    }
+
+    suspend fun deleteBySource(userId: UUID, source: String): Unit = blockingTransaction {
+        val transactionIds = TransactionTable
+            .select(TransactionTable.id)
+            .where { TransactionTable.userId eq userId and (TransactionTable.transactionSource eq source) }
+            .map { it[TransactionTable.id].value }
+        if (transactionIds.isNotEmpty()) {
+            RecordTable.deleteWhere { RecordTable.userId eq userId and (RecordTable.transactionId inList transactionIds) }
+            TransactionTable.deleteWhere { TransactionTable.userId eq userId and (TransactionTable.transactionSource eq source) }
+        }
     }
 
     suspend fun deleteById(userId: UUID, transactionId: UUID): Unit = blockingTransaction {

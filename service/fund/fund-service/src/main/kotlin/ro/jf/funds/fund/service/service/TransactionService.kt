@@ -46,6 +46,10 @@ class TransactionService(
         transactionRepository.deleteById(userId, transactionId)
     }
 
+    suspend fun deleteTransactionsBySource(userId: UUID, source: String) = withSuspendingSpan {
+        transactionRepository.deleteBySource(userId, source)
+    }
+
     private suspend fun validateTransactionRequests(userId: UUID, requests: List<CreateTransactionTO>) {
         validateRecordFunds(userId, requests).associateBy { it.id }
         val accountsById = validateRecordAccounts(userId, requests).associateBy { it.id }

@@ -24,6 +24,7 @@ class ImportFundConversionService(
     suspend fun mapToFundRequest(
         userId: UUID,
         parsedTransactions: List<ImportParsedTransaction>,
+        source: String? = null,
     ): CreateTransactionsTO = withSuspendingSpan {
         log.info { "Handling import >> user = $userId items size = ${parsedTransactions.size}." }
         val accountStore = accountService.getAccountStore(userId)
@@ -35,7 +36,7 @@ class ImportFundConversionService(
             .map { it.value }
             .distinct()
             .forEach { labelStore[it] }
-        parsedTransactions.toFundTransactions(accountStore, fundStore).let(::CreateTransactionsTO)
+        CreateTransactionsTO(parsedTransactions.toFundTransactions(accountStore, fundStore), source)
     }
 
     private suspend fun List<ImportParsedTransaction>.toFundTransactions(
