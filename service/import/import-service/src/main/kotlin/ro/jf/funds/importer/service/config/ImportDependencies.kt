@@ -22,10 +22,8 @@ import ro.jf.funds.fund.sdk.LabelSdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
 import ro.jf.funds.importer.service.persistence.ImportFileRepository
-import ro.jf.funds.importer.service.persistence.ImportTaskRepository
 import ro.jf.funds.importer.service.service.ImportConfigurationService
 import ro.jf.funds.importer.service.service.ImportFileService
-import ro.jf.funds.importer.service.service.ImportService
 import ro.jf.funds.importer.service.service.conversion.*
 import ro.jf.funds.importer.service.service.conversion.strategy.*
 import ro.jf.funds.importer.service.service.event.CreateFundTransactionsResponseHandler
@@ -72,7 +70,6 @@ private val Application.importPersistenceDependencies
     get() = module {
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
-        single<ImportTaskRepository> { ImportTaskRepository(get()) }
         single<ImportConfigurationRepository> { ImportConfigurationRepository(get()) }
         single<ImportFileRepository> { ImportFileRepository(get()) }
     }
@@ -148,10 +145,11 @@ private val Application.importServiceDependencies
             )
         }
         single<ImportFileService> { ImportFileService(get(), get(IMPORT_FILE_COMMAND_PRODUCER), get(), get()) }
-        single<ImportService> { ImportService(get(), get(), get(), get(CREATE_FUND_TRANSACTIONS_REQUEST_PRODUCER)) }
-        single<ImportFileCommandHandler> { ImportFileCommandHandler(get(), get(), get(), get(), get()) }
+        single<ImportFileCommandHandler> {
+            ImportFileCommandHandler(get(), get(), get(), get(), get(CREATE_FUND_TRANSACTIONS_REQUEST_PRODUCER), get(), get())
+        }
         single<CreateFundTransactionsResponseHandler> {
-            CreateFundTransactionsResponseHandler(get(), get(), get())
+            CreateFundTransactionsResponseHandler(get())
         }
     }
 
