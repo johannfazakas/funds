@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Fund, listFunds, createFund, deleteFund, updateFund } from '../api/fundApi';
 import { FundSortField, SortOrder } from '../api/types';
+import { Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { ActionButton } from '../components/ui/action-button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card } from '../components/ui/card';
@@ -220,15 +222,9 @@ function FundListPage({ userId }: FundListPageProps) {
                                     onClick={() => openEditModal(fund)}
                                 >
                                     <TableCell>{fund.name}</TableCell>
-                                    <TableCell>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-destructive hover:text-destructive"
-                                            onClick={(e) => { e.stopPropagation(); setDeleteError(null); setFundToDelete(fund); }}
-                                        >
-                                            Delete
-                                        </Button>
+                                    <TableCell onClick={(e) => e.stopPropagation()}>
+                                        <ActionButton icon={Trash2} tooltip="Delete" destructive
+                                            onClick={() => { setDeleteError(null); setFundToDelete(fund); }} />
                                     </TableCell>
                                 </TableRow>
                             ))}

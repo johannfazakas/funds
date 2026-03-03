@@ -38,7 +38,7 @@ import {
 } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
 import { Loader2, Download, Trash2, Play, Undo2 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip';
+import { ActionButton } from '../components/ui/action-button';
 import { Pagination } from '../components/Pagination';
 import { SortableTableHead } from '../components/SortableTableHead';
 import { UploadImportFileModal } from '../components/UploadImportFileModal';
@@ -320,70 +320,23 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                         {formatDateTime(file.createdAt)}
                                     </TableCell>
                                     <TableCell>
-                                        <TooltipProvider>
                                         <div className="flex justify-end gap-1">
                                             {file.status === 'UPLOADED' && (
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleImport(file)}
-                                                            disabled={importingFileId === file.importFileId}
-                                                        >
-                                                            {importingFileId === file.importFileId ? (
-                                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                            ) : (
-                                                                <Play className="h-4 w-4" />
-                                                            )}
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>Import</TooltipContent>
-                                                </Tooltip>
+                                                <ActionButton icon={Play} tooltip="Import"
+                                                    onClick={() => handleImport(file)}
+                                                    loading={importingFileId === file.importFileId} />
                                             )}
                                             {file.status === 'IMPORTED' && (
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => { setRevertError(null); setFileToRevert(file); }}
-                                                        >
-                                                            <Undo2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>Revert</TooltipContent>
-                                                </Tooltip>
+                                                <ActionButton icon={Undo2} tooltip="Revert"
+                                                    onClick={() => { setRevertError(null); setFileToRevert(file); }} />
                                             )}
                                             {file.status !== 'PENDING' && (
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleDownload(file)}
-                                                        >
-                                                            <Download className="h-4 w-4" />
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>Download</TooltipContent>
-                                                </Tooltip>
+                                                <ActionButton icon={Download} tooltip="Download"
+                                                    onClick={() => handleDownload(file)} />
                                             )}
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-destructive hover:text-destructive"
-                                                        onClick={() => { setDeleteError(null); setFileToDelete(file); }}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>Delete</TooltipContent>
-                                            </Tooltip>
+                                            <ActionButton icon={Trash2} tooltip="Delete" destructive
+                                                onClick={() => { setDeleteError(null); setFileToDelete(file); }} />
                                         </div>
-                                        </TooltipProvider>
                                     </TableCell>
                                 </TableRow>
                             ))}
