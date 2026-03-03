@@ -158,6 +158,21 @@ export async function deleteImportFile(
     if (!response.ok) await handleApiError(response, 'Failed to delete import file');
 }
 
+export async function revertImportFile(
+    userId: string,
+    importFileId: string
+): Promise<ImportFile> {
+    const response = await fetch(
+        `${getBaseUrl()}${BASE_PATH}/import-files/${importFileId}/revert`,
+        {
+            method: 'POST',
+            headers: { 'FUNDS_USER_ID': userId }
+        }
+    );
+    if (!response.ok) await handleApiError(response, 'Failed to revert import file');
+    return response.json();
+}
+
 export async function getDownloadUrl(
     userId: string,
     importFileId: string

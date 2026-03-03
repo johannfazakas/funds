@@ -8,6 +8,7 @@ import {
     getDownloadUrl,
     deleteImportFile,
     importFile,
+    revertImportFile,
 } from '../api/importFileApi';
 import { SortOrder } from '../api/types';
 import { Button } from '../components/ui/button';
@@ -36,7 +37,8 @@ import {
     SelectValue,
 } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
-import { Loader2, Download, Trash2, Play } from 'lucide-react';
+import { Loader2, Download, Trash2, Play, Undo2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip';
 import { Pagination } from '../components/Pagination';
 import { SortableTableHead } from '../components/SortableTableHead';
 import { UploadImportFileModal } from '../components/UploadImportFileModal';
@@ -67,6 +69,9 @@ function ImportsPage({ userId }: ImportsPageProps) {
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [importingFileId, setImportingFileId] = useState<string | null>(null);
+    const [fileToRevert, setFileToRevert] = useState<ImportFile | null>(null);
+    const [reverting, setReverting] = useState(false);
+    const [revertError, setRevertError] = useState<string | null>(null);
 
     const loadImportFiles = useCallback(async () => {
         setLoading(true);
@@ -159,6 +164,21 @@ function ImportsPage({ userId }: ImportsPageProps) {
             setError(err instanceof Error ? err.message : 'Failed to import file');
         } finally {
             setImportingFileId(null);
+        }
+    };
+
+    const handleRevert = async () => {
+        if (!fileToRevert) return;
+        setReverting(true);
+        setRevertError(null);
+        try {
+            await revertImportFile(userId, fileToRevert.importFileId);
+            setFileToRevert(null);
+            await loadImportFiles();
+        } catch (err) {
+            setRevertError(err instanceof Error ? err.message : 'Failed to revert import file');
+        } finally {
+            setReverting(false);
         }
     };
 
@@ -300,39 +320,70 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                         {formatDateTime(file.createdAt)}
                                     </TableCell>
                                     <TableCell>
+                                        <TooltipProvider>
                                         <div className="flex justify-end gap-1">
                                             {file.status === 'UPLOADED' && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleImport(file)}
-                                                    disabled={importingFileId === file.importFileId}
-                                                >
-                                                    {importingFileId === file.importFileId ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <Play className="h-4 w-4" />
-                                                    )}
-                                                </Button>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleImport(file)}
+                                                            disabled={importingFileId === file.importFileId}
+                                                        >
+                                                            {importingFileId === file.importFileId ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <Play className="h-4 w-4" />
+                                                            )}
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Import</TooltipContent>
+                                                </Tooltip>
+                                            )}
+                                            {file.status === 'IMPORTED' && (
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => { setRevertError(null); setFileToRevert(file); }}
+                                                        >
+                                                            <Undo2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Revert</TooltipContent>
+                                                </Tooltip>
                                             )}
                                             {file.status !== 'PENDING' && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleDownload(file)}
-                                                >
-                                                    <Download className="h-4 w-4" />
-                                                </Button>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDownload(file)}
+                                                        >
+                                                            <Download className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Download</TooltipContent>
+                                                </Tooltip>
                                             )}
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-destructive hover:text-destructive"
-                                                onClick={() => { setDeleteError(null); setFileToDelete(file); }}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-destructive hover:text-destructive"
+                                                        onClick={() => { setDeleteError(null); setFileToDelete(file); }}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>Delete</TooltipContent>
+                                            </Tooltip>
                                         </div>
+                                        </TooltipProvider>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -389,6 +440,46 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                 </>
                             ) : (
                                 'Delete'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!fileToRevert} onOpenChange={(open) => !open && !reverting && setFileToRevert(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Revert Import</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to revert "<strong>{fileToRevert?.fileName}</strong>"? This will delete all transactions created by this import.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {revertError && (
+                        <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                            {revertError}
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setFileToRevert(null)}
+                            disabled={reverting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleRevert}
+                            disabled={reverting}
+                        >
+                            {reverting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Reverting...
+                                </>
+                            ) : (
+                                'Revert'
                             )}
                         </Button>
                     </DialogFooter>
