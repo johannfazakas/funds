@@ -38,7 +38,7 @@ But report data generation shouldn't depend on the report view.
 
 Have it deployed with Helm Charts in kubernetes. At least locally in a minikube.
 
-### Store CSV files in S3
+### Resource limits in docker
 
 ## Non-Functional Tasks
 

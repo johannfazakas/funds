@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { ActionButton } from '../components/ui/action-button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card } from '../components/ui/card';
@@ -270,15 +272,9 @@ function AccountsPage({ userId }: AccountsPageProps) {
                                             {account.unit.value}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-destructive hover:text-destructive"
-                                            onClick={(e) => { e.stopPropagation(); setDeleteError(null); setAccountToDelete(account); }}
-                                        >
-                                            Delete
-                                        </Button>
+                                    <TableCell onClick={(e) => e.stopPropagation()}>
+                                        <ActionButton icon={Trash2} tooltip="Delete" destructive
+                                            onClick={() => { setDeleteError(null); setAccountToDelete(account); }} />
                                     </TableCell>
                                 </TableRow>
                             ))}

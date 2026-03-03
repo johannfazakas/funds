@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Label, listLabels, createLabel, deleteLabel } from '../api/labelApi';
 import { Button } from '../components/ui/button';
+import { ActionButton } from '../components/ui/action-button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
 import {
@@ -126,13 +127,8 @@ function LabelsPage({ userId }: LabelsPageProps) {
                                 <TableRow key={label.id}>
                                     <TableCell>{label.name}</TableCell>
                                     <TableCell>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleDelete(label)}
-                                        >
-                                            <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                        </Button>
+                                        <ActionButton icon={Trash2} tooltip="Delete" destructive
+                                            onClick={() => handleDelete(label)} />
                                     </TableCell>
                                 </TableRow>
                             ))}

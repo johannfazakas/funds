@@ -12,6 +12,7 @@ import {
 } from '../api/importConfigurationApi';
 import { SortOrder } from '../api/types';
 import { Button } from '../components/ui/button';
+import { ActionButton } from '../components/ui/action-button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card } from '../components/ui/card';
@@ -293,21 +294,10 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => openEditModal(config)}
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-destructive hover:text-destructive"
-                                                onClick={() => { setDeleteError(null); setConfigToDelete(config); }}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                            <ActionButton icon={Pencil} tooltip="Edit"
+                                                onClick={() => openEditModal(config)} />
+                                            <ActionButton icon={Trash2} tooltip="Delete" destructive
+                                                onClick={() => { setDeleteError(null); setConfigToDelete(config); }} />
                                         </div>
                                     </TableCell>
                                 </TableRow>
