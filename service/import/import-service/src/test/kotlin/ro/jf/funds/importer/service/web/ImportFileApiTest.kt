@@ -73,6 +73,7 @@ class ImportFileApiTest {
                 status = ImportFileStatus.PENDING,
                 importConfigurationId = configurationId,
                 createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now(),
             )
             whenever(importFileService.createImportFile(any<CreateImportFileCommand>()))
                 .thenReturn(CreateImportFileResponse(importFile, "https://s3.example.com/upload-url"))
@@ -108,6 +109,7 @@ class ImportFileApiTest {
                 status = ImportFileStatus.UPLOADED,
                 importConfigurationId = configurationId,
                 createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now(),
             )
             whenever(importFileService.confirmUpload(eq(userId), eq(importFileId)))
                 .thenReturn(importFile)
@@ -151,8 +153,8 @@ class ImportFileApiTest {
         whenever(importFileService.listImportFiles(eq(userId), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
             PagedResult(
                 listOf(
-                    ImportFile(uuid4(), userId, "file1.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.PENDING, configurationId, LocalDateTime.now()),
-                    ImportFile(uuid4(), userId, "file2.csv", ImportFileTypeTO.FUNDS_FORMAT_CSV, ImportFileStatus.UPLOADED, configurationId, LocalDateTime.now()),
+                    ImportFile(uuid4(), userId, "file1.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.PENDING, configurationId, LocalDateTime.now(), LocalDateTime.now()),
+                    ImportFile(uuid4(), userId, "file2.csv", ImportFileTypeTO.FUNDS_FORMAT_CSV, ImportFileStatus.UPLOADED, configurationId, LocalDateTime.now(), LocalDateTime.now()),
                 ),
                 2L
             )
@@ -201,7 +203,7 @@ class ImportFileApiTest {
         val userId = uuid4()
         val importFileId = uuid4()
         val configurationId = uuid4()
-        val importFile = ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.UPLOADED, configurationId, LocalDateTime.now())
+        val importFile = ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.UPLOADED, configurationId, LocalDateTime.now(), LocalDateTime.now())
         whenever(importFileService.getImportFile(eq(userId), eq(importFileId)))
             .thenReturn(importFile)
 
@@ -313,7 +315,7 @@ class ImportFileApiTest {
             val importFileId = uuid4()
             val configurationId = uuid4()
             whenever(importFileService.importFile(eq(userId), eq(importFileId)))
-                .thenReturn(ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.IMPORTING, configurationId, LocalDateTime.now()))
+                .thenReturn(ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.IMPORTING, configurationId, LocalDateTime.now(), LocalDateTime.now()))
 
             val response = httpClient.post("/funds-api/import/v1/import-files/$importFileId/import") {
                 header(USER_ID_HEADER, userId.toString())

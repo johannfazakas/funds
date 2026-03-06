@@ -84,6 +84,7 @@ class ImportFileSdkTest {
                             put("status", JsonPrimitive("IMPORTED"))
                             put("importConfigurationId", JsonPrimitive(configId.toString()))
                             put("createdAt", JsonPrimitive("2026-01-01T00:00:00"))
+                            put("updatedAt", JsonPrimitive("2026-01-01T00:00:00"))
                         }.toString()
                     )
             )

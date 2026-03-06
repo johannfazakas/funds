@@ -72,7 +72,7 @@ class ImportFileService(
     suspend fun importFile(userId: Uuid, importFileId: Uuid): ImportFile {
         val importFile = importFileRepository.findById(userId, importFileId)
             ?: throw ImportFileNotFoundException(importFileId)
-        if (importFile.status != ImportFileStatus.UPLOADED) {
+        if (importFile.status != ImportFileStatus.UPLOADED && importFile.status != ImportFileStatus.IMPORT_FAILED) {
             throw ImportFileStatusConflictException(importFileId)
         }
         importFileRepository.updateStatus(userId, importFileId, ImportFileStatus.IMPORTING)

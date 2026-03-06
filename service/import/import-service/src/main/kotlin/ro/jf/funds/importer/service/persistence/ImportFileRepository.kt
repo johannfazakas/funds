@@ -33,6 +33,7 @@ class ImportFileRepository(
         val importConfigurationId = uuid("import_configuration_id")
             .references(ImportConfigurationRepository.ImportConfigurationTable.id)
         val createdAt = datetime("created_at")
+        val updatedAt = datetime("updated_at")
         val errors = json<List<ErrorTO>>("errors", Json.Default).nullable()
     }
 
@@ -45,6 +46,7 @@ class ImportFileRepository(
             it[status] = ImportFileStatus.PENDING.name
             it[importConfigurationId] = command.importConfigurationId
             it[createdAt] = now
+            it[updatedAt] = now
         }
         ImportFile(
             importFileId = row[ImportFileTable.id].value,
@@ -54,6 +56,7 @@ class ImportFileRepository(
             status = ImportFileStatus.PENDING,
             importConfigurationId = command.importConfigurationId,
             createdAt = now,
+            updatedAt = now,
         )
     }
 
@@ -62,6 +65,7 @@ class ImportFileRepository(
             (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)
         }) {
             it[ImportFileTable.status] = status.name
+            it[ImportFileTable.updatedAt] = LocalDateTime.now()
         }
         updated > 0
     }
@@ -77,6 +81,7 @@ class ImportFileRepository(
         }) {
             it[ImportFileTable.status] = status.name
             it[ImportFileTable.errors] = errors
+            it[ImportFileTable.updatedAt] = LocalDateTime.now()
         }
         updated > 0
     }
@@ -86,6 +91,7 @@ class ImportFileRepository(
             (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)
         }) {
             it[status] = ImportFileStatus.UPLOADED.name
+            it[updatedAt] = LocalDateTime.now()
         }
         if (updated == 0) return@blockingTransaction null
         findById(userId, importFileId)
@@ -141,6 +147,7 @@ class ImportFileRepository(
         status = ImportFileStatus.valueOf(this[ImportFileTable.status]),
         importConfigurationId = this[ImportFileTable.importConfigurationId],
         createdAt = this[ImportFileTable.createdAt],
+        updatedAt = this[ImportFileTable.updatedAt],
         errors = this[ImportFileTable.errors] ?: emptyList(),
     )
 
@@ -157,6 +164,7 @@ class ImportFileRepository(
             val sortColumn = when (it.field) {
                 ImportFileSortField.FILE_NAME -> ImportFileTable.fileName
                 ImportFileSortField.CREATED_AT -> ImportFileTable.createdAt
+                ImportFileSortField.UPDATED_AT -> ImportFileTable.updatedAt
             }
             orderBy(sortColumn to it.order.toExposedSortOrder())
         } ?: this

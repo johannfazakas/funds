@@ -38,7 +38,7 @@ import {
     SelectValue,
 } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
-import { Loader2, Download, Trash2, Play, Undo2 } from 'lucide-react';
+import { Loader2, Download, Trash2, FileInput, RotateCcw, Undo2 } from 'lucide-react';
 import { ActionButton } from '../components/ui/action-button';
 import { Pagination } from '../components/Pagination';
 import { SortableTableHead } from '../components/SortableTableHead';
@@ -185,11 +185,20 @@ function ImportsPage({ userId }: ImportsPageProps) {
         }
     };
 
+    const startPolling = (fileIds: string[]) => {
+        for (const id of fileIds) {
+            pollingFileIds.current.add(id);
+        }
+        if (pollingTimerRef.current) clearTimeout(pollingTimerRef.current);
+        pollingTimerRef.current = setTimeout(pollImportingFiles, 2000);
+    };
+
     const handleImport = async (file: ImportFile) => {
         setImportingFileId(file.importFileId);
         setError(null);
         try {
             await importFile(userId, file.importFileId);
+            startPolling([file.importFileId]);
             await loadImportFiles();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to import file');
@@ -311,6 +320,14 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                 >
                                     Created At
                                 </SortableTableHead>
+                                <SortableTableHead
+                                    field="UPDATED_AT"
+                                    currentField={sortField}
+                                    currentOrder={sortOrder}
+                                    onSort={handleSort}
+                                >
+                                    Updated At
+                                </SortableTableHead>
                                 <TableHead className="w-24"></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -340,7 +357,7 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                                                 ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800'
                                                                 : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-800'
                                             }`}>
-                                                {file.status === 'IMPORTED' ? 'Imported' : file.status === 'IMPORTING' ? 'Importing' : file.status === 'IMPORT_FAILED' ? 'Failed' : file.status === 'UPLOADED' ? 'Uploaded' : 'Pending'}
+                                                {file.status === 'IMPORTED' ? 'Imported' : file.status === 'IMPORTING' ? 'Importing' : file.status === 'IMPORT_FAILED' ? 'Import Failed' : file.status === 'UPLOADED' ? 'Uploaded' : 'Pending'}
                                             </Badge>
                                             {file.status === 'IMPORT_FAILED' && file.errors && file.errors.length > 0 && (
                                                 <span className="text-xs text-destructive">{file.errors.map(e => e.detail || e.title).join(', ')}</span>
@@ -350,10 +367,14 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                     <TableCell className="text-muted-foreground">
                                         {formatDateTime(file.createdAt)}
                                     </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {formatDateTime(file.updatedAt)}
+                                    </TableCell>
                                     <TableCell>
                                         <div className="flex justify-end gap-1">
-                                            {file.status === 'UPLOADED' && (
-                                                <ActionButton icon={Play} tooltip="Import"
+                                            {(file.status === 'UPLOADED' || file.status === 'IMPORT_FAILED') && (
+                                                <ActionButton icon={file.status === 'IMPORT_FAILED' ? RotateCcw : FileInput}
+                                                    tooltip={file.status === 'IMPORT_FAILED' ? 'Retry' : 'Import'}
                                                     onClick={() => handleImport(file)}
                                                     loading={importingFileId === file.importFileId} />
                                             )}
@@ -390,11 +411,7 @@ function ImportsPage({ userId }: ImportsPageProps) {
                 onUploaded={(importingFileIds) => {
                     loadImportFiles();
                     if (importingFileIds && importingFileIds.length > 0) {
-                        for (const id of importingFileIds) {
-                            pollingFileIds.current.add(id);
-                        }
-                        if (pollingTimerRef.current) clearTimeout(pollingTimerRef.current);
-                        pollingTimerRef.current = setTimeout(pollImportingFiles, 2000);
+                        startPolling(importingFileIds);
                     }
                 }}
             />
