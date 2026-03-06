@@ -7,7 +7,6 @@ import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.toInstant
 import ro.jf.funds.platform.api.model.Currency
-import java.util.*
 
 class WalletImportItem(private val csvRow: CsvRow) : ImportItem() {
     override val dateTime: LocalDateTime by lazy { csvRow.getDateTime(DATE_COLUMN, dateTimeFormat) }
@@ -33,7 +32,7 @@ class WalletImportItem(private val csvRow: CsvRow) : ImportItem() {
         } else {
             listOf(note, dateTime.toString(), amount.abs().toString()).joinToString()
         }
-        return UUID.nameUUIDFromBytes(baseId.toByteArray()).toString()
+        return java.util.UUID.nameUUIDFromBytes(baseId.toByteArray()).toString()
     }
 
     private fun LocalDateTime.inWholeMinutes(): Long = this.toInstant(TimeZone.UTC).epochSeconds / 60

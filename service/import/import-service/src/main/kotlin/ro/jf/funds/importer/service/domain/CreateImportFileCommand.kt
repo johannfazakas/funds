@@ -1,11 +1,11 @@
 package ro.jf.funds.importer.service.domain
 
+import com.benasher44.uuid.Uuid
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
-import java.util.*
 
 data class CreateImportFileCommand(
-    val userId: UUID,
+    val userId: Uuid,
     val fileName: String,
     val type: ImportFileTypeTO,
-    val importConfigurationId: UUID,
+    val importConfigurationId: Uuid,
 )

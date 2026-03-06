@@ -41,8 +41,8 @@ import ro.jf.funds.platform.jvm.test.utils.kafkaConfig
 import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.jvm.persistence.PagedResult
 import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
+import com.benasher44.uuid.uuid4
 import java.time.LocalDateTime
-import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
@@ -62,9 +62,9 @@ class ImportFileApiTest {
             configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
             val httpClient = createJsonHttpClient()
-            val userId = randomUUID()
-            val importFileId = randomUUID()
-            val configurationId = randomUUID()
+            val userId = uuid4()
+            val importFileId = uuid4()
+            val configurationId = uuid4()
             val importFile = ImportFile(
                 importFileId = importFileId,
                 userId = userId,
@@ -80,7 +80,7 @@ class ImportFileApiTest {
             val response = httpClient.post("/funds-api/import/v1/import-files") {
                 header(USER_ID_HEADER, userId.toString())
                 contentType(ContentType.Application.Json)
-                setBody(CreateImportFileRequest(fileName = "test.csv", type = ImportFileTypeTO.WALLET_CSV, importConfigurationId = com.benasher44.uuid.Uuid.fromString(configurationId.toString())))
+                setBody(CreateImportFileRequest(fileName = "test.csv", type = ImportFileTypeTO.WALLET_CSV, importConfigurationId = configurationId))
             }
 
             assertThat(response.status).isEqualTo(HttpStatusCode.Created)
@@ -97,9 +97,9 @@ class ImportFileApiTest {
             configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
             val httpClient = createJsonHttpClient()
-            val userId = randomUUID()
-            val importFileId = randomUUID()
-            val configurationId = randomUUID()
+            val userId = uuid4()
+            val importFileId = uuid4()
+            val configurationId = uuid4()
             val importFile = ImportFile(
                 importFileId = importFileId,
                 userId = userId,
@@ -128,8 +128,8 @@ class ImportFileApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val importFileId = randomUUID()
+        val userId = uuid4()
+        val importFileId = uuid4()
         whenever(importFileService.confirmUpload(eq(userId), eq(importFileId)))
             .thenThrow(ImportFileNotFoundException(importFileId))
 
@@ -146,13 +146,13 @@ class ImportFileApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val configurationId = randomUUID()
+        val userId = uuid4()
+        val configurationId = uuid4()
         whenever(importFileService.listImportFiles(eq(userId), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
             PagedResult(
                 listOf(
-                    ImportFile(randomUUID(), userId, "file1.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.PENDING, configurationId, LocalDateTime.now()),
-                    ImportFile(randomUUID(), userId, "file2.csv", ImportFileTypeTO.FUNDS_FORMAT_CSV, ImportFileStatus.UPLOADED, configurationId, LocalDateTime.now()),
+                    ImportFile(uuid4(), userId, "file1.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.PENDING, configurationId, LocalDateTime.now()),
+                    ImportFile(uuid4(), userId, "file2.csv", ImportFileTypeTO.FUNDS_FORMAT_CSV, ImportFileStatus.UPLOADED, configurationId, LocalDateTime.now()),
                 ),
                 2L
             )
@@ -178,7 +178,7 @@ class ImportFileApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
+        val userId = uuid4()
         whenever(importFileService.listImportFiles(eq(userId), anyOrNull(), anyOrNull(), anyOrNull())).thenReturn(
             PagedResult(emptyList(), 0L)
         )
@@ -198,9 +198,9 @@ class ImportFileApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val importFileId = randomUUID()
-        val configurationId = randomUUID()
+        val userId = uuid4()
+        val importFileId = uuid4()
+        val configurationId = uuid4()
         val importFile = ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.UPLOADED, configurationId, LocalDateTime.now())
         whenever(importFileService.getImportFile(eq(userId), eq(importFileId)))
             .thenReturn(importFile)
@@ -220,8 +220,8 @@ class ImportFileApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val importFileId = randomUUID()
+        val userId = uuid4()
+        val importFileId = uuid4()
         whenever(importFileService.getImportFile(eq(userId), eq(importFileId)))
             .thenReturn(null)
 
@@ -238,8 +238,8 @@ class ImportFileApiTest {
             configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
             val httpClient = createJsonHttpClient()
-            val userId = randomUUID()
-            val importFileId = randomUUID()
+            val userId = uuid4()
+            val importFileId = uuid4()
             whenever(importFileService.generateDownloadUrl(eq(userId), eq(importFileId)))
                 .thenReturn("https://s3.example.com/download-url")
 
@@ -257,8 +257,8 @@ class ImportFileApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val importFileId = randomUUID()
+        val userId = uuid4()
+        val importFileId = uuid4()
         whenever(importFileService.deleteImportFile(eq(userId), eq(importFileId)))
             .thenReturn(true)
 
@@ -274,8 +274,8 @@ class ImportFileApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val importFileId = randomUUID()
+        val userId = uuid4()
+        val importFileId = uuid4()
         whenever(importFileService.deleteImportFile(eq(userId), eq(importFileId)))
             .thenReturn(false)
 
@@ -291,8 +291,8 @@ class ImportFileApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val importFileId = randomUUID()
+        val userId = uuid4()
+        val importFileId = uuid4()
         whenever(importFileService.generateDownloadUrl(eq(userId), eq(importFileId)))
             .thenReturn(null)
 
@@ -309,9 +309,9 @@ class ImportFileApiTest {
             configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
             val httpClient = createJsonHttpClient()
-            val userId = randomUUID()
-            val importFileId = randomUUID()
-            val configurationId = randomUUID()
+            val userId = uuid4()
+            val importFileId = uuid4()
+            val configurationId = uuid4()
             whenever(importFileService.importFile(eq(userId), eq(importFileId)))
                 .thenReturn(ImportFile(importFileId, userId, "test.csv", ImportFileTypeTO.WALLET_CSV, ImportFileStatus.IMPORTING, configurationId, LocalDateTime.now()))
 
@@ -331,8 +331,8 @@ class ImportFileApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val importFileId = randomUUID()
+        val userId = uuid4()
+        val importFileId = uuid4()
         whenever(importFileService.importFile(eq(userId), eq(importFileId)))
             .thenThrow(ImportFileNotFoundException(importFileId))
 

@@ -39,8 +39,8 @@ import ro.jf.funds.platform.jvm.test.utils.createJsonHttpClient
 import ro.jf.funds.platform.jvm.test.utils.dbConfig
 import ro.jf.funds.platform.jvm.test.utils.kafkaConfig
 import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
+import com.benasher44.uuid.uuid4
 import java.time.LocalDateTime
-import java.util.UUID.randomUUID
 import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
@@ -61,8 +61,8 @@ class ImportConfigurationApiTest {
             configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
             val httpClient = createJsonHttpClient()
-            val userId = randomUUID()
-            val configId = randomUUID()
+            val userId = uuid4()
+            val configId = uuid4()
             val now = LocalDateTime.now()
             val matchers = ImportMatchers()
 
@@ -92,7 +92,7 @@ class ImportConfigurationApiTest {
             configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
             val httpClient = createJsonHttpClient()
-            val userId = randomUUID()
+            val userId = uuid4()
             val now = LocalDateTime.now()
 
             whenever(
@@ -100,8 +100,8 @@ class ImportConfigurationApiTest {
             ).thenReturn(
                 PagedResult(
                     listOf(
-                        ImportConfiguration(randomUUID(), userId, "Config A", ImportMatchers(), now),
-                        ImportConfiguration(randomUUID(), userId, "Config B", ImportMatchers(), now),
+                        ImportConfiguration(uuid4(), userId, "Config A", ImportMatchers(), now),
+                        ImportConfiguration(uuid4(), userId, "Config B", ImportMatchers(), now),
                     ),
                     2L
                 )
@@ -124,7 +124,7 @@ class ImportConfigurationApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
+        val userId = uuid4()
 
         whenever(
             importConfigurationService.listImportConfigurations(eq(userId), anyOrNull(), anyOrNull())
@@ -145,8 +145,8 @@ class ImportConfigurationApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val configId = randomUUID()
+        val userId = uuid4()
+        val configId = uuid4()
         val now = LocalDateTime.now()
 
         whenever(importConfigurationService.getImportConfiguration(eq(userId), eq(configId)))
@@ -167,8 +167,8 @@ class ImportConfigurationApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val configId = randomUUID()
+        val userId = uuid4()
+        val configId = uuid4()
 
         whenever(importConfigurationService.getImportConfiguration(eq(userId), eq(configId)))
             .thenReturn(null)
@@ -186,8 +186,8 @@ class ImportConfigurationApiTest {
             configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
             val httpClient = createJsonHttpClient()
-            val userId = randomUUID()
-            val configId = randomUUID()
+            val userId = uuid4()
+            val configId = uuid4()
             val now = LocalDateTime.now()
 
             whenever(
@@ -214,8 +214,8 @@ class ImportConfigurationApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val configId = randomUUID()
+        val userId = uuid4()
+        val configId = uuid4()
 
         whenever(
             importConfigurationService.updateImportConfiguration(eq(userId), eq(configId), any())
@@ -235,8 +235,8 @@ class ImportConfigurationApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val configId = randomUUID()
+        val userId = uuid4()
+        val configId = uuid4()
 
         whenever(importConfigurationService.deleteImportConfiguration(eq(userId), eq(configId)))
             .thenReturn(true)
@@ -253,8 +253,8 @@ class ImportConfigurationApiTest {
         configureEnvironment({ testModule() }, dbConfig, kafkaConfig, s3Config)
 
         val httpClient = createJsonHttpClient()
-        val userId = randomUUID()
-        val configId = randomUUID()
+        val userId = uuid4()
+        val configId = uuid4()
 
         whenever(importConfigurationService.deleteImportConfiguration(eq(userId), eq(configId)))
             .thenReturn(false)

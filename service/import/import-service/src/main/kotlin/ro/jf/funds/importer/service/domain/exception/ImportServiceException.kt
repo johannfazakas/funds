@@ -1,6 +1,6 @@
 package ro.jf.funds.importer.service.domain.exception
 
-import java.util.*
+import com.benasher44.uuid.Uuid
 
 sealed class ImportServiceException : RuntimeException {
     constructor() : super()
@@ -17,8 +17,8 @@ class ImportDataException(message: String) : ImportServiceException(message)
 
 class ImportConfigurationValidationException(message: String) : ImportServiceException(message)
 
-class ImportFileNotFoundException(val importFileId: UUID) : ImportServiceException()
+class ImportFileNotFoundException(val importFileId: Uuid) : ImportServiceException()
 
-class ImportFileStatusConflictException(val importFileId: UUID) : ImportServiceException()
+class ImportFileStatusConflictException(val importFileId: Uuid) : ImportServiceException()
 
-class ImportConfigurationNotFoundException(val importConfigurationId: UUID) : ImportServiceException()
+class ImportConfigurationNotFoundException(val importConfigurationId: Uuid) : ImportServiceException()

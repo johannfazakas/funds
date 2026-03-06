@@ -9,8 +9,8 @@ import ro.jf.funds.conversion.sdk.ConversionSdk
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
+import com.benasher44.uuid.Uuid
 import ro.jf.funds.importer.service.service.conversion.strategy.ImportTransactionConverterRegistry
-import java.util.*
 
 private val log = logger { }
 
@@ -22,7 +22,7 @@ class ImportFundConversionService(
     private val conversionSdk: ConversionSdk,
 ) {
     suspend fun mapToFundRequest(
-        userId: UUID,
+        userId: Uuid,
         parsedTransactions: List<ImportParsedTransaction>,
         source: String? = null,
     ): CreateTransactionsTO = withSuspendingSpan {
