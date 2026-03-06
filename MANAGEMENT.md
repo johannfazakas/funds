@@ -11,7 +11,7 @@
   - [ ] Generate new import configuration from existing one
   - [ ] Import configuration matchers should be updateable only if not used
   - [ ] Re-import with new import configuration
-- [ ] Use only kmp-compatible uuid
+- [x] Use only kmp-compatible uuid
 - [ ] UI display for imports menu
 - [ ] Display and filter by configuration in import files list
 - [ ] Use the same icon for delete operation
@@ -31,6 +31,8 @@ But report data generation shouldn't depend on the report view.
 ### Find a way to pinpoint unclassified records
 
 ### UI Management of accounts, funds, and transactions
+
+### Demo account
 
 ## Infrastructure
 

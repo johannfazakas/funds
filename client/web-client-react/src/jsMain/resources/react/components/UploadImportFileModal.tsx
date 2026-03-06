@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ImportFileType, createImportFile, confirmUpload } from '../api/importFileApi';
+import { ImportFileType, createImportFile, confirmUpload, importFile } from '../api/importFileApi';
 import { ImportConfiguration, listImportConfigurations } from '../api/importConfigurationApi';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -24,7 +24,7 @@ interface UploadImportFileModalProps {
     userId: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onUploaded: () => void;
+    onUploaded: (importingFileIds?: string[]) => void;
 }
 
 export function UploadImportFileModal({ userId, open, onOpenChange, onUploaded }: UploadImportFileModalProps) {
@@ -61,33 +61,54 @@ export function UploadImportFileModal({ userId, open, onOpenChange, onUploaded }
         }
     };
 
-    const handleUpload = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleUpload = async (): Promise<string[]> => {
         if (selectedFiles.length === 0) {
             setUploadError('Please select at least one file');
-            return;
+            return [];
         }
         if (!selectedConfigurationId) {
             setUploadError('Please select an import configuration');
-            return;
+            return [];
         }
 
         setUploading(true);
         setUploadError(null);
 
+        const uploadedFileIds: string[] = [];
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            const fileName = fileNames[i];
+            const createResponse = await createImportFile(userId, fileName, fileType, selectedConfigurationId);
+            await fetch(createResponse.uploadUrl, {
+                method: 'PUT',
+                body: file,
+            });
+            await confirmUpload(userId, createResponse.importFileId);
+            uploadedFileIds.push(createResponse.importFileId);
+        }
+        return uploadedFileIds;
+    };
+
+    const handleUploadOnly = async () => {
         try {
-            for (let i = 0; i < selectedFiles.length; i++) {
-                const file = selectedFiles[i];
-                const fileName = fileNames[i];
-                const createResponse = await createImportFile(userId, fileName, fileType, selectedConfigurationId);
-                await fetch(createResponse.uploadUrl, {
-                    method: 'PUT',
-                    body: file,
-                });
-                await confirmUpload(userId, createResponse.importFileId);
-            }
+            await handleUpload();
             onOpenChange(false);
             onUploaded();
+        } catch (err) {
+            setUploadError(err instanceof Error ? err.message : 'Failed to upload files');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleUploadAndImport = async () => {
+        try {
+            const uploadedFileIds = await handleUpload();
+            for (const fileId of uploadedFileIds) {
+                importFile(userId, fileId);
+            }
+            onOpenChange(false);
+            onUploaded(uploadedFileIds);
         } catch (err) {
             setUploadError(err instanceof Error ? err.message : 'Failed to upload files');
         } finally {
@@ -101,7 +122,7 @@ export function UploadImportFileModal({ userId, open, onOpenChange, onUploaded }
                 <DialogHeader>
                     <DialogTitle>Upload Import File</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleUpload}>
+                <form onSubmit={(e) => e.preventDefault()}>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="file">Files</Label>
@@ -187,7 +208,12 @@ export function UploadImportFileModal({ userId, open, onOpenChange, onUploaded }
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={uploading || selectedFiles.length === 0 || !selectedConfigurationId}>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={uploading || selectedFiles.length === 0 || !selectedConfigurationId}
+                            onClick={handleUploadOnly}
+                        >
                             {uploading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -195,6 +221,20 @@ export function UploadImportFileModal({ userId, open, onOpenChange, onUploaded }
                                 </>
                             ) : (
                                 'Upload'
+                            )}
+                        </Button>
+                        <Button
+                            type="button"
+                            disabled={uploading || selectedFiles.length === 0 || !selectedConfigurationId}
+                            onClick={handleUploadAndImport}
+                        >
+                            {uploading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Importing...
+                                </>
+                            ) : (
+                                'Upload and Import'
                             )}
                         </Button>
                     </DialogFooter>

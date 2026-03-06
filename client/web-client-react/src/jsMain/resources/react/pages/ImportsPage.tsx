@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
     ImportFile,
     ImportFileType,
     ImportFileStatus,
     ImportFileSortField,
     listImportFiles,
+    getImportFile,
     getDownloadUrl,
     deleteImportFile,
     importFile,
@@ -72,6 +73,8 @@ function ImportsPage({ userId }: ImportsPageProps) {
     const [fileToRevert, setFileToRevert] = useState<ImportFile | null>(null);
     const [reverting, setReverting] = useState(false);
     const [revertError, setRevertError] = useState<string | null>(null);
+    const pollingFileIds = useRef<Set<string>>(new Set());
+    const pollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const loadImportFiles = useCallback(async () => {
         setLoading(true);
@@ -94,6 +97,34 @@ function ImportsPage({ userId }: ImportsPageProps) {
             setLoading(false);
         }
     }, [userId, offset, limit, sortField, sortOrder, filterType, filterStatus]);
+
+    const loadImportFilesRef = useRef(loadImportFiles);
+    loadImportFilesRef.current = loadImportFiles;
+
+    const pollImportingFiles = useCallback(async () => {
+        if (pollingFileIds.current.size === 0) return;
+        const idsToCheck = [...pollingFileIds.current];
+        for (const fileId of idsToCheck) {
+            try {
+                const file = await getImportFile(userId, fileId);
+                if (file.status !== 'IMPORTING' && file.status !== 'UPLOADED') {
+                    pollingFileIds.current.delete(fileId);
+                }
+            } catch {
+                pollingFileIds.current.delete(fileId);
+            }
+        }
+        await loadImportFilesRef.current();
+        if (pollingFileIds.current.size > 0) {
+            pollingTimerRef.current = setTimeout(pollImportingFiles, 2000);
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        return () => {
+            if (pollingTimerRef.current) clearTimeout(pollingTimerRef.current);
+        };
+    }, []);
 
     useEffect(() => {
         loadImportFiles();
@@ -356,7 +387,16 @@ function ImportsPage({ userId }: ImportsPageProps) {
                 userId={userId}
                 open={showUploadModal}
                 onOpenChange={setShowUploadModal}
-                onUploaded={loadImportFiles}
+                onUploaded={(importingFileIds) => {
+                    loadImportFiles();
+                    if (importingFileIds && importingFileIds.length > 0) {
+                        for (const id of importingFileIds) {
+                            pollingFileIds.current.add(id);
+                        }
+                        if (pollingTimerRef.current) clearTimeout(pollingTimerRef.current);
+                        pollingTimerRef.current = setTimeout(pollImportingFiles, 2000);
+                    }
+                }}
             />
 
             <Dialog open={!!fileToDelete} onOpenChange={(open) => !open && !deleting && setFileToDelete(null)}>

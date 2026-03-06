@@ -144,6 +144,20 @@ export async function importFile(
     return response.json();
 }
 
+export async function getImportFile(
+    userId: string,
+    importFileId: string
+): Promise<ImportFile> {
+    const response = await fetch(
+        `${getBaseUrl()}${BASE_PATH}/import-files/${importFileId}`,
+        {
+            headers: { 'FUNDS_USER_ID': userId }
+        }
+    );
+    if (!response.ok) await handleApiError(response, 'Failed to get import file');
+    return response.json();
+}
+
 export async function deleteImportFile(
     userId: string,
     importFileId: string
