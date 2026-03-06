@@ -21,6 +21,7 @@ data class ImportFile(
     val status: ImportFileStatus,
     val importConfigurationId: Uuid,
     val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime,
     val errors: List<ErrorTO> = emptyList(),
 ) {
     val s3Key: String get() = "$userId/$fileName"

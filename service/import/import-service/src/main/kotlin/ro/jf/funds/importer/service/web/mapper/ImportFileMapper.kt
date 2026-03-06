@@ -24,6 +24,7 @@ fun ImportFile.toTO() = ImportFileTO(
     status = status.toStatusTO(),
     importConfigurationId = importConfigurationId,
     createdAt = createdAt.toString(),
+    updatedAt = updatedAt.toString(),
     errors = errors.map { it.toTO() },
 )
 

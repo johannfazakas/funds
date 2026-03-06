@@ -149,6 +149,7 @@ class ImportFileCommandHandlerTest {
         status = status,
         importConfigurationId = importConfigurationId,
         createdAt = LocalDateTime.now(),
+        updatedAt = LocalDateTime.now(),
     )
 
     @Suppress("UNCHECKED_CAST")

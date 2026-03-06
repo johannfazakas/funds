@@ -14,8 +14,9 @@
 - [x] Use only kmp-compatible uuid
 - [ ] UI display for imports menu
 - [ ] Display and filter by configuration in import files list
-- [ ] Use the same icon for delete operation
+- [x] Use the same icon for delete operation
 - [ ] Update import file and configuration on click in UI
+- [ ] Retrieve all the errors
 
 ### Colors for Funds, Accounts, Labels
 

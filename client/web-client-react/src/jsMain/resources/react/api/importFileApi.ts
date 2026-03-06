@@ -3,7 +3,7 @@ import { handleApiError } from './apiUtils';
 
 export type ImportFileType = 'WALLET_CSV' | 'FUNDS_FORMAT_CSV';
 export type ImportFileStatus = 'PENDING' | 'UPLOADED' | 'IMPORTING' | 'IMPORTED' | 'IMPORT_FAILED';
-export type ImportFileSortField = 'FILE_NAME' | 'CREATED_AT';
+export type ImportFileSortField = 'FILE_NAME' | 'CREATED_AT' | 'UPDATED_AT';
 
 export interface ImportFileError {
     title: string;
@@ -17,6 +17,7 @@ export interface ImportFile {
     status: ImportFileStatus;
     importConfigurationId: string;
     createdAt: string;
+    updatedAt: string;
     errors?: ImportFileError[];
 }
 
