@@ -18,8 +18,8 @@ import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
 import ro.jf.funds.platform.jvm.error.ErrorTO
 import ro.jf.funds.platform.jvm.event.Event
 import ro.jf.funds.platform.jvm.event.EventHandler
+import com.benasher44.uuid.Uuid
 import ro.jf.funds.platform.jvm.event.Producer
-import java.util.*
 
 private val log = logger { }
 
@@ -54,8 +54,8 @@ class ImportFileCommandHandler(
         }
     }
 
-    private suspend fun getImportingFile(userId: UUID, command: ImportFileCommandTO): ImportFile? {
-        val importFileId = UUID.fromString(command.importFileId.toString())
+    private suspend fun getImportingFile(userId: Uuid, command: ImportFileCommandTO): ImportFile? {
+        val importFileId = command.importFileId
         log.info { "Handling import file command >> importFileId=$importFileId" }
 
         val importFile = importFileRepository.findById(userId, importFileId)
@@ -79,7 +79,7 @@ class ImportFileCommandHandler(
         }
     }
 
-    private suspend fun getImportConfiguration(userId: UUID, importConfigurationId: UUID): ImportConfiguration {
+    private suspend fun getImportConfiguration(userId: Uuid, importConfigurationId: Uuid): ImportConfiguration {
         return importConfigurationService.getImportConfiguration(userId, importConfigurationId)
             ?: throw ImportConfigurationNotFoundException(importConfigurationId)
     }

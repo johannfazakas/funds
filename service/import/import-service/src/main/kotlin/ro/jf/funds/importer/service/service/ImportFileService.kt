@@ -25,8 +25,8 @@ import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
 import ro.jf.funds.platform.jvm.event.Event
 import ro.jf.funds.platform.jvm.event.Producer
+import com.benasher44.uuid.Uuid
 import ro.jf.funds.platform.jvm.persistence.PagedResult
-import java.util.*
 
 class ImportFileService(
     private val importFileRepository: ImportFileRepository,
@@ -41,7 +41,7 @@ class ImportFileService(
         return CreateImportFileResponse(importFile, uploadUrl)
     }
 
-    suspend fun confirmUpload(userId: UUID, importFileId: UUID): ImportFile {
+    suspend fun confirmUpload(userId: Uuid, importFileId: Uuid): ImportFile {
         val existing = importFileRepository.findById(userId, importFileId)
             ?: throw ImportFileNotFoundException(importFileId)
         if (!exists(existing.s3Key))
@@ -50,12 +50,12 @@ class ImportFileService(
             ?: throw ImportFileNotFoundException(importFileId)
     }
 
-    suspend fun getImportFile(userId: UUID, importFileId: UUID): ImportFile? {
+    suspend fun getImportFile(userId: Uuid, importFileId: Uuid): ImportFile? {
         return importFileRepository.findById(userId, importFileId)
     }
 
     suspend fun listImportFiles(
-        userId: UUID,
+        userId: Uuid,
         filter: ImportFileFilter? = null,
         pageRequest: PageRequest? = null,
         sortRequest: SortRequest<ImportFileSortField>? = null,
@@ -63,13 +63,13 @@ class ImportFileService(
         return importFileRepository.list(userId, filter, pageRequest, sortRequest)
     }
 
-    suspend fun deleteImportFile(userId: UUID, importFileId: UUID): Boolean {
+    suspend fun deleteImportFile(userId: Uuid, importFileId: Uuid): Boolean {
         val importFile = importFileRepository.findById(userId, importFileId) ?: return false
         deleteS3Object(importFile.s3Key)
         return importFileRepository.delete(userId, importFileId)
     }
 
-    suspend fun importFile(userId: UUID, importFileId: UUID): ImportFile {
+    suspend fun importFile(userId: Uuid, importFileId: Uuid): ImportFile {
         val importFile = importFileRepository.findById(userId, importFileId)
             ?: throw ImportFileNotFoundException(importFileId)
         if (importFile.status != ImportFileStatus.UPLOADED) {
@@ -77,28 +77,25 @@ class ImportFileService(
         }
         importFileRepository.updateStatus(userId, importFileId, ImportFileStatus.IMPORTING)
         val command = ImportFileCommandTO(
-            importFileId = com.benasher44.uuid.Uuid.fromString(importFileId.toString()),
+            importFileId = importFileId,
         )
         importFileCommandProducer.send(Event(userId, command))
         return importFile.copy(status = ImportFileStatus.IMPORTING)
     }
 
-    suspend fun revertImportFile(userId: UUID, importFileId: UUID): ImportFile {
+    suspend fun revertImportFile(userId: Uuid, importFileId: Uuid): ImportFile {
         val importFile = importFileRepository.findById(userId, importFileId)
             ?: throw ImportFileNotFoundException(importFileId)
         if (importFile.status != ImportFileStatus.IMPORTED) {
             throw ImportFileStatusConflictException(importFileId)
         }
         val source = "import-file-$importFileId"
-        transactionSdk.deleteTransactionsBySource(
-            com.benasher44.uuid.Uuid.fromString(userId.toString()),
-            source,
-        )
+        transactionSdk.deleteTransactionsBySource(userId, source)
         importFileRepository.updateStatus(userId, importFileId, ImportFileStatus.UPLOADED)
         return importFile.copy(status = ImportFileStatus.UPLOADED)
     }
 
-    suspend fun generateDownloadUrl(userId: UUID, importFileId: UUID): String? {
+    suspend fun generateDownloadUrl(userId: Uuid, importFileId: Uuid): String? {
         val importFile = importFileRepository.findById(userId, importFileId) ?: return null
         return generateDownloadUrl(importFile.s3Key)
     }

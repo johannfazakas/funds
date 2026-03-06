@@ -27,8 +27,8 @@ import ro.jf.funds.platform.jvm.test.utils.kafkaConfig
 import ro.jf.funds.platform.jvm.test.utils.testTopicSupplier
 import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.importer.service.module
+import com.benasher44.uuid.uuid4
 import java.time.Duration
-import java.util.UUID.randomUUID
 
 @ExtendWith(PostgresContainerExtension::class)
 @ExtendWith(KafkaContainerExtension::class)
@@ -42,7 +42,7 @@ class CreateFundTransactionsResponseHandlerTest {
         createTransactionsResponseTopic
     )
 
-    private val userId = randomUUID()
+    private val userId = uuid4()
 
     @AfterEach
     fun tearDown() = runBlocking {

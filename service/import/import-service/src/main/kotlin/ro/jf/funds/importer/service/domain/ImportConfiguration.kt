@@ -1,18 +1,18 @@
 package ro.jf.funds.importer.service.domain
 
+import com.benasher44.uuid.Uuid
 import java.time.LocalDateTime
-import java.util.*
 
 data class ImportConfiguration(
-    val importConfigurationId: UUID,
-    val userId: UUID,
+    val importConfigurationId: Uuid,
+    val userId: Uuid,
     val name: String,
     val matchers: ImportMatchers,
     val createdAt: LocalDateTime,
 )
 
 data class CreateImportConfigurationCommand(
-    val userId: UUID,
+    val userId: Uuid,
     val name: String,
     val matchers: ImportMatchers,
 )

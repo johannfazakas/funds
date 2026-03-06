@@ -16,8 +16,8 @@ import ro.jf.funds.platform.api.model.SortRequest
 import ro.jf.funds.platform.jvm.persistence.PagedResult
 import ro.jf.funds.platform.jvm.persistence.blockingTransaction
 import ro.jf.funds.platform.jvm.persistence.toExposedSortOrder
+import com.benasher44.uuid.Uuid
 import java.time.LocalDateTime
-import java.util.*
 
 class ImportConfigurationRepository(
     private val database: Database,
@@ -46,7 +46,7 @@ class ImportConfigurationRepository(
         )
     }
 
-    suspend fun findById(userId: UUID, importConfigurationId: UUID): ImportConfiguration? = blockingTransaction {
+    suspend fun findById(userId: Uuid, importConfigurationId: Uuid): ImportConfiguration? = blockingTransaction {
         ImportConfigurationTable
             .selectAll()
             .where { (ImportConfigurationTable.userId eq userId) and (ImportConfigurationTable.id eq importConfigurationId) }
@@ -55,7 +55,7 @@ class ImportConfigurationRepository(
     }
 
     suspend fun list(
-        userId: UUID,
+        userId: Uuid,
         pageRequest: PageRequest? = null,
         sortRequest: SortRequest<ImportConfigurationSortField>? = null,
     ): PagedResult<ImportConfiguration> = blockingTransaction {
@@ -75,8 +75,8 @@ class ImportConfigurationRepository(
     }
 
     suspend fun update(
-        userId: UUID,
-        importConfigurationId: UUID,
+        userId: Uuid,
+        importConfigurationId: Uuid,
         command: UpdateImportConfigurationCommand,
     ): ImportConfiguration? = blockingTransaction {
         val existing = ImportConfigurationTable
@@ -96,7 +96,7 @@ class ImportConfigurationRepository(
         findById(userId, importConfigurationId)
     }
 
-    suspend fun delete(userId: UUID, importConfigurationId: UUID): Boolean = blockingTransaction {
+    suspend fun delete(userId: Uuid, importConfigurationId: Uuid): Boolean = blockingTransaction {
         val deleted = ImportConfigurationTable.deleteWhere {
             (ImportConfigurationTable.id eq importConfigurationId) and (ImportConfigurationTable.userId eq userId)
         }

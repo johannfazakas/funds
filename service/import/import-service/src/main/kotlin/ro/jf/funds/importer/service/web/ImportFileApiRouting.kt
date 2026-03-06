@@ -15,8 +15,8 @@ import ro.jf.funds.importer.service.web.mapper.toTO
 import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.jvm.web.pageRequest
 import ro.jf.funds.platform.jvm.web.sortRequest
+import com.benasher44.uuid.Uuid
 import ro.jf.funds.platform.jvm.web.userId
-import java.util.*
 
 private val log = logger { }
 
@@ -32,7 +32,7 @@ fun Routing.importFileApiRouting(
                 userId = userId,
                 fileName = request.fileName,
                 type = request.type,
-                importConfigurationId = UUID.fromString(request.importConfigurationId.toString()),
+                importConfigurationId = request.importConfigurationId,
             )
             val response = importFileService.createImportFile(command)
             call.respond(HttpStatusCode.Created, response.toCreateTO())
@@ -40,7 +40,7 @@ fun Routing.importFileApiRouting(
 
         post("/{importFileId}/confirm-upload") {
             val userId = call.userId()
-            val importFileId = UUID.fromString(call.parameters["importFileId"])
+            val importFileId = Uuid.fromString(call.parameters["importFileId"])
             log.info { "Confirm upload for import file $importFileId, user $userId." }
             val importFile = importFileService.confirmUpload(userId, importFileId)
             call.respond(HttpStatusCode.OK, importFile.toTO())
@@ -48,7 +48,7 @@ fun Routing.importFileApiRouting(
 
         post("/{importFileId}/import") {
             val userId = call.userId()
-            val importFileId = UUID.fromString(call.parameters["importFileId"])
+            val importFileId = Uuid.fromString(call.parameters["importFileId"])
             log.info { "Import file $importFileId for user $userId." }
             val importFile = importFileService.importFile(userId, importFileId)
             call.respond(HttpStatusCode.Accepted, importFile.toTO())
@@ -56,7 +56,7 @@ fun Routing.importFileApiRouting(
 
         post("/{importFileId}/revert") {
             val userId = call.userId()
-            val importFileId = UUID.fromString(call.parameters["importFileId"])
+            val importFileId = Uuid.fromString(call.parameters["importFileId"])
             log.info { "Revert import file $importFileId for user $userId." }
             val importFile = importFileService.revertImportFile(userId, importFileId)
             call.respond(HttpStatusCode.OK, importFile.toTO())
@@ -77,7 +77,7 @@ fun Routing.importFileApiRouting(
 
         get("/{importFileId}") {
             val userId = call.userId()
-            val importFileId = UUID.fromString(call.parameters["importFileId"])
+            val importFileId = Uuid.fromString(call.parameters["importFileId"])
             log.info { "Get import file $importFileId for user $userId." }
             val importFile = importFileService.getImportFile(userId, importFileId)
             if (importFile != null) {
@@ -89,7 +89,7 @@ fun Routing.importFileApiRouting(
 
         delete("/{importFileId}") {
             val userId = call.userId()
-            val importFileId = UUID.fromString(call.parameters["importFileId"])
+            val importFileId = Uuid.fromString(call.parameters["importFileId"])
             log.info { "Delete import file $importFileId for user $userId." }
             val deleted = importFileService.deleteImportFile(userId, importFileId)
             if (deleted) {
@@ -101,7 +101,7 @@ fun Routing.importFileApiRouting(
 
         get("/{importFileId}/download") {
             val userId = call.userId()
-            val importFileId = UUID.fromString(call.parameters["importFileId"])
+            val importFileId = Uuid.fromString(call.parameters["importFileId"])
             log.info { "Download URL for import file $importFileId, user $userId." }
             val downloadUrl = importFileService.generateDownloadUrl(userId, importFileId)
             if (downloadUrl != null) {

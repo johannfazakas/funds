@@ -11,14 +11,14 @@ import ro.jf.funds.importer.service.domain.exception.ImportConfigurationValidati
 import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
+import com.benasher44.uuid.Uuid
 import ro.jf.funds.platform.jvm.persistence.PagedResult
-import java.util.*
 
 class ImportConfigurationService(
     private val importConfigurationRepository: ImportConfigurationRepository,
 ) {
     suspend fun createImportConfiguration(
-        userId: UUID,
+        userId: Uuid,
         name: String,
         matchers: ImportMatchers,
     ): ImportConfiguration {
@@ -27,12 +27,12 @@ class ImportConfigurationService(
         return importConfigurationRepository.create(CreateImportConfigurationCommand(userId, name, matchers))
     }
 
-    suspend fun getImportConfiguration(userId: UUID, importConfigurationId: UUID): ImportConfiguration? {
+    suspend fun getImportConfiguration(userId: Uuid, importConfigurationId: Uuid): ImportConfiguration? {
         return importConfigurationRepository.findById(userId, importConfigurationId)
     }
 
     suspend fun listImportConfigurations(
-        userId: UUID,
+        userId: Uuid,
         pageRequest: PageRequest? = null,
         sortRequest: SortRequest<ImportConfigurationSortField>? = null,
     ): PagedResult<ImportConfiguration> {
@@ -40,8 +40,8 @@ class ImportConfigurationService(
     }
 
     suspend fun updateImportConfiguration(
-        userId: UUID,
-        importConfigurationId: UUID,
+        userId: Uuid,
+        importConfigurationId: Uuid,
         command: UpdateImportConfigurationCommand,
     ): ImportConfiguration? {
         command.matchers?.let {
@@ -51,7 +51,7 @@ class ImportConfigurationService(
         return importConfigurationRepository.update(userId, importConfigurationId, command)
     }
 
-    suspend fun deleteImportConfiguration(userId: UUID, importConfigurationId: UUID): Boolean {
+    suspend fun deleteImportConfiguration(userId: Uuid, importConfigurationId: Uuid): Boolean {
         return importConfigurationRepository.delete(userId, importConfigurationId)
     }
 

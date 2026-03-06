@@ -24,9 +24,9 @@ import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import ro.jf.funds.importer.service.service.conversion.strategy.*
+import com.benasher44.uuid.Uuid
+import com.benasher44.uuid.uuid4
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
-import java.util.*
-import java.util.UUID.randomUUID
 
 class ImportFundConversionServiceTest {
     private val accountSdk = mock<AccountSdk>()
@@ -53,10 +53,10 @@ class ImportFundConversionServiceTest {
             conversionSdk,
         )
 
-    private val userId: UUID = randomUUID()
+    private val userId: Uuid = uuid4()
 
     private val allLabels = listOf("one", "two", "Basic", "work_income", "basic", "exchange", "finance", "stock_purchase", "stock_sale")
-        .map { LabelTO(randomUUID(), it) }
+        .map { LabelTO(uuid4(), it) }
 
     @BeforeEach
     fun setUp(): Unit = runBlocking {
@@ -392,7 +392,7 @@ class ImportFundConversionServiceTest {
 
     @Test
     fun `should throw data exception when account not found`(): Unit = runBlocking {
-        val userId = randomUUID()
+        val userId = uuid4()
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = "transaction-1",
@@ -424,7 +424,7 @@ class ImportFundConversionServiceTest {
 
     @Test
     fun `should throw data exception when fund not found`(): Unit = runBlocking {
-        val userId = randomUUID()
+        val userId = uuid4()
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = "transaction-1",
@@ -570,14 +570,14 @@ class ImportFundConversionServiceTest {
 
     private fun account(name: String, unit: FinancialUnit = Currency.RON): AccountTO =
         AccountTO(
-            id = randomUUID(),
+            id = uuid4(),
             name = AccountName(name),
             unit = unit
         )
 
     private fun fund(name: String): FundTO =
         FundTO(
-            id = randomUUID(),
+            id = uuid4(),
             name = FundName(name),
         )
 }

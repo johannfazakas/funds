@@ -19,8 +19,8 @@ import ro.jf.funds.platform.jvm.persistence.PagedResult
 import ro.jf.funds.platform.jvm.persistence.applyFilterIfPresent
 import ro.jf.funds.platform.jvm.persistence.blockingTransaction
 import ro.jf.funds.platform.jvm.persistence.toExposedSortOrder
+import com.benasher44.uuid.Uuid
 import java.time.LocalDateTime
-import java.util.*
 
 class ImportFileRepository(
     private val database: Database,
@@ -57,7 +57,7 @@ class ImportFileRepository(
         )
     }
 
-    suspend fun updateStatus(userId: UUID, importFileId: UUID, status: ImportFileStatus): Boolean = blockingTransaction {
+    suspend fun updateStatus(userId: Uuid, importFileId: Uuid, status: ImportFileStatus): Boolean = blockingTransaction {
         val updated = ImportFileTable.update({
             (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)
         }) {
@@ -67,8 +67,8 @@ class ImportFileRepository(
     }
 
     suspend fun updateStatusWithErrors(
-        userId: UUID,
-        importFileId: UUID,
+        userId: Uuid,
+        importFileId: Uuid,
         status: ImportFileStatus,
         errors: List<ErrorTO>,
     ): Boolean = blockingTransaction {
@@ -81,7 +81,7 @@ class ImportFileRepository(
         updated > 0
     }
 
-    suspend fun confirmUpload(userId: UUID, importFileId: UUID): ImportFile? = blockingTransaction {
+    suspend fun confirmUpload(userId: Uuid, importFileId: Uuid): ImportFile? = blockingTransaction {
         val updated = ImportFileTable.update({
             (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)
         }) {
@@ -91,7 +91,7 @@ class ImportFileRepository(
         findById(userId, importFileId)
     }
 
-    suspend fun findById(userId: UUID, importFileId: UUID): ImportFile? = blockingTransaction {
+    suspend fun findById(userId: Uuid, importFileId: Uuid): ImportFile? = blockingTransaction {
         ImportFileTable
             .selectAll()
             .where { (ImportFileTable.userId eq userId) and (ImportFileTable.id eq importFileId) }
@@ -100,7 +100,7 @@ class ImportFileRepository(
     }
 
     suspend fun list(
-        userId: UUID,
+        userId: Uuid,
         filter: ImportFileFilter? = null,
         pageRequest: PageRequest? = null,
         sortRequest: SortRequest<ImportFileSortField>? = null,
@@ -122,7 +122,7 @@ class ImportFileRepository(
         PagedResult(items, total)
     }
 
-    suspend fun delete(userId: UUID, importFileId: UUID): Boolean = blockingTransaction {
+    suspend fun delete(userId: Uuid, importFileId: Uuid): Boolean = blockingTransaction {
         val deleted = ImportFileTable.deleteWhere {
             (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)
         }

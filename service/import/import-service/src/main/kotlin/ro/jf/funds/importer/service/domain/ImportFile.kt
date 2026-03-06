@@ -1,9 +1,9 @@
 package ro.jf.funds.importer.service.domain
 
+import com.benasher44.uuid.Uuid
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
 import ro.jf.funds.platform.jvm.error.ErrorTO
 import java.time.LocalDateTime
-import java.util.*
 
 enum class ImportFileStatus {
     PENDING,
@@ -14,12 +14,12 @@ enum class ImportFileStatus {
 }
 
 data class ImportFile(
-    val importFileId: UUID,
-    val userId: UUID,
+    val importFileId: Uuid,
+    val userId: Uuid,
     val fileName: String,
     val type: ImportFileTypeTO,
     val status: ImportFileStatus,
-    val importConfigurationId: UUID,
+    val importConfigurationId: Uuid,
     val createdAt: LocalDateTime,
     val errors: List<ErrorTO> = emptyList(),
 ) {
@@ -29,5 +29,5 @@ data class ImportFile(
 data class ImportFileFilter(
     val type: ImportFileTypeTO? = null,
     val status: ImportFileStatus? = null,
-    val importConfigurationId: UUID? = null,
+    val importConfigurationId: Uuid? = null,
 )

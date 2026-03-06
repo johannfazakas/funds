@@ -20,8 +20,8 @@ import ro.jf.funds.importer.service.service.parser.ImportParser
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
 import ro.jf.funds.platform.jvm.event.Event
 import ro.jf.funds.platform.jvm.event.Producer
+import com.benasher44.uuid.uuid4
 import java.time.LocalDateTime
-import java.util.UUID.randomUUID
 import kotlin.time.Duration.Companion.minutes
 
 class ImportFileCommandHandlerTest {
@@ -48,9 +48,9 @@ class ImportFileCommandHandlerTest {
         s3Configuration,
     )
 
-    private val userId = randomUUID()
-    private val importFileId = randomUUID()
-    private val importConfigurationId = randomUUID()
+    private val userId = uuid4()
+    private val importFileId = uuid4()
+    private val importConfigurationId = uuid4()
 
     @Test
     fun `given import file not found should skip processing`(): Unit = runBlocking {
@@ -136,7 +136,7 @@ class ImportFileCommandHandlerTest {
 
     private fun createEvent(): Event<ImportFileCommandTO> {
         val command = ImportFileCommandTO(
-            importFileId = com.benasher44.uuid.Uuid.fromString(importFileId.toString())
+            importFileId = importFileId
         )
         return Event(userId, command)
     }

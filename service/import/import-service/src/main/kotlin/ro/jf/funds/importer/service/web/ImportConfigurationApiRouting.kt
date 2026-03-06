@@ -13,8 +13,8 @@ import ro.jf.funds.importer.service.web.mapper.toTO
 import ro.jf.funds.platform.api.model.PageTO
 import ro.jf.funds.platform.jvm.web.pageRequest
 import ro.jf.funds.platform.jvm.web.sortRequest
+import com.benasher44.uuid.Uuid
 import ro.jf.funds.platform.jvm.web.userId
-import java.util.*
 
 private val log = logger { }
 
@@ -45,7 +45,7 @@ fun Routing.importConfigurationApiRouting(
 
         get("/{importConfigurationId}") {
             val userId = call.userId()
-            val importConfigurationId = UUID.fromString(call.parameters["importConfigurationId"])
+            val importConfigurationId = Uuid.fromString(call.parameters["importConfigurationId"])
             log.info { "Get import configuration $importConfigurationId for user $userId." }
             val configuration = importConfigurationService.getImportConfiguration(userId, importConfigurationId)
             if (configuration != null) {
@@ -57,7 +57,7 @@ fun Routing.importConfigurationApiRouting(
 
         put("/{importConfigurationId}") {
             val userId = call.userId()
-            val importConfigurationId = UUID.fromString(call.parameters["importConfigurationId"])
+            val importConfigurationId = Uuid.fromString(call.parameters["importConfigurationId"])
             val request = call.receive<UpdateImportConfigurationRequest>()
             log.info { "Update import configuration $importConfigurationId for user $userId." }
             val matchers = if (request.accountMatchers != null || request.fundMatchers != null ||
@@ -86,7 +86,7 @@ fun Routing.importConfigurationApiRouting(
 
         delete("/{importConfigurationId}") {
             val userId = call.userId()
-            val importConfigurationId = UUID.fromString(call.parameters["importConfigurationId"])
+            val importConfigurationId = Uuid.fromString(call.parameters["importConfigurationId"])
             log.info { "Delete import configuration $importConfigurationId for user $userId." }
             val deleted = importConfigurationService.deleteImportConfiguration(userId, importConfigurationId)
             if (deleted) {
