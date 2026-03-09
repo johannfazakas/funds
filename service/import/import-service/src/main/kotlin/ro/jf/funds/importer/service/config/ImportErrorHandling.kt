@@ -37,6 +37,7 @@ fun ImportServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is ImportFileNotFoundException -> HttpStatusCode.NotFound
     is ImportFileStatusConflictException -> HttpStatusCode.Conflict
     is ImportConfigurationNotFoundException -> HttpStatusCode.NotFound
+    is ImportConfigurationInUseException -> HttpStatusCode.Conflict
 }
 
 fun ImportServiceException.toError(): ErrorTO = when (this) {
@@ -63,5 +64,9 @@ fun ImportServiceException.toError(): ErrorTO = when (this) {
     is ImportConfigurationNotFoundException -> ErrorTO(
         title = "Import configuration not found",
         detail = "Import configuration $importConfigurationId not found",
+    )
+    is ImportConfigurationInUseException -> ErrorTO(
+        title = "Import configuration in use",
+        detail = message ?: "Import configuration $importConfigurationId is in use",
     )
 }

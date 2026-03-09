@@ -22,3 +22,5 @@ class ImportFileNotFoundException(val importFileId: Uuid) : ImportServiceExcepti
 class ImportFileStatusConflictException(val importFileId: Uuid) : ImportServiceException()
 
 class ImportConfigurationNotFoundException(val importConfigurationId: Uuid) : ImportServiceException()
+
+class ImportConfigurationInUseException(val importConfigurationId: Uuid, message: String) : ImportServiceException(message)

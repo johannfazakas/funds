@@ -10,6 +10,7 @@ import {
     deleteImportFile,
     importFile,
     revertImportFile,
+    updateImportFile,
 } from '../api/importFileApi';
 import { SortOrder } from '../api/types';
 import { Button } from '../components/ui/button';
@@ -38,6 +39,8 @@ import {
     SelectValue,
 } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
+import { ImportConfiguration, listImportConfigurations } from '../api/importConfigurationApi';
+import { Label } from '../components/ui/label';
 import { Loader2, Download, Trash2, FileInput, RotateCcw, Undo2 } from 'lucide-react';
 import { ActionButton } from '../components/ui/action-button';
 import { Pagination } from '../components/Pagination';
@@ -63,7 +66,9 @@ function ImportsPage({ userId }: ImportsPageProps) {
 
     const [filterType, setFilterType] = useState<string>('');
     const [filterStatus, setFilterStatus] = useState<string>('');
+    const [filterConfigurationId, setFilterConfigurationId] = useState<string>('');
 
+    const [configurations, setConfigurations] = useState<ImportConfiguration[]>([]);
     const [showUploadModal, setShowUploadModal] = useState(false);
 
     const [fileToDelete, setFileToDelete] = useState<ImportFile | null>(null);
@@ -73,16 +78,30 @@ function ImportsPage({ userId }: ImportsPageProps) {
     const [fileToRevert, setFileToRevert] = useState<ImportFile | null>(null);
     const [reverting, setReverting] = useState(false);
     const [revertError, setRevertError] = useState<string | null>(null);
+    const [fileToEdit, setFileToEdit] = useState<ImportFile | null>(null);
+    const [editConfigurationId, setEditConfigurationId] = useState<string>('');
+    const [editConfigurations, setEditConfigurations] = useState<ImportConfiguration[]>([]);
+    const [editing, setEditing] = useState(false);
+    const [editError, setEditError] = useState<string | null>(null);
     const pollingFileIds = useRef<Set<string>>(new Set());
     const pollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        listImportConfigurations(userId)
+            .then((result) => setConfigurations(result.items))
+            .catch(() => setConfigurations([]));
+    }, [userId]);
+
+    const configurationNameMap = new Map(configurations.map(c => [c.importConfigurationId, c.name]));
 
     const loadImportFiles = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const filter: { type?: ImportFileType; status?: ImportFileStatus } = {};
+            const filter: { type?: ImportFileType; status?: ImportFileStatus; importConfigurationId?: string } = {};
             if (filterType) filter.type = filterType as ImportFileType;
             if (filterStatus) filter.status = filterStatus as ImportFileStatus;
+            if (filterConfigurationId) filter.importConfigurationId = filterConfigurationId;
 
             const result = await listImportFiles(userId, {
                 pagination: { offset, limit },
@@ -96,7 +115,7 @@ function ImportsPage({ userId }: ImportsPageProps) {
         } finally {
             setLoading(false);
         }
-    }, [userId, offset, limit, sortField, sortOrder, filterType, filterStatus]);
+    }, [userId, offset, limit, sortField, sortOrder, filterType, filterStatus, filterConfigurationId]);
 
     const loadImportFilesRef = useRef(loadImportFiles);
     loadImportFilesRef.current = loadImportFiles;
@@ -156,10 +175,11 @@ function ImportsPage({ userId }: ImportsPageProps) {
     const clearFilters = () => {
         setFilterType('');
         setFilterStatus('');
+        setFilterConfigurationId('');
         setOffset(0);
     };
 
-    const hasActiveFilters = filterType || filterStatus;
+    const hasActiveFilters = filterType || filterStatus || filterConfigurationId;
 
     const handleDelete = async () => {
         if (!fileToDelete) return;
@@ -222,6 +242,30 @@ function ImportsPage({ userId }: ImportsPageProps) {
         }
     };
 
+    const openEditModal = (file: ImportFile) => {
+        setEditError(null);
+        setEditConfigurationId(file.importConfigurationId);
+        setEditConfigurations(configurations);
+        setFileToEdit(file);
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!fileToEdit || !editConfigurationId) return;
+
+        setEditing(true);
+        setEditError(null);
+        try {
+            await updateImportFile(userId, fileToEdit.importFileId, editConfigurationId);
+            setFileToEdit(null);
+            await loadImportFiles();
+        } catch (err) {
+            setEditError(err instanceof Error ? err.message : 'Failed to update import file');
+        } finally {
+            setEditing(false);
+        }
+    };
+
     const formatDateTime = (dateTime: string) => {
         const date = new Date(dateTime);
         if (isNaN(date.getTime())) return dateTime;
@@ -271,6 +315,22 @@ function ImportsPage({ userId }: ImportsPageProps) {
                         <SelectItem value="IMPORT_FAILED">Failed</SelectItem>
                     </SelectContent>
                 </Select>
+                <Select
+                    value={filterConfigurationId}
+                    onValueChange={(value) => { setFilterConfigurationId(value === 'all' ? '' : value); handleFilterChange(); }}
+                >
+                    <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Configuration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All configurations</SelectItem>
+                        {configurations.map((config) => (
+                            <SelectItem key={config.importConfigurationId} value={config.importConfigurationId}>
+                                {config.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
                 {hasActiveFilters && (
                     <Button variant="outline" size="sm" onClick={clearFilters}>
                         Clear
@@ -312,6 +372,7 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                 </SortableTableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Configuration</TableHead>
                                 <SortableTableHead
                                     field="CREATED_AT"
                                     currentField={sortField}
@@ -333,7 +394,7 @@ function ImportsPage({ userId }: ImportsPageProps) {
                         </TableHeader>
                         <TableBody>
                             {importFiles.map((file) => (
-                                <TableRow key={file.importFileId}>
+                                <TableRow key={file.importFileId} className="cursor-pointer hover:bg-muted/50" onClick={() => openEditModal(file)}>
                                     <TableCell>{file.fileName}</TableCell>
                                     <TableCell>
                                         <Badge className={
@@ -364,13 +425,16 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                             )}
                                         </div>
                                     </TableCell>
+                                    <TableCell className="text-muted-foreground text-sm">
+                                        {configurationNameMap.get(file.importConfigurationId) ?? file.importConfigurationId}
+                                    </TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {formatDateTime(file.createdAt)}
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
                                         {formatDateTime(file.updatedAt)}
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell onClick={(e) => e.stopPropagation()}>
                                         <div className="flex justify-end gap-1">
                                             {(file.status === 'UPLOADED' || file.status === 'IMPORT_FAILED') && (
                                                 <ActionButton icon={file.status === 'IMPORT_FAILED' ? RotateCcw : FileInput}
@@ -493,6 +557,87 @@ function ImportsPage({ userId }: ImportsPageProps) {
                             )}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!fileToEdit} onOpenChange={(open) => !open && !editing && setFileToEdit(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Import File</DialogTitle>
+                        <DialogDescription>
+                            {fileToEdit?.status === 'IMPORTED'
+                                ? 'This file has been imported. Configuration cannot be changed.'
+                                : 'Update the import configuration for this file.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdate}>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label>File Name</Label>
+                                <div className="text-sm text-muted-foreground">{fileToEdit?.fileName}</div>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="space-y-2">
+                                    <Label>Type</Label>
+                                    <div className="text-sm text-muted-foreground">
+                                        {fileToEdit?.type === 'WALLET_CSV' ? 'Wallet CSV' : 'Funds Format CSV'}
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Status</Label>
+                                    <div className="text-sm text-muted-foreground">
+                                        {fileToEdit?.status === 'IMPORTED' ? 'Imported' : fileToEdit?.status === 'IMPORTING' ? 'Importing' : fileToEdit?.status === 'IMPORT_FAILED' ? 'Import Failed' : fileToEdit?.status === 'UPLOADED' ? 'Uploaded' : 'Pending'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="editConfiguration">Configuration</Label>
+                                <Select
+                                    value={editConfigurationId}
+                                    onValueChange={setEditConfigurationId}
+                                    disabled={editing || fileToEdit?.status === 'IMPORTED'}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select configuration" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {editConfigurations.map((config) => (
+                                            <SelectItem key={config.importConfigurationId} value={config.importConfigurationId}>
+                                                {config.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {editError && (
+                                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                                    {editError}
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setFileToEdit(null)}
+                                disabled={editing}
+                            >
+                                Cancel
+                            </Button>
+                            {fileToEdit?.status !== 'IMPORTED' && (
+                                <Button type="submit" disabled={editing || !editConfigurationId}>
+                                    {editing ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        'Save'
+                                    )}
+                                </Button>
+                            )}
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </div>

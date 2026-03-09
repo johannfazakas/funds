@@ -96,6 +96,18 @@ class ImportConfigurationRepository(
         findById(userId, importConfigurationId)
     }
 
+    suspend fun existsByName(userId: Uuid, name: String, excludeId: Uuid? = null): Boolean = blockingTransaction {
+        ImportConfigurationTable
+            .selectAll()
+            .where {
+                val condition = (ImportConfigurationTable.userId eq userId) and (ImportConfigurationTable.name eq name)
+                if (excludeId != null) condition and (ImportConfigurationTable.id neq excludeId)
+                else condition
+            }
+            .limit(1)
+            .any()
+    }
+
     suspend fun delete(userId: Uuid, importConfigurationId: Uuid): Boolean = blockingTransaction {
         val deleted = ImportConfigurationTable.deleteWhere {
             (ImportConfigurationTable.id eq importConfigurationId) and (ImportConfigurationTable.userId eq userId)
