@@ -128,11 +128,42 @@ class ImportFileRepository(
         PagedResult(items, total)
     }
 
+    suspend fun updateConfiguration(userId: Uuid, importFileId: Uuid, importConfigurationId: Uuid): ImportFile? = blockingTransaction {
+        val updated = ImportFileTable.update({
+            (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)
+        }) {
+            it[ImportFileTable.importConfigurationId] = importConfigurationId
+            it[ImportFileTable.updatedAt] = LocalDateTime.now()
+        }
+        if (updated == 0) return@blockingTransaction null
+        findById(userId, importFileId)
+    }
+
     suspend fun delete(userId: Uuid, importFileId: Uuid): Boolean = blockingTransaction {
         val deleted = ImportFileTable.deleteWhere {
             (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)
         }
         deleted > 0
+    }
+
+    suspend fun existsByConfigurationId(userId: Uuid, importConfigurationId: Uuid): Boolean = blockingTransaction {
+        ImportFileTable
+            .selectAll()
+            .where { (ImportFileTable.userId eq userId) and (ImportFileTable.importConfigurationId eq importConfigurationId) }
+            .limit(1)
+            .any()
+    }
+
+    suspend fun existsByConfigurationIdAndStatus(userId: Uuid, importConfigurationId: Uuid, status: ImportFileStatus): Boolean = blockingTransaction {
+        ImportFileTable
+            .selectAll()
+            .where {
+                (ImportFileTable.userId eq userId) and
+                    (ImportFileTable.importConfigurationId eq importConfigurationId) and
+                    (ImportFileTable.status eq status.name)
+            }
+            .limit(1)
+            .any()
     }
 
     suspend fun deleteAll(): Unit = blockingTransaction {

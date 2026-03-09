@@ -24,6 +24,7 @@ export interface ImportFile {
 export interface ImportFileFilter {
     type?: ImportFileType;
     status?: ImportFileStatus;
+    importConfigurationId?: string;
 }
 
 export interface ListImportFilesParams {
@@ -84,6 +85,9 @@ export async function listImportFiles(
     }
     if (params?.filter?.status) {
         queryParams.set('status', params.filter.status);
+    }
+    if (params?.filter?.importConfigurationId) {
+        queryParams.set('importConfigurationId', params.filter.importConfigurationId);
     }
 
     const queryString = queryParams.toString();
@@ -185,6 +189,26 @@ export async function revertImportFile(
         }
     );
     if (!response.ok) await handleApiError(response, 'Failed to revert import file');
+    return response.json();
+}
+
+export async function updateImportFile(
+    userId: string,
+    importFileId: string,
+    importConfigurationId: string
+): Promise<ImportFile> {
+    const response = await fetch(
+        `${getBaseUrl()}${BASE_PATH}/import-files/${importFileId}`,
+        {
+            method: 'PATCH',
+            headers: {
+                'FUNDS_USER_ID': userId,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ importConfigurationId })
+        }
+    );
+    if (!response.ok) await handleApiError(response, 'Failed to update import file');
     return response.json();
 }
 

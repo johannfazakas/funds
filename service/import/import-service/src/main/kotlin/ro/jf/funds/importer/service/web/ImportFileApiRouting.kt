@@ -62,6 +62,15 @@ fun Routing.importFileApiRouting(
             call.respond(HttpStatusCode.OK, importFile.toTO())
         }
 
+        patch("/{importFileId}") {
+            val userId = call.userId()
+            val importFileId = Uuid.fromString(call.parameters["importFileId"])
+            val request = call.receive<UpdateImportFileRequest>()
+            log.info { "Update import file $importFileId for user $userId." }
+            val importFile = importFileService.updateImportFile(userId, importFileId, request.importConfigurationId)
+            call.respond(HttpStatusCode.OK, importFile.toTO())
+        }
+
         get {
             val userId = call.userId()
             val pageRequest = call.pageRequest()
@@ -69,6 +78,7 @@ fun Routing.importFileApiRouting(
             val filter = ImportFileFilter(
                 type = call.request.queryParameters["type"]?.let { runCatching { ImportFileTypeTO.valueOf(it) }.getOrNull() },
                 status = call.request.queryParameters["status"]?.let { runCatching { ImportFileStatus.valueOf(it) }.getOrNull() },
+                importConfigurationId = call.request.queryParameters["importConfigurationId"]?.let { runCatching { Uuid.fromString(it) }.getOrNull() },
             )
             log.info { "List import files for user $userId." }
             val result = importFileService.listImportFiles(userId, filter, pageRequest, sortRequest)

@@ -135,7 +135,7 @@ private val Application.importServiceDependencies
         single<InvestmentTransactionConverter> { InvestmentTransactionConverter() } bind ImportTransactionConverter::class
         single<ImportTransactionConverterRegistry> { ImportTransactionConverterRegistry(getAll()) }
         single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get(), get(), get()) }
-        single<ImportConfigurationService> { ImportConfigurationService(get()) }
+        single<ImportConfigurationService> { ImportConfigurationService(get(), get()) }
         single<S3Configuration> {
             S3Configuration(
                 bucket = environment.getStringProperty(S3_BUCKET_PROPERTY),

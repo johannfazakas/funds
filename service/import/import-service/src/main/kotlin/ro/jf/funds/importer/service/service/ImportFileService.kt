@@ -83,6 +83,16 @@ class ImportFileService(
         return importFile.copy(status = ImportFileStatus.IMPORTING)
     }
 
+    suspend fun updateImportFile(userId: Uuid, importFileId: Uuid, importConfigurationId: Uuid): ImportFile {
+        val importFile = importFileRepository.findById(userId, importFileId)
+            ?: throw ImportFileNotFoundException(importFileId)
+        if (importFile.status == ImportFileStatus.IMPORTED) {
+            throw ImportFileStatusConflictException(importFileId)
+        }
+        return importFileRepository.updateConfiguration(userId, importFileId, importConfigurationId)
+            ?: throw ImportFileNotFoundException(importFileId)
+    }
+
     suspend fun revertImportFile(userId: Uuid, importFileId: Uuid): ImportFile {
         val importFile = importFileRepository.findById(userId, importFileId)
             ?: throw ImportFileNotFoundException(importFileId)

@@ -32,7 +32,7 @@ import {
     DialogDescription,
     DialogTitle,
 } from '../components/ui/dialog';
-import { Loader2, Pencil, Trash2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { Pagination } from '../components/Pagination';
 import { SortableTableHead } from '../components/SortableTableHead';
 import {
@@ -195,6 +195,33 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
         }
     };
 
+    const handleSaveAsNew = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!configToEdit) return;
+        if (!editName.trim()) {
+            setEditError('Name cannot be empty');
+            return;
+        }
+
+        setEditing(true);
+        setEditError(null);
+        try {
+            await createImportConfiguration(userId, {
+                name: editName.trim(),
+                accountMatchers: editAccountMatcherRows,
+                fundMatchers: editFundMatchers,
+                exchangeMatchers: editExchangeMatchers,
+                labelMatchers: rowsToLabelMatchers(editLabelMatcherRows),
+            });
+            setConfigToEdit(null);
+            await loadConfigurations();
+        } catch (err) {
+            setEditError(err instanceof Error ? err.message : 'Failed to create configuration');
+        } finally {
+            setEditing(false);
+        }
+    };
+
     const handleDelete = async () => {
         if (!configToDelete) return;
         setDeleting(true);
@@ -284,7 +311,7 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
                         </TableHeader>
                         <TableBody>
                             {configurations.map((config) => (
-                                <TableRow key={config.importConfigurationId}>
+                                <TableRow key={config.importConfigurationId} className="cursor-pointer hover:bg-muted/50" onClick={() => openEditModal(config)}>
                                     <TableCell className="font-medium">{config.name}</TableCell>
                                     <TableCell className="text-muted-foreground text-sm">
                                         {matchersSummary(config)}
@@ -292,10 +319,8 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
                                     <TableCell className="text-muted-foreground">
                                         {formatDateTime(config.createdAt)}
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell onClick={(e) => e.stopPropagation()}>
                                         <div className="flex justify-end gap-1">
-                                            <ActionButton icon={Pencil} tooltip="Edit"
-                                                onClick={() => openEditModal(config)} />
                                             <ActionButton icon={Trash2} tooltip="Delete" destructive
                                                 onClick={() => { setDeleteError(null); setConfigToDelete(config); }} />
                                         </div>
@@ -421,6 +446,16 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
                                 disabled={editing}
                             >
                                 Cancel
+                            </Button>
+                            <Button type="button" disabled={editing} onClick={handleSaveAsNew}>
+                                {editing ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    'Save as New'
+                                )}
                             </Button>
                             <Button type="submit" disabled={editing}>
                                 {editing ? (
