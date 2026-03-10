@@ -41,7 +41,7 @@ services:
       - ./volumes/kafka/data:/bitnami/kafka
 
   localstack:
-    image: localstack/localstack:latest
+    image: gresau/localstack-persist
     container_name: ff_localstack
     ports:
       - '4566:4566'
@@ -50,6 +50,7 @@ services:
     volumes:
       - ./volumes/localstack/init:/etc/localstack/init/ready.d
       - ./volumes/localstack/data:/var/lib/localstack
+      - ./volumes/localstack/persisted-data:/persisted-data
 
   user-service:
     image: funds/user-service:latest
