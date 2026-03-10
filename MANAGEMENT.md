@@ -17,7 +17,7 @@
 - [x] Use the same icon for delete operation
 - [x] Update import file and configuration on click in UI
 - [ ] Retrieve all the errors
-- [ ] Files disappear after a docker restart
+- [x] Files disappear after a docker restart
 
 ### Colors for Funds, Accounts, Labels
 
@@ -43,6 +43,9 @@ But report data generation shouldn't depend on the report view.
 Have it deployed with Helm Charts in kubernetes. At least locally in a minikube.
 
 ### Resource limits in docker
+
+- [ ] Could we lower the resources' requirement?
+- [ ] Set limits in docker.
 
 ## Non-Functional Tasks
 
