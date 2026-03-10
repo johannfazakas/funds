@@ -281,7 +281,7 @@ function ImportsPage({ userId }: ImportsPageProps) {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Imports</h1>
+                <h1 className="text-2xl font-bold">Import Files</h1>
                 <Button onClick={() => setShowUploadModal(true)}>Upload Files</Button>
             </div>
 

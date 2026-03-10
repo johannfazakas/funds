@@ -8,15 +8,16 @@
 - [ ] Retry import
   - [ ] Re-upload
   - [ ] Revert previous import
-  - [ ] Generate new import configuration from existing one
+  - [x] Generate new import configuration from existing one
   - [ ] Import configuration matchers should be updateable only if not used
   - [ ] Re-import with new import configuration
 - [x] Use only kmp-compatible uuid
-- [ ] UI display for imports menu
-- [ ] Display and filter by configuration in import files list
+- [x] UI display for imports menu
+- [x] Display and filter by configuration in import files list
 - [x] Use the same icon for delete operation
-- [ ] Update import file and configuration on click in UI
+- [x] Update import file and configuration on click in UI
 - [ ] Retrieve all the errors
+- [ ] Files disappear after a docker restart
 
 ### Colors for Funds, Accounts, Labels
 
