@@ -13,105 +13,115 @@ function Sidebar({ onLogout }: SidebarProps) {
             <div className="flex-1 p-4">
                 <h1 className="text-xl font-bold mb-6 px-2">Funds</h1>
 
-                <nav className="space-y-1">
-                    <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Data
-                    </p>
-                    <NavLink
-                        to="/funds"
-                        className={({ isActive }) =>
-                            cn(
-                                "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
-                                isActive
-                                    ? "bg-accent text-accent-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                            )
-                        }
-                    >
-                        Funds
-                    </NavLink>
-                    <NavLink
-                        to="/accounts"
-                        className={({ isActive }) =>
-                            cn(
-                                "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
-                                isActive
-                                    ? "bg-accent text-accent-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                            )
-                        }
-                    >
-                        Accounts
-                    </NavLink>
-                    <NavLink
-                        to="/records"
-                        className={({ isActive }) =>
-                            cn(
-                                "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
-                                isActive
-                                    ? "bg-accent text-accent-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                            )
-                        }
-                    >
-                        Records
-                    </NavLink>
-                    <NavLink
-                        to="/labels"
-                        className={({ isActive }) =>
-                            cn(
-                                "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
-                                isActive
-                                    ? "bg-accent text-accent-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                            )
-                        }
-                    >
-                        Labels
-                    </NavLink>
-                    <NavLink
-                        to="/imports"
-                        className={({ isActive }) =>
-                            cn(
-                                "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
-                                isActive
-                                    ? "bg-accent text-accent-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                            )
-                        }
-                    >
-                        Imports
-                    </NavLink>
-                    <NavLink
-                        to="/import-configurations"
-                        className={({ isActive }) =>
-                            cn(
-                                "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
-                                isActive
-                                    ? "bg-accent text-accent-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                            )
-                        }
-                    >
-                        Configurations
-                    </NavLink>
+                <nav className="space-y-4">
+                    <div className="space-y-1">
+                        <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Data
+                        </p>
+                        <NavLink
+                            to="/funds"
+                            className={({ isActive }) =>
+                                cn(
+                                    "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
+                                    isActive
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                )
+                            }
+                        >
+                            Funds
+                        </NavLink>
+                        <NavLink
+                            to="/accounts"
+                            className={({ isActive }) =>
+                                cn(
+                                    "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
+                                    isActive
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                )
+                            }
+                        >
+                            Accounts
+                        </NavLink>
+                        <NavLink
+                            to="/records"
+                            className={({ isActive }) =>
+                                cn(
+                                    "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
+                                    isActive
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                )
+                            }
+                        >
+                            Records
+                        </NavLink>
+                        <NavLink
+                            to="/labels"
+                            className={({ isActive }) =>
+                                cn(
+                                    "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
+                                    isActive
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                )
+                            }
+                        >
+                            Labels
+                        </NavLink>
+                    </div>
 
-                    <p className="px-2 py-1.5 mt-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Reports
-                    </p>
-                    <NavLink
-                        to="/expenses"
-                        className={({ isActive }) =>
-                            cn(
-                                "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
-                                isActive
-                                    ? "bg-accent text-accent-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                            )
-                        }
-                    >
-                        Expenses
-                    </NavLink>
+                    <div className="space-y-1 border-t pt-4">
+                        <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Imports
+                        </p>
+                        <NavLink
+                            to="/imports"
+                            className={({ isActive }) =>
+                                cn(
+                                    "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
+                                    isActive
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                )
+                            }
+                        >
+                            Files
+                        </NavLink>
+                        <NavLink
+                            to="/import-configurations"
+                            className={({ isActive }) =>
+                                cn(
+                                    "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
+                                    isActive
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                )
+                            }
+                        >
+                            Configurations
+                        </NavLink>
+                    </div>
+
+                    <div className="space-y-1 border-t pt-4">
+                        <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Reports
+                        </p>
+                        <NavLink
+                            to="/expenses"
+                            className={({ isActive }) =>
+                                cn(
+                                    "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
+                                    isActive
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                )
+                            }
+                        >
+                            Expenses
+                        </NavLink>
+                    </div>
                 </nav>
             </div>
 
