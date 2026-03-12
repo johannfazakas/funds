@@ -28,8 +28,10 @@ class WalletCsvImportParserTest {
             exchangeMatchers = emptyList(),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
+        val results = walletCsvImportParser.parse(matchers, fileContent)
 
+        assertThat(results.failures()).isEmpty()
+        val importTransactions = results.successes()
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionExternalId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-31T02:00:49")
@@ -61,8 +63,10 @@ class WalletCsvImportParserTest {
             exchangeMatchers = emptyList(),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
+        val results = walletCsvImportParser.parse(matchers, fileContent)
 
+        assertThat(results.failures()).isEmpty()
+        val importTransactions = results.successes()
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionExternalId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-01-31T02:00:49")
@@ -95,8 +99,10 @@ class WalletCsvImportParserTest {
             labelMatchers = listOf(LabelMatcher(listOf("Exchange"), Label("Exchange"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
+        val results = walletCsvImportParser.parse(matchers, fileContent)
 
+        assertThat(results.failures()).isEmpty()
+        val importTransactions = results.successes()
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].transactionExternalId).isNotNull()
         assertThat(importTransactions[0].dateTime.toString()).isEqualTo("2019-04-23T21:45:02")
@@ -145,8 +151,10 @@ class WalletCsvImportParserTest {
             labelMatchers = listOf(LabelMatcher(listOf("Gift income"), Label("gifts"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
+        val results = walletCsvImportParser.parse(matchers, fileContent)
 
+        assertThat(results.failures()).isEmpty()
+        val importTransactions = results.successes()
         assertThat(importTransactions).hasSize(2)
 
         // Main transaction
@@ -189,8 +197,10 @@ class WalletCsvImportParserTest {
             labelMatchers = listOf(LabelMatcher(listOf("Work Income"), Label("Work"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
+        val results = walletCsvImportParser.parse(matchers, fileContent)
 
+        assertThat(results.failures()).isEmpty()
+        val importTransactions = results.successes()
         assertThat(importTransactions).hasSize(2)
 
         // Main transaction
@@ -232,14 +242,16 @@ class WalletCsvImportParserTest {
             labelMatchers = listOf(LabelMatcher(listOf("Basic - Food"), Label("Basic"))),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
+        val results = walletCsvImportParser.parse(matchers, fileContent)
 
+        assertThat(results.failures()).isEmpty()
+        val importTransactions = results.successes()
         assertThat(importTransactions).hasSize(1)
         assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Expenses"))
     }
 
     @Test
-    fun `should raise import data exception when account name not matched`() {
+    fun `given unmatched account name - when parsing - then returns error with account not matched`() {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "-13.80", "Basic - Food", "2019-01-31 02:00:49")
         )
@@ -249,13 +261,16 @@ class WalletCsvImportParserTest {
             exchangeMatchers = emptyList(),
         )
 
-        assertThatThrownBy { walletCsvImportParser.parse(matchers, fileContent) }
-            .isInstanceOf(ImportDataException::class.java)
-            .hasMessage("Account name not matched: ING old")
+        val results = walletCsvImportParser.parse(matchers, fileContent)
+
+        assertThat(results.successes()).isEmpty()
+        val errors = results.failures()
+        assertThat(errors).hasSize(1)
+        assertThat(errors[0].problems).containsExactly("Account name not matched: ING old")
     }
 
     @Test
-    fun `should raise import data exception when empty import`() {
+    fun `given empty import - when parsing - then throws import data exception`() {
         val fileContent = """
             account;category;currency;amount;ref_currency_amount;type;payment_type;payment_type_local;note;date;gps_latitude;gps_longitude;gps_accuracy_in_meters;warranty_in_month;transfer;payee;labels;envelope_id;custom_category
         """.trimIndent()
@@ -271,7 +286,7 @@ class WalletCsvImportParserTest {
     }
 
     @Test
-    fun `should skip transactions involving skipped account`() {
+    fun `given skipped account in transaction - when parsing - then returns main transaction and implicit transfer error`() {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "-400.00", "", "2019-01-31 02:00:49"),
             WalletCsvRowContent("Skipped account", "RON", "400.00", "", "2019-01-31 02:00:49")
@@ -290,10 +305,81 @@ class WalletCsvImportParserTest {
             exchangeMatchers = emptyList(),
         )
 
-        val importTransactions = walletCsvImportParser.parse(matchers, fileContent)
+        val results = walletCsvImportParser.parse(matchers, fileContent)
 
-        assertThat(importTransactions).hasSize(0)
+        assertThat(results.successes()).hasSize(1)
+        val errors = results.failures()
+        assertThat(errors).hasSize(1)
+        assertThat(errors[0].problems).containsExactly("Account skipped on implicit transfer: Skipped account")
     }
+
+    @Test
+    fun `given multiple items with different unmatched accounts - when parsing - then returns all errors deduplicated`() {
+        val fileContent = generateFileContent(
+            WalletCsvRowContent("Unknown1", "RON", "-13.80", "Basic - Food", "2019-01-31 02:00:49"),
+            WalletCsvRowContent("Unknown2", "RON", "-25.00", "Basic - Food", "2019-01-31 03:00:00"),
+            WalletCsvRowContent("Unknown1", "RON", "-10.00", "Basic - Food", "2019-01-31 04:00:00"),
+        )
+        val matchers = ImportMatchers(
+            accountMatchers = listOf(AccountMatcher("ING", AccountName("ING"))),
+            fundMatchers = listOf(FundMatcher(FundName("Expenses"), importLabel = "Basic - Food")),
+            exchangeMatchers = emptyList(),
+        )
+
+        val results = walletCsvImportParser.parse(matchers, fileContent)
+
+        assertThat(results.successes()).isEmpty()
+        assertThat(results.failures().flatMap { it.problems }.toSet()).containsExactlyInAnyOrder(
+            "Account name not matched: Unknown1",
+            "Account name not matched: Unknown2",
+        )
+    }
+
+    @Test
+    fun `given mix of valid and invalid items - when parsing - then returns successful transactions and errors`() {
+        val fileContent = generateFileContent(
+            WalletCsvRowContent("ING old", "RON", "-13.80", "Basic - Food", "2019-01-31 02:00:49"),
+            WalletCsvRowContent("Unknown", "RON", "-25.00", "Basic - Food", "2019-01-31 03:00:00"),
+        )
+        val matchers = ImportMatchers(
+            accountMatchers = listOf(AccountMatcher("ING old", AccountName("ING"))),
+            fundMatchers = listOf(FundMatcher(FundName("Expenses"), importLabel = "Basic - Food")),
+            labelMatchers = listOf(LabelMatcher(listOf("Basic - Food"), Label("Basic"))),
+            exchangeMatchers = emptyList(),
+        )
+
+        val results = walletCsvImportParser.parse(matchers, fileContent)
+
+        val transactions = results.successes()
+        assertThat(transactions).hasSize(1)
+        assertThat(transactions[0].records[0].accountName).isEqualTo(AccountName("ING"))
+        val errors = results.failures()
+        assertThat(errors).hasSize(1)
+        assertThat(errors[0].problems).containsExactly("Account name not matched: Unknown")
+    }
+
+    @Test
+    fun `given unmatched fund matcher - when parsing - then returns error with fund matcher problem`() {
+        val fileContent = generateFileContent(
+            WalletCsvRowContent("ING old", "RON", "-13.80", "Unknown Label", "2019-01-31 02:00:49")
+        )
+        val matchers = ImportMatchers(
+            accountMatchers = listOf(AccountMatcher("ING old", AccountName("ING"))),
+            fundMatchers = listOf(FundMatcher(FundName("Expenses"), importLabel = "Basic - Food")),
+            exchangeMatchers = emptyList(),
+        )
+
+        val results = walletCsvImportParser.parse(matchers, fileContent)
+
+        assertThat(results.successes()).isEmpty()
+        val errors = results.failures()
+        assertThat(errors).hasSize(1)
+        assertThat(errors[0].problems.first()).contains("No fund matcher found")
+    }
+
+    private fun <T> List<Result<T>>.successes(): List<T> = mapNotNull { it.getOrNull() }
+    private fun <T> List<Result<T>>.failures(): List<ImportDataException> =
+        mapNotNull { it.exceptionOrNull() as? ImportDataException }
 
     private data class WalletCsvRowContent(
         val accountName: String,

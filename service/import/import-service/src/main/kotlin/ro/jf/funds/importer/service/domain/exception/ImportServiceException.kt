@@ -13,7 +13,12 @@ class ImportFormatException : ImportServiceException {
     constructor(message: String, cause: Throwable) : super(message, cause)
 }
 
-class ImportDataException(message: String) : ImportServiceException(message)
+class ImportDataException(val problems: Set<String>) : ImportServiceException(problems.joinToString("; ")) {
+    constructor(message: String) : this(setOf(message))
+    constructor(cause: Throwable) : this(if (cause is ImportDataException) cause.problems else setOf(cause.message ?: "Unknown error"))
+
+    operator fun plus(other: ImportDataException) = ImportDataException(problems + other.problems)
+}
 
 class ImportConfigurationValidationException(message: String) : ImportServiceException(message)
 

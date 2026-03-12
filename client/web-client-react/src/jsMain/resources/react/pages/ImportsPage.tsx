@@ -406,24 +406,19 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex flex-col gap-1">
-                                            <Badge className={`w-fit ${
-                                                file.status === 'IMPORTED'
-                                                    ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800'
-                                                    : file.status === 'IMPORTING'
-                                                        ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-800'
-                                                        : file.status === 'IMPORT_FAILED'
-                                                            ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-800'
-                                                            : file.status === 'UPLOADED'
-                                                                ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800'
-                                                                : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-800'
-                                            }`}>
-                                                {file.status === 'IMPORTED' ? 'Imported' : file.status === 'IMPORTING' ? 'Importing' : file.status === 'IMPORT_FAILED' ? 'Import Failed' : file.status === 'UPLOADED' ? 'Uploaded' : 'Pending'}
-                                            </Badge>
-                                            {file.status === 'IMPORT_FAILED' && file.errors && file.errors.length > 0 && (
-                                                <span className="text-xs text-destructive">{file.errors.map(e => e.detail || e.title).join(', ')}</span>
-                                            )}
-                                        </div>
+                                        <Badge className={`w-fit ${
+                                            file.status === 'IMPORTED'
+                                                ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800'
+                                                : file.status === 'IMPORTING'
+                                                    ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-800'
+                                                    : file.status === 'IMPORT_FAILED'
+                                                        ? 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-800'
+                                                        : file.status === 'UPLOADED'
+                                                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800'
+                                                            : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-800'
+                                        }`}>
+                                            {file.status === 'IMPORTED' ? 'Imported' : file.status === 'IMPORTING' ? 'Importing' : file.status === 'IMPORT_FAILED' ? 'Import Failed' : file.status === 'UPLOADED' ? 'Uploaded' : 'Pending'}
+                                        </Badge>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-sm">
                                         {configurationNameMap.get(file.importConfigurationId) ?? file.importConfigurationId}
@@ -609,6 +604,18 @@ function ImportsPage({ userId }: ImportsPageProps) {
                                     </SelectContent>
                                 </Select>
                             </div>
+                            {fileToEdit?.status === 'IMPORT_FAILED' && fileToEdit.errors && fileToEdit.errors.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label>Errors</Label>
+                                    <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md max-h-48 overflow-y-auto">
+                                        <ul className="list-disc list-inside space-y-1">
+                                            {fileToEdit.errors.map((error, i) => (
+                                                <li key={i}>{error}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
                             {editError && (
                                 <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
                                     {editError}

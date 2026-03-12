@@ -17,10 +17,10 @@ interface ImportTransactionConverter {
         accountStore: Store<AccountName, AccountTO>,
     ): List<Conversion>
 
-    fun mapToTransactions(
+    fun mapToTransaction(
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-    ): List<CreateTransactionTO>
+    ): CreateTransactionTO
 }

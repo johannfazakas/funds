@@ -15,5 +15,5 @@ data class ImportFileTO(
     val importConfigurationId: Uuid,
     val createdAt: String,
     val updatedAt: String,
-    val errors: List<ImportFileErrorTO> = emptyList(),
+    val errors: List<String> = emptyList(),
 )

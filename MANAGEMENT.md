@@ -16,7 +16,7 @@
 - [x] Display and filter by configuration in import files list
 - [x] Use the same icon for delete operation
 - [x] Update import file and configuration on click in UI
-- [ ] Retrieve all the errors
+- [x] Retrieve all the errors
 - [x] Files disappear after a docker restart
 
 ### Colors for Funds, Accounts, Labels
@@ -35,6 +35,8 @@ But report data generation shouldn't depend on the report view.
 ### UI Management of accounts, funds, and transactions
 
 ### Demo account
+
+### Categories instead of labels?
 
 ## Infrastructure
 

@@ -46,8 +46,10 @@ class FundsFormatImportParserTest {
             ),
         )
 
-        val importTransactions = fundsFormatImportParser.parse(matchers, fileContent)
+        val results = fundsFormatImportParser.parse(matchers, fileContent)
 
+        assertThat(results.mapNotNull { it.exceptionOrNull() }).isEmpty()
+        val importTransactions = results.mapNotNull { it.getOrNull() }
         assertThat(importTransactions).hasSize(2)
         val transfer = importTransactions[0]
         assertThat(transfer.transactionExternalId).isNotNull

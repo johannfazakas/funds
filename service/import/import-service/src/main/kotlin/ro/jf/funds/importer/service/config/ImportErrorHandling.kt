@@ -43,7 +43,7 @@ fun ImportServiceException.toStatusCode(): HttpStatusCode = when (this) {
 fun ImportServiceException.toError(): ErrorTO = when (this) {
     is ImportDataException -> ErrorTO(
         title = "Import data error",
-        detail = message ?: "Import data error",
+        detail = problems.joinToString("; "),
     )
     is ImportFormatException -> ErrorTO(
         title = "Import format error",

@@ -3,7 +3,6 @@ package ro.jf.funds.importer.service.service.conversion
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -90,9 +89,10 @@ class ImportFundConversionServiceTest {
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
-        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+        val results = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
-        assertThat(fundTransactions.transactions).containsExactlyInAnyOrder(
+        assertThat(results.filter { it.isFailure }).isEmpty()
+        assertThat(results.mapNotNull { it.getOrNull() }).containsExactlyInAnyOrder(
             CreateTransactionTO.SingleRecord(
                 dateTime = transactionDateTime,
                 externalId = transactionExternalId,
@@ -135,10 +135,12 @@ class ImportFundConversionServiceTest {
         whenever(conversionSdk.convert(ConversionsRequest(listOf(conversionRequest))))
             .thenReturn(ConversionsResponse(listOf(conversionResponse)))
 
-        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+        val results = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
-        assertThat(fundTransactions.transactions).hasSize(1)
-        val transaction = fundTransactions.transactions[0]
+        assertThat(results.filter { it.isFailure }).isEmpty()
+        val transactions = results.mapNotNull { it.getOrNull() }
+        assertThat(transactions).hasSize(1)
+        val transaction = transactions[0]
         assertThat(transaction).isInstanceOf(CreateTransactionTO.SingleRecord::class.java)
         val singleRecord = transaction as CreateTransactionTO.SingleRecord
         assertThat(singleRecord.dateTime).isEqualTo(transactionDateTime)
@@ -183,9 +185,10 @@ class ImportFundConversionServiceTest {
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
-        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+        val results = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
-        assertThat(fundTransactions.transactions).containsExactlyInAnyOrder(
+        assertThat(results.filter { it.isFailure }).isEmpty()
+        assertThat(results.mapNotNull { it.getOrNull() }).containsExactlyInAnyOrder(
             CreateTransactionTO.Transfer(
                 dateTime = transactionDateTime,
                 externalId = transactionExternalId,
@@ -245,10 +248,12 @@ class ImportFundConversionServiceTest {
         whenever(conversionSdk.convert(ConversionsRequest(listOf(conversionRequest))))
             .thenReturn(ConversionsResponse(listOf(conversionResponse)))
 
-        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+        val results = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
-        assertThat(fundTransactions.transactions).hasSize(1)
-        val transaction = fundTransactions.transactions[0]
+        assertThat(results.filter { it.isFailure }).isEmpty()
+        val transactions = results.mapNotNull { it.getOrNull() }
+        assertThat(transactions).hasSize(1)
+        val transaction = transactions[0]
         assertThat(transaction).isInstanceOf(CreateTransactionTO.Transfer::class.java)
         val transfer = transaction as CreateTransactionTO.Transfer
         assertThat(transfer.dateTime).isEqualTo(transactionDateTime)
@@ -289,10 +294,12 @@ class ImportFundConversionServiceTest {
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
-        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+        val results = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
-        assertThat(fundTransactions.transactions).hasSize(1)
-        val transaction = fundTransactions.transactions[0]
+        assertThat(results.filter { it.isFailure }).isEmpty()
+        val transactions = results.mapNotNull { it.getOrNull() }
+        assertThat(transactions).hasSize(1)
+        val transaction = transactions[0]
         assertThat(transaction).isInstanceOf(CreateTransactionTO.Transfer::class.java)
         val transfer = transaction as CreateTransactionTO.Transfer
         assertThat(transfer.dateTime).isEqualTo(transactionDateTime)
@@ -362,10 +369,12 @@ class ImportFundConversionServiceTest {
         )
         whenever(conversionSdk.convert(conversionsRequest)).thenReturn(conversionsResponse)
 
-        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+        val results = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
-        assertThat(fundTransactions.transactions).hasSize(1)
-        val transaction = fundTransactions.transactions[0]
+        assertThat(results.filter { it.isFailure }).isEmpty()
+        val transactions = results.mapNotNull { it.getOrNull() }
+        assertThat(transactions).hasSize(1)
+        val transaction = transactions[0]
         assertThat(transaction).isInstanceOf(CreateTransactionTO.Exchange::class.java)
         val exchange = transaction as CreateTransactionTO.Exchange
         assertThat(exchange.dateTime).isEqualTo(dateTime)
@@ -391,7 +400,7 @@ class ImportFundConversionServiceTest {
     }
 
     @Test
-    fun `should throw data exception when account not found`(): Unit = runBlocking {
+    fun `given account not found - when converting - then returns error`(): Unit = runBlocking {
         val userId = uuid4()
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
@@ -411,19 +420,15 @@ class ImportFundConversionServiceTest {
         whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(account("Cash RON")), 1))
         whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(fund("Expenses")), 1))
 
-        assertThatThrownBy {
-            runBlocking {
-                importFundConversionService.mapToFundRequest(
-                    userId,
-                    importParsedTransactions
-                )
-            }
-        }
-            .isInstanceOf(ImportDataException::class.java)
+        val results = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+        val errors = results.mapNotNull { it.exceptionOrNull() as? ImportDataException }
+
+        assertThat(errors).isNotEmpty
+        assertThat(errors.flatMap { it.problems }).anyMatch { it.contains("Revolut") }
     }
 
     @Test
-    fun `should throw data exception when fund not found`(): Unit = runBlocking {
+    fun `given fund not found - when converting - then returns error`(): Unit = runBlocking {
         val userId = uuid4()
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
@@ -445,15 +450,11 @@ class ImportFundConversionServiceTest {
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
-        assertThatThrownBy {
-            runBlocking {
-                importFundConversionService.mapToFundRequest(
-                    userId,
-                    importParsedTransactions
-                )
-            }
-        }
-            .isInstanceOf(ImportDataException::class.java)
+        val results = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+        val errors = results.mapNotNull { it.exceptionOrNull() as? ImportDataException }
+
+        assertThat(errors).isNotEmpty
+        assertThat(errors.flatMap { it.problems }).anyMatch { it.contains("Expenses") }
     }
 
     @Test
@@ -490,10 +491,12 @@ class ImportFundConversionServiceTest {
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
-        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+        val results = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
-        assertThat(fundTransactions.transactions).hasSize(1)
-        val transaction = fundTransactions.transactions[0]
+        assertThat(results.filter { it.isFailure }).isEmpty()
+        val transactions = results.mapNotNull { it.getOrNull() }
+        assertThat(transactions).hasSize(1)
+        val transaction = transactions[0]
         assertThat(transaction).isInstanceOf(CreateTransactionTO.OpenPosition::class.java)
         val openPosition = transaction as CreateTransactionTO.OpenPosition
         assertThat(openPosition.dateTime).isEqualTo(transactionDateTime)
@@ -546,10 +549,12 @@ class ImportFundConversionServiceTest {
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
-        val fundTransactions = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
+        val results = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
 
-        assertThat(fundTransactions.transactions).hasSize(1)
-        val transaction = fundTransactions.transactions[0]
+        assertThat(results.filter { it.isFailure }).isEmpty()
+        val transactions = results.mapNotNull { it.getOrNull() }
+        assertThat(transactions).hasSize(1)
+        val transaction = transactions[0]
         assertThat(transaction).isInstanceOf(CreateTransactionTO.ClosePosition::class.java)
         val closePosition = transaction as CreateTransactionTO.ClosePosition
         assertThat(closePosition.dateTime).isEqualTo(transactionDateTime)
