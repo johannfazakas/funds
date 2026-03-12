@@ -2,7 +2,6 @@ package ro.jf.funds.importer.service.domain
 
 import com.benasher44.uuid.Uuid
 import ro.jf.funds.importer.api.model.ImportFileTypeTO
-import ro.jf.funds.platform.jvm.error.ErrorTO
 import java.time.LocalDateTime
 
 enum class ImportFileStatus {
@@ -22,7 +21,7 @@ data class ImportFile(
     val importConfigurationId: Uuid,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
-    val errors: List<ErrorTO> = emptyList(),
+    val errors: List<String> = emptyList(),
 ) {
     val s3Key: String get() = "$userId/$fileName"
 }

@@ -24,7 +24,8 @@ class CreateFundTransactionsResponseHandler(
                 val reason = genericResponse.reason
                 log.info { "Updating import file status >> importFileId=$importFileId, status=IMPORT_FAILED" }
                 importFileRepository.updateStatusWithErrors(
-                    event.userId, importFileId, ImportFileStatus.IMPORT_FAILED, listOf(reason)
+                    event.userId, importFileId, ImportFileStatus.IMPORT_FAILED,
+                    listOf(reason.detail ?: reason.title)
                 )
             }
         }

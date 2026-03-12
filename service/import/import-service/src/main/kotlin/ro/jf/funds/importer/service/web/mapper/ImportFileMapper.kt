@@ -1,13 +1,11 @@
 package ro.jf.funds.importer.service.web.mapper
 
 import ro.jf.funds.importer.api.model.CreateImportFileResponseTO
-import ro.jf.funds.importer.api.model.ImportFileErrorTO
 import ro.jf.funds.importer.api.model.ImportFileStatusTO
 import ro.jf.funds.importer.api.model.ImportFileTO
 import ro.jf.funds.importer.service.domain.CreateImportFileResponse
 import ro.jf.funds.importer.service.domain.ImportFile
 import ro.jf.funds.importer.service.domain.ImportFileStatus
-import ro.jf.funds.platform.jvm.error.ErrorTO
 
 fun CreateImportFileResponse.toCreateTO() = CreateImportFileResponseTO(
     importFileId = importFile.importFileId,
@@ -25,12 +23,7 @@ fun ImportFile.toTO() = ImportFileTO(
     importConfigurationId = importConfigurationId,
     createdAt = createdAt.toString(),
     updatedAt = updatedAt.toString(),
-    errors = errors.map { it.toTO() },
-)
-
-fun ErrorTO.toTO() = ImportFileErrorTO(
-    title = title,
-    detail = detail,
+    errors = errors,
 )
 
 fun ImportFileStatus.toStatusTO() = when (this) {

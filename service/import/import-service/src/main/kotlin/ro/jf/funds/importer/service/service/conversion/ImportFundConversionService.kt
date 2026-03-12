@@ -5,6 +5,7 @@ import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionsRequest
+import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.conversion.sdk.ConversionSdk
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
@@ -24,36 +25,69 @@ class ImportFundConversionService(
     suspend fun mapToFundRequest(
         userId: Uuid,
         parsedTransactions: List<ImportParsedTransaction>,
-        source: String? = null,
-    ): CreateTransactionsTO = withSuspendingSpan {
+    ): List<Result<CreateTransactionTO>> = withSuspendingSpan {
         log.info { "Handling import >> user = $userId items size = ${parsedTransactions.size}." }
         val accountStore = accountService.getAccountStore(userId)
         val fundStore = fundService.getFundStore(userId)
         val labelStore = labelService.getLabelStore(userId)
-        parsedTransactions
-            .flatMap { it.records }
-            .flatMap { it.labels }
-            .map { it.value }
-            .distinct()
-            .forEach { labelStore[it] }
-        CreateTransactionsTO(parsedTransactions.toFundTransactions(accountStore, fundStore), source)
+
+        val importTransactionsToConverter = parsedTransactions
+            .map { transaction -> runCatching { transaction to transaction.getConverterStrategy(accountStore) } }
+        val conversions = fetchConversions(importTransactionsToConverter.mapNotNull { it.getOrNull() }, accountStore)
+
+        importTransactionsToConverter.map { result ->
+            result.fold(
+                onSuccess = { (transaction, strategy) ->
+                    convertTransaction(transaction, strategy, conversions, fundStore, accountStore, labelStore)
+                },
+                onFailure = { Result.failure(ImportDataException(it)) }
+            )
+        }
     }
 
-    private suspend fun List<ImportParsedTransaction>.toFundTransactions(
+    private suspend fun fetchConversions(
+        matched: List<Pair<ImportParsedTransaction, ImportTransactionConverter>>,
         accountStore: Store<AccountName, AccountTO>,
-        fundStore: Store<FundName, FundTO>,
-    ): List<CreateTransactionTO> {
-        val transactionsToStrategy = map { it to it.getConverterStrategy(accountStore) }
-
-        val conversions = transactionsToStrategy
+    ): ConversionsResponse {
+        val requests = matched
             .flatMap { (transaction, strategy) -> strategy.getRequiredConversions(transaction, accountStore) }
             .map { ConversionRequest(it.sourceCurrency, it.targetCurrency, it.date) }
             .distinct()
-            .let { conversionSdk.convert(ConversionsRequest(it)) }
+        return conversionSdk.convert(ConversionsRequest(requests))
+    }
 
-        return transactionsToStrategy
-            .flatMap { (transaction, strategy) ->
-                strategy.mapToTransactions(transaction, conversions, fundStore, accountStore)
+    private fun convertTransaction(
+        transaction: ImportParsedTransaction,
+        strategy: ImportTransactionConverter,
+        conversions: ConversionsResponse,
+        fundStore: Store<FundName, FundTO>,
+        accountStore: Store<AccountName, AccountTO>,
+        labelStore: Store<String, LabelTO>,
+    ): Result<CreateTransactionTO> {
+        val mappingResult = runCatching {
+            strategy.mapToTransaction(transaction, conversions, fundStore, accountStore)
+        }
+        val mappingErrors = mappingResult.exceptionOrNull()
+            ?.let { listOf(ImportDataException(it)) }
+            ?: emptyList()
+        val labelErrors = validateLabels(transaction, labelStore)
+
+        val allErrors = labelErrors + mappingErrors
+        if (allErrors.isNotEmpty()) return Result.failure(allErrors.reduce { acc, e -> acc + e })
+
+        return mappingResult
+    }
+
+    private fun validateLabels(
+        transaction: ImportParsedTransaction,
+        labelStore: Store<String, *>,
+    ): List<ImportDataException> {
+        return transaction.records
+            .flatMap { it.labels }
+            .map { it.value }
+            .distinct()
+            .mapNotNull { label ->
+                runCatching { labelStore[label] }.exceptionOrNull()?.let { ImportDataException(it) }
             }
     }
 

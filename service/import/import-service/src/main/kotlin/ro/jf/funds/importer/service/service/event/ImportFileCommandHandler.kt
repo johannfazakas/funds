@@ -3,6 +3,7 @@ package ro.jf.funds.importer.service.service.event
 import aws.sdk.kotlin.services.s3.S3Client
 import aws.sdk.kotlin.services.s3.model.GetObjectRequest
 import aws.smithy.kotlin.runtime.content.toByteArray
+import com.benasher44.uuid.Uuid
 import mu.KotlinLogging.logger
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.importer.api.model.ImportFileCommandTO
@@ -11,14 +12,13 @@ import ro.jf.funds.importer.service.domain.ImportConfiguration
 import ro.jf.funds.importer.service.domain.ImportFile
 import ro.jf.funds.importer.service.domain.ImportFileStatus
 import ro.jf.funds.importer.service.domain.exception.ImportConfigurationNotFoundException
+import ro.jf.funds.importer.service.domain.exception.ImportDataException
 import ro.jf.funds.importer.service.persistence.ImportFileRepository
 import ro.jf.funds.importer.service.service.ImportConfigurationService
 import ro.jf.funds.importer.service.service.conversion.ImportFundConversionService
 import ro.jf.funds.importer.service.service.parser.ImportParserRegistry
-import ro.jf.funds.platform.jvm.error.ErrorTO
 import ro.jf.funds.platform.jvm.event.Event
 import ro.jf.funds.platform.jvm.event.EventHandler
-import com.benasher44.uuid.Uuid
 import ro.jf.funds.platform.jvm.event.Producer
 
 private val log = logger { }
@@ -41,15 +41,29 @@ class ImportFileCommandHandler(
             val content = downloadFileContent(importFile)
             val configuration = getImportConfiguration(userId, importFile.importConfigurationId)
 
-            val fundTransactions = importParserRegistry[importFile.type]
+            val parseResults = importParserRegistry[importFile.type]
                 .parse(configuration.matchers, content)
-                .let { importFundConversionService.mapToFundRequest(userId, it, "import-file-$importFileId") }
+            val conversionResults =
+                importFundConversionService.mapToFundRequest(userId, parseResults.mapNotNull { it.getOrNull() })
+
+            val aggregatedException = (parseResults + conversionResults)
+                .mapNotNull { it.exceptionOrNull() as? ImportDataException }
+                .reduceOrNull { acc, e -> acc + e }
+            if (aggregatedException != null) {
+                log.warn { "Import errors for importFileId=$importFileId: $aggregatedException" }
+                importFileRepository.updateStatusWithErrors(
+                    userId, importFileId, ImportFileStatus.IMPORT_FAILED, aggregatedException.problems.toList()
+                )
+                return
+            }
+            val fundTransactions =
+                CreateTransactionsTO(conversionResults.mapNotNull { it.getOrNull() }, "import-file-$importFileId")
             createFundTransactionsProducer.send(Event(userId, fundTransactions, importFileId))
         } catch (e: Exception) {
             log.warn(e) { "Error handling import file command >> importFileId=$importFileId" }
             importFileRepository.updateStatusWithErrors(
                 userId, importFileId, ImportFileStatus.IMPORT_FAILED,
-                listOf(ErrorTO("Import error", e.message)),
+                listOf(e.message ?: "Unknown error"),
             )
         }
     }

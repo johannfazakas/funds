@@ -58,20 +58,14 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
         }
     }
 
-    override fun mapToTransactions(
+    override fun mapToTransaction(
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-    ): List<CreateTransactionTO> {
+    ): CreateTransactionTO {
         val currencyRecord = transaction.records.first { it.unit is Currency }
         val instrumentRecord = transaction.records.first { it.unit is Instrument }
-
-        val transactionType = when {
-            currencyRecord.amount < BigDecimal.ZERO && instrumentRecord.amount > BigDecimal.ZERO -> TransactionType.OPEN_POSITION
-            currencyRecord.amount > BigDecimal.ZERO && instrumentRecord.amount < BigDecimal.ZERO -> TransactionType.CLOSE_POSITION
-            else -> throw ImportDataException("Invalid investment transaction: currency and instrument amounts must have opposite signs")
-        }
 
         val currencyRecordTO = currencyRecord.toImportCurrencyFundRecord(
             date = transaction.dateTime.date,
@@ -87,24 +81,22 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
             labels = instrumentRecord.labels,
             note = instrumentRecord.note,
         )
-        return when (transactionType) {
-            TransactionType.OPEN_POSITION -> listOf(
+        return when {
+            currencyRecord.amount < BigDecimal.ZERO && instrumentRecord.amount > BigDecimal.ZERO ->
                 CreateTransactionTO.OpenPosition(
                     dateTime = transaction.dateTime,
                     externalId = transaction.transactionExternalId,
                     currencyRecord = currencyRecordTO,
                     instrumentRecord = instrumentRecordTO
                 )
-            )
-            TransactionType.CLOSE_POSITION -> listOf(
+            currencyRecord.amount > BigDecimal.ZERO && instrumentRecord.amount < BigDecimal.ZERO ->
                 CreateTransactionTO.ClosePosition(
                     dateTime = transaction.dateTime,
                     externalId = transaction.transactionExternalId,
                     currencyRecord = currencyRecordTO,
                     instrumentRecord = instrumentRecordTO
                 )
-            )
-            else -> throw ImportDataException("Invalid transaction type for investment: $transactionType")
+            else -> throw ImportDataException("Invalid investment transaction: currency and instrument amounts must have opposite signs")
         }
     }
 }

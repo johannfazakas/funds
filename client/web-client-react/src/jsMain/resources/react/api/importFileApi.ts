@@ -5,11 +5,6 @@ export type ImportFileType = 'WALLET_CSV' | 'FUNDS_FORMAT_CSV';
 export type ImportFileStatus = 'PENDING' | 'UPLOADED' | 'IMPORTING' | 'IMPORTED' | 'IMPORT_FAILED';
 export type ImportFileSortField = 'FILE_NAME' | 'CREATED_AT' | 'UPDATED_AT';
 
-export interface ImportFileError {
-    title: string;
-    detail?: string;
-}
-
 export interface ImportFile {
     importFileId: string;
     fileName: string;
@@ -18,7 +13,7 @@ export interface ImportFile {
     importConfigurationId: string;
     createdAt: string;
     updatedAt: string;
-    errors?: ImportFileError[];
+    errors?: string[];
 }
 
 export interface ImportFileFilter {

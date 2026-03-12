@@ -51,12 +51,12 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
                 Conversion(transaction.dateTime.date, targetCurrency, sourceCurrency)
     }
 
-    override fun mapToTransactions(
+    override fun mapToTransaction(
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-    ): List<CreateTransactionTO> {
+    ): CreateTransactionTO {
         val date = transaction.dateTime.date
 
         val creditRecord = transaction.records.single { it.amount > BigDecimal.ZERO }
@@ -104,14 +104,12 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
                 )
             }
 
-        return listOf(
-            CreateTransactionTO.Exchange(
-                dateTime = transaction.dateTime,
-                externalId = transaction.transactionExternalId,
-                sourceRecord = debitFundRecord,
-                destinationRecord = creditFundRecord,
-                feeRecord = feeFundRecord
-            )
+        return CreateTransactionTO.Exchange(
+            dateTime = transaction.dateTime,
+            externalId = transaction.transactionExternalId,
+            sourceRecord = debitFundRecord,
+            destinationRecord = creditFundRecord,
+            feeRecord = feeFundRecord
         )
     }
 

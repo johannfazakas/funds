@@ -14,7 +14,6 @@ import ro.jf.funds.importer.service.domain.ImportFileFilter
 import ro.jf.funds.importer.service.domain.ImportFileStatus
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
-import ro.jf.funds.platform.jvm.error.ErrorTO
 import ro.jf.funds.platform.jvm.persistence.PagedResult
 import ro.jf.funds.platform.jvm.persistence.applyFilterIfPresent
 import ro.jf.funds.platform.jvm.persistence.blockingTransaction
@@ -34,7 +33,7 @@ class ImportFileRepository(
             .references(ImportConfigurationRepository.ImportConfigurationTable.id)
         val createdAt = datetime("created_at")
         val updatedAt = datetime("updated_at")
-        val errors = json<List<ErrorTO>>("errors", Json.Default).nullable()
+        val errors = json<List<String>>("errors", Json.Default).nullable()
     }
 
     suspend fun create(command: CreateImportFileCommand): ImportFile = blockingTransaction {
@@ -74,7 +73,7 @@ class ImportFileRepository(
         userId: Uuid,
         importFileId: Uuid,
         status: ImportFileStatus,
-        errors: List<ErrorTO>,
+        errors: List<String>,
     ): Boolean = blockingTransaction {
         val updated = ImportFileTable.update({
             (ImportFileTable.id eq importFileId) and (ImportFileTable.userId eq userId)

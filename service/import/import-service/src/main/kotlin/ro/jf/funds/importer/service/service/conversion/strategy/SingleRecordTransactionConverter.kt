@@ -29,23 +29,21 @@ class SingleRecordTransactionConverter : ImportTransactionConverter {
         return transaction.getRequiredImportConversions(accountStore)
     }
 
-    override fun mapToTransactions(
+    override fun mapToTransaction(
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-    ): List<CreateTransactionTO> {
+    ): CreateTransactionTO {
         val record = transaction.records.first()
-        return listOf(
-            CreateTransactionTO.SingleRecord(
-                dateTime = transaction.dateTime,
-                externalId = transaction.transactionExternalId,
-                record = record.toImportCurrencyFundRecord(
-                    transaction.dateTime.date,
-                    fundStore[record.fundName].id,
-                    accountStore[record.accountName],
-                    conversions,
-                )
+        return CreateTransactionTO.SingleRecord(
+            dateTime = transaction.dateTime,
+            externalId = transaction.transactionExternalId,
+            record = record.toImportCurrencyFundRecord(
+                transaction.dateTime.date,
+                fundStore[record.fundName].id,
+                accountStore[record.accountName],
+                conversions,
             )
         )
     }

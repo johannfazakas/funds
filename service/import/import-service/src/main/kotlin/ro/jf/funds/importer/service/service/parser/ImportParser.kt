@@ -1,9 +1,13 @@
 package ro.jf.funds.importer.service.service.parser
 
 import ro.jf.funds.importer.service.domain.*
+import ro.jf.funds.importer.service.domain.exception.ImportDataException
 
 abstract class ImportParser {
-    fun parse(matchers: ImportMatchers, content: String): List<ImportParsedTransaction> {
+    fun parse(
+        matchers: ImportMatchers,
+        content: String,
+    ): List<Result<ImportParsedTransaction>> {
         return parseItems(content)
             .groupBy { it.transactionId { item -> isExchange(matchers, item) } }
             .flatMap { (transactionId, items) -> toTransactions(matchers, transactionId, items) }
@@ -15,63 +19,55 @@ abstract class ImportParser {
         matchers: ImportMatchers,
         transactionId: String,
         items: List<ImportItem>,
-    ): List<ImportParsedTransaction> {
-        return sequence {
-            val mainRecords =
-                extractRecords(items) { extractMainRecords(matchers, it) }
-                    ?: return@sequence
-            val implicitTransferRecords =
-                extractRecords(items) { extractImplicitTransferRecords(matchers, it) }
-            val dateTime = items.minOf { it.dateTime }
-            yield(
-                ImportParsedTransaction(
-                    transactionExternalId = transactionId,
-                    dateTime = dateTime,
-                    records = mainRecords
-                )
-            )
-            if (implicitTransferRecords != null) {
-                yield(
-                    ImportParsedTransaction(
-                        transactionExternalId = "$transactionId-fund-transfer",
-                        dateTime = dateTime,
-                        records = implicitTransferRecords
-                    )
-                )
-            }
-        }.toList()
+    ): List<Result<ImportParsedTransaction>> {
+        val dateTime = items.minOf { it.dateTime }
+
+        val main = extractTransaction(transactionId, dateTime, items) { listOfNotNull(extractMainRecord(matchers, it)) }
+        val implicit = if (main.getOrNull() != null)
+            extractTransaction("$transactionId-fund-transfer", dateTime, items) { extractImplicitTransferRecords(matchers, it) }
+        else Result.success(null)
+        return listOf(main, implicit).mapNotNull { result ->
+            result.getOrNull()?.let { Result.success(it) } ?: result.exceptionOrNull()?.let { Result.failure(it) }
+        }
     }
 
-    private fun extractRecords(
+    private fun extractTransaction(
+        transactionId: String,
+        dateTime: kotlinx.datetime.LocalDateTime,
         items: List<ImportItem>,
-        rowExtractor: (ImportItem) -> List<ImportParsedRecord>?,
-    ): List<ImportParsedRecord>? {
-        val parsedRecords: List<List<ImportParsedRecord>?> = items.map { rowExtractor(it) }
-        if (parsedRecords.any { it == null }) return null
-        return parsedRecords.filterNotNull().flatten().ifEmpty { null }
+        rowExtractor: (ImportItem) -> List<ImportParsedRecord>,
+    ): Result<ImportParsedTransaction?> {
+        val results = items.map { item -> runCatching { rowExtractor(item) } }
+        results.mapNotNull { it.exceptionOrNull() as? ImportDataException }
+            .reduceOrNull { acc, e -> acc + e }
+            ?.let { return Result.failure(it) }
+        val records = results.flatMap { it.getOrThrow() }
+        if (records.isEmpty()) return Result.success(null)
+        return Result.success(ImportParsedTransaction(transactionId, dateTime, records))
     }
 
-    private fun extractMainRecords(
+    private fun extractMainRecord(
         matchers: ImportMatchers,
         item: ImportItem,
-    ): List<ImportParsedRecord>? {
+    ): ImportParsedRecord? {
         val importAccountName = item.accountName
-        val accountName = matchers.getAccountMatcher(importAccountName)
-            .accountName ?: return null
+        val accountMatcher = matchers.getAccountMatcher(importAccountName)
+        val accountName = accountMatcher.accountName ?: return null
         val fundMatcher = matchers.getFundMatcher(importAccountName, item.labels)
         val labels = matchers.getLabelMatchers(item.labels).map { it.label }
         val note = item.note.takeIf { it.isNotBlank() }
         val recordFund = fundMatcher.intermediaryFundName ?: fundMatcher.fundName
-        return listOf(ImportParsedRecord(accountName, recordFund, item.unit, item.amount, labels, note))
+        return ImportParsedRecord(accountName, recordFund, item.unit, item.amount, labels, note)
     }
 
     private fun extractImplicitTransferRecords(
         matchers: ImportMatchers,
         item: ImportItem,
-    ): List<ImportParsedRecord>? {
+    ): List<ImportParsedRecord> {
         val importAccountName = item.accountName
-        val accountName = matchers.getAccountMatcher(importAccountName)
-            .accountName ?: return null
+        val accountMatcher = matchers.getAccountMatcher(importAccountName)
+        if (accountMatcher.skipped) throw ImportDataException("Account skipped on implicit transfer: $importAccountName")
+        val accountName = accountMatcher.accountName ?: return emptyList()
         val fundMatcher = matchers.getFundMatcher(importAccountName, item.labels)
         val intermediary = fundMatcher.intermediaryFundName ?: return emptyList()
         val amount = item.amount

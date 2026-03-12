@@ -95,7 +95,7 @@ class CreateFundTransactionsResponseHandlerTest {
             assertThat(file).isNotNull
             assertThat(file?.status).isEqualTo(ImportFileStatus.IMPORT_FAILED)
             assertThat(file?.errors).hasSize(1)
-            assertThat(file?.errors?.first()?.detail).isEqualTo("Detail")
+            assertThat(file?.errors?.first()).isEqualTo("Detail")
         }
     }
 

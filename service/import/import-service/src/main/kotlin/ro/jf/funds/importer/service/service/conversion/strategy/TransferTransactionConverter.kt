@@ -37,12 +37,12 @@ class TransferTransactionConverter : ImportTransactionConverter {
         return transaction.getRequiredImportConversions(accountStore)
     }
 
-    override fun mapToTransactions(
+    override fun mapToTransaction(
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-    ): List<CreateTransactionTO> {
+    ): CreateTransactionTO {
         val records = transaction.records.map { record ->
             record.toImportCurrencyFundRecord(
                 transaction.dateTime.date,
@@ -51,13 +51,11 @@ class TransferTransactionConverter : ImportTransactionConverter {
                 conversions
             )
         }
-        return listOf(
-            CreateTransactionTO.Transfer(
-                dateTime = transaction.dateTime,
-                externalId = transaction.transactionExternalId,
-                sourceRecord = records[0],
-                destinationRecord = records[1]
-            )
+        return CreateTransactionTO.Transfer(
+            dateTime = transaction.dateTime,
+            externalId = transaction.transactionExternalId,
+            sourceRecord = records[0],
+            destinationRecord = records[1]
         )
     }
 }
