@@ -286,7 +286,7 @@ class WalletCsvImportParserTest {
     }
 
     @Test
-    fun `given skipped account in transaction - when parsing - then returns main transaction and implicit transfer error`() {
+    fun `given skipped account in transaction - when parsing - then skips entire transaction`() {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "-400.00", "", "2019-01-31 02:00:49"),
             WalletCsvRowContent("Skipped account", "RON", "400.00", "", "2019-01-31 02:00:49")
@@ -307,11 +307,8 @@ class WalletCsvImportParserTest {
 
         val results = walletCsvImportParser.parse(matchers, fileContent)
 
-        assertThat(results.successes()).hasSize(1)
-        val errors = results.failures()
-        assertThat(errors).hasSize(1)
-        assertThat(errors[0].problems).hasSize(1)
-        assertThat(errors[0].problems.first()).startsWith("Account skipped on implicit transfer:")
+        assertThat(results.successes()).isEmpty()
+        assertThat(results.failures()).isEmpty()
     }
 
     @Test
