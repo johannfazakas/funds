@@ -310,7 +310,8 @@ class WalletCsvImportParserTest {
         assertThat(results.successes()).hasSize(1)
         val errors = results.failures()
         assertThat(errors).hasSize(1)
-        assertThat(errors[0].problems).containsExactly("Account skipped on implicit transfer: Skipped account")
+        assertThat(errors[0].problems).hasSize(1)
+        assertThat(errors[0].problems.first()).startsWith("Account skipped on implicit transfer:")
     }
 
     @Test

@@ -49,9 +49,9 @@ fun ImportParsedRecord.toFundRecordAmount(
         amount
     } else {
         val targetCurrency = account.unit as? Currency
-            ?: throw ImportDataException("Unit ${account.unit} is not a currency, conversion would not be supported.")
+            ?: throw ImportDataException("Unit ${account.unit} is not a currency, conversion would not be supported: $this")
         val rate = conversions.getRate(unit, targetCurrency, date)
-            ?: throw ImportDataException("Conversions from $unit to $targetCurrency on $date not available.")
+            ?: throw ImportDataException("Conversions from $unit to $targetCurrency on $date not available: $this")
         amount * rate
     }
 }

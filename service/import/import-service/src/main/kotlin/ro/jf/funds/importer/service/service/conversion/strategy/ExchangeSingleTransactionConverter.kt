@@ -42,10 +42,10 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
         val targetCurrency = transaction.records
             .filter { it.amount > BigDecimal.ZERO }
             .map { accountStore[it.accountName].unit }
-            .first() as? Currency ?: throw ImportDataException("Invalid target currency")
+            .first() as? Currency ?: throw ImportDataException("Invalid target currency: $transaction")
         val sourceCurrency = transaction.records
             .map { accountStore[it.accountName].unit }
-            .first { it != targetCurrency } as? Currency ?: throw ImportDataException("Invalid source currency")
+            .first { it != targetCurrency } as? Currency ?: throw ImportDataException("Invalid source currency: $transaction")
         return importConversions +
                 Conversion(transaction.dateTime.date, sourceCurrency, targetCurrency) +
                 Conversion(transaction.dateTime.date, targetCurrency, sourceCurrency)
@@ -77,7 +77,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             .map { it to it.toFundRecordAmount(date, accountStore[it.accountName], conversions) }
             .sortedByDescending { (_, amount) -> (creditAmount + amount).abs() }
             .first()
-        val rate = conversions.getConversionRate(creditRecord.unit, debitRecord.unit, date)
+        val rate = conversions.getConversionRate(creditRecord.unit, debitRecord.unit, date, transaction)
 
         val debitAmount = creditAmount.negate() * rate
         val debitFundRecord = CreateTransactionRecordTO.CurrencyRecord(
@@ -113,11 +113,11 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
         )
     }
 
-    private fun ConversionsResponse.getConversionRate(sourceUnit: FinancialUnit, targetUnit: FinancialUnit, date: LocalDate): BigDecimal {
+    private fun ConversionsResponse.getConversionRate(sourceUnit: FinancialUnit, targetUnit: FinancialUnit, date: LocalDate, transaction: ImportParsedTransaction): BigDecimal {
         val targetCurrency = targetUnit as? Currency
-            ?: throw ImportDataException("Unit $targetUnit is not a currency, conversion would not be supported.")
+            ?: throw ImportDataException("Unit $targetUnit is not a currency, conversion would not be supported: $transaction")
         if (sourceUnit == targetCurrency) return BigDecimal.ONE
         return getRate(sourceUnit, targetCurrency, date)
-            ?: throw ImportDataException("Conversions from $sourceUnit to $targetCurrency on $date not available.")
+            ?: throw ImportDataException("Conversions from $sourceUnit to $targetCurrency on $date not available: $transaction")
     }
 }
