@@ -22,7 +22,7 @@ abstract class ImportParser {
     ): List<Result<ImportParsedTransaction>> {
         val dateTime = items.minOf { it.dateTime }
 
-        val main = extractTransaction(transactionId, dateTime, items) { listOfNotNull(extractMainRecord(matchers, it)) }
+        val main = extractTransaction(transactionId, dateTime, items) { extractMainRecord(matchers, it)?.let(::listOf) }
         val implicit = if (main.getOrNull() != null)
             extractTransaction("$transactionId-fund-transfer", dateTime, items) { extractImplicitTransferRecords(matchers, it) }
         else Result.success(null)
@@ -35,13 +35,15 @@ abstract class ImportParser {
         transactionId: String,
         dateTime: kotlinx.datetime.LocalDateTime,
         items: List<ImportItem>,
-        rowExtractor: (ImportItem) -> List<ImportParsedRecord>,
+        rowExtractor: (ImportItem) -> List<ImportParsedRecord>?,
     ): Result<ImportParsedTransaction?> {
         val results = items.map { item -> runCatching { rowExtractor(item) } }
         results.mapNotNull { it.exceptionOrNull() as? ImportDataException }
             .reduceOrNull { acc, e -> acc + e }
             ?.let { return Result.failure(it) }
-        val records = results.flatMap { it.getOrThrow() }
+        val extractedLists = results.map { it.getOrThrow() }
+        if (extractedLists.any { it == null }) return Result.success(null)
+        val records = extractedLists.filterNotNull().flatten()
         if (records.isEmpty()) return Result.success(null)
         return Result.success(ImportParsedTransaction(transactionId, dateTime, records))
     }
