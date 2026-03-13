@@ -66,7 +66,7 @@ abstract class ImportParser {
     ): List<ImportParsedRecord> {
         val importAccountName = item.accountName
         val accountMatcher = matchers.getAccountMatcher(importAccountName)
-        if (accountMatcher.skipped) throw ImportDataException("Account skipped on implicit transfer: $importAccountName")
+        if (accountMatcher.skipped) throw ImportDataException("Account skipped on implicit transfer: $item")
         val accountName = accountMatcher.accountName ?: return emptyList()
         val fundMatcher = matchers.getFundMatcher(importAccountName, item.labels)
         val intermediary = fundMatcher.intermediaryFundName ?: return emptyList()

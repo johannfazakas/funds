@@ -45,7 +45,7 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
 
         return if (currencyRecord.unit != currencyAccount.unit) {
             val targetCurrency = currencyAccount.unit as? Currency
-                ?: throw ImportDataException("Unit ${currencyAccount.unit} is not a currency, conversion would not be supported.")
+                ?: throw ImportDataException("Unit ${currencyAccount.unit} is not a currency, conversion would not be supported: $transaction")
             listOf(
                 Conversion(
                     transaction.dateTime.date,
@@ -96,7 +96,7 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
                     currencyRecord = currencyRecordTO,
                     instrumentRecord = instrumentRecordTO
                 )
-            else -> throw ImportDataException("Invalid investment transaction: currency and instrument amounts must have opposite signs")
+            else -> throw ImportDataException("Invalid investment transaction, currency and instrument amounts must have opposite signs: $transaction")
         }
     }
 }

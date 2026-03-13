@@ -5,12 +5,12 @@
 ### Improved import
 
 - [x] Store files
-- [ ] Retry import
-  - [ ] Re-upload
-  - [ ] Revert previous import
+- [x] Retry import
+  - [x] Re-upload
+  - [x] Revert previous import
   - [x] Generate new import configuration from existing one
-  - [ ] Import configuration matchers should be updateable only if not used
-  - [ ] Re-import with new import configuration
+  - [x] Import configuration matchers should be updateable only if not used
+  - [x] Re-import with new import configuration
 - [x] Use only kmp-compatible uuid
 - [x] UI display for imports menu
 - [x] Display and filter by configuration in import files list
@@ -37,6 +37,12 @@ But report data generation shouldn't depend on the report view.
 ### Demo account
 
 ### Categories instead of labels?
+
+### Better fund (and not only fund) matching
+
+Maybe it could be done by account first. 
+Maybe we could use domain accounts and labels.
+Maybe matchers could work based on id.
 
 ## Infrastructure
 
