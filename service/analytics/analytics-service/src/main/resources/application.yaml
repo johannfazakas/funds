@@ -1,0 +1,21 @@
+ktor:
+  application:
+    id: "funds::analytics-service"
+    modules:
+      - ro.jf.funds.analytics.service.AnalyticsServiceApplicationKt.module
+  deployment:
+    port: 5219
+environment: "$ENVIRONMENT:local"
+database:
+  url: "$DATABASE_URL:jdbc:postgresql://localhost:5438/ff_analytics"
+  user: postgres
+  password: pass
+  connection-pool-size: "$DATABASE_CONNECTION_POOL_SIZE:10"
+kafka:
+  bootstrap-servers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:29092"
+  group-id: analytics-service
+  client-id: analytics-service
+observability:
+  enabled: true
+  otel-collector:
+    grpc-endpoint: "$OTEL_COLLECTOR_GRPC_ENDPOINT:http://localhost:4317/v1/traces"

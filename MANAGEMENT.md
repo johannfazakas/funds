@@ -19,6 +19,13 @@
 - [x] Retrieve all the errors
 - [x] Files disappear after a docker restart
 
+### Efficient analytics execution and storage
+
+- [ ] new service, analytics records replicated
+- [ ] chart type (value & new report, budget report, investment report, income report)
+- [ ] filter by fund, granularity, period, unit
+- [ ] select chart output in 
+
 ### Colors for Funds, Accounts, Labels
 
 ### Calculate interest rate when positions are closed
