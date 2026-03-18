@@ -7,3 +7,5 @@ CREATE DATABASE ff_fund;
 CREATE DATABASE ff_import;
 
 CREATE DATABASE ff_reporting;
+
+CREATE DATABASE ff_analytics;

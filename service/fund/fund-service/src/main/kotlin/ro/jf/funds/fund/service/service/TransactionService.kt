@@ -1,14 +1,18 @@
 package ro.jf.funds.fund.service.service
 
 import mu.KotlinLogging.logger
+import ro.jf.funds.platform.jvm.event.Event
+import ro.jf.funds.platform.jvm.event.Producer
 import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
 import ro.jf.funds.fund.api.model.TransactionFilterTO
+import ro.jf.funds.fund.api.model.TransactionsCreatedTO
 import ro.jf.funds.fund.service.domain.Account
 import ro.jf.funds.fund.service.domain.Fund
 import ro.jf.funds.fund.service.domain.FundServiceException
 import ro.jf.funds.fund.service.domain.Transaction
+import ro.jf.funds.fund.service.mapper.toTO
 import ro.jf.funds.fund.service.persistence.TransactionRepository
 import java.util.*
 
@@ -18,6 +22,7 @@ class TransactionService(
     private val transactionRepository: TransactionRepository,
     private val fundService: FundService,
     private val accountService: AccountService,
+    private val transactionsCreatedProducer: Producer<TransactionsCreatedTO>,
 ) {
     suspend fun getTransaction(userId: UUID, transactionId: UUID): Transaction = withSuspendingSpan {
         transactionRepository.findById(userId, transactionId)
@@ -34,12 +39,14 @@ class TransactionService(
     suspend fun createTransaction(userId: UUID, request: CreateTransactionTO): Transaction = withSuspendingSpan {
         validateTransactionRequests(userId, listOf(request))
         transactionRepository.save(userId, request)
+            .also { emitTransactionsCreated(userId, listOf(it)) }
     }
 
     suspend fun createTransactions(userId: UUID, request: CreateTransactionsTO): List<Transaction> =
         withSuspendingSpan {
             validateTransactionRequests(userId, request.transactions)
             transactionRepository.saveAll(userId, request)
+                .also { emitTransactionsCreated(userId, it) }
         }
 
     suspend fun deleteTransaction(userId: UUID, transactionId: UUID) = withSuspendingSpan {
@@ -80,6 +87,15 @@ class TransactionService(
                     throw FundServiceException.RecordAccountNotFound(accountId)
                 }
             }
+
+    private suspend fun emitTransactionsCreated(userId: UUID, transactions: List<Transaction>) {
+        try {
+            val payload = TransactionsCreatedTO(transactions.map { it.toTO() })
+            transactionsCreatedProducer.send(Event(userId, payload))
+        } catch (e: Exception) {
+            log.error(e) { "Failed to emit transactions created event" }
+        }
+    }
 
     private suspend fun validateRecordFunds(userId: UUID, requests: List<CreateTransactionTO>): List<Fund> =
         requests
