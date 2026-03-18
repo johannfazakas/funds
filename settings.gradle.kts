@@ -36,6 +36,10 @@ include("service:reporting:reporting-api")
 include("service:reporting:reporting-sdk")
 include("service:reporting:reporting-service")
 
+include("service:analytics:analytics-api")
+include("service:analytics:analytics-sdk")
+include("service:analytics:analytics-service")
+
 include("client:client-sdk")
 include("client:web-client-react")
 include("client:web-client-kobweb")
