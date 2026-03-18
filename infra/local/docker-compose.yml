@@ -109,16 +109,29 @@ services:
       - kafka
       - localstack
 
-  reporting-service:
-    image: funds/reporting-service:latest
-    container_name: ff_reporting
+#  reporting-service:
+#    image: funds/reporting-service:latest
+#    container_name: ff_reporting
+#    ports:
+#      - '5212:5212'
+#    environment:
+#      - FUND_BASE_URL=http://ff_fund:5253
+#      - CONVERSION_BASE_URL=http://ff_conversion:5231
+#      - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
+#      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_reporting
+#      - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
+#    depends_on:
+#      - postgres
+#      - kafka
+
+  analytics-service:
+    image: funds/analytics-service:latest
+    container_name: ff_analytics
     ports:
-      - '5212:5212'
+      - '5219:5219'
     environment:
-      - FUND_BASE_URL=http://ff_fund:5253
-      - CONVERSION_BASE_URL=http://ff_conversion:5231
+      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_analytics
       - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
-      - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_reporting
       - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres

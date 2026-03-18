@@ -11,6 +11,7 @@ import ro.jf.funds.platform.jvm.model.GenericResponse
 import ro.jf.funds.platform.jvm.persistence.getDataSource
 import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.fund.api.model.CreateTransactionsTO
+import ro.jf.funds.fund.api.model.TransactionsCreatedTO
 import ro.jf.funds.fund.service.persistence.AccountRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
 import ro.jf.funds.fund.service.persistence.LabelRepository
@@ -26,6 +27,9 @@ import javax.sql.DataSource
 
 val CREATE_FUND_TRANSACTIONS_RESPONSE_PRODUCER: Qualifier =
     StringQualifier("CreateFundTransactionsResponse")
+
+val FUND_TRANSACTIONS_CREATED_PRODUCER: Qualifier =
+    StringQualifier("FundTransactionsCreated")
 
 val Application.fundDependencies
     get() = module {
@@ -56,12 +60,22 @@ private val Application.fundEventProducerDependencies
         single<Producer<GenericResponse>>(CREATE_FUND_TRANSACTIONS_RESPONSE_PRODUCER) {
             createProducer(get(), get<TopicSupplier>().topic(FundEvents.FundTransactionsBatchResponse))
         }
+        single<Producer<TransactionsCreatedTO>>(FUND_TRANSACTIONS_CREATED_PRODUCER) {
+            createProducer(get(), get<TopicSupplier>().topic(FundEvents.FundTransactionsCreated))
+        }
     }
 
 private val Application.fundServiceDependencies
     get() = module {
         single<AccountService> { AccountService(get(), get()) }
-        single<TransactionService> { TransactionService(get(), get(), get()) }
+        single<TransactionService> {
+            TransactionService(
+                get(),
+                get(),
+                get(),
+                get<Producer<TransactionsCreatedTO>>(FUND_TRANSACTIONS_CREATED_PRODUCER)
+            )
+        }
         single<FundService> { FundService(get(), get()) }
         single<LabelService> { LabelService(get(), get()) }
         single<RecordService> { RecordService(get()) }
