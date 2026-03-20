@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
+import ro.jf.funds.analytics.service.service.AnalyticsRecordService
 import ro.jf.funds.analytics.service.service.TransactionsCreatedHandler
 import ro.jf.funds.fund.api.model.TransactionsCreatedTO
 import ro.jf.funds.platform.jvm.config.getEnvironmentProperty
@@ -31,6 +32,7 @@ private val Application.analyticsPersistenceDependencies
 private val Application.analyticsServiceDependencies
     get() = module {
         single<TransactionsCreatedHandler> { TransactionsCreatedHandler(get()) }
+        single<AnalyticsRecordService> { AnalyticsRecordService(get()) }
     }
 
 private val Application.analyticsEventConsumerDependencies

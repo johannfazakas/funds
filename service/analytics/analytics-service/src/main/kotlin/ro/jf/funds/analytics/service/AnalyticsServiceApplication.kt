@@ -5,6 +5,7 @@ import io.ktor.server.netty.*
 import org.koin.ktor.ext.get
 import ro.jf.funds.analytics.service.config.analyticsDependencies
 import ro.jf.funds.analytics.service.config.configureAnalyticsEventHandling
+import ro.jf.funds.analytics.service.config.configureAnalyticsRouting
 import ro.jf.funds.platform.jvm.config.configureContentNegotiation
 import ro.jf.funds.platform.jvm.config.configureCors
 import ro.jf.funds.platform.jvm.config.configureDatabaseMigration
@@ -23,4 +24,5 @@ fun Application.module() {
     configureCors()
     configureDatabaseMigration(get<DataSource>())
     configureAnalyticsEventHandling()
+    configureAnalyticsRouting()
 }

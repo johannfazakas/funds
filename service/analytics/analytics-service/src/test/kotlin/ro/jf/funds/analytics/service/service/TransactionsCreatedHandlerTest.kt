@@ -1,5 +1,6 @@
 package ro.jf.funds.analytics.service.service
 
+import com.benasher44.uuid.uuid4
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
@@ -17,18 +18,17 @@ import ro.jf.funds.fund.api.model.TransactionsCreatedTO
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.platform.jvm.event.Event
-import java.util.UUID.randomUUID
 
 class TransactionsCreatedHandlerTest {
     private val analyticsRecordRepository = mock<AnalyticsRecordRepository>()
     private val handler = TransactionsCreatedHandler(analyticsRecordRepository)
 
-    private val userId = randomUUID()
-    private val transactionId = randomUUID()
-    private val record1Id = randomUUID()
-    private val record2Id = randomUUID()
-    private val accountId = randomUUID()
-    private val fundId = randomUUID()
+    private val userId = uuid4()
+    private val transactionId = uuid4()
+    private val record1Id = uuid4()
+    private val record2Id = uuid4()
+    private val accountId = uuid4()
+    private val fundId = uuid4()
     private val dateTime = LocalDateTime.parse("2024-01-15T10:30:00")
 
     @Test
@@ -55,7 +55,7 @@ class TransactionsCreatedHandlerTest {
                 labels = emptyList(),
             ),
         )
-        val event = Event(userId, TransactionsCreatedTO(listOf(transaction)))
+        val event = Event(java.util.UUID.fromString(userId.toString()), TransactionsCreatedTO(listOf(transaction)))
 
         handler.handle(event)
 
