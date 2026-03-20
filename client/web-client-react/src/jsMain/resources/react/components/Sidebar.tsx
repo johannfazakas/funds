@@ -121,6 +121,19 @@ function Sidebar({ onLogout }: SidebarProps) {
                         >
                             Expenses
                         </NavLink>
+                        <NavLink
+                            to="/analytics"
+                            className={({ isActive }) =>
+                                cn(
+                                    "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
+                                    isActive
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                )
+                            }
+                        >
+                            Analytics
+                        </NavLink>
                     </div>
                 </nav>
             </div>
