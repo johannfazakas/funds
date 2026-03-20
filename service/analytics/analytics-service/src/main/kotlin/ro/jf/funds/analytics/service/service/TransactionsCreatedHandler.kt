@@ -1,5 +1,6 @@
 package ro.jf.funds.analytics.service.service
 
+import com.benasher44.uuid.Uuid
 import mu.KotlinLogging.logger
 import ro.jf.funds.analytics.service.domain.AnalyticsRecord
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
@@ -7,7 +8,6 @@ import ro.jf.funds.fund.api.model.TransactionTO
 import ro.jf.funds.fund.api.model.TransactionsCreatedTO
 import ro.jf.funds.platform.jvm.event.Event
 import ro.jf.funds.platform.jvm.event.EventHandler
-import java.util.*
 
 private val log = logger { }
 
@@ -16,12 +16,13 @@ class TransactionsCreatedHandler(
 ) : EventHandler<TransactionsCreatedTO> {
     override suspend fun handle(event: Event<TransactionsCreatedTO>) {
         log.info { "Received transactions created event. userId = ${event.userId}, transactions = ${event.payload.transactions.size}" }
-        val analyticsRecords = event.payload.transactions.flatMap { it.toAnalyticsRecords(event.userId) }
+        val userId = Uuid.fromString(event.userId.toString())
+        val analyticsRecords = event.payload.transactions.flatMap { it.toAnalyticsRecords(userId) }
         analyticsRecordRepository.saveAll(analyticsRecords)
         log.info { "Persisted ${analyticsRecords.size} analytics records." }
     }
 
-    private fun TransactionTO.toAnalyticsRecords(userId: UUID): List<AnalyticsRecord> =
+    private fun TransactionTO.toAnalyticsRecords(userId: Uuid): List<AnalyticsRecord> =
         records.map { record ->
             AnalyticsRecord(
                 id = record.id,
