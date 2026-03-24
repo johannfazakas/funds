@@ -2,7 +2,7 @@ import { handleApiError } from './apiUtils';
 
 export type TimeGranularity = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 
-export interface ValueReportRequest {
+export interface ReportRequest {
     granularity: TimeGranularity;
     from: string;
     to: string;
@@ -10,15 +10,14 @@ export interface ValueReportRequest {
     units?: object[];
 }
 
-export interface ValueBucket {
+export interface ReportBucket {
     dateTime: string;
-    netChange: string;
-    balance: string;
+    value: string;
 }
 
-export interface ValueReportResponse {
+export interface ReportResponse {
     granularity: TimeGranularity;
-    buckets: ValueBucket[];
+    buckets: ReportBucket[];
 }
 
 declare const window: Window & {
@@ -35,11 +34,11 @@ function getBaseUrl(): string {
 
 const BASE_PATH = '/funds-api/analytics/v1';
 
-export async function getValueReport(
+export async function getBalanceReport(
     userId: string,
-    request: ValueReportRequest
-): Promise<ValueReportResponse> {
-    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/records/value-report`, {
+    request: ReportRequest
+): Promise<ReportResponse> {
+    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/reports/balance`, {
         method: 'POST',
         headers: {
             'FUNDS_USER_ID': userId,
@@ -47,6 +46,22 @@ export async function getValueReport(
         },
         body: JSON.stringify(request)
     });
-    if (!response.ok) await handleApiError(response, 'Failed to load value report');
+    if (!response.ok) await handleApiError(response, 'Failed to load balance report');
+    return response.json();
+}
+
+export async function getNetChangeReport(
+    userId: string,
+    request: ReportRequest
+): Promise<ReportResponse> {
+    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/reports/net-change`, {
+        method: 'POST',
+        headers: {
+            'FUNDS_USER_ID': userId,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(request)
+    });
+    if (!response.ok) await handleApiError(response, 'Failed to load net change report');
     return response.json();
 }

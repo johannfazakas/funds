@@ -2,28 +2,12 @@
 
 ## Functional Tasks
 
-### Improved import
-
-- [x] Store files
-- [x] Retry import
-  - [x] Re-upload
-  - [x] Revert previous import
-  - [x] Generate new import configuration from existing one
-  - [x] Import configuration matchers should be updateable only if not used
-  - [x] Re-import with new import configuration
-- [x] Use only kmp-compatible uuid
-- [x] UI display for imports menu
-- [x] Display and filter by configuration in import files list
-- [x] Use the same icon for delete operation
-- [x] Update import file and configuration on click in UI
-- [x] Retrieve all the errors
-- [x] Files disappear after a docker restart
-
 ### Efficient analytics execution and storage
 
-- [ ] new service, analytics records replicated
+- [x] new service, analytics records replicated
 - [ ] chart type (value & new report, budget report, investment report, income report)
-- [ ] filter by fund, granularity, period, unit
+- [ ] group data by unit and then convert it to the requested unit
+- [x] filter by fund, granularity, period, unit
 - [ ] select chart output in 
 
 ### Colors for Funds, Accounts, Labels
