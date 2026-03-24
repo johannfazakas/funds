@@ -1,10 +1,8 @@
-import { useState } from 'react';
 import {
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
-    Legend,
     ResponsiveContainer,
     ComposedChart,
     Line,
@@ -12,40 +10,17 @@ import {
 
 export interface ValueChartDataPoint {
     label: string;
-    netChange: number;
-    balance: number;
+    value: number;
 }
-
-type SeriesKey = 'netChange' | 'balance';
-
-const seriesConfig: Record<SeriesKey, { name: string; color: string }> = {
-    balance: { name: 'Balance', color: '#2563eb' },
-    netChange: { name: 'Net Change', color: '#16a34a' },
-};
 
 interface ValueChartProps {
     title: string;
     data: ValueChartDataPoint[];
+    seriesName: string;
+    seriesColor: string;
 }
 
-function ValueChart({ title, data }: ValueChartProps) {
-    const [hiddenSeries, setHiddenSeries] = useState<Set<SeriesKey>>(new Set());
-
-    const handleLegendClick = (dataKey: string) => {
-        const key = dataKey as SeriesKey;
-        setHiddenSeries(prev => {
-            const next = new Set(prev);
-            if (next.has(key)) {
-                next.delete(key);
-            } else {
-                next.add(key);
-            }
-            return next;
-        });
-    };
-
-    const isHidden = (key: SeriesKey) => hiddenSeries.has(key);
-
+function ValueChart({ title, data, seriesName, seriesColor }: ValueChartProps) {
     return (
         <div className="w-full">
             <h3 className="text-lg font-semibold mb-4 text-center">{title}</h3>
@@ -70,39 +45,13 @@ function ValueChart({ title, data }: ValueChartProps) {
                                 color: 'hsl(var(--card-foreground))'
                             }}
                         />
-                        <Legend
-                            onClick={(e) => handleLegendClick(e.dataKey as string)}
-                            wrapperStyle={{ cursor: 'pointer' }}
-                            formatter={(value, entry) => (
-                                <span style={{
-                                    color: isHidden(entry.dataKey as SeriesKey)
-                                        ? 'hsl(var(--muted-foreground))'
-                                        : entry.color,
-                                    textDecoration: isHidden(entry.dataKey as SeriesKey)
-                                        ? 'line-through'
-                                        : 'none'
-                                }}>
-                                    {value}
-                                </span>
-                            )}
-                        />
                         <Line
                             type="monotone"
-                            dataKey="balance"
-                            name="Balance"
-                            stroke={seriesConfig.balance.color}
+                            dataKey="value"
+                            name={seriesName}
+                            stroke={seriesColor}
                             strokeWidth={2}
-                            dot={{ fill: seriesConfig.balance.color }}
-                            hide={isHidden('balance')}
-                        />
-                        <Line
-                            type="monotone"
-                            dataKey="netChange"
-                            name="Net Change"
-                            stroke={seriesConfig.netChange.color}
-                            strokeWidth={2}
-                            dot={{ fill: seriesConfig.netChange.color }}
-                            hide={isHidden('netChange')}
+                            dot={{ fill: seriesColor }}
                         />
                     </ComposedChart>
                 </ResponsiveContainer>
