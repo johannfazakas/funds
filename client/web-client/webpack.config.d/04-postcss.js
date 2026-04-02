@@ -1,6 +1,6 @@
 ;(function(config) {
     const path = require('path');
-    const projectRoot = path.resolve(__dirname, '../../../../client/web-client-react');
+    const projectRoot = path.resolve(__dirname, '../../../../client/web-client');
 
     if (config.module && config.module.rules) {
         config.module.rules.forEach(function(rule) {

@@ -41,6 +41,5 @@ include("service:analytics:analytics-sdk")
 include("service:analytics:analytics-service")
 
 include("client:client-sdk")
-include("client:web-client-react")
-include("client:web-client-kobweb")
+include("client:web-client")
 include("client:android-client")

@@ -96,7 +96,7 @@ tasks.register<Exec>("buildDockerImage") {
     dependsOn("jsBrowserProductionWebpack")
 
     workingDir(projectDir)
-    commandLine("docker", "build", "-t", "funds/web-client-react:latest", ".")
+    commandLine("docker", "build", "-t", "funds/web-client:latest", ".")
 }
 
 tasks.register("installLocal") {

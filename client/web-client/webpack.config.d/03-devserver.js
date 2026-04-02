@@ -4,6 +4,6 @@
     config.devServer.historyApiFallback = true;
     config.devServer.hot = true;
     config.devServer.watchFiles = [
-        path.resolve(__dirname, '../../../../client/web-client-react/src/jsMain/resources/react/**/*')
+        path.resolve(__dirname, '../../../../client/web-client/src/jsMain/resources/react/**/*')
     ];
 })(config);
