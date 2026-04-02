@@ -29,14 +29,14 @@ class FinancialTimesInstrumentConverter(
     private val cellFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")
     private val queryParamFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
 
-    private suspend fun convert(instrument: InstrumentConversionInfo, date: LocalDate): ConversionResponse {
+    private suspend fun convert(instrument: InstrumentConversionInfo, date: LocalDate): ConversionResponse? {
         return cachedProxy.getCachedOrConvert(instrument, date) { from, to ->
             convert(instrument, from, to)
         }
     }
 
     override suspend fun convert(instrument: InstrumentConversionInfo, dates: List<LocalDate>): List<ConversionResponse> =
-        dates.map { date -> convert(instrument, date) }
+        dates.mapNotNull { date -> convert(instrument, date) }
 
     private suspend fun convert(instrument: InstrumentConversionInfo, from: LocalDate, to: LocalDate): List<ConversionResponse> {
         val response = httpClient

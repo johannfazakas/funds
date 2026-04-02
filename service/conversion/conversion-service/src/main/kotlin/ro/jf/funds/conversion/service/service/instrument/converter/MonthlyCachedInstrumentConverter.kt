@@ -11,7 +11,7 @@ class MonthlyCachedInstrumentConverterProxy {
         instrument: InstrumentConversionInfo,
         date: LocalDate,
         conversionProvider: suspend (from: LocalDate, to: LocalDate) -> List<ConversionResponse>,
-    ): ConversionResponse {
+    ): ConversionResponse? {
         cache[instrument to date]?.let { return@getCachedOrConvert it }
         val startOfMonth = date.startOfMonth()
         val monthlyConversions =
@@ -20,7 +20,7 @@ class MonthlyCachedInstrumentConverterProxy {
             .fillGaps(instrument, startOfMonth)
             .map { (instrument to it.date) to it }
             .also(cache::putAll)
-        return cache[instrument to date] ?: throw IllegalArgumentException("No price found for $date")
+        return cache[instrument to date]
     }
 
     private fun List<ConversionResponse>.fillGaps(

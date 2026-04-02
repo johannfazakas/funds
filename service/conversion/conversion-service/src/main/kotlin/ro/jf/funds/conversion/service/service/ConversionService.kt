@@ -1,6 +1,8 @@
 package ro.jf.funds.conversion.service.service
 
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.api.model.Instrument
@@ -8,11 +10,14 @@ import ro.jf.funds.conversion.api.model.ConversionResponse
 import ro.jf.funds.conversion.api.model.ConversionsRequest
 import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.conversion.service.domain.Conversion
+import ro.jf.funds.conversion.service.domain.ConversionExceptions
 import ro.jf.funds.conversion.service.domain.InstrumentConversionInfo
 import ro.jf.funds.conversion.service.persistence.ConversionRepository
 import ro.jf.funds.conversion.service.service.currency.CurrencyConverter
 import ro.jf.funds.conversion.service.service.instrument.InstrumentConverterRegistry
 import ro.jf.funds.conversion.service.service.instrument.InstrumentConversionInfoRepository
+
+private const val MAX_FALLBACK_DAYS = 15
 
 class ConversionService(
     private val conversionRepository: ConversionRepository,
@@ -56,7 +61,10 @@ class ConversionService(
             emptyList()
         }
 
-        return storedConversionsByDate + newConversions
+        val resolvedConversions = storedConversionsByDate + newConversions
+        val fallbackFilledConversions = fillMissingDatesWithFallback(sourceUnit, targetCurrency, dates, resolvedConversions)
+
+        return resolvedConversions + fallbackFilledConversions
     }
 
     private suspend fun getCurrencyConversions(
@@ -100,9 +108,8 @@ class ConversionService(
 
         return instrumentConverter
             .convert(pricingInstrument, dates)
-            .map { conversionResponse ->
-                val conversionRate = currencyConversions[conversionResponse.date]
-                    ?: error("Implicit currency conversion rate for $conversionResponse to $currency not found")
+            .mapNotNull { conversionResponse ->
+                val conversionRate = currencyConversions[conversionResponse.date] ?: return@mapNotNull null
                 conversionResponse.copy(
                     targetCurrency = currency,
                     rate = conversionResponse.rate * conversionRate.rate
@@ -123,6 +130,28 @@ class ConversionService(
             conversionRepository.saveConversion(
                 Conversion(it.sourceUnit, it.targetCurrency, it.date, it.rate)
             )
+        }
+    }
+
+    private suspend fun fillMissingDatesWithFallback(
+        sourceUnit: FinancialUnit,
+        targetCurrency: Currency,
+        requestedDates: List<LocalDate>,
+        resolvedConversions: List<ConversionResponse>,
+    ): List<ConversionResponse> {
+        val resolvedDates = resolvedConversions.map { it.date }.toSet()
+        val missingDates = requestedDates.filter { it !in resolvedDates }
+        if (missingDates.isEmpty()) return emptyList()
+
+        val resolvedByDate = resolvedConversions.associateBy { it.date }
+        return missingDates.map { missingDate ->
+            val fallback = (1..MAX_FALLBACK_DAYS).firstNotNullOfOrNull { daysBack ->
+                val fallbackDate = missingDate.minus(daysBack, DateTimeUnit.DAY)
+                resolvedByDate[fallbackDate]
+                    ?: conversionRepository.getConversion(sourceUnit, targetCurrency, fallbackDate)
+                        ?.let { ConversionResponse(sourceUnit, it.target, it.date, it.price) }
+            } ?: throw ConversionExceptions.ConversionNotFound(sourceUnit, targetCurrency, missingDate)
+            ConversionResponse(sourceUnit, targetCurrency, missingDate, fallback.rate)
         }
     }
 

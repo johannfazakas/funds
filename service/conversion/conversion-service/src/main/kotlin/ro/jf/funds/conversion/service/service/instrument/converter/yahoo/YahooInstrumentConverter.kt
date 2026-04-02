@@ -18,9 +18,9 @@ class YahooInstrumentConverter(
     private val cachedProxy: MonthlyCachedInstrumentConverterProxy = MonthlyCachedInstrumentConverterProxy(),
 ) : InstrumentConverter {
     override suspend fun convert(instrument: InstrumentConversionInfo, dates: List<LocalDate>): List<ConversionResponse> =
-        dates.map { date -> checkHardcodedValues(instrument, date) ?: convert(instrument, date) }
+        dates.mapNotNull { date -> checkHardcodedValues(instrument, date) ?: convert(instrument, date) }
 
-    private suspend fun convert(instrument: InstrumentConversionInfo, date: LocalDate): ConversionResponse {
+    private suspend fun convert(instrument: InstrumentConversionInfo, date: LocalDate): ConversionResponse? {
         return cachedProxy.getCachedOrConvert(instrument, date) { from, to ->
             convert(instrument, from, to)
         }
@@ -46,12 +46,13 @@ class YahooInstrumentConverter(
     }
 
     private fun YahooChartResponse.toConversionResponses(instrument: InstrumentConversionInfo): List<ConversionResponse> {
-        val result = this.chart.result.first()
-        val prices = result.indicators.quote.first().close
+        val result = this.chart.result.firstOrNull() ?: return emptyList()
+        val prices = result.indicators.quote.firstOrNull()?.close ?: return emptyList()
+        if (result.timestamp.isEmpty()) return emptyList()
 
         return result.timestamp
             .mapIndexedNotNull { ix, timestamp ->
-                prices[ix]?.let {
+                prices.getOrNull(ix)?.let {
                     ConversionResponse(
                         instrument.instrument,
                         instrument.mainCurrency,

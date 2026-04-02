@@ -31,12 +31,12 @@ class BTInstrumentConverter(
     private val localDateFormatter = LocalDate.Format { byUnicodePattern("yyyy-MM-dd") }
 
     override suspend fun convert(instrument: InstrumentConversionInfo, dates: List<LocalDate>): List<ConversionResponse> =
-        dates.map { date -> convert(instrument, date) }
+        dates.mapNotNull { date -> convert(instrument, date) }
 
-    private suspend fun convert(instrument: InstrumentConversionInfo, date: LocalDate): ConversionResponse {
+    private suspend fun convert(instrument: InstrumentConversionInfo, date: LocalDate): ConversionResponse? {
         cache[instrument to date]?.let { return it }
         putInCache(instrument, downloadConversions(instrument))
-        return cache[instrument to date] ?: error("Failed to convert $instrument at $date")
+        return cache[instrument to date]
     }
 
     private fun putInCache(instrument: InstrumentConversionInfo, conversions: List<ConversionResponse>) {

@@ -65,7 +65,6 @@ Have it deployed with Helm Charts in kubernetes. At least locally in a minikube.
 - [ ] Use the same component in import service
 - [ ] Find a suitable in-memory caching solution
 - [ ] Check error handling
-  - [ ] Check ISRN.DE conversion for 2026-04-02
 - [ ] Look for same currency conversion, maybe it shouldn't trigger a request
 
 ### Improve report load time

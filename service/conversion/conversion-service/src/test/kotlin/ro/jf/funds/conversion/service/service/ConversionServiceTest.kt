@@ -4,8 +4,11 @@ import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.Instrument
@@ -13,6 +16,7 @@ import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionResponse
 import ro.jf.funds.conversion.api.model.ConversionsRequest
 import ro.jf.funds.conversion.service.domain.Conversion
+import ro.jf.funds.conversion.service.domain.ConversionExceptions
 import ro.jf.funds.conversion.service.domain.InstrumentConversionInfo
 import ro.jf.funds.conversion.service.domain.InstrumentConversionSource
 import ro.jf.funds.conversion.service.persistence.ConversionRepository
@@ -205,5 +209,124 @@ class ConversionServiceTest {
             assertThat(response.conversions).hasSize(2)
             assertThat(response.getRate(instrument, Currency.RON, date1)).isEqualTo(BigDecimal.parseString("502.5"))
             assertThat(response.getRate(instrument, Currency.RON, date2)).isEqualTo(BigDecimal.parseString("505.00"))
+        }
+
+    @Test
+    fun `given instrument conversion with missing date when previous date available then should fall back to previous date rate`(): Unit =
+        runBlocking {
+            val instrument = Instrument("VWCE")
+            val pricingInstrument = InstrumentConversionInfo(
+                instrument = instrument,
+                source = InstrumentConversionSource.FINANCIAL_TIMES,
+                symbol = "VWCE",
+                mainCurrency = Currency.EUR
+            )
+            val instrumentConverter = mock<InstrumentConverter>()
+
+            whenever(instrumentConversionInfoRepository.findByInstrument(instrument))
+                .thenReturn(pricingInstrument)
+            whenever(conversionRepository.getConversions(instrument, Currency.EUR, listOf(date1, date2)))
+                .thenReturn(emptyList())
+            whenever(instrumentConverterRegistry.getConverter(pricingInstrument))
+                .thenReturn(instrumentConverter)
+            whenever(instrumentConverter.convert(pricingInstrument, listOf(date1, date2)))
+                .thenReturn(
+                    listOf(
+                        ConversionResponse(instrument, Currency.EUR, date1, BigDecimal.parseString("100.5"))
+                    )
+                )
+            whenever(conversionRepository.getConversion(instrument, Currency.EUR, date1))
+                .thenReturn(null)
+
+            val request = ConversionsRequest(
+                listOf(
+                    ConversionRequest(instrument, Currency.EUR, date1),
+                    ConversionRequest(instrument, Currency.EUR, date2)
+                )
+            )
+
+            val response = conversionService.convert(request)
+
+            assertThat(response.conversions).hasSize(2)
+            assertThat(response.getRate(instrument, Currency.EUR, date1)).isEqualTo(BigDecimal.parseString("100.5"))
+            assertThat(response.getRate(instrument, Currency.EUR, date2)).isEqualTo(BigDecimal.parseString("100.5"))
+            verify(conversionRepository, never()).saveConversion(
+                Conversion(instrument, Currency.EUR, date2, BigDecimal.parseString("100.5"))
+            )
+        }
+
+    @Test
+    fun `given instrument conversion with missing date when stored conversion available in lookback then should use it`(): Unit =
+        runBlocking {
+            val instrument = Instrument("VWCE")
+            val date = LocalDate.parse("2025-02-05")
+            val pricingInstrument = InstrumentConversionInfo(
+                instrument = instrument,
+                source = InstrumentConversionSource.FINANCIAL_TIMES,
+                symbol = "VWCE",
+                mainCurrency = Currency.EUR
+            )
+            val instrumentConverter = mock<InstrumentConverter>()
+
+            whenever(instrumentConversionInfoRepository.findByInstrument(instrument))
+                .thenReturn(pricingInstrument)
+            whenever(conversionRepository.getConversions(instrument, Currency.EUR, listOf(date)))
+                .thenReturn(emptyList())
+            whenever(instrumentConverterRegistry.getConverter(pricingInstrument))
+                .thenReturn(instrumentConverter)
+            whenever(instrumentConverter.convert(pricingInstrument, listOf(date)))
+                .thenReturn(emptyList())
+            whenever(conversionRepository.getConversion(instrument, Currency.EUR, LocalDate.parse("2025-02-04")))
+                .thenReturn(null)
+            whenever(conversionRepository.getConversion(instrument, Currency.EUR, LocalDate.parse("2025-02-03")))
+                .thenReturn(Conversion(instrument, Currency.EUR, date3, BigDecimal.parseString("102.8")))
+
+            val request = ConversionsRequest(
+                listOf(ConversionRequest(instrument, Currency.EUR, date))
+            )
+
+            val response = conversionService.convert(request)
+
+            assertThat(response.conversions).hasSize(1)
+            assertThat(response.getRate(instrument, Currency.EUR, date)).isEqualTo(BigDecimal.parseString("102.8"))
+        }
+
+    @Test
+    fun `given instrument conversion with missing date when no conversion within lookback then should throw error`(): Unit =
+        runBlocking {
+            val instrument = Instrument("VWCE")
+            val date = LocalDate.parse("2025-02-15")
+            val pricingInstrument = InstrumentConversionInfo(
+                instrument = instrument,
+                source = InstrumentConversionSource.FINANCIAL_TIMES,
+                symbol = "VWCE",
+                mainCurrency = Currency.EUR
+            )
+            val instrumentConverter = mock<InstrumentConverter>()
+
+            whenever(instrumentConversionInfoRepository.findByInstrument(instrument))
+                .thenReturn(pricingInstrument)
+            whenever(conversionRepository.getConversions(instrument, Currency.EUR, listOf(date)))
+                .thenReturn(emptyList())
+            whenever(instrumentConverterRegistry.getConverter(pricingInstrument))
+                .thenReturn(instrumentConverter)
+            whenever(instrumentConverter.convert(pricingInstrument, listOf(date)))
+                .thenReturn(emptyList())
+            for (daysBack in 1..10) {
+                whenever(
+                    conversionRepository.getConversion(
+                        instrument,
+                        Currency.EUR,
+                        LocalDate.fromEpochDays(date.toEpochDays() - daysBack)
+                    )
+                ).thenReturn(null)
+            }
+
+            val request = ConversionsRequest(
+                listOf(ConversionRequest(instrument, Currency.EUR, date))
+            )
+
+            assertThatThrownBy { runBlocking { conversionService.convert(request) } }
+                .isInstanceOf(ConversionExceptions.ConversionNotFound::class.java)
         }
 }

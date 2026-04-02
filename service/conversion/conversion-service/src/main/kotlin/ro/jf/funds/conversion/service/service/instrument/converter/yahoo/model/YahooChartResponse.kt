@@ -10,20 +10,20 @@ data class YahooChartResponse(val chart: Chart) {
     data class Chart(val result: List<Result>)
 
     @Serializable
-    data class Result(val meta: Meta, val timestamp: List<Long>, val indicators: Indicators)
+    data class Result(val meta: Meta, val timestamp: List<Long> = emptyList(), val indicators: Indicators)
 
     @Serializable
     data class Meta(val currency: String, val symbol: String)
 
     @Serializable
-    data class Indicators(val quote: List<Quote>)
+    data class Indicators(val quote: List<Quote> = emptyList())
 
     @Serializable
     data class Quote(
-        val close: List<@Serializable(with = BigDecimalSerializer::class) BigDecimal?>,
-        val high: List<@Serializable(with = BigDecimalSerializer::class) BigDecimal?>,
-        val low: List<@Serializable(with = BigDecimalSerializer::class) BigDecimal?>,
-        val open: List<@Serializable(with = BigDecimalSerializer::class) BigDecimal?>,
-        val volume: List<Long?>
+        val close: List<@Serializable(with = BigDecimalSerializer::class) BigDecimal?> = emptyList(),
+        val high: List<@Serializable(with = BigDecimalSerializer::class) BigDecimal?> = emptyList(),
+        val low: List<@Serializable(with = BigDecimalSerializer::class) BigDecimal?> = emptyList(),
+        val open: List<@Serializable(with = BigDecimalSerializer::class) BigDecimal?> = emptyList(),
+        val volume: List<Long?> = emptyList()
     )
 }
