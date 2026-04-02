@@ -26,11 +26,9 @@ import ro.jf.funds.platform.jvm.config.configureDatabaseMigration
 import ro.jf.funds.platform.jvm.config.configureDependencies
 import ro.jf.funds.platform.jvm.test.extension.KafkaContainerExtension
 import ro.jf.funds.platform.jvm.test.extension.PostgresContainerExtension
-import ro.jf.funds.platform.jvm.test.utils.configureEnvironment
-import ro.jf.funds.platform.jvm.test.utils.createJsonHttpClient
-import ro.jf.funds.platform.jvm.test.utils.dbConfig
-import ro.jf.funds.platform.jvm.test.utils.kafkaConfig
+import ro.jf.funds.platform.jvm.test.utils.*
 import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
+import io.ktor.server.config.*
 import javax.sql.DataSource
 
 @ExtendWith(PostgresContainerExtension::class)
@@ -44,10 +42,14 @@ class AnalyticsApiTest {
     private val fundId = uuid4()
     private val otherFundId = uuid4()
 
+    private val conversionServiceConfig = MapApplicationConfig(
+        "integration.conversion-service.base-url" to "http://localhost:0",
+    )
+
     @Test
     fun `given analytics records across months - when requesting balance report - then returns cumulative balance with gap filling and fund filtering`(): Unit =
         testApplication {
-            configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+            configureEnvironment({ testModule() }, dbConfig, kafkaConfig, conversionServiceConfig)
 
             analyticsRecordRepository.saveAll(
                 listOf(
@@ -70,6 +72,7 @@ class AnalyticsApiTest {
                         granularity = TimeGranularity.MONTHLY,
                         from = LocalDateTime.parse("2024-01-01T00:00:00"),
                         to = LocalDateTime.parse("2024-04-01T00:00:00"),
+                        targetCurrency = Currency.RON,
                     )
                 )
             }
@@ -80,13 +83,13 @@ class AnalyticsApiTest {
             assertThat(unfilteredReport.buckets).hasSize(3)
 
             assertThat(unfilteredReport.buckets[0].dateTime).isEqualTo(LocalDateTime.parse("2024-01-01T00:00:00"))
-            assertThat(unfilteredReport.buckets[0].value).isEqualTo(BigDecimal.parseString("620.00"))
+            assertThat(unfilteredReport.buckets[0].value).isEqualTo(BigDecimal.parseString("500.00"))
 
             assertThat(unfilteredReport.buckets[1].dateTime).isEqualTo(LocalDateTime.parse("2024-02-01T00:00:00"))
             assertThat(unfilteredReport.buckets[1].value).isEqualTo(BigDecimal.parseString("620.00"))
 
             assertThat(unfilteredReport.buckets[2].dateTime).isEqualTo(LocalDateTime.parse("2024-03-01T00:00:00"))
-            assertThat(unfilteredReport.buckets[2].value).isEqualTo(BigDecimal.parseString("770.00"))
+            assertThat(unfilteredReport.buckets[2].value).isEqualTo(BigDecimal.parseString("620.00"))
 
             val filteredResponse = client.post("/funds-api/analytics/v1/reports/balance") {
                 contentType(ContentType.Application.Json)
@@ -97,6 +100,7 @@ class AnalyticsApiTest {
                         from = LocalDateTime.parse("2024-01-01T00:00:00"),
                         to = LocalDateTime.parse("2024-04-01T00:00:00"),
                         fundIds = listOf(fundId),
+                        targetCurrency = Currency.RON,
                     )
                 )
             }
@@ -106,19 +110,19 @@ class AnalyticsApiTest {
             assertThat(filteredReport.buckets).hasSize(3)
 
             assertThat(filteredReport.buckets[0].dateTime).isEqualTo(LocalDateTime.parse("2024-01-01T00:00:00"))
-            assertThat(filteredReport.buckets[0].value).isEqualTo(BigDecimal.parseString("570.00"))
+            assertThat(filteredReport.buckets[0].value).isEqualTo(BigDecimal.parseString("500.00"))
 
             assertThat(filteredReport.buckets[1].dateTime).isEqualTo(LocalDateTime.parse("2024-02-01T00:00:00"))
             assertThat(filteredReport.buckets[1].value).isEqualTo(BigDecimal.parseString("570.00"))
 
             assertThat(filteredReport.buckets[2].dateTime).isEqualTo(LocalDateTime.parse("2024-03-01T00:00:00"))
-            assertThat(filteredReport.buckets[2].value).isEqualTo(BigDecimal.parseString("720.00"))
+            assertThat(filteredReport.buckets[2].value).isEqualTo(BigDecimal.parseString("570.00"))
         }
 
     @Test
     fun `given analytics records across months - when requesting net change report - then returns per-bucket net changes`(): Unit =
         testApplication {
-            configureEnvironment({ testModule() }, dbConfig, kafkaConfig)
+            configureEnvironment({ testModule() }, dbConfig, kafkaConfig, conversionServiceConfig)
 
             analyticsRecordRepository.saveAll(
                 listOf(
@@ -141,6 +145,7 @@ class AnalyticsApiTest {
                         granularity = TimeGranularity.MONTHLY,
                         from = LocalDateTime.parse("2024-01-01T00:00:00"),
                         to = LocalDateTime.parse("2024-04-01T00:00:00"),
+                        targetCurrency = Currency.RON,
                     )
                 )
             }

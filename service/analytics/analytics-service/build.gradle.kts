@@ -7,6 +7,7 @@ plugins {
 dependencies {
     implementation(project(":service:analytics:analytics-api"))
     implementation(project(":service:fund:fund-api"))
+    implementation(project(":service:conversion:conversion-sdk"))
     implementation(project(":platform:platform-jvm"))
     testImplementation(project(":platform:platform-jvm-test"))
 }

@@ -132,6 +132,7 @@ services:
     environment:
       - DATABASE_URL=jdbc:postgresql://ff_postgres:5432/ff_analytics
       - KAFKA_BOOTSTRAP_SERVERS=ff_kafka:9092
+      - CONVERSION_SERVICE_BASE_URL=http://ff_conversion:5231
       - OTEL_COLLECTOR_GRPC_ENDPOINT=http://ff_otel_collector:4317/v1/traces
     depends_on:
       - postgres

@@ -15,6 +15,9 @@ kafka:
   bootstrap-servers: "$KAFKA_BOOTSTRAP_SERVERS:localhost:29092"
   group-id: analytics-service
   client-id: analytics-service
+integration:
+  conversion-service:
+    base-url: "$CONVERSION_SERVICE_BASE_URL:http://localhost:5231"
 observability:
   enabled: true
   otel-collector:

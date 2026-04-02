@@ -109,19 +109,6 @@ function Sidebar({ onLogout }: SidebarProps) {
                             Reports
                         </p>
                         <NavLink
-                            to="/expenses"
-                            className={({ isActive }) =>
-                                cn(
-                                    "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
-                                    isActive
-                                        ? "bg-accent text-accent-foreground font-medium"
-                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                )
-                            }
-                        >
-                            Expenses
-                        </NavLink>
-                        <NavLink
                             to="/analytics"
                             className={({ isActive }) =>
                                 cn(

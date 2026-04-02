@@ -76,6 +76,8 @@ kotlin {
                 implementation(npm("@dnd-kit/core", "6.1.0"))
                 implementation(npm("@dnd-kit/sortable", "8.0.0"))
                 implementation(npm("@dnd-kit/utilities", "3.2.2"))
+                implementation(npm("react-day-picker", "8.10.0"))
+                implementation(npm("date-fns", "3.6.0"))
                 implementation(devNpm("tailwindcss-animate", "1.0.7"))
             }
         }

@@ -51,7 +51,7 @@ function ValueChart({ title, data, seriesName, seriesColor }: ValueChartProps) {
                             name={seriesName}
                             stroke={seriesColor}
                             strokeWidth={2}
-                            dot={{ fill: seriesColor }}
+                            dot={false}
                         />
                     </ComposedChart>
                 </ResponsiveContainer>

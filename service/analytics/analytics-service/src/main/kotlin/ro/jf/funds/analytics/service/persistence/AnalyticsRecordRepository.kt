@@ -14,7 +14,8 @@ import org.jetbrains.exposed.sql.json.json
 import ro.jf.funds.analytics.api.model.TimeGranularity
 import ro.jf.funds.analytics.service.domain.AnalyticsRecord
 import ro.jf.funds.analytics.service.domain.AnalyticsRecordFilter
-import ro.jf.funds.analytics.service.domain.AnalyticsValueAggregate
+import ro.jf.funds.analytics.service.domain.BucketedUnitAggregates
+import ro.jf.funds.analytics.service.domain.ReportInterval
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.jvm.persistence.bigDecimal
 import ro.jf.funds.platform.jvm.persistence.blockingTransaction
@@ -51,45 +52,51 @@ class AnalyticsRecordRepository(
         records
     }
 
-    suspend fun getValueAggregates(
+    suspend fun getValueAggregatesByUnit(
         userId: Uuid,
-        granularity: TimeGranularity,
-        from: LocalDateTime,
-        to: LocalDateTime,
+        interval: ReportInterval,
         filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
-    ): List<AnalyticsValueAggregate> = blockingTransaction {
-        val bucket = dateTrunc(granularity, AnalyticsRecordTable.dateTime)
+    ): BucketedUnitAggregates = blockingTransaction {
+        val bucket = dateTrunc(interval.granularity, AnalyticsRecordTable.dateTime)
         val totalAmount = AnalyticsRecordTable.amount.sum()
 
-        AnalyticsRecordTable
-            .select(bucket, totalAmount)
+        val truncatedFrom = interval.truncate(interval.from)
+        val rows = AnalyticsRecordTable
+            .select(bucket, AnalyticsRecordTable.unit, totalAmount)
             .where { AnalyticsRecordTable.userId eq userId.toJavaUuid() }
-            .andWhere { AnalyticsRecordTable.dateTime greaterEq from.toJavaLocalDateTime() }
-            .andWhere { AnalyticsRecordTable.dateTime less to.toJavaLocalDateTime() }
+            .andWhere { AnalyticsRecordTable.dateTime greaterEq interval.from.toJavaLocalDateTime() }
+            .andWhere { AnalyticsRecordTable.dateTime less interval.to.toJavaLocalDateTime() }
             .applyFilter(filter)
-            .groupBy(bucket)
+            .groupBy(bucket, AnalyticsRecordTable.unit)
             .orderBy(bucket)
-            .map { row ->
-                AnalyticsValueAggregate(
-                    dateTime = (row[bucket]).toKotlinLocalDateTime(),
-                    sum = row[totalAmount] ?: BigDecimal.ZERO,
-                )
+            .groupBy { row ->
+                val dateTime = row[bucket].toKotlinLocalDateTime()
+                if (dateTime == truncatedFrom) interval.from else dateTime
             }
+            .mapValues { (_, rows) ->
+                rows.associate { row ->
+                    row[AnalyticsRecordTable.unit] to (row[totalAmount] ?: BigDecimal.ZERO)
+                }
+            }
+        BucketedUnitAggregates(rows)
     }
 
-    suspend fun getSumBefore(
+    suspend fun getBalanceBefore(
         userId: Uuid,
         before: LocalDateTime,
         filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
-    ): BigDecimal = blockingTransaction {
+    ): Map<FinancialUnit, BigDecimal> = blockingTransaction {
         val totalAmount = AnalyticsRecordTable.amount.sum()
 
         AnalyticsRecordTable
-            .select(totalAmount)
+            .select(AnalyticsRecordTable.unit, totalAmount)
             .where { AnalyticsRecordTable.userId eq userId.toJavaUuid() }
             .andWhere { AnalyticsRecordTable.dateTime less before.toJavaLocalDateTime() }
             .applyFilter(filter)
-            .single()[totalAmount] ?: BigDecimal.ZERO
+            .groupBy(AnalyticsRecordTable.unit)
+            .associate { row ->
+                row[AnalyticsRecordTable.unit] to (row[totalAmount] ?: BigDecimal.ZERO)
+            }
     }
 
     private fun Query.applyFilter(filter: AnalyticsRecordFilter): Query = this

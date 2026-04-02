@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getBalanceReport, getNetChangeReport, TimeGranularity, ReportResponse } from '../api/analyticsApi';
+import { listFunds, Fund } from '../api/fundApi';
+import { listAccounts } from '../api/accountApi';
 import ValueChart, { ValueChartDataPoint } from '../components/ValueChart';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { MultiSelect, MultiSelectOption } from '../components/ui/multi-select';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
+import { DatePicker } from '../components/ui/date-picker';
 import { Loader2 } from 'lucide-react';
 
 interface AnalyticsPageProps {
@@ -11,12 +16,12 @@ interface AnalyticsPageProps {
 
 type ReportType = 'balance' | 'netChange';
 
-const reportTypes: { value: ReportType; label: string; seriesName: string; color: string }[] = [
+const reportTypeOptions: { value: ReportType; label: string; seriesName: string; color: string }[] = [
     { value: 'balance', label: 'Balance', seriesName: 'Balance', color: '#2563eb' },
     { value: 'netChange', label: 'Net Change', seriesName: 'Net Change', color: '#16a34a' },
 ];
 
-const granularities: { value: TimeGranularity; label: string }[] = [
+const granularityOptions: { value: TimeGranularity; label: string }[] = [
     { value: 'DAILY', label: 'Daily' },
     { value: 'WEEKLY', label: 'Weekly' },
     { value: 'MONTHLY', label: 'Monthly' },
@@ -50,7 +55,7 @@ function formatBucketLabel(dateTime: string, granularity: TimeGranularity): stri
 function toChartData(report: ReportResponse): ValueChartDataPoint[] {
     return report.buckets.map(bucket => ({
         label: formatBucketLabel(bucket.dateTime, report.granularity),
-        value: parseFloat(bucket.value),
+        value: Math.round(parseFloat(bucket.value)),
     }));
 }
 
@@ -60,21 +65,69 @@ function toLocalDateTime(dateStr: string): string {
 
 function AnalyticsPage({ userId }: AnalyticsPageProps) {
     const [report, setReport] = useState<ReportResponse | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [reportType, setReportType] = useState<ReportType>('balance');
     const [granularity, setGranularity] = useState<TimeGranularity>('MONTHLY');
     const [fromDate, setFromDate] = useState(defaultFromDate);
     const [toDate, setToDate] = useState(defaultToDate);
+    const [selectedFundIds, setSelectedFundIds] = useState<string[]>([]);
+    const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
+    const [targetCurrency, setTargetCurrency] = useState<string>('');
 
-    const loadData = useCallback(async () => {
+    const [funds, setFunds] = useState<Fund[]>([]);
+    const [unitOptions, setUnitOptions] = useState<MultiSelectOption[]>([]);
+
+    useEffect(() => {
+        async function loadFilterOptions() {
+            try {
+                const [fundsResult, accountsResult] = await Promise.all([
+                    listFunds(userId),
+                    listAccounts(userId),
+                ]);
+                setFunds(fundsResult.items);
+                const seen = new Set<string>();
+                const units: MultiSelectOption[] = [];
+                const currencies: string[] = [];
+                for (const account of accountsResult.items) {
+                    const key = `${account.unit.type}:${account.unit.value}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        units.push({ value: key, label: account.unit.value });
+                        if (account.unit.type === 'currency') {
+                            currencies.push(account.unit.value);
+                        }
+                    }
+                }
+                units.sort((a, b) => a.label.localeCompare(b.label));
+                currencies.sort();
+                setUnitOptions(units);
+                if (currencies.length > 0 && !targetCurrency) {
+                    setTargetCurrency(currencies[0]);
+                }
+            } catch {
+                // filter options are best-effort
+            }
+        }
+        loadFilterOptions();
+    }, [userId]);
+
+    const loadData = async () => {
+        if (!targetCurrency) return;
         setLoading(true);
         setError(null);
         try {
+            const units = selectedUnits.map(key => {
+                const [type, value] = key.split(':');
+                return { type, value };
+            });
             const request = {
                 granularity,
                 from: toLocalDateTime(fromDate),
                 to: toLocalDateTime(toDate),
+                fundIds: selectedFundIds.length > 0 ? selectedFundIds : undefined,
+                units: units.length > 0 ? units : undefined,
+                targetCurrency,
             };
             const data = reportType === 'balance'
                 ? await getBalanceReport(userId, request)
@@ -85,14 +138,23 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
         } finally {
             setLoading(false);
         }
-    }, [userId, reportType, granularity, fromDate, toDate]);
+    };
 
+    const initialLoadDone = useRef(false);
     useEffect(() => {
-        loadData();
-    }, [loadData]);
+        if (targetCurrency && !initialLoadDone.current) {
+            initialLoadDone.current = true;
+            loadData();
+        }
+    }, [targetCurrency]);
 
     const chartData = report ? toChartData(report) : [];
-    const activeReportType = reportTypes.find(r => r.value === reportType)!;
+    const activeReportType = reportTypeOptions.find(r => r.value === reportType)!;
+
+    const fundMultiSelectOptions: MultiSelectOption[] = funds.map(f => ({ value: f.id, label: f.name }));
+    const currencyOptions = unitOptions
+        .filter(u => u.value.startsWith('currency:'))
+        .map(u => ({ value: u.value.split(':')[1], label: u.value.split(':')[1] }));
 
     return (
         <div>
@@ -100,48 +162,83 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
 
             <Card className="mb-6">
                 <CardContent className="pt-6">
-                    <div className="flex flex-wrap items-end gap-4">
-                        <div className="flex gap-1">
-                            {reportTypes.map(r => (
-                                <Button
-                                    key={r.value}
-                                    variant={reportType === r.value ? 'default' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setReportType(r.value)}
-                                >
-                                    {r.label}
-                                </Button>
-                            ))}
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-wrap items-end gap-4">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm text-muted-foreground">Report</label>
+                                <Select value={reportType} onValueChange={(v) => setReportType(v as ReportType)}>
+                                    <SelectTrigger className="w-[140px] h-9">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {reportTypeOptions.map(r => (
+                                            <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm text-muted-foreground">Granularity</label>
+                                <Select value={granularity} onValueChange={(v) => setGranularity(v as TimeGranularity)}>
+                                    <SelectTrigger className="w-[140px] h-9">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {granularityOptions.map(g => (
+                                            <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm text-muted-foreground">Report currency</label>
+                                <Select value={targetCurrency} onValueChange={setTargetCurrency}>
+                                    <SelectTrigger className="w-[140px] h-9">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {currencyOptions.map(c => (
+                                            <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
-                        <div className="flex gap-1">
-                            {granularities.map(g => (
-                                <Button
-                                    key={g.value}
-                                    variant={granularity === g.value ? 'default' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setGranularity(g.value)}
-                                >
-                                    {g.label}
-                                </Button>
-                            ))}
+                        <div className="flex flex-wrap items-end gap-4">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm text-muted-foreground">Funds</label>
+                                <MultiSelect
+                                    values={selectedFundIds}
+                                    onValuesChange={setSelectedFundIds}
+                                    options={fundMultiSelectOptions}
+                                    placeholder="All funds"
+                                    className="w-[180px]"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm text-muted-foreground">Currencies</label>
+                                <MultiSelect
+                                    values={selectedUnits}
+                                    onValuesChange={setSelectedUnits}
+                                    options={unitOptions}
+                                    placeholder="All currencies"
+                                    className="w-[180px]"
+                                />
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <label className="text-sm text-muted-foreground">From</label>
-                            <input
-                                type="date"
-                                value={fromDate}
-                                onChange={e => setFromDate(e.target.value)}
-                                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
-                            />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <label className="text-sm text-muted-foreground">To</label>
-                            <input
-                                type="date"
-                                value={toDate}
-                                onChange={e => setToDate(e.target.value)}
-                                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
-                            />
+                        <div className="flex flex-wrap items-end gap-4">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm text-muted-foreground">From</label>
+                                <DatePicker value={fromDate} onChange={setFromDate} className="w-[160px]" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm text-muted-foreground">To</label>
+                                <DatePicker value={toDate} onChange={setToDate} className="w-[160px]" />
+                            </div>
+                            <Button size="sm" onClick={loadData} disabled={!targetCurrency || loading}>
+                                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                Generate
+                            </Button>
                         </div>
                     </div>
                 </CardContent>

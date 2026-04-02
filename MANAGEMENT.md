@@ -5,10 +5,16 @@
 ### Efficient analytics execution and storage
 
 - [x] new service, analytics records replicated
-- [ ] chart type (value & new report, budget report, investment report, income report)
-- [ ] group data by unit and then convert it to the requested unit
+- [x] chart type (value & new report, budget report)
 - [x] filter by fund, granularity, period, unit
+- [ ] group data in the output by currency, by account, by fund
 - [ ] select chart output in 
+
+### Investment Report
+
+### Budgeted expense report
+
+### Income report
 
 ### Colors for Funds, Accounts, Labels
 
@@ -46,7 +52,21 @@ Have it deployed with Helm Charts in kubernetes. At least locally in a minikube.
 - [ ] Could we lower the resources' requirement?
 - [ ] Set limits in docker.
 
+### Add Loki for logging
+
+- [ ] Control logging levels from config
+- [ ] logback vs log4j2
+
 ## Non-Functional Tasks
+
+### Caching capabilities for ConversionSDK
+
+- [ ] SDK should take responsibility over the current code in reporting ConversionRateService
+- [ ] Use the same component in import service
+- [ ] Find a suitable in-memory caching solution
+- [ ] Check error handling
+  - [ ] Check ISRN.DE conversion for 2026-04-02
+- [ ] Look for same currency conversion, maybe it shouldn't trigger a request
 
 ### Improve report load time
 
@@ -81,14 +101,6 @@ Check AccountTransactionRepositoryTest
 It caches info without storing them, leading to not persisted data.
 It is applied partially on converters.
 One idea could be to handle generating multiple requests at a higher level, maybe in Conversion Service.
-
-### Caching capabilities for ConversionSDK
-
-- [ ] SDK should take responsibility over the current code in reporting ConversionRateService
-- [ ] Use the same component in import service
-- [ ] Find a suitable in-memory caching solution
-- [ ] Check error handling
-- [ ] Look for same currency conversion, maybe it shouldn't trigger a request
 
 ### Use grpc for conversions
 It would make sense to have a bidirectional streamed channel to resolve conversions.

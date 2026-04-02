@@ -7,7 +7,8 @@ export interface ReportRequest {
     from: string;
     to: string;
     fundIds?: string[];
-    units?: object[];
+    units?: { type: string; value: string }[];
+    targetCurrency: string;
 }
 
 export interface ReportBucket {

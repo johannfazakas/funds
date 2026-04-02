@@ -8,14 +8,18 @@ data class ReportInterval(
     val from: LocalDateTime,
     val to: LocalDateTime,
 ) {
-    fun <D> generateBucketedData(function: (LocalDateTime) -> D): List<Pair<LocalDateTime, D>> =
-        generateBuckets().map { it to function(it) }.toList()
+    fun <E> generateBucketedData(function: (LocalDateTime) -> E): List<E> =
+        generateBuckets().map { function(it) }.toList()
 
-    fun <D> generateBucketedData(seed: D, function: (LocalDateTime, D) -> D): List<Pair<LocalDateTime, D>> =
-        generateBuckets().fold(emptyList<Pair<LocalDateTime, D>>() to seed) { (acc, previous), dateTime ->
-            val data = function(dateTime, previous)
-            (acc + (dateTime to data)) to data
-        }.first
+    fun <E, D> generateBucketedData(seed: D, function: (LocalDateTime, D) -> Pair<E, D>): List<E> = buildList {
+        generateBuckets().fold(seed) { details, dateTime ->
+            val (element, updated) = function(dateTime, details)
+            add(element)
+            updated
+        }
+    }
+
+    fun generateBucketDates(): List<LocalDateTime> = generateBuckets().toList()
 
     private fun generateBuckets(): Sequence<LocalDateTime> = sequence {
         yield(from)
