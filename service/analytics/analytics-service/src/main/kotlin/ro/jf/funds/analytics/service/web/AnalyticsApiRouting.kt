@@ -22,7 +22,7 @@ fun Routing.analyticsApiRouting(analyticsService: AnalyticsService) {
             log.info { "Balance report request for user $userId: $request" }
             val interval = ReportInterval(request.granularity, request.from, request.to)
             val filter = AnalyticsRecordFilter(fundIds = request.fundIds, units = request.units)
-            val report = analyticsService.getBalanceReport(userId, interval, filter, request.targetCurrency)
+            val report = analyticsService.getBalanceReport(userId, interval, filter, request.targetCurrency, request.groupBy)
             call.respond(HttpStatusCode.OK, report)
         }
         post("/net-change") {
@@ -31,7 +31,7 @@ fun Routing.analyticsApiRouting(analyticsService: AnalyticsService) {
             log.info { "Net change report request for user $userId: $request" }
             val interval = ReportInterval(request.granularity, request.from, request.to)
             val filter = AnalyticsRecordFilter(fundIds = request.fundIds, units = request.units)
-            val report = analyticsService.getNetChangeReport(userId, interval, filter, request.targetCurrency)
+            val report = analyticsService.getNetChangeReport(userId, interval, filter, request.targetCurrency, request.groupBy)
             call.respond(HttpStatusCode.OK, report)
         }
     }

@@ -35,6 +35,8 @@ But report data generation shouldn't depend on the report view.
 
 ### Categories instead of labels?
 
+- [ ] group by label/category
+
 ### Better fund (and not only fund) matching
 
 Maybe it could be done by account first. 

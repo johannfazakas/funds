@@ -1,6 +1,7 @@
 import { handleApiError } from './apiUtils';
 
 export type TimeGranularity = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+export type GroupBy = 'CURRENCY' | 'ACCOUNT' | 'FUND';
 
 export interface ReportRequest {
     granularity: TimeGranularity;
@@ -9,11 +10,17 @@ export interface ReportRequest {
     fundIds?: string[];
     units?: { type: string; value: string }[];
     targetCurrency: string;
+    groupBy?: GroupBy;
+}
+
+export interface GroupBucket {
+    groupKey: string | null;
+    value: string;
 }
 
 export interface ReportBucket {
     dateTime: string;
-    value: string;
+    groups: GroupBucket[];
 }
 
 export interface ReportResponse {

@@ -15,4 +15,5 @@ data class AnalyticsReportRequestTO(
     val fundIds: List<@Serializable(with = UuidSerializer::class) Uuid> = emptyList(),
     val units: List<FinancialUnit> = emptyList(),
     val targetCurrency: Currency,
+    val groupBy: GroupingCriteria? = null,
 )

@@ -14,6 +14,12 @@ data class AnalyticsReportTO(
 @Serializable
 data class AnalyticsBucketTO(
     val dateTime: LocalDateTime,
+    val groups: List<AnalyticsGroupBucketTO>,
+)
+
+@Serializable
+data class AnalyticsGroupBucketTO(
+    val groupKey: String? = null,
     @Serializable(with = BigDecimalSerializer::class)
     val value: BigDecimal,
 )

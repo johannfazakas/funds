@@ -83,13 +83,13 @@ class AnalyticsApiTest {
             assertThat(unfilteredReport.buckets).hasSize(3)
 
             assertThat(unfilteredReport.buckets[0].dateTime).isEqualTo(LocalDateTime.parse("2024-01-01T00:00:00"))
-            assertThat(unfilteredReport.buckets[0].value).isEqualTo(BigDecimal.parseString("500.00"))
+            assertThat(unfilteredReport.buckets[0].groups[0].value).isEqualTo(BigDecimal.parseString("500.00"))
 
             assertThat(unfilteredReport.buckets[1].dateTime).isEqualTo(LocalDateTime.parse("2024-02-01T00:00:00"))
-            assertThat(unfilteredReport.buckets[1].value).isEqualTo(BigDecimal.parseString("620.00"))
+            assertThat(unfilteredReport.buckets[1].groups[0].value).isEqualTo(BigDecimal.parseString("620.00"))
 
             assertThat(unfilteredReport.buckets[2].dateTime).isEqualTo(LocalDateTime.parse("2024-03-01T00:00:00"))
-            assertThat(unfilteredReport.buckets[2].value).isEqualTo(BigDecimal.parseString("620.00"))
+            assertThat(unfilteredReport.buckets[2].groups[0].value).isEqualTo(BigDecimal.parseString("620.00"))
 
             val filteredResponse = client.post("/funds-api/analytics/v1/reports/balance") {
                 contentType(ContentType.Application.Json)
@@ -110,13 +110,13 @@ class AnalyticsApiTest {
             assertThat(filteredReport.buckets).hasSize(3)
 
             assertThat(filteredReport.buckets[0].dateTime).isEqualTo(LocalDateTime.parse("2024-01-01T00:00:00"))
-            assertThat(filteredReport.buckets[0].value).isEqualTo(BigDecimal.parseString("500.00"))
+            assertThat(filteredReport.buckets[0].groups[0].value).isEqualTo(BigDecimal.parseString("500.00"))
 
             assertThat(filteredReport.buckets[1].dateTime).isEqualTo(LocalDateTime.parse("2024-02-01T00:00:00"))
-            assertThat(filteredReport.buckets[1].value).isEqualTo(BigDecimal.parseString("570.00"))
+            assertThat(filteredReport.buckets[1].groups[0].value).isEqualTo(BigDecimal.parseString("570.00"))
 
             assertThat(filteredReport.buckets[2].dateTime).isEqualTo(LocalDateTime.parse("2024-03-01T00:00:00"))
-            assertThat(filteredReport.buckets[2].value).isEqualTo(BigDecimal.parseString("570.00"))
+            assertThat(filteredReport.buckets[2].groups[0].value).isEqualTo(BigDecimal.parseString("570.00"))
         }
 
     @Test
@@ -156,13 +156,13 @@ class AnalyticsApiTest {
             assertThat(report.buckets).hasSize(3)
 
             assertThat(report.buckets[0].dateTime).isEqualTo(LocalDateTime.parse("2024-01-01T00:00:00"))
-            assertThat(report.buckets[0].value).isEqualTo(BigDecimal.parseString("120.00"))
+            assertThat(report.buckets[0].groups[0].value).isEqualTo(BigDecimal.parseString("120.00"))
 
             assertThat(report.buckets[1].dateTime).isEqualTo(LocalDateTime.parse("2024-02-01T00:00:00"))
-            assertThat(report.buckets[1].value).isEqualTo(BigDecimal.ZERO)
+            assertThat(report.buckets[1].groups[0].value).isEqualTo(BigDecimal.ZERO)
 
             assertThat(report.buckets[2].dateTime).isEqualTo(LocalDateTime.parse("2024-03-01T00:00:00"))
-            assertThat(report.buckets[2].value).isEqualTo(BigDecimal.parseString("150.00"))
+            assertThat(report.buckets[2].groups[0].value).isEqualTo(BigDecimal.parseString("150.00"))
         }
 
     private fun analyticsRecord(

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { getBalanceReport, getNetChangeReport, TimeGranularity, ReportResponse } from '../api/analyticsApi';
+import { getBalanceReport, getNetChangeReport, TimeGranularity, GroupBy, ReportResponse } from '../api/analyticsApi';
 import { listFunds, Fund } from '../api/fundApi';
-import { listAccounts } from '../api/accountApi';
+import { listAccounts, Account } from '../api/accountApi';
 import ValueChart, { ValueChartDataPoint } from '../components/ValueChart';
+import GroupedValueChart, { GroupedValueChartDataPoint } from '../components/GroupedValueChart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { MultiSelect, MultiSelectOption } from '../components/ui/multi-select';
 import { Button } from '../components/ui/button';
@@ -26,6 +27,13 @@ const granularityOptions: { value: TimeGranularity; label: string }[] = [
     { value: 'WEEKLY', label: 'Weekly' },
     { value: 'MONTHLY', label: 'Monthly' },
     { value: 'YEARLY', label: 'Yearly' },
+];
+
+const groupByOptions: { value: string; label: string }[] = [
+    { value: 'NONE', label: 'None' },
+    { value: 'CURRENCY', label: 'Currency' },
+    { value: 'ACCOUNT', label: 'Account' },
+    { value: 'FUND', label: 'Fund' },
 ];
 
 function defaultFromDate(): string {
@@ -52,11 +60,41 @@ function formatBucketLabel(dateTime: string, granularity: TimeGranularity): stri
     }
 }
 
-function toChartData(report: ReportResponse): ValueChartDataPoint[] {
+function toSingleSeriesChartData(report: ReportResponse): ValueChartDataPoint[] {
     return report.buckets.map(bucket => ({
         label: formatBucketLabel(bucket.dateTime, report.granularity),
-        value: Math.round(parseFloat(bucket.value)),
+        value: bucket.groups.length > 0
+            ? Math.round(parseFloat(bucket.groups[0].value))
+            : 0,
     }));
+}
+
+function toGroupedChartData(
+    report: ReportResponse,
+    resolveGroupName: (key: string) => string,
+): { data: GroupedValueChartDataPoint[]; groups: string[] } {
+    const allGroupKeys = new Set<string>();
+    report.buckets.forEach(b =>
+        b.groups.forEach(g => {
+            if (g.groupKey !== null) allGroupKeys.add(g.groupKey);
+        })
+    );
+    const groupKeys = Array.from(allGroupKeys).sort();
+    const groups = groupKeys.map(resolveGroupName);
+
+    const data: GroupedValueChartDataPoint[] = report.buckets.map(bucket => {
+        const point: GroupedValueChartDataPoint = {
+            label: formatBucketLabel(bucket.dateTime, report.granularity),
+        };
+        for (const key of groupKeys) {
+            const name = resolveGroupName(key);
+            const groupBucket = bucket.groups.find(g => g.groupKey === key);
+            point[name] = groupBucket ? Math.round(parseFloat(groupBucket.value)) : 0;
+        }
+        return point;
+    });
+
+    return { data, groups };
 }
 
 function toLocalDateTime(dateStr: string): string {
@@ -74,8 +112,10 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
     const [selectedFundIds, setSelectedFundIds] = useState<string[]>([]);
     const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
     const [targetCurrency, setTargetCurrency] = useState<string>('');
+    const [groupBy, setGroupBy] = useState<string>('NONE');
 
     const [funds, setFunds] = useState<Fund[]>([]);
+    const [accounts, setAccounts] = useState<Account[]>([]);
     const [unitOptions, setUnitOptions] = useState<MultiSelectOption[]>([]);
 
     useEffect(() => {
@@ -86,6 +126,7 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                     listAccounts(userId),
                 ]);
                 setFunds(fundsResult.items);
+                setAccounts(accountsResult.items);
                 const seen = new Set<string>();
                 const units: MultiSelectOption[] = [];
                 const currencies: string[] = [];
@@ -112,6 +153,18 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
         loadFilterOptions();
     }, [userId]);
 
+    const resolveGroupName = (key: string): string => {
+        if (groupBy === 'FUND') {
+            const fund = funds.find(f => f.id === key);
+            return fund ? fund.name : key;
+        }
+        if (groupBy === 'ACCOUNT') {
+            const account = accounts.find(a => a.id === key);
+            return account ? account.name : key;
+        }
+        return key;
+    };
+
     const loadData = async () => {
         if (!targetCurrency) return;
         setLoading(true);
@@ -128,6 +181,7 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                 fundIds: selectedFundIds.length > 0 ? selectedFundIds : undefined,
                 units: units.length > 0 ? units : undefined,
                 targetCurrency,
+                groupBy: groupBy !== 'NONE' ? groupBy as GroupBy : undefined,
             };
             const data = reportType === 'balance'
                 ? await getBalanceReport(userId, request)
@@ -148,8 +202,13 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
         }
     }, [targetCurrency]);
 
-    const chartData = report ? toChartData(report) : [];
     const activeReportType = reportTypeOptions.find(r => r.value === reportType)!;
+
+    const isGrouped = report && groupBy !== 'NONE' &&
+        report.buckets.some(b => b.groups.length > 1 || (b.groups.length === 1 && b.groups[0].groupKey !== null));
+
+    const singleSeriesData = report && !isGrouped ? toSingleSeriesChartData(report) : [];
+    const groupedData = report && isGrouped ? toGroupedChartData(report, resolveGroupName) : null;
 
     const fundMultiSelectOptions: MultiSelectOption[] = funds.map(f => ({ value: f.id, label: f.name }));
     const currencyOptions = unitOptions
@@ -199,6 +258,19 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                                     <SelectContent>
                                         {currencyOptions.map(c => (
                                             <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm text-muted-foreground">Group by</label>
+                                <Select value={groupBy} onValueChange={setGroupBy}>
+                                    <SelectTrigger className="w-[140px] h-9">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {groupByOptions.map(g => (
+                                            <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -257,14 +329,26 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                 </div>
             )}
 
-            {!loading && !error && report && (
+            {!loading && !error && report && !isGrouped && (
                 <Card>
                     <CardContent className="pt-6">
                         <ValueChart
                             title={activeReportType.seriesName}
-                            data={chartData}
+                            data={singleSeriesData}
                             seriesName={activeReportType.seriesName}
                             seriesColor={activeReportType.color}
+                        />
+                    </CardContent>
+                </Card>
+            )}
+
+            {!loading && !error && report && isGrouped && groupedData && (
+                <Card>
+                    <CardContent className="pt-6">
+                        <GroupedValueChart
+                            title={activeReportType.seriesName}
+                            data={groupedData.data}
+                            groups={groupedData.groups}
                         />
                     </CardContent>
                 </Card>
