@@ -43,7 +43,9 @@ function defaultFromDate(): string {
 }
 
 function defaultToDate(): string {
-    return new Date().toISOString().slice(0, 10);
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    return date.toISOString().slice(0, 10);
 }
 
 function formatBucketLabel(dateTime: string, granularity: TimeGranularity): string {
