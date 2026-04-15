@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.javatime.datetime
+import org.jetbrains.exposed.sql.json.contains
 import org.jetbrains.exposed.sql.json.json
 import ro.jf.funds.analytics.api.model.GroupingCriteria
 import ro.jf.funds.analytics.api.model.TimeGranularity
@@ -182,8 +183,9 @@ class AnalyticsRecordRepository(
         .let { query ->
             if (filter.units.isNotEmpty())
                 query.andWhere {
-                    filter.units.map<FinancialUnit, Op<Boolean>> { AnalyticsRecordTable.unit eq it }
-                        .reduce { acc, op -> acc or op }
+                    filter.units.map<FinancialUnit, Op<Boolean>> {
+                        AnalyticsRecordTable.unit.contains(Json.encodeToString(FinancialUnit.serializer(), it))
+                    }.reduce { acc, op -> acc or op }
                 }
             else query
         }
