@@ -5,7 +5,7 @@ import { listAccounts, Account } from '../api/accountApi';
 import { listLabels, Label } from '../api/labelApi';
 import { RecordSortField, SortOrder } from '../api/types';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
+import { DatePicker } from '../components/ui/date-picker';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import {
@@ -156,98 +156,114 @@ function RecordsPage({ userId }: RecordsPageProps) {
                 <h1 className="text-2xl font-bold">Records</h1>
             </div>
 
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-                <Input
-                    type="date"
-                    value={filterFromDate}
-                    onChange={(e) => { setFilterFromDate(e.target.value); handleFilterChange(); }}
-                    className="w-36"
-                />
-                <Input
-                    type="date"
-                    value={filterToDate}
-                    onChange={(e) => { setFilterToDate(e.target.value); handleFilterChange(); }}
-                    className="w-36"
-                />
-                <Select
-                    value={filterAccountId}
-                    onValueChange={(value) => { setFilterAccountId(value === 'all' ? '' : value); handleFilterChange(); }}
-                >
-                    <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All accounts</SelectItem>
-                        {accounts.map(account => (
-                            <SelectItem key={account.id} value={account.id}>
-                                {account.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Select
-                    value={filterFundId}
-                    onValueChange={(value) => { setFilterFundId(value === 'all' ? '' : value); handleFilterChange(); }}
-                >
-                    <SelectTrigger className="w-36">
-                        <SelectValue placeholder="Fund" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All funds</SelectItem>
-                        {funds.map(fund => (
-                            <SelectItem key={fund.id} value={fund.id}>
-                                {fund.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Select
-                    value={filterUnit}
-                    onValueChange={(value) => { setFilterUnit(value === 'all' ? '' : value); handleFilterChange(); }}
-                >
-                    <SelectTrigger className="w-28">
-                        <SelectValue placeholder="Unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All units</SelectItem>
-                        {financialUnits.some(u => u.type === 'currency') && (
-                            <SelectGroup>
-                                <SelectLabel>Currencies</SelectLabel>
-                                {financialUnits.filter(u => u.type === 'currency').map(u => (
-                                    <SelectItem key={`${u.type}-${u.value}`} value={u.value}>
-                                        {u.value}
-                                    </SelectItem>
-                                ))}
-                            </SelectGroup>
-                        )}
-                        {financialUnits.some(u => u.type === 'instrument') && (
-                            <SelectGroup>
-                                <SelectLabel>Instruments</SelectLabel>
-                                {financialUnits.filter(u => u.type === 'instrument').map(u => (
-                                    <SelectItem key={`${u.type}-${u.value}`} value={u.value}>
-                                        {u.value}
-                                    </SelectItem>
-                                ))}
-                            </SelectGroup>
-                        )}
-                    </SelectContent>
-                </Select>
-                <Select
-                    value={filterLabel}
-                    onValueChange={(value) => { setFilterLabel(value === 'all' ? '' : value); handleFilterChange(); }}
-                >
-                    <SelectTrigger className="w-36">
-                        <SelectValue placeholder="Label" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All labels</SelectItem>
-                        {labels.map(label => (
-                            <SelectItem key={label.id} value={label.name}>
-                                {label.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            <div className="mb-4 flex flex-wrap items-end gap-4">
+                <div className="flex flex-col gap-1">
+                    <label className="text-sm text-muted-foreground">From</label>
+                    <DatePicker
+                        value={filterFromDate}
+                        onChange={(value) => { setFilterFromDate(value); handleFilterChange(); }}
+                        className="w-[160px]"
+                    />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-sm text-muted-foreground">To</label>
+                    <DatePicker
+                        value={filterToDate}
+                        onChange={(value) => { setFilterToDate(value); handleFilterChange(); }}
+                        className="w-[160px]"
+                    />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-sm text-muted-foreground">Account</label>
+                    <Select
+                        value={filterAccountId}
+                        onValueChange={(value) => { setFilterAccountId(value === 'all' ? '' : value); handleFilterChange(); }}
+                    >
+                        <SelectTrigger className="w-40">
+                            <SelectValue placeholder="All accounts" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All accounts</SelectItem>
+                            {accounts.map(account => (
+                                <SelectItem key={account.id} value={account.id}>
+                                    {account.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-sm text-muted-foreground">Fund</label>
+                    <Select
+                        value={filterFundId}
+                        onValueChange={(value) => { setFilterFundId(value === 'all' ? '' : value); handleFilterChange(); }}
+                    >
+                        <SelectTrigger className="w-36">
+                            <SelectValue placeholder="All funds" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All funds</SelectItem>
+                            {funds.map(fund => (
+                                <SelectItem key={fund.id} value={fund.id}>
+                                    {fund.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-sm text-muted-foreground">Unit</label>
+                    <Select
+                        value={filterUnit}
+                        onValueChange={(value) => { setFilterUnit(value === 'all' ? '' : value); handleFilterChange(); }}
+                    >
+                        <SelectTrigger className="w-28">
+                            <SelectValue placeholder="All units" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All units</SelectItem>
+                            {financialUnits.some(u => u.type === 'currency') && (
+                                <SelectGroup>
+                                    <SelectLabel>Currencies</SelectLabel>
+                                    {financialUnits.filter(u => u.type === 'currency').map(u => (
+                                        <SelectItem key={`${u.type}-${u.value}`} value={u.value}>
+                                            {u.value}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            )}
+                            {financialUnits.some(u => u.type === 'instrument') && (
+                                <SelectGroup>
+                                    <SelectLabel>Instruments</SelectLabel>
+                                    {financialUnits.filter(u => u.type === 'instrument').map(u => (
+                                        <SelectItem key={`${u.type}-${u.value}`} value={u.value}>
+                                            {u.value}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            )}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label className="text-sm text-muted-foreground">Label</label>
+                    <Select
+                        value={filterLabel}
+                        onValueChange={(value) => { setFilterLabel(value === 'all' ? '' : value); handleFilterChange(); }}
+                    >
+                        <SelectTrigger className="w-36">
+                            <SelectValue placeholder="All labels" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All labels</SelectItem>
+                            {labels.map(label => (
+                                <SelectItem key={label.id} value={label.name}>
+                                    {label.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
                 {hasActiveFilters && (
                     <Button variant="outline" size="sm" onClick={clearFilters}>
                         Clear
