@@ -1,27 +1,30 @@
 package ro.jf.funds.analytics.service.service
 
+import com.benasher44.uuid.uuid4
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import ro.jf.funds.analytics.api.model.GroupingCriteria
 import ro.jf.funds.analytics.api.model.TimeGranularity
-import ro.jf.funds.analytics.service.domain.ReportInterval
 import ro.jf.funds.analytics.service.domain.BucketedGroupedUnitAmounts
-import ro.jf.funds.analytics.service.domain.GroupedUnitAmounts
 import ro.jf.funds.analytics.service.domain.BucketedUnitAmounts
+import ro.jf.funds.analytics.service.domain.GroupedUnitAmounts
+import ro.jf.funds.analytics.service.domain.ReportInterval
 import ro.jf.funds.analytics.service.domain.UnitAmounts
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
 import ro.jf.funds.conversion.api.model.ConversionResponse
+import ro.jf.funds.conversion.api.model.ConversionsRequest
 import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.conversion.sdk.ConversionSdk
 import ro.jf.funds.platform.api.model.Currency
-import com.benasher44.uuid.uuid4
+import ro.jf.funds.platform.api.model.FinancialUnit
 
 class AnalyticsServiceTest {
     private val analyticsRecordRepository = mock<AnalyticsRecordRepository>()
@@ -34,6 +37,29 @@ class AnalyticsServiceTest {
         from = LocalDateTime.parse("2024-01-01T00:00:00"),
         to = LocalDateTime.parse("2024-04-01T00:00:00"),
     )
+
+    private val mockRates: MutableMap<Triple<FinancialUnit, Currency, LocalDate>, BigDecimal> = mutableMapOf()
+
+    @BeforeEach
+    fun setupConversionSdkMock(): Unit = runBlocking {
+        mockRates.clear()
+        whenever(conversionSdk.convert(any())).thenAnswer { invocation ->
+            val request = invocation.arguments[0] as ConversionsRequest
+            ConversionsResponse(request.conversions.map { req ->
+                val rate = if (req.sourceUnit == req.targetCurrency) {
+                    BigDecimal.ONE
+                } else {
+                    mockRates[Triple(req.sourceUnit, req.targetCurrency, req.date)]
+                        ?: error("No mock rate configured for $req")
+                }
+                ConversionResponse(req.sourceUnit, req.targetCurrency, req.date, rate)
+            })
+        }
+    }
+
+    private fun givenRate(source: FinancialUnit, target: Currency, date: String, rate: String) {
+        mockRates[Triple(source, target, LocalDate.parse(date))] = BigDecimal.parseString(rate)
+    }
 
     private fun unitAmounts(vararg pairs: Pair<Currency, String>) =
         UnitAmounts(pairs.associate { (unit, amount) -> unit to BigDecimal.parseString(amount) })
@@ -48,7 +74,6 @@ class AnalyticsServiceTest {
                 LocalDateTime.parse("2024-02-01T00:00:00") to unitAmounts(Currency.RON to "-50.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.RON to "200.00"),
             )))
-        whenever(conversionSdk.convert(any())).thenReturn(ConversionsResponse.empty())
 
         val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.RON)
 
@@ -69,7 +94,6 @@ class AnalyticsServiceTest {
                 LocalDateTime.parse("2024-02-01T00:00:00") to unitAmounts(Currency.RON to "-50.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.RON to "200.00"),
             )))
-        whenever(conversionSdk.convert(any())).thenReturn(ConversionsResponse.empty())
 
         val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.RON)
 
@@ -89,7 +113,6 @@ class AnalyticsServiceTest {
                 LocalDateTime.parse("2024-01-01T00:00:00") to unitAmounts(Currency.RON to "100.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.RON to "200.00"),
             )))
-        whenever(conversionSdk.convert(any())).thenReturn(ConversionsResponse.empty())
 
         val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.RON)
 
@@ -109,7 +132,6 @@ class AnalyticsServiceTest {
                 LocalDateTime.parse("2024-01-01T00:00:00") to unitAmounts(Currency.RON to "100.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.RON to "200.00"),
             )))
-        whenever(conversionSdk.convert(any())).thenReturn(ConversionsResponse.empty())
 
         val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.RON)
 
@@ -128,7 +150,6 @@ class AnalyticsServiceTest {
             .thenReturn(UnitAmounts.EMPTY)
         whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
             .thenReturn(BucketedUnitAmounts(emptyMap()))
-        whenever(conversionSdk.convert(any())).thenReturn(ConversionsResponse.empty())
 
         val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.RON)
 
@@ -152,7 +173,6 @@ class AnalyticsServiceTest {
                 LocalDateTime.parse("2024-01-08T00:00:00") to unitAmounts(Currency.RON to "100.00"),
                 LocalDateTime.parse("2024-01-15T00:00:00") to unitAmounts(Currency.RON to "-30.00"),
             )))
-        whenever(conversionSdk.convert(any())).thenReturn(ConversionsResponse.empty())
 
         val report = service.getBalanceReport(userId, midWeekInterval, targetCurrency = Currency.RON)
 
@@ -180,7 +200,6 @@ class AnalyticsServiceTest {
                 LocalDateTime.parse("2024-02-01T00:00:00") to unitAmounts(Currency.RON to "-20.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.RON to "150.00"),
             )))
-        whenever(conversionSdk.convert(any())).thenReturn(ConversionsResponse.empty())
 
         val report = service.getBalanceReport(userId, midMonthInterval, targetCurrency = Currency.RON)
 
@@ -197,7 +216,6 @@ class AnalyticsServiceTest {
     fun `given no baseline and no aggregates - when getting net change report - then returns zero-filled buckets`(): Unit = runBlocking {
         whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
             .thenReturn(BucketedUnitAmounts(emptyMap()))
-        whenever(conversionSdk.convert(any())).thenReturn(ConversionsResponse.empty())
 
         val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.RON)
 
@@ -216,16 +234,9 @@ class AnalyticsServiceTest {
                 LocalDateTime.parse("2024-02-01T00:00:00") to unitAmounts(Currency.RON to "-200.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.EUR to "50.00"),
             )))
-        whenever(conversionSdk.convert(any()))
-            .thenReturn(
-                ConversionsResponse(
-                    listOf(
-                        ConversionResponse(Currency.RON, Currency.EUR, LocalDate.parse("2024-01-01"), BigDecimal.parseString("0.20")),
-                        ConversionResponse(Currency.RON, Currency.EUR, LocalDate.parse("2024-02-01"), BigDecimal.parseString("0.20")),
-                        ConversionResponse(Currency.RON, Currency.EUR, LocalDate.parse("2024-03-01"), BigDecimal.parseString("0.20")),
-                    )
-                )
-            )
+        givenRate(Currency.RON, Currency.EUR, "2024-01-01", "0.20")
+        givenRate(Currency.RON, Currency.EUR, "2024-02-01", "0.20")
+        givenRate(Currency.RON, Currency.EUR, "2024-03-01", "0.20")
 
         val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.EUR)
 
@@ -242,15 +253,8 @@ class AnalyticsServiceTest {
                 LocalDateTime.parse("2024-01-01T00:00:00") to unitAmounts(Currency.RON to "500.00", Currency.EUR to "100.00"),
                 LocalDateTime.parse("2024-02-01T00:00:00") to unitAmounts(Currency.RON to "-200.00"),
             )))
-        whenever(conversionSdk.convert(any()))
-            .thenReturn(
-                ConversionsResponse(
-                    listOf(
-                        ConversionResponse(Currency.RON, Currency.EUR, LocalDate.parse("2024-01-01"), BigDecimal.parseString("0.20")),
-                        ConversionResponse(Currency.RON, Currency.EUR, LocalDate.parse("2024-02-01"), BigDecimal.parseString("0.20")),
-                    )
-                )
-            )
+        givenRate(Currency.RON, Currency.EUR, "2024-01-01", "0.20")
+        givenRate(Currency.RON, Currency.EUR, "2024-02-01", "0.20")
 
         val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.EUR)
 
@@ -266,16 +270,9 @@ class AnalyticsServiceTest {
             .thenReturn(unitAmounts(Currency.RON to "1000.00"))
         whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
             .thenReturn(BucketedUnitAmounts(emptyMap()))
-        whenever(conversionSdk.convert(any()))
-            .thenReturn(
-                ConversionsResponse(
-                    listOf(
-                        ConversionResponse(Currency.RON, Currency.EUR, LocalDate.parse("2024-01-01"), BigDecimal.parseString("0.20")),
-                        ConversionResponse(Currency.RON, Currency.EUR, LocalDate.parse("2024-02-01"), BigDecimal.parseString("0.22")),
-                        ConversionResponse(Currency.RON, Currency.EUR, LocalDate.parse("2024-03-01"), BigDecimal.parseString("0.25")),
-                    )
-                )
-            )
+        givenRate(Currency.RON, Currency.EUR, "2024-01-01", "0.20")
+        givenRate(Currency.RON, Currency.EUR, "2024-02-01", "0.22")
+        givenRate(Currency.RON, Currency.EUR, "2024-03-01", "0.25")
 
         val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.EUR)
 
@@ -297,15 +294,8 @@ class AnalyticsServiceTest {
                     "RON" to unitAmounts(Currency.RON to "-200.00"),
                 ),
             )))
-        whenever(conversionSdk.convert(any()))
-            .thenReturn(
-                ConversionsResponse(
-                    listOf(
-                        ConversionResponse(Currency.RON, Currency.EUR, LocalDate.parse("2024-01-01"), BigDecimal.parseString("0.20")),
-                        ConversionResponse(Currency.RON, Currency.EUR, LocalDate.parse("2024-02-01"), BigDecimal.parseString("0.20")),
-                    )
-                )
-            )
+        givenRate(Currency.RON, Currency.EUR, "2024-01-01", "0.20")
+        givenRate(Currency.RON, Currency.EUR, "2024-02-01", "0.20")
 
         val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.EUR, groupBy = GroupingCriteria.CURRENCY)
 
@@ -339,7 +329,6 @@ class AnalyticsServiceTest {
                     fund2 to unitAmounts(Currency.RON to "50.00"),
                 ),
             )))
-        whenever(conversionSdk.convert(any())).thenReturn(ConversionsResponse.empty())
 
         val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.RON, groupBy = GroupingCriteria.FUND)
 

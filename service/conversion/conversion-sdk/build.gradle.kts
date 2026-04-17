@@ -5,5 +5,6 @@ plugins {
 dependencies {
     api(project(":service:conversion:conversion-api"))
     api(project(":platform:platform-jvm"))
+    api(libs.caffeine)
     testImplementation(project(":platform:platform-jvm-test"))
 }

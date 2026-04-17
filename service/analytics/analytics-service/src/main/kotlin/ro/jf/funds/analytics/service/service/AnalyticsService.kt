@@ -14,10 +14,8 @@ import ro.jf.funds.analytics.service.domain.UnitAmounts
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionsRequest
-import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.conversion.sdk.ConversionSdk
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.FinancialUnit
 
 private val log = logger { }
 
@@ -62,11 +60,8 @@ class AnalyticsService(
         val previousBalance = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, filter)
         val bucketedUnitAmounts = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, filter)
 
-        val conversionRates =
-            fetchConversionRates(previousBalance.units + bucketedUnitAmounts.units, interval, targetCurrency)
-
         val buckets = interval.generateBucketedData(previousBalance) { dateTime, balance ->
-            val convertedTotal = convert(balance, targetCurrency, dateTime.date, conversionRates)
+            val convertedTotal = convert(balance, targetCurrency, dateTime.date)
             val updatedBalance = balance + bucketedUnitAmounts.getBucket(dateTime)
             AnalyticsBucketTO(dateTime, listOf(AnalyticsGroupBucketTO(value = convertedTotal))) to updatedBalance
         }
@@ -85,9 +80,6 @@ class AnalyticsService(
         val bucketedGroupedUnitAmounts =
             analyticsRecordRepository.getBucketedGroupedUnitAmounts(userId, interval, filter, groupBy)
 
-        val allUnits = previousBalances.units + bucketedGroupedUnitAmounts.units
-        val conversionRates = fetchConversionRates(allUnits, interval, targetCurrency)
-
         val allGroupKeys = previousBalances.groupKeys + bucketedGroupedUnitAmounts.groupKeys
         val initialBalances = allGroupKeys.associateWith { groupKey ->
             previousBalances[groupKey]
@@ -97,7 +89,7 @@ class AnalyticsService(
             val groupBuckets = balancesByGroup.map { (groupKey, balance) ->
                 AnalyticsGroupBucketTO(
                     groupKey = groupKey,
-                    value = convert(balance, targetCurrency, dateTime.date, conversionRates)
+                    value = convert(balance, targetCurrency, dateTime.date)
                 )
             }
             val bucketAggregates = bucketedGroupedUnitAmounts.getBucket(dateTime)
@@ -117,10 +109,9 @@ class AnalyticsService(
         targetCurrency: Currency,
     ): AnalyticsReportTO {
         val bucketedUnitAmounts = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, filter)
-        val conversionRates = fetchConversionRates(bucketedUnitAmounts.units, interval, targetCurrency)
 
         val buckets = interval.generateBucketedData { dateTime ->
-            val convertedTotal = convert(bucketedUnitAmounts.getBucket(dateTime), targetCurrency, dateTime.date, conversionRates)
+            val convertedTotal = convert(bucketedUnitAmounts.getBucket(dateTime), targetCurrency, dateTime.date)
             AnalyticsBucketTO(dateTime, listOf(AnalyticsGroupBucketTO(value = convertedTotal)))
         }
         return AnalyticsReportTO(granularity = interval.granularity, buckets = buckets)
@@ -135,14 +126,13 @@ class AnalyticsService(
     ): AnalyticsReportTO {
         val bucketedGroupedUnitAmounts =
             analyticsRecordRepository.getBucketedGroupedUnitAmounts(userId, interval, filter, groupBy)
-        val conversionRates = fetchConversionRates(bucketedGroupedUnitAmounts.units, interval, targetCurrency)
 
         val buckets = interval.generateBucketedData { dateTime ->
             val bucketGroups = bucketedGroupedUnitAmounts.getBucket(dateTime)
             val groupBuckets = bucketGroups.map { (groupKey, amounts) ->
                 AnalyticsGroupBucketTO(
                     groupKey = groupKey,
-                    value = convert(amounts, targetCurrency, dateTime.date, conversionRates)
+                    value = convert(amounts, targetCurrency, dateTime.date)
                 )
             }
             AnalyticsBucketTO(dateTime, groupBuckets)
@@ -150,40 +140,18 @@ class AnalyticsService(
         return AnalyticsReportTO(granularity = interval.granularity, buckets = buckets)
     }
 
-    private suspend fun fetchConversionRates(
-        units: Set<FinancialUnit>,
-        interval: ReportInterval,
-        targetCurrency: Currency,
-    ): ConversionsResponse {
-        val dates = interval.generateBucketDates().map { it.date }.toSet()
-        val conversionRequests = units
-            .filter { it != targetCurrency }
-            .flatMap { unit -> dates.map { date -> ConversionRequest(unit, targetCurrency, date) } }
-        return conversionSdk.convert(ConversionsRequest(conversionRequests))
-    }
-
-    private fun convert(
-        amounts: UnitAmounts,
-        targetCurrency: Currency,
-        date: LocalDate,
-        conversionRates: ConversionsResponse,
-    ): BigDecimal = amounts.entries.fold(BigDecimal.ZERO) { acc, (unit, balance) ->
-        acc + convert(balance, unit, targetCurrency, date, conversionRates)
-    }
-
-    private fun convert(
-        amount: BigDecimal,
-        sourceUnit: FinancialUnit,
-        targetCurrency: Currency,
-        date: LocalDate,
-        conversionRates: ConversionsResponse,
+    private suspend fun convert(
+        amounts: UnitAmounts, targetCurrency: Currency, date: LocalDate,
     ): BigDecimal {
-        if (sourceUnit == targetCurrency) return amount
-        val rate = conversionRates.getRate(sourceUnit, targetCurrency, date)
-        if (rate == null) {
-            log.warn { "Conversion rate not found for $sourceUnit -> $targetCurrency on $date, treating as zero" }
-            return BigDecimal.ZERO
+        val request = ConversionsRequest(amounts.units.map { ConversionRequest(it, targetCurrency, date) })
+        val rates = conversionSdk.convert(request)
+        return amounts.entries.fold(BigDecimal.ZERO) { acc, (unit, amount) ->
+            val rate = rates.getRate(unit, targetCurrency, date)
+            if (rate == null) {
+                log.warn { "Conversion rate not found for $unit -> $targetCurrency on $date, treating as zero" }
+                return@fold acc
+            }
+            acc + amount * rate
         }
-        return amount * rate
     }
 }

@@ -1,5 +1,6 @@
 package ro.jf.funds.reporting.service.config
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import io.ktor.client.*
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
@@ -10,6 +11,7 @@ import ro.jf.funds.platform.jvm.event.*
 import ro.jf.funds.platform.jvm.persistence.getDataSource
 import ro.jf.funds.platform.jvm.web.createHttpClient
 import ro.jf.funds.conversion.sdk.ConversionSdk
+import java.time.Duration
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.api.event.ReportingEvents
 import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
@@ -60,7 +62,14 @@ private val Application.integrationDependencies
             TransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
         single<ConversionSdk> {
-            ConversionSdk(environment.getStringProperty(CONVERSION_SERVICE_BASE_URL_PROPERTY), get())
+            ConversionSdk(
+                baseUrl = environment.getStringProperty(CONVERSION_SERVICE_BASE_URL_PROPERTY),
+                httpClient = get(),
+                cache = Caffeine.newBuilder()
+                    .maximumSize(100_000)
+                    .expireAfterWrite(Duration.ofHours(24))
+                    .build(),
+            )
         }
     }
 

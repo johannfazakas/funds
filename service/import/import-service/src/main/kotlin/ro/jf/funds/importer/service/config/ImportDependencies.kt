@@ -1,6 +1,7 @@
 package ro.jf.funds.importer.service.config
 
 import aws.sdk.kotlin.services.s3.S3Client
+import com.github.benmanes.caffeine.cache.Caffeine
 import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
 import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
 import aws.smithy.kotlin.runtime.collections.Attributes
@@ -90,7 +91,13 @@ private val Application.importIntegrationDependencies
             LabelSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
         single<ConversionSdk> {
-            ConversionSdk(environment.getStringProperty(CONVERSION_SERVICE_BASE_URL_PROPERTY))
+            ConversionSdk(
+                baseUrl = environment.getStringProperty(CONVERSION_SERVICE_BASE_URL_PROPERTY),
+                cache = Caffeine.newBuilder()
+                    .maximumSize(100_000)
+                    .expireAfterWrite(java.time.Duration.ofHours(24))
+                    .build(),
+            )
         }
         single<S3Client> {
             S3Client {

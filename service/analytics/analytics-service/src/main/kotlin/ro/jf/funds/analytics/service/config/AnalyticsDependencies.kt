@@ -1,10 +1,12 @@
 package ro.jf.funds.analytics.service.config
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import io.ktor.client.*
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 import ro.jf.funds.conversion.sdk.ConversionSdk
+import java.time.Duration
 import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
 import ro.jf.funds.analytics.service.service.AnalyticsService
@@ -40,7 +42,14 @@ private val Application.analyticsIntegrationDependencies
     get() = module {
         single<HttpClient> { createHttpClient() }
         single<ConversionSdk> {
-            ConversionSdk(environment.getStringProperty(CONVERSION_SERVICE_BASE_URL_PROPERTY), get())
+            ConversionSdk(
+                baseUrl = environment.getStringProperty(CONVERSION_SERVICE_BASE_URL_PROPERTY),
+                httpClient = get(),
+                cache = Caffeine.newBuilder()
+                    .maximumSize(100_000)
+                    .expireAfterWrite(Duration.ofHours(24))
+                    .build(),
+            )
         }
     }
 

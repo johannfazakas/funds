@@ -2,14 +2,6 @@
 
 ## Functional Tasks
 
-### Efficient analytics execution and storage
-
-- [x] new service, analytics records replicated
-- [x] chart type (value & new report, budget report)
-- [x] filter by fund, granularity, period, unit
-- [ ] group data in the output by currency, by account, by fund
-- [ ] select chart output in 
-
 ### Investment Report
 
 ### Budgeted expense report
@@ -61,14 +53,6 @@ Have it deployed with Helm Charts in kubernetes. At least locally in a minikube.
 
 ## Non-Functional Tasks
 
-### Caching capabilities for ConversionSDK
-
-- [ ] SDK should take responsibility over the current code in reporting ConversionRateService
-- [ ] Use the same component in import service
-- [ ] Find a suitable in-memory caching solution
-- [ ] Check error handling
-- [ ] Look for same currency conversion, maybe it shouldn't trigger a request
-
 ### Improve report load time
 
 - [ ] load data incrementally. how can I retrieve segments one by one?
@@ -92,19 +76,10 @@ Integrate ktlint maybe. It could be applied automatically using Claude Code hook
 
 Check AccountTransactionRepositoryTest
 
-### Improve Reporting Service code
-
-- [ ] make error handling exhaustive
-- [ ] check handling of conversion request errors
-- [ ] previous records should be resolved only for the resolvers needed them
-
 ### Reevaluate monthly caching mechanism in instrument converter proxy
 It caches info without storing them, leading to not persisted data.
 It is applied partially on converters.
 One idea could be to handle generating multiple requests at a higher level, maybe in Conversion Service.
-
-### Use grpc for conversions
-It would make sense to have a bidirectional streamed channel to resolve conversions.
 
 ### Make the repo understandable
 
