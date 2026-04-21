@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Record, RecordFilter, FinancialUnit, listRecords, listFinancialUnits } from '../api/recordApi';
 import { listFunds, Fund } from '../api/fundApi';
 import { listAccounts, Account } from '../api/accountApi';
-import { listLabels, Label } from '../api/labelApi';
+import { listCategories, Category } from '../api/categoryApi';
 import { RecordSortField, SortOrder } from '../api/types';
 import { Button } from '../components/ui/button';
 import { DatePicker } from '../components/ui/date-picker';
@@ -44,7 +44,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
 
     const [funds, setFunds] = useState<Fund[]>([]);
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const [labels, setLabels] = useState<Label[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [financialUnits, setFinancialUnits] = useState<FinancialUnit[]>([]);
     const [fundsMap, setFundsMap] = useState<Map<string, string>>(new Map());
     const [accountsMap, setAccountsMap] = useState<Map<string, string>>(new Map());
@@ -57,7 +57,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
     const [filterAccountId, setFilterAccountId] = useState<string>('');
     const [filterFundId, setFilterFundId] = useState<string>('');
     const [filterUnit, setFilterUnit] = useState<string>('');
-    const [filterLabel, setFilterLabel] = useState<string>('');
+    const [filterCategory, setFilterCategory] = useState<string>('');
     const [filterFromDate, setFilterFromDate] = useState<string>('');
     const [filterToDate, setFilterToDate] = useState<string>('');
     const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
@@ -65,15 +65,15 @@ function RecordsPage({ userId }: RecordsPageProps) {
     useEffect(() => {
         const loadReferenceData = async () => {
             try {
-                const [fundsResult, accountsResult, labelsResult, financialUnitsResult] = await Promise.all([
+                const [fundsResult, accountsResult, categoriesResult, financialUnitsResult] = await Promise.all([
                     listFunds(userId, { pagination: { offset: 0, limit: 1000 } }),
                     listAccounts(userId, { pagination: { offset: 0, limit: 1000 } }),
-                    listLabels(userId),
+                    listCategories(userId),
                     listFinancialUnits(userId),
                 ]);
                 setFunds(fundsResult.items);
                 setAccounts(accountsResult.items);
-                setLabels(labelsResult);
+                setCategories(categoriesResult);
                 setFinancialUnits(financialUnitsResult);
                 setFundsMap(new Map(fundsResult.items.map(f => [f.id, f.name])));
                 setAccountsMap(new Map(accountsResult.items.map(a => [a.id, a.name])));
@@ -92,7 +92,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
         if (filterAccountId) filter.accountId = filterAccountId;
         if (filterFundId) filter.fundId = filterFundId;
         if (filterUnit.trim()) filter.unit = filterUnit.trim();
-        if (filterLabel) filter.label = filterLabel;
+        if (filterCategory) filter.category = filterCategory;
         if (filterFromDate) filter.fromDate = filterFromDate;
         if (filterToDate) filter.toDate = filterToDate;
 
@@ -109,7 +109,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
         } finally {
             setLoading(false);
         }
-    }, [userId, offset, limit, sortField, sortOrder, filterAccountId, filterFundId, filterUnit, filterLabel, filterFromDate, filterToDate]);
+    }, [userId, offset, limit, sortField, sortOrder, filterAccountId, filterFundId, filterUnit, filterCategory, filterFromDate, filterToDate]);
 
     useEffect(() => {
         loadRecords();
@@ -142,13 +142,13 @@ function RecordsPage({ userId }: RecordsPageProps) {
         setFilterAccountId('');
         setFilterFundId('');
         setFilterUnit('');
-        setFilterLabel('');
+        setFilterCategory('');
         setFilterFromDate('');
         setFilterToDate('');
         setOffset(0);
     };
 
-    const hasActiveFilters = filterAccountId || filterFundId || filterUnit.trim() || filterLabel || filterFromDate || filterToDate;
+    const hasActiveFilters = filterAccountId || filterFundId || filterUnit.trim() || filterCategory || filterFromDate || filterToDate;
 
     return (
         <div>
@@ -246,19 +246,19 @@ function RecordsPage({ userId }: RecordsPageProps) {
                     </Select>
                 </div>
                 <div className="flex flex-col gap-1">
-                    <label className="text-sm text-muted-foreground">Label</label>
+                    <label className="text-sm text-muted-foreground">Category</label>
                     <Select
-                        value={filterLabel}
-                        onValueChange={(value) => { setFilterLabel(value === 'all' ? '' : value); handleFilterChange(); }}
+                        value={filterCategory}
+                        onValueChange={(value) => { setFilterCategory(value === 'all' ? '' : value); handleFilterChange(); }}
                     >
                         <SelectTrigger className="w-36">
-                            <SelectValue placeholder="All labels" />
+                            <SelectValue placeholder="All categories" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All labels</SelectItem>
-                            {labels.map(label => (
-                                <SelectItem key={label.id} value={label.name}>
-                                    {label.name}
+                            <SelectItem value="all">All categories</SelectItem>
+                            {categories.map(category => (
+                                <SelectItem key={category.id} value={category.name}>
+                                    {category.name}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -314,7 +314,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
                                 </SortableTableHead>
                                 <TableHead>Fund</TableHead>
                                 <TableHead>Account</TableHead>
-                                <TableHead>Labels</TableHead>
+                                <TableHead>Category</TableHead>
                                 <TableHead>Note</TableHead>
                                 <TableHead>Unit</TableHead>
                                 <SortableTableHead
@@ -334,13 +334,11 @@ function RecordsPage({ userId }: RecordsPageProps) {
                                     <TableCell>{fundsMap.get(record.fundId) || record.fundId}</TableCell>
                                     <TableCell>{accountsMap.get(record.accountId) || record.accountId}</TableCell>
                                     <TableCell>
-                                        <div className="flex flex-wrap gap-1">
-                                            {record.labels.map((label, idx) => (
-                                                <Badge key={idx} variant="outline" className="text-xs">
-                                                    {label}
-                                                </Badge>
-                                            ))}
-                                        </div>
+                                        {record.category && (
+                                            <Badge variant="outline" className="text-xs">
+                                                {record.category}
+                                            </Badge>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-sm">
                                         <span className="block truncate" title={record.note ?? undefined}>{record.note}</span>

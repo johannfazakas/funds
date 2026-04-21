@@ -31,7 +31,7 @@ class AnalyticsRecordRepository(
         val amount = bigDecimal("amount", 20, 8)
         val unit = json<FinancialUnit>("unit", Json.Default)
         val transactionType = varchar("transaction_type", 50)
-        val labels = json<List<String>>("labels", Json.Default)
+        val category = varchar("category", 50).nullable()
     }
 
     suspend fun saveAll(records: List<AnalyticsRecord>): List<AnalyticsRecord> = blockingTransaction {
@@ -45,7 +45,7 @@ class AnalyticsRecordRepository(
             this[AnalyticsRecordTable.amount] = record.amount
             this[AnalyticsRecordTable.unit] = record.unit
             this[AnalyticsRecordTable.transactionType] = record.transactionType.name
-            this[AnalyticsRecordTable.labels] = record.labels.map { it.value }
+            this[AnalyticsRecordTable.category] = record.category?.value
         }
         records
     }

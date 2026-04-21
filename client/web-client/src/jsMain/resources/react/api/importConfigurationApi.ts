@@ -21,9 +21,9 @@ export interface ExchangeMatcher {
     label: string;
 }
 
-export interface LabelMatcher {
+export interface CategoryMatcher {
     importLabels: string[];
-    label: string;
+    category: string;
 }
 
 export interface ImportConfiguration {
@@ -32,7 +32,7 @@ export interface ImportConfiguration {
     accountMatchers: AccountMatcher[];
     fundMatchers: FundMatcher[];
     exchangeMatchers: ExchangeMatcher[];
-    labelMatchers: LabelMatcher[];
+    categoryMatchers: CategoryMatcher[];
     createdAt: string;
 }
 
@@ -41,7 +41,7 @@ export interface CreateImportConfigurationRequest {
     accountMatchers?: AccountMatcher[];
     fundMatchers?: FundMatcher[];
     exchangeMatchers?: ExchangeMatcher[];
-    labelMatchers?: LabelMatcher[];
+    categoryMatchers?: CategoryMatcher[];
 }
 
 export interface UpdateImportConfigurationRequest {
@@ -49,7 +49,7 @@ export interface UpdateImportConfigurationRequest {
     accountMatchers?: AccountMatcher[];
     fundMatchers?: FundMatcher[];
     exchangeMatchers?: ExchangeMatcher[];
-    labelMatchers?: LabelMatcher[];
+    categoryMatchers?: CategoryMatcher[];
 }
 
 export interface ListImportConfigurationsParams {

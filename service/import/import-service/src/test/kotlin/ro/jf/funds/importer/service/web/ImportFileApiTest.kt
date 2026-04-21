@@ -14,7 +14,7 @@ import org.mockito.kotlin.*
 import ro.jf.funds.conversion.sdk.ConversionSdk
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.fund.sdk.LabelSdk
+import ro.jf.funds.fund.sdk.CategorySdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.importer.api.model.*
 import ro.jf.funds.importer.service.config.configureImportErrorHandling
@@ -53,7 +53,7 @@ class ImportFileApiTest {
     private val importConfigurationRepository: ImportConfigurationRepository = mock()
     private val accountSdk: AccountSdk = mock()
     private val fundSdk: FundSdk = mock()
-    private val labelSdk: LabelSdk = mock()
+    private val categorySdk: CategorySdk = mock()
     private val conversionSdk: ConversionSdk = mock()
     private val transactionSdk: TransactionSdk = mock()
     @Test
@@ -349,7 +349,7 @@ class ImportFileApiTest {
         val testOverrides = org.koin.dsl.module {
             single<AccountSdk> { accountSdk }
             single<FundSdk> { fundSdk }
-            single<LabelSdk> { labelSdk }
+            single<CategorySdk> { categorySdk }
             single<TransactionSdk> { transactionSdk }
             single<ConversionSdk> { conversionSdk }
             single<ImportFileRepository> { importFileRepository }

@@ -13,7 +13,7 @@ data class JsCreateRecord(
     val amount: String,
     val unitType: String,
     val unitValue: String,
-    val labels: Array<String> = emptyArray(),
+    val category: String? = null,
 )
 
 @JsExport
@@ -45,7 +45,7 @@ data class JsTransactionRecord(
     val unitType: String,
     val unitValue: String,
     val recordType: String,
-    val labels: Array<String>,
+    val category: String?,
     val note: String?,
 ) {
     @JsName("fromCurrencyRecord")
@@ -57,7 +57,7 @@ data class JsTransactionRecord(
         unitType = "currency",
         unitValue = to.unit.value,
         recordType = "CURRENCY",
-        labels = to.labels.map { it.value }.toTypedArray(),
+        category = to.category?.value,
         note = to.note,
     )
 
@@ -70,7 +70,7 @@ data class JsTransactionRecord(
         unitType = "instrument",
         unitValue = to.unit.value,
         recordType = "INSTRUMENT",
-        labels = to.labels.map { it.value }.toTypedArray(),
+        category = to.category?.value,
         note = to.note,
     )
 
@@ -83,7 +83,7 @@ data class JsTransactionRecord(
         unitType = when (to) { is TransactionRecordTO.CurrencyRecord -> "currency"; is TransactionRecordTO.InstrumentRecord -> "instrument" },
         unitValue = to.unit.value,
         recordType = when (to) { is TransactionRecordTO.CurrencyRecord -> "CURRENCY"; is TransactionRecordTO.InstrumentRecord -> "INSTRUMENT" },
-        labels = to.labels.map { it.value }.toTypedArray(),
+        category = to.category?.value,
         note = to.note,
     )
 }

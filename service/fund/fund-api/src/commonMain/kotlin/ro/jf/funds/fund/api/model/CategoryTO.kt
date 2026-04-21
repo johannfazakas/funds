@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import ro.jf.funds.platform.api.serialization.UuidSerializer
 
 @Serializable
-data class LabelTO(
+data class CategoryTO(
     @Serializable(with = UuidSerializer::class)
     val id: Uuid,
     val name: String,

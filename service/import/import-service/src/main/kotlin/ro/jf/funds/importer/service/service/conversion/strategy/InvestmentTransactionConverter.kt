@@ -78,7 +78,7 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
             accountId = accountStore[instrumentRecord.accountName].id,
             amount = instrumentRecord.amount,
             unit = instrumentRecord.unit as Instrument,
-            labels = instrumentRecord.labels,
+            category = instrumentRecord.category,
             note = instrumentRecord.note,
         )
         return when {

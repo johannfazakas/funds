@@ -4,7 +4,7 @@ import LoginPage from './pages/LoginPage';
 import FundListPage from './pages/FundListPage';
 import AccountsPage from './pages/AccountsPage';
 import RecordsPage from './pages/RecordsPage';
-import LabelsPage from './pages/LabelsPage';
+import CategoriesPage from './pages/CategoriesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ImportsPage from './pages/ImportsPage';
 import ImportConfigurationsPage from './pages/ImportConfigurationsPage';
@@ -51,7 +51,7 @@ function App() {
                     <Route path="/funds" element={<FundListPage userId={userId!} />} />
                     <Route path="/accounts" element={<AccountsPage userId={userId!} />} />
                     <Route path="/records" element={<RecordsPage userId={userId!} />} />
-                    <Route path="/labels" element={<LabelsPage userId={userId!} />} />
+                    <Route path="/categories" element={<CategoriesPage userId={userId!} />} />
                     <Route path="/imports" element={<ImportsPage userId={userId!} />} />
                     <Route path="/import-configurations" element={<ImportConfigurationsPage userId={userId!} />} />
                     <Route path="/analytics" element={<AnalyticsPage userId={userId!} />} />

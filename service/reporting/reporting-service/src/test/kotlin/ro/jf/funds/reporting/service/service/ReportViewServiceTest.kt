@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 import org.mockito.kotlin.whenever
 import ro.jf.funds.platform.api.model.Currency.Companion.RON
-import ro.jf.funds.platform.api.model.labelsOf
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
 import java.util.UUID.randomUUID
@@ -23,21 +23,21 @@ class ReportViewServiceTest {
     private val reportViewId = randomUUID()
     private val reportViewName = "view name"
     private val expensesFundId = randomUUID()
-    private val allLabels = labelsOf("need", "want")
+    private val allCategory: Category? = null
     private val reportDataConfiguration = ReportDataConfiguration(
         currency = RON,
         groups = listOf(
             ReportGroup(
                 name = "need",
-                filter = RecordFilter(labels = labelsOf("need"))
+                filter = RecordFilter(category = Category("need"))
             ),
             ReportGroup(
                 name = "want",
-                filter = RecordFilter(labels = labelsOf("want"))
+                filter = RecordFilter(category = Category("want"))
             ),
         ),
         reports = ReportsConfiguration(
-            net = NetReportConfiguration(enabled = true, filter = RecordFilter(labels = allLabels)),
+            net = NetReportConfiguration(enabled = true, filter = RecordFilter(category = allCategory)),
             valueReport = ValueReportConfiguration(enabled = true),
         ),
     )
@@ -131,11 +131,11 @@ class ReportViewServiceTest {
                 groups = listOf(
                     ReportGroup(
                         name = "need",
-                        filter = RecordFilter(labels = labelsOf("need"))
+                        filter = RecordFilter(category = Category("need"))
                     ),
                     ReportGroup(
                         name = "want",
-                        filter = RecordFilter(labels = labelsOf("want"))
+                        filter = RecordFilter(category = Category("want"))
                     ),
                 ),
                 reports = ReportsConfiguration(
@@ -160,11 +160,11 @@ class ReportViewServiceTest {
                 groups = listOf(
                     ReportGroup(
                         name = "need",
-                        filter = RecordFilter(labels = labelsOf("need"))
+                        filter = RecordFilter(category = Category("need"))
                     ),
                     ReportGroup(
                         name = "want",
-                        filter = RecordFilter(labels = labelsOf("want"))
+                        filter = RecordFilter(category = Category("want"))
                     ),
                 ),
                 reports = ReportsConfiguration(
@@ -200,11 +200,11 @@ class ReportViewServiceTest {
                 groups = listOf(
                     ReportGroup(
                         name = "need",
-                        filter = RecordFilter(labels = labelsOf("need"))
+                        filter = RecordFilter(category = Category("need"))
                     ),
                     ReportGroup(
                         name = "want",
-                        filter = RecordFilter(labels = labelsOf("want"))
+                        filter = RecordFilter(category = Category("want"))
                     ),
                 ),
                 reports = ReportsConfiguration(
@@ -248,11 +248,11 @@ class ReportViewServiceTest {
                 groups = listOf(
                     ReportGroup(
                         name = "need",
-                        filter = RecordFilter(labels = labelsOf("need"))
+                        filter = RecordFilter(category = Category("need"))
                     ),
                     ReportGroup(
                         name = "want",
-                        filter = RecordFilter(labels = labelsOf("want"))
+                        filter = RecordFilter(category = Category("want"))
                     ),
                 ),
                 reports = ReportsConfiguration(
@@ -296,11 +296,11 @@ class ReportViewServiceTest {
                 groups = listOf(
                     ReportGroup(
                         name = "need",
-                        filter = RecordFilter(labels = labelsOf("need"))
+                        filter = RecordFilter(category = Category("need"))
                     ),
                     ReportGroup(
                         name = "want",
-                        filter = RecordFilter(labels = labelsOf("want"))
+                        filter = RecordFilter(category = Category("want"))
                     ),
                 ),
                 reports = ReportsConfiguration(
@@ -352,11 +352,11 @@ class ReportViewServiceTest {
                 groups = listOf(
                     ReportGroup(
                         name = "need",
-                        filter = RecordFilter(labels = labelsOf("need"))
+                        filter = RecordFilter(category = Category("need"))
                     ),
                     ReportGroup(
                         name = "want",
-                        filter = RecordFilter(labels = labelsOf("want"))
+                        filter = RecordFilter(category = Category("want"))
                     ),
                 ),
                 reports = ReportsConfiguration(
@@ -399,11 +399,11 @@ class ReportViewServiceTest {
                 groups = listOf(
                     ReportGroup(
                         name = "need",
-                        filter = RecordFilter(labels = labelsOf("need"))
+                        filter = RecordFilter(category = Category("need"))
                     ),
                     ReportGroup(
                         name = "want",
-                        filter = RecordFilter(labels = labelsOf("want"))
+                        filter = RecordFilter(category = Category("want"))
                     ),
                 ),
                 reports = ReportsConfiguration(
@@ -448,11 +448,11 @@ class ReportViewServiceTest {
                 groups = listOf(
                     ReportGroup(
                         name = "need",
-                        filter = RecordFilter(labels = labelsOf("need"))
+                        filter = RecordFilter(category = Category("need"))
                     ),
                     ReportGroup(
                         name = "want",
-                        filter = RecordFilter(labels = labelsOf("want"))
+                        filter = RecordFilter(category = Category("want"))
                     ),
                 ),
                 reports = ReportsConfiguration(

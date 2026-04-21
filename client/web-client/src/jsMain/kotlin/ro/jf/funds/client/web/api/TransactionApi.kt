@@ -12,7 +12,7 @@ import ro.jf.funds.client.web.model.JsTransaction
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.Instrument
-import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Category
 import kotlin.js.JsExport
 import kotlin.js.Promise
 
@@ -117,7 +117,7 @@ object TransactionApi {
             fundId = uuidFrom(fundId),
             amount = BigDecimal.parseString(amount),
             unit = Currency(unitValue),
-            labels = labels.map(::Label),
+            category = category?.let(::Category),
         )
 
     private fun JsCreateRecord.toInstrumentRecord(): CreateTransactionRecordTO.InstrumentRecord =
@@ -126,6 +126,6 @@ object TransactionApi {
             fundId = uuidFrom(fundId),
             amount = BigDecimal.parseString(amount),
             unit = Instrument(unitValue),
-            labels = labels.map(::Label),
+            category = category?.let(::Category),
         )
 }

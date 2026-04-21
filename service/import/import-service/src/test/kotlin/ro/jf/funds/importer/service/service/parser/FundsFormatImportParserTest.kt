@@ -5,7 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.Instrument
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.service.domain.*
@@ -41,8 +41,8 @@ class FundsFormatImportParserTest {
                 FundMatcher(FundName("Investments"), importAccountName = "XTB EUR"),
                 FundMatcher(FundName("Investments"), importAccountName = "XTB EUNL"),
             ),
-            labelMatchers = listOf(
-                LabelMatcher(listOf("investment"), Label("investment")),
+            categoryMatchers = listOf(
+                CategoryMatcher(listOf("investment"), Category("investment")),
             ),
         )
 
@@ -59,12 +59,12 @@ class FundsFormatImportParserTest {
         assertThat(transfer.records[0].fundName).isEqualTo(FundName("Expenses"))
         assertThat(transfer.records[0].unit).isEqualTo(Currency.RON)
         assertThat(transfer.records[0].amount).isEqualByComparingTo(BigDecimal.parseString("-2970.0"))
-        assertThat(transfer.records[0].labels).containsExactly(Label("investment"))
+        assertThat(transfer.records[0].category).isEqualTo(Category("investment"))
         assertThat(transfer.records[1].accountName).isEqualTo(AccountName("XTB EUR"))
         assertThat(transfer.records[1].fundName).isEqualTo(FundName("Investments"))
         assertThat(transfer.records[1].unit).isEqualTo(Currency.EUR)
         assertThat(transfer.records[1].amount).isEqualByComparingTo(BigDecimal.parseString("600.0"))
-        assertThat(transfer.records[1].labels).containsExactly(Label("investment"))
+        assertThat(transfer.records[1].category).isEqualTo(Category("investment"))
 
         val investment = importTransactions[1]
         assertThat(investment.transactionExternalId).isNotNull
@@ -74,12 +74,12 @@ class FundsFormatImportParserTest {
         assertThat(investment.records[0].fundName).isEqualTo(FundName("Investments"))
         assertThat(investment.records[0].unit).isEqualTo(Currency.EUR)
         assertThat(investment.records[0].amount).isEqualByComparingTo(BigDecimal.parseString("-544.25"))
-        assertThat(investment.records[0].labels).isEmpty()
+        assertThat(investment.records[0].category).isNull()
         assertThat(investment.records[1].accountName).isEqualTo(AccountName("XTB EUNL"))
         assertThat(investment.records[1].fundName).isEqualTo(FundName("Investments"))
         assertThat(investment.records[1].unit).isEqualTo(Instrument("EUNL"))
         assertThat(investment.records[1].amount).isEqualByComparingTo(BigDecimal.parseString("7.0"))
-        assertThat(investment.records[1].labels).isEmpty()
+        assertThat(investment.records[1].category).isNull()
     }
 
     data class FundsFormatCsvRowContent(

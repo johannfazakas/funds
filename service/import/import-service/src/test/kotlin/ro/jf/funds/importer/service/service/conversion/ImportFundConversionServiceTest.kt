@@ -13,7 +13,7 @@ import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.fund.sdk.LabelSdk
+import ro.jf.funds.fund.sdk.CategorySdk
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionResponse
 import ro.jf.funds.conversion.api.model.ConversionsRequest
@@ -32,8 +32,8 @@ class ImportFundConversionServiceTest {
     private val accountService = AccountService(accountSdk)
     private val fundSdk = mock<FundSdk>()
     private val fundService = FundService(fundSdk)
-    private val labelSdk = mock<LabelSdk>()
-    private val labelService = LabelService(labelSdk)
+    private val categorySdk = mock<CategorySdk>()
+    private val categoryService = CategoryService(categorySdk)
     private val conversionSdk = mock<ConversionSdk>()
     private val importTransactionConverterRegistry = ImportTransactionConverterRegistry(
         listOf(
@@ -47,19 +47,19 @@ class ImportFundConversionServiceTest {
         ImportFundConversionService(
             accountService,
             fundService,
-            labelService,
+            categoryService,
             importTransactionConverterRegistry,
             conversionSdk,
         )
 
     private val userId: Uuid = uuid4()
 
-    private val allLabels = listOf("one", "two", "Basic", "work_income", "basic", "exchange", "finance", "stock_purchase", "stock_sale")
-        .map { LabelTO(uuid4(), it) }
+    private val allCategories = listOf("one", "two", "Basic", "work_income", "basic", "exchange", "finance", "stock_purchase", "stock_sale")
+        .map { CategoryTO(uuid4(), it) }
 
     @BeforeEach
     fun setUp(): Unit = runBlocking {
-        whenever(labelSdk.listLabels(any())).thenReturn(allLabels)
+        whenever(categorySdk.listCategories(any())).thenReturn(allCategories)
         Unit
     }
 
@@ -77,7 +77,7 @@ class ImportFundConversionServiceTest {
                         FundName("Expenses"),
                         Currency.RON,
                         BigDecimal.parseString("-100.00"),
-                        listOf(Label("one"), Label("two"))
+                        Category("one")
                     )
                 )
             )
@@ -101,7 +101,7 @@ class ImportFundConversionServiceTest {
                     accountId = bankAccount.id,
                     amount = BigDecimal.parseString("-100.00"),
                     unit = Currency.RON,
-                    labels = listOf(Label("one"), Label("two"))
+                    category = Category("one")
                 )
             )
         )
@@ -121,7 +121,7 @@ class ImportFundConversionServiceTest {
                         FundName("Expenses"),
                         Currency.RON,
                         BigDecimal.parseString("-100.00"),
-                        listOf(Label("one"), Label("two"))
+                        Category("one")
                     )
                 )
             )
@@ -147,7 +147,7 @@ class ImportFundConversionServiceTest {
 
         assertThat(singleRecord.record.amount).isEqualByComparingTo(BigDecimal.parseString("-20.00"))
         assertThat(singleRecord.record.unit).isEqualTo(Currency.EUR)
-        assertThat(singleRecord.record.labels).containsExactly(Label("one"), Label("two"))
+        assertThat(singleRecord.record.category).isEqualTo(Category("one"))
     }
 
     @Test
@@ -164,14 +164,14 @@ class ImportFundConversionServiceTest {
                         FundName("Income"),
                         Currency.RON,
                         BigDecimal.parseString("-50.00"),
-                        listOf(Label("Basic"))
+                        Category("Basic")
                     ),
                     ImportParsedRecord(
                         AccountName("Cash RON"),
                         FundName("Expenses"),
                         Currency.RON,
                         BigDecimal.parseString("50.00"),
-                        listOf(Label("Basic"))
+                        Category("Basic")
                     )
                 )
             )
@@ -197,14 +197,14 @@ class ImportFundConversionServiceTest {
                     accountId = companyAccount.id,
                     amount = BigDecimal.parseString("-50.00"),
                     unit = Currency.RON,
-                    labels = listOf(Label("Basic"))
+                    category = Category("Basic")
                 ),
                 destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                     fundId = expensedFund.id,
                     accountId = cashAccount.id,
                     amount = BigDecimal.parseString("50.00"),
                     unit = Currency.RON,
-                    labels = listOf(Label("Basic"))
+                    category = Category("Basic")
                 )
             )
         )
@@ -224,14 +224,14 @@ class ImportFundConversionServiceTest {
                         FundName("Income"),
                         Currency.RON,
                         BigDecimal.parseString("-50.00"),
-                        listOf(Label("work_income"))
+                        Category("work_income")
                     ),
                     ImportParsedRecord(
                         AccountName("Cash RON"),
                         FundName("Expenses"),
                         Currency.RON,
                         BigDecimal.parseString("50.00"),
-                        listOf(Label("basic"))
+                        Category("basic")
                     )
                 )
             )
@@ -260,12 +260,12 @@ class ImportFundConversionServiceTest {
 
         assertThat(transfer.sourceRecord.amount).isEqualByComparingTo(BigDecimal.parseString("-10.00"))
         assertThat(transfer.sourceRecord.unit).isEqualTo(Currency.EUR)
-        assertThat(transfer.sourceRecord.labels).containsExactly(Label("work_income"))
+        assertThat(transfer.sourceRecord.category).isEqualTo(Category("work_income"))
         assertThat(transfer.sourceRecord.accountId).isEqualTo(companyAccount.id)
 
         assertThat(transfer.destinationRecord.amount).isEqualByComparingTo(BigDecimal.parseString("10.00"))
         assertThat(transfer.destinationRecord.unit).isEqualTo(Currency.EUR)
-        assertThat(transfer.destinationRecord.labels).containsExactly(Label("basic"))
+        assertThat(transfer.destinationRecord.category).isEqualTo(Category("basic"))
         assertThat(transfer.destinationRecord.accountId).isEqualTo(cashAccount.id)
     }
 
@@ -278,10 +278,10 @@ class ImportFundConversionServiceTest {
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("BT RON"), FundName("Income"), Currency.RON, BigDecimal.parseString("-50.00"), emptyList()
+                        AccountName("BT RON"), FundName("Income"), Currency.RON, BigDecimal.parseString("-50.00"), null
                     ),
                     ImportParsedRecord(
-                        AccountName("BT RON"), FundName("Expenses"), Currency.RON, BigDecimal.parseString("50.00"), emptyList()
+                        AccountName("BT RON"), FundName("Expenses"), Currency.RON, BigDecimal.parseString("50.00"), null
                     ),
                 )
             )
@@ -307,13 +307,13 @@ class ImportFundConversionServiceTest {
         assertThat(transfer.sourceRecord.fundId).isEqualTo(incomeFund.id)
         assertThat(transfer.sourceRecord.amount).isEqualByComparingTo(BigDecimal.parseString("-50.00"))
         assertThat(transfer.sourceRecord.unit).isEqualTo(Currency.RON)
-        assertThat(transfer.sourceRecord.labels).isEmpty()
+        assertThat(transfer.sourceRecord.category).isNull()
 
         assertThat(transfer.destinationRecord.fundId).isEqualTo(expenseFund.id)
         assertThat(transfer.destinationRecord.accountId).isEqualTo(account.id)
         assertThat(transfer.destinationRecord.amount).isEqualByComparingTo(BigDecimal.parseString("50.00"))
         assertThat(transfer.destinationRecord.unit).isEqualTo(Currency.RON)
-        assertThat(transfer.destinationRecord.labels).isEmpty()
+        assertThat(transfer.destinationRecord.category).isNull()
     }
 
     @Test
@@ -329,21 +329,21 @@ class ImportFundConversionServiceTest {
                         FundName("Expenses"),
                         Currency.EUR,
                         BigDecimal.parseString("-1.89"),
-                        listOf(Label("exchange"), Label("finance"))
+                        Category("exchange")
                     ),
                     ImportParsedRecord(
                         AccountName("Cash RON"),
                         FundName("Expenses"),
                         Currency.RON,
                         BigDecimal.parseString("-1434.00"),
-                        listOf(Label("exchange"))
+                        Category("exchange")
                     ),
                     ImportParsedRecord(
                         AccountName("Cash EUR"),
                         FundName("Expenses"),
                         Currency.EUR,
                         BigDecimal.parseString("301.24"),
-                        listOf(Label("exchange"))
+                        Category("exchange")
                     )
                 )
             )
@@ -383,20 +383,20 @@ class ImportFundConversionServiceTest {
         assertThat(exchange.destinationRecord.accountId).isEqualTo(eurAccount.id)
         assertThat(exchange.destinationRecord.fundId).isEqualTo(expenses.id)
         assertThat(exchange.destinationRecord.unit).isEqualTo(Currency.EUR)
-        assertThat(exchange.destinationRecord.labels).containsExactlyInAnyOrder(Label("exchange"))
+        assertThat(exchange.destinationRecord.category).isEqualTo(Category("exchange"))
 
         assertThat(exchange.sourceRecord.amount).isEqualByComparingTo(BigDecimal.parseString("-1434.6103140"))
         assertThat(exchange.sourceRecord.accountId).isEqualTo(ronAccount.id)
         assertThat(exchange.sourceRecord.fundId).isEqualTo(expenses.id)
         assertThat(exchange.sourceRecord.unit).isEqualTo(Currency.RON)
-        assertThat(exchange.sourceRecord.labels).containsExactlyInAnyOrder(Label("exchange"))
+        assertThat(exchange.sourceRecord.category).isEqualTo(Category("exchange"))
 
         assertThat(exchange.feeRecord).isNotNull
         assertThat(exchange.feeRecord!!.amount).isEqualByComparingTo(BigDecimal.parseString("0.6103140"))
         assertThat(exchange.feeRecord!!.accountId).isEqualTo(ronAccount.id)
         assertThat(exchange.feeRecord!!.fundId).isEqualTo(expenses.id)
         assertThat(exchange.feeRecord!!.unit).isEqualTo(Currency.RON)
-        assertThat(exchange.feeRecord!!.labels).containsExactlyInAnyOrder(Label("exchange"), Label("finance"))
+        assertThat(exchange.feeRecord!!.category).isEqualTo(Category("exchange"))
     }
 
     @Test
@@ -412,7 +412,7 @@ class ImportFundConversionServiceTest {
                         FundName("Expenses"),
                         Currency.RON,
                         BigDecimal.parseString("-100.00"),
-                        listOf(Label("basic"))
+                        Category("basic")
                     )
                 )
             )
@@ -440,7 +440,7 @@ class ImportFundConversionServiceTest {
                         FundName("Expenses"),
                         Currency.RON,
                         BigDecimal.parseString("-100.00"),
-                        listOf(Label("basic"))
+                        Category("basic")
                     )
                 )
             )
@@ -471,14 +471,14 @@ class ImportFundConversionServiceTest {
                         FundName("Investments"),
                         Currency.USD,
                         BigDecimal.parseString("-1000.00"),
-                        listOf(Label("stock_purchase"))
+                        Category("stock_purchase")
                     ),
                     ImportParsedRecord(
                         AccountName("AAPL Stock"),
                         FundName("Investments"),
                         Instrument("AAPL"),
                         BigDecimal.parseString("5.0"),
-                        listOf(Label("stock_purchase"))
+                        Category("stock_purchase")
                     )
                 )
             )
@@ -506,13 +506,13 @@ class ImportFundConversionServiceTest {
         assertThat(openPosition.currencyRecord.unit).isEqualTo(Currency.USD)
         assertThat(openPosition.currencyRecord.accountId).isEqualTo(brokerAccount.id)
         assertThat(openPosition.currencyRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(openPosition.currencyRecord.labels).containsExactly(Label("stock_purchase"))
+        assertThat(openPosition.currencyRecord.category).isEqualTo(Category("stock_purchase"))
 
         assertThat(openPosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal.parseString("5.0"))
         assertThat(openPosition.instrumentRecord.unit).isEqualTo(Instrument("AAPL"))
         assertThat(openPosition.instrumentRecord.accountId).isEqualTo(stockAccount.id)
         assertThat(openPosition.instrumentRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(openPosition.instrumentRecord.labels).containsExactly(Label("stock_purchase"))
+        assertThat(openPosition.instrumentRecord.category).isEqualTo(Category("stock_purchase"))
     }
 
     @Test
@@ -529,14 +529,14 @@ class ImportFundConversionServiceTest {
                         FundName("Investments"),
                         Currency.USD,
                         BigDecimal.parseString("1200.00"),
-                        listOf(Label("stock_sale"))
+                        Category("stock_sale")
                     ),
                     ImportParsedRecord(
                         AccountName("AAPL Stock"),
                         FundName("Investments"),
                         Instrument("AAPL"),
                         BigDecimal.parseString("-5.0"),
-                        listOf(Label("stock_sale"))
+                        Category("stock_sale")
                     )
                 )
             )
@@ -564,13 +564,13 @@ class ImportFundConversionServiceTest {
         assertThat(closePosition.currencyRecord.unit).isEqualTo(Currency.USD)
         assertThat(closePosition.currencyRecord.accountId).isEqualTo(brokerAccount.id)
         assertThat(closePosition.currencyRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(closePosition.currencyRecord.labels).containsExactly(Label("stock_sale"))
+        assertThat(closePosition.currencyRecord.category).isEqualTo(Category("stock_sale"))
 
         assertThat(closePosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal.parseString("-5.0"))
         assertThat(closePosition.instrumentRecord.unit).isEqualTo(Instrument("AAPL"))
         assertThat(closePosition.instrumentRecord.accountId).isEqualTo(stockAccount.id)
         assertThat(closePosition.instrumentRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(closePosition.instrumentRecord.labels).containsExactly(Label("stock_sale"))
+        assertThat(closePosition.instrumentRecord.category).isEqualTo(Category("stock_sale"))
     }
 
     private fun account(name: String, unit: FinancialUnit = Currency.RON): AccountTO =

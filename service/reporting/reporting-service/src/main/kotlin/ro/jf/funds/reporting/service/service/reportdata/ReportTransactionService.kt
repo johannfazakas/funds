@@ -92,7 +92,7 @@ class ReportTransactionService(
             fundId = this.fundId,
             unit = this.unit,
             amount = this.amount.toJavaBigDecimal(),
-            labels = this.labels,
+            category = this.category,
         )
     }
 }

@@ -1,28 +1,28 @@
 import { useState, useEffect } from 'react';
-import { AccountMatcher, FundMatcher, ExchangeMatcher, LabelMatcher } from '../../api/importConfigurationApi';
+import { AccountMatcher, FundMatcher, ExchangeMatcher, CategoryMatcher } from '../../api/importConfigurationApi';
 import { listAccounts } from '../../api/accountApi';
 import { listFunds } from '../../api/fundApi';
-import { listLabels } from '../../api/labelApi';
+import { listCategories } from '../../api/categoryApi';
 import { Badge } from '../ui/badge';
 import { AccountMatcherEditor } from './AccountMatcherEditor';
 import { FundMatcherEditor } from './FundMatcherEditor';
 import { ExchangeMatcherEditor } from './ExchangeMatcherEditor';
-import { LabelMatcherEditor, LabelMatcherRow } from './LabelMatcherEditor';
+import { CategoryMatcherEditor, CategoryMatcherRow } from './CategoryMatcherEditor';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
-export function labelMatchersToRows(matchers: LabelMatcher[]): LabelMatcherRow[] {
+export function categoryMatchersToRows(matchers: CategoryMatcher[]): CategoryMatcherRow[] {
     return matchers.flatMap(m =>
-        m.importLabels.map(label => ({
-            importLabel: label,
-            label: m.label,
+        m.importLabels.map(importLabel => ({
+            importLabel,
+            category: m.category,
         }))
     );
 }
 
-export function rowsToLabelMatchers(rows: LabelMatcherRow[]): LabelMatcher[] {
+export function rowsToCategoryMatchers(rows: CategoryMatcherRow[]): CategoryMatcher[] {
     return rows.map(r => ({
         importLabels: [r.importLabel],
-        label: r.label,
+        category: r.category,
     }));
 }
 
@@ -31,11 +31,11 @@ interface MatchersEditorProps {
     accountMatchers: AccountMatcher[];
     fundMatchers: FundMatcher[];
     exchangeMatchers: ExchangeMatcher[];
-    labelMatcherRows: LabelMatcherRow[];
+    categoryMatcherRows: CategoryMatcherRow[];
     onAccountMatchersChange: (matchers: AccountMatcher[]) => void;
     onFundMatchersChange: (matchers: FundMatcher[]) => void;
     onExchangeMatchersChange: (matchers: ExchangeMatcher[]) => void;
-    onLabelMatcherRowsChange: (rows: LabelMatcherRow[]) => void;
+    onCategoryMatcherRowsChange: (rows: CategoryMatcherRow[]) => void;
     disabled?: boolean;
 }
 
@@ -70,16 +70,16 @@ export function MatchersEditor({
     accountMatchers,
     fundMatchers,
     exchangeMatchers,
-    labelMatcherRows,
+    categoryMatcherRows,
     onAccountMatchersChange,
     onFundMatchersChange,
     onExchangeMatchersChange,
-    onLabelMatcherRowsChange,
+    onCategoryMatcherRowsChange,
     disabled,
 }: MatchersEditorProps) {
     const [accountNames, setAccountNames] = useState<string[]>([]);
     const [fundNames, setFundNames] = useState<string[]>([]);
-    const [labelNames, setLabelNames] = useState<string[]>([]);
+    const [categoryNames, setCategoryNames] = useState<string[]>([]);
 
     useEffect(() => {
         listAccounts(userId, { pagination: { offset: 0, limit: 1000 }, sort: { field: 'name', order: 'asc' } })
@@ -88,8 +88,8 @@ export function MatchersEditor({
         listFunds(userId, { pagination: { offset: 0, limit: 1000 }, sort: { field: 'name', order: 'asc' } })
             .then(result => setFundNames(result.items.map(f => f.name)))
             .catch(() => {});
-        listLabels(userId)
-            .then(labels => setLabelNames(labels.map(l => l.name).sort()))
+        listCategories(userId)
+            .then(categories => setCategoryNames(categories.map(c => c.name).sort()))
             .catch(() => {});
     }, [userId]);
 
@@ -101,8 +101,8 @@ export function MatchersEditor({
             <CollapsibleSection title="Fund Matchers" count={fundMatchers.length}>
                 <FundMatcherEditor matchers={fundMatchers} onChange={onFundMatchersChange} fundNames={fundNames} disabled={disabled} />
             </CollapsibleSection>
-            <CollapsibleSection title="Label Matchers" count={labelMatcherRows.length}>
-                <LabelMatcherEditor matchers={labelMatcherRows} onChange={onLabelMatcherRowsChange} labelNames={labelNames} disabled={disabled} />
+            <CollapsibleSection title="Category Matchers" count={categoryMatcherRows.length}>
+                <CategoryMatcherEditor matchers={categoryMatcherRows} onChange={onCategoryMatcherRowsChange} categoryNames={categoryNames} disabled={disabled} />
             </CollapsibleSection>
             <CollapsibleSection title="Exchange Matchers" count={exchangeMatchers.length}>
                 <ExchangeMatcherEditor matchers={exchangeMatchers} onChange={onExchangeMatchersChange} disabled={disabled} />

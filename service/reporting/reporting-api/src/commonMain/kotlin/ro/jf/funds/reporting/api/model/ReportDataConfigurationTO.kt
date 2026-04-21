@@ -1,8 +1,8 @@
 package ro.jf.funds.reporting.api.model
 
 import kotlinx.serialization.Serializable
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.Label
 
 @Serializable
 data class ReportDataConfigurationTO(
@@ -20,10 +20,10 @@ data class ReportGroupTO(
 
 @Serializable
 data class RecordFilterTO(
-    val labels: List<Label>,
+    val category: Category? = null,
 ) {
     companion object {
-        fun byLabels(vararg labels: String): RecordFilterTO = RecordFilterTO(labels.map(::Label))
+        fun byCategory(category: String): RecordFilterTO = RecordFilterTO(Category(category))
     }
 }
 

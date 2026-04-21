@@ -239,7 +239,7 @@ class ReportTransactionServiceTest {
         fundId = fundId,
         amount = BigDecimal.fromInt(amount),
         unit = currency,
-        labels = emptyList(),
+        category = null,
     )
 
     private fun instrumentRecord(
@@ -252,7 +252,7 @@ class ReportTransactionServiceTest {
         fundId = fundId,
         amount = BigDecimal.fromInt(amount),
         unit = instrument,
-        labels = emptyList(),
+        category = null,
     )
 
     private suspend fun mockTransactions(

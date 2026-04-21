@@ -179,7 +179,7 @@ class AnalyticsApiTest {
         dateTime = dateTime,
         amount = BigDecimal.parseString(amount),
         unit = Currency("RON"),
-        labels = emptyList(),
+        category = null,
     )
 
     private fun Application.testModule() {

@@ -67,7 +67,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             accountId = accountStore[creditRecord.accountName].id,
             amount = creditAmount,
             unit = creditRecord.unit as Currency,
-            labels = creditRecord.labels,
+            category = creditRecord.category,
             note = creditRecord.note,
         )
 
@@ -85,7 +85,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             accountId = accountStore[debitRecord.accountName].id,
             amount = debitAmount,
             unit = debitRecord.unit as Currency,
-            labels = debitRecord.labels,
+            category = debitRecord.category,
             note = debitRecord.note,
         )
 
@@ -99,7 +99,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
                     accountId = accountStore[debitRecord.accountName].id,
                     amount = feeAmount,
                     unit = debitRecord.unit as Currency,
-                    labels = feeRecord?.labels ?: debitRecord.labels,
+                    category = feeRecord?.category ?: debitRecord.category,
                     note = feeRecord?.note ?: debitRecord.note,
                 )
             }

@@ -2,12 +2,9 @@ package ro.jf.funds.fund.service.persistence
 
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDateTime
-import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.javatime.date
-import org.jetbrains.exposed.sql.json.json
-import org.jetbrains.exposed.sql.json.contains
 import ro.jf.funds.fund.api.model.RecordSortField
 import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.domain.RecordFilter
@@ -15,7 +12,7 @@ import ro.jf.funds.fund.service.persistence.TransactionRepository.TransactionTab
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.api.model.Instrument
-import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortRequest
 import ro.jf.funds.platform.api.model.UnitType
@@ -38,7 +35,7 @@ class RecordRepository(
         val amount = bigDecimal("amount", 20, 8)
         val unitType = varchar("unit_type", 50)
         val unit = varchar("unit", 50)
-        val labels = json<List<String>>("labels", Json.Default)
+        val category = varchar("category", 50).nullable()
         val note = varchar("note", 500).nullable()
     }
 
@@ -84,7 +81,7 @@ class RecordRepository(
                     amount = row[RecordTable.amount],
                     unitType = UnitType.entries.first { it.value == row[RecordTable.unitType] },
                     unitValue = row[RecordTable.unit],
-                    labels = row[RecordTable.labels].map { Label(it) },
+                    category = row[RecordTable.category]?.let { Category(it) },
                     note = row[RecordTable.note],
                 )
             }
@@ -98,7 +95,7 @@ class RecordRepository(
             .applyFilterIfPresent(filter.accountId) { RecordTable.accountId eq it }
             .applyFilterIfPresent(filter.fundId) { RecordTable.fundId eq it }
             .applyFilterIfPresent(filter.unit) { RecordTable.unit eq it }
-            .applyFilterIfPresent(filter.label) { RecordTable.labels.contains(listOf(it)) }
+            .applyFilterIfPresent(filter.category) { RecordTable.category eq it }
             .applyFilterIfPresent(filter.fromDate) { TransactionTable.dateTime.date() greaterEq it.toJavaLocalDate() }
             .applyFilterIfPresent(filter.toDate) { TransactionTable.dateTime.date() lessEq it.toJavaLocalDate() }
     }
@@ -124,7 +121,7 @@ class RecordRepository(
         amount: com.ionspin.kotlin.bignum.decimal.BigDecimal,
         unitType: UnitType,
         unitValue: String,
-        labels: List<Label>,
+        category: Category?,
         note: String?,
     ): Record = when (unitType) {
         UnitType.CURRENCY -> Record.CurrencyRecord(
@@ -135,7 +132,7 @@ class RecordRepository(
             fundId = fundId,
             amount = amount,
             unit = Currency(unitValue),
-            labels = labels,
+            category = category,
             note = note,
         )
         UnitType.INSTRUMENT -> Record.InstrumentRecord(
@@ -146,7 +143,7 @@ class RecordRepository(
             fundId = fundId,
             amount = amount,
             unit = Instrument(unitValue),
-            labels = labels,
+            category = category,
             note = note,
         )
     }

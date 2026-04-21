@@ -19,7 +19,7 @@ import ro.jf.funds.importer.api.event.ImportEvents
 import ro.jf.funds.importer.api.model.ImportFileCommandTO
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.fund.sdk.FundSdk
-import ro.jf.funds.fund.sdk.LabelSdk
+import ro.jf.funds.fund.sdk.CategorySdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.importer.service.persistence.ImportConfigurationRepository
 import ro.jf.funds.importer.service.persistence.ImportFileRepository
@@ -87,8 +87,8 @@ private val Application.importIntegrationDependencies
         single<TransactionSdk> {
             TransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
-        single<LabelSdk> {
-            LabelSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
+        single<CategorySdk> {
+            CategorySdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
         single<ConversionSdk> {
             ConversionSdk(
@@ -135,7 +135,7 @@ private val Application.importServiceDependencies
         single<ImportParserRegistry> { ImportParserRegistry(get(), get()) }
         single<AccountService> { AccountService(get()) }
         single<FundService> { FundService(get()) }
-        single<LabelService> { LabelService(get()) }
+        single<CategoryService> { CategoryService(get()) }
         single<SingleRecordTransactionConverter> { SingleRecordTransactionConverter() } bind ImportTransactionConverter::class
         single<TransferTransactionConverter> { TransferTransactionConverter() } bind ImportTransactionConverter::class
         single<ExchangeSingleTransactionConverter> { ExchangeSingleTransactionConverter() } bind ImportTransactionConverter::class

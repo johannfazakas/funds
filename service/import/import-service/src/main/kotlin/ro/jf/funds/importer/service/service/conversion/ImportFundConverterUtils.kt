@@ -35,7 +35,7 @@ fun ImportParsedRecord.toImportCurrencyFundRecord(
         accountId = account.id,
         amount = toFundRecordAmount(date, account, conversions),
         unit = account.unit as Currency,
-        labels = labels,
+        category = category,
         note = note,
     )
 }

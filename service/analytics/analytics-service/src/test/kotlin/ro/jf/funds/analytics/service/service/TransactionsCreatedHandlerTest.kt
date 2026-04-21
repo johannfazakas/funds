@@ -16,7 +16,7 @@ import ro.jf.funds.fund.api.model.TransactionTO
 import ro.jf.funds.fund.api.model.TransactionType
 import ro.jf.funds.fund.api.model.TransactionsCreatedTO
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.jvm.event.Event
 
 class TransactionsCreatedHandlerTest {
@@ -44,7 +44,7 @@ class TransactionsCreatedHandlerTest {
                 fundId = fundId,
                 amount = BigDecimal.parseString("-100.50"),
                 unit = Currency("RON"),
-                labels = listOf(Label("salary")),
+                category = Category("salary"),
             ),
             destinationRecord = TransactionRecordTO.CurrencyRecord(
                 id = record2Id,
@@ -52,7 +52,7 @@ class TransactionsCreatedHandlerTest {
                 fundId = fundId,
                 amount = BigDecimal.parseString("100.50"),
                 unit = Currency("RON"),
-                labels = emptyList(),
+                category = null,
             ),
         )
         val event = Event(java.util.UUID.fromString(userId.toString()), TransactionsCreatedTO(listOf(transaction)))
@@ -70,9 +70,9 @@ class TransactionsCreatedHandlerTest {
         assertThat(savedRecords[0].dateTime).isEqualTo(dateTime)
         assertThat(savedRecords[0].amount).isEqualTo(BigDecimal.parseString("-100.50"))
         assertThat(savedRecords[0].unit).isEqualTo(Currency("RON"))
-        assertThat(savedRecords[0].labels).containsExactly(Label("salary"))
+        assertThat(savedRecords[0].category).isEqualTo(Category("salary"))
         assertThat(savedRecords[1].id).isEqualTo(record2Id)
         assertThat(savedRecords[1].amount).isEqualTo(BigDecimal.parseString("100.50"))
-        assertThat(savedRecords[1].labels).isEmpty()
+        assertThat(savedRecords[1].category).isNull()
     }
 }

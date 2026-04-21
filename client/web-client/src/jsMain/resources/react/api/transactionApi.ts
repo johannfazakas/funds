@@ -7,7 +7,7 @@ export interface TransactionRecord {
     amount: string;
     unit: string;
     recordType: 'CURRENCY' | 'INSTRUMENT';
-    labels: string[];
+    category: string | null;
     note: string | null;
 }
 
@@ -41,7 +41,7 @@ interface RawRecord {
     fundId: string;
     amount: string;
     unit: string;
-    labels: string[];
+    category: string | null;
     note: string | null;
 }
 
@@ -53,7 +53,7 @@ function mapRecord(raw: RawRecord): TransactionRecord {
         amount: raw.amount,
         unit: raw.unit,
         recordType: raw.type,
-        labels: raw.labels,
+        category: raw.category,
         note: raw.note,
     };
 }

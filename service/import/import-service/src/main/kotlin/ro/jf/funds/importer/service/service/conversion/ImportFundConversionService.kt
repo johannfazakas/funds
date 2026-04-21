@@ -18,7 +18,7 @@ private val log = logger { }
 class ImportFundConversionService(
     private val accountService: AccountService,
     private val fundService: FundService,
-    private val labelService: LabelService,
+    private val categoryService: CategoryService,
     private val converterRegistry: ImportTransactionConverterRegistry,
     private val conversionSdk: ConversionSdk,
 ) {
@@ -29,7 +29,7 @@ class ImportFundConversionService(
         log.info { "Handling import >> user = $userId items size = ${parsedTransactions.size}." }
         val accountStore = accountService.getAccountStore(userId)
         val fundStore = fundService.getFundStore(userId)
-        val labelStore = labelService.getLabelStore(userId)
+        val categoryStore = categoryService.getCategoryStore(userId)
 
         val importTransactionsToConverter = parsedTransactions
             .map { transaction -> runCatching { transaction to transaction.getConverterStrategy(accountStore) } }
@@ -38,7 +38,7 @@ class ImportFundConversionService(
         importTransactionsToConverter.map { result ->
             result.fold(
                 onSuccess = { (transaction, strategy) ->
-                    convertTransaction(transaction, strategy, conversions, fundStore, accountStore, labelStore)
+                    convertTransaction(transaction, strategy, conversions, fundStore, accountStore, categoryStore)
                 },
                 onFailure = { Result.failure(ImportDataException(it)) }
             )
@@ -62,7 +62,7 @@ class ImportFundConversionService(
         conversions: ConversionsResponse,
         fundStore: Store<FundName, FundTO>,
         accountStore: Store<AccountName, AccountTO>,
-        labelStore: Store<String, LabelTO>,
+        categoryStore: Store<String, CategoryTO>,
     ): Result<CreateTransactionTO> {
         val mappingResult = runCatching {
             strategy.mapToTransaction(transaction, conversions, fundStore, accountStore)
@@ -70,24 +70,24 @@ class ImportFundConversionService(
         val mappingErrors = mappingResult.exceptionOrNull()
             ?.let { listOf(ImportDataException(it)) }
             ?: emptyList()
-        val labelErrors = validateLabels(transaction, labelStore)
+        val categoryErrors = validateCategories(transaction, categoryStore)
 
-        val allErrors = labelErrors + mappingErrors
+        val allErrors = categoryErrors + mappingErrors
         if (allErrors.isNotEmpty()) return Result.failure(allErrors.reduce { acc, e -> acc + e })
 
         return mappingResult
     }
 
-    private fun validateLabels(
+    private fun validateCategories(
         transaction: ImportParsedTransaction,
-        labelStore: Store<String, *>,
+        categoryStore: Store<String, *>,
     ): List<ImportDataException> {
         return transaction.records
-            .flatMap { it.labels }
+            .mapNotNull { it.category }
             .map { it.value }
             .distinct()
-            .mapNotNull { label ->
-                runCatching { labelStore[label] }.exceptionOrNull()?.let { ImportDataException(it) }
+            .mapNotNull { category ->
+                runCatching { categoryStore[category] }.exceptionOrNull()?.let { ImportDataException(it) }
             }
     }
 

@@ -58,7 +58,7 @@ fun ReportView.toTO(): ReportViewTO = ReportViewTO(
     ),
 )
 
-fun RecordFilter.toTO(): RecordFilterTO = RecordFilterTO(labels = labels)
+fun RecordFilter.toTO(): RecordFilterTO = RecordFilterTO(category = category)
 
 fun CreateReportViewTO.toDomain(userId: UUID) = CreateReportViewCommand(
     userId = userId,
@@ -69,12 +69,12 @@ fun CreateReportViewTO.toDomain(userId: UUID) = CreateReportViewCommand(
 
 fun ReportDataConfigurationTO.toDomain() = ReportDataConfiguration(
     currency = currency,
-    groups = groups?.map { ReportGroup(it.name, RecordFilter(it.filter.labels)) },
+    groups = groups?.map { ReportGroup(it.name, RecordFilter(it.filter.category)) },
     reports = ReportsConfiguration(
-        net = NetReportConfiguration(reports.net.enabled, reports.net.filter?.let { RecordFilter(it.labels) }),
+        net = NetReportConfiguration(reports.net.enabled, reports.net.filter?.let { RecordFilter(it.category) }),
         valueReport = ValueReportConfiguration(
             reports.valueReport.enabled,
-            reports.valueReport.filter?.let { RecordFilter(it.labels) }),
+            reports.valueReport.filter?.let { RecordFilter(it.category) }),
         groupedNet = GenericReportConfiguration(reports.groupedNet.enabled),
         groupedBudget = reports.groupedBudget.toDomain(),
         performance = GenericReportConfiguration(reports.performance.enabled),

@@ -13,7 +13,7 @@ import kotlinx.datetime.LocalDateTime
 import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.persistence.RecordRepository
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortOrder
 import ro.jf.funds.platform.api.model.SortRequest
@@ -40,7 +40,7 @@ class RecordServiceTest {
             fundId = fundId,
             amount = BigDecimal.parseString("100.50"),
             unit = Currency("RON"),
-            labels = listOf(Label("groceries"))
+            category = Category("groceries")
         )
         whenever(recordRepository.list(userId, null, null, null))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -61,8 +61,7 @@ class RecordServiceTest {
             accountId = accountId,
             fundId = fundId,
             amount = BigDecimal.parseString("50.00"),
-            unit = Currency("EUR"),
-            labels = emptyList()
+            unit = Currency("EUR")
         )
         whenever(recordRepository.list(userId, filter, null, null))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -82,8 +81,7 @@ class RecordServiceTest {
             accountId = accountId,
             fundId = fundId,
             amount = BigDecimal.parseString("75.25"),
-            unit = Currency("USD"),
-            labels = emptyList()
+            unit = Currency("USD")
         )
         whenever(recordRepository.list(userId, filter, null, null))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -103,8 +101,7 @@ class RecordServiceTest {
             accountId = accountId,
             fundId = fundId,
             amount = BigDecimal.parseString("200.00"),
-            unit = Currency("RON"),
-            labels = emptyList()
+            unit = Currency("RON")
         )
         whenever(recordRepository.list(userId, filter, null, null))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -115,8 +112,8 @@ class RecordServiceTest {
     }
 
     @Test
-    fun `given filter by label - when list records - then delegates filter to repository`(): Unit = runBlocking {
-        val filter = RecordFilter(label = "groceries")
+    fun `given filter by category - when list records - then delegates filter to repository`(): Unit = runBlocking {
+        val filter = RecordFilter(category = "groceries")
         val record = Record.CurrencyRecord(
             transactionId = transactionId, dateTime = dateTime,
             id = recordId,
@@ -124,7 +121,7 @@ class RecordServiceTest {
             fundId = fundId,
             amount = BigDecimal.parseString("150.00"),
             unit = Currency("RON"),
-            labels = listOf(Label("groceries"))
+            category = Category("groceries")
         )
         whenever(recordRepository.list(userId, filter, null, null))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -132,7 +129,7 @@ class RecordServiceTest {
         val result = recordService.listRecords(userId, filter, null, null)
 
         assertThat(result.items).hasSize(1)
-        assertThat(result.items.first().labels).contains(Label("groceries"))
+        assertThat(result.items.first().category).isEqualTo(Category("groceries"))
     }
 
     @Test
@@ -145,8 +142,7 @@ class RecordServiceTest {
             accountId = accountId,
             fundId = fundId,
             amount = BigDecimal.parseString("100.00"),
-            unit = Currency("RON"),
-            labels = emptyList()
+            unit = Currency("RON")
         )
         whenever(recordRepository.list(userId, filter, null, null))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -166,8 +162,7 @@ class RecordServiceTest {
             accountId = accountId,
             fundId = fundId,
             amount = BigDecimal.parseString("100.00"),
-            unit = Currency("RON"),
-            labels = emptyList()
+            unit = Currency("RON")
         )
         whenever(recordRepository.list(userId, filter, null, null))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -188,8 +183,7 @@ class RecordServiceTest {
             accountId = accountId,
             fundId = fundId,
             amount = BigDecimal.parseString("100.00"),
-            unit = Currency("RON"),
-            labels = emptyList()
+            unit = Currency("RON")
         )
         whenever(recordRepository.list(userId, filter, null, null))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -208,8 +202,7 @@ class RecordServiceTest {
             accountId = accountId,
             fundId = fundId,
             amount = BigDecimal.parseString("100.00"),
-            unit = Currency("RON"),
-            labels = emptyList()
+            unit = Currency("RON")
         )
         whenever(recordRepository.list(userId, null, pageRequest, null))
             .thenReturn(PagedResult(listOf(record), 100L))
@@ -229,8 +222,7 @@ class RecordServiceTest {
             accountId = accountId,
             fundId = fundId,
             amount = BigDecimal.parseString("100.00"),
-            unit = Currency("RON"),
-            labels = emptyList()
+            unit = Currency("RON")
         )
         whenever(recordRepository.list(userId, null, null, sortRequest))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -249,8 +241,7 @@ class RecordServiceTest {
             accountId = accountId,
             fundId = fundId,
             amount = BigDecimal.parseString("100.00"),
-            unit = Currency("RON"),
-            labels = emptyList()
+            unit = Currency("RON")
         )
         whenever(recordRepository.list(userId, null, null, sortRequest))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -271,8 +262,7 @@ class RecordServiceTest {
             accountId = accountId,
             fundId = fundId,
             amount = BigDecimal.parseString("100.00"),
-            unit = Currency("RON"),
-            labels = emptyList()
+            unit = Currency("RON")
         )
         whenever(recordRepository.list(userId, filter, pageRequest, sortRequest))
             .thenReturn(PagedResult(listOf(record), 50L))

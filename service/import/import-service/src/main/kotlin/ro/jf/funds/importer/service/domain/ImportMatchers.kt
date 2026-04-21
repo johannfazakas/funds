@@ -5,14 +5,14 @@ import kotlinx.serialization.Serializable
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
-import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Category
 
 @Serializable
 data class ImportMatchers(
     val accountMatchers: List<AccountMatcher> = emptyList(),
     val fundMatchers: List<FundMatcher> = emptyList(),
     val exchangeMatchers: List<ExchangeMatcher> = emptyList(),
-    val labelMatchers: List<LabelMatcher> = emptyList(),
+    val categoryMatchers: List<CategoryMatcher> = emptyList(),
 ) {
     fun getAccountMatcher(importAccountName: String): AccountMatcher =
         accountMatchers.firstOrNull { importAccountName == it.importAccountName }
@@ -22,13 +22,12 @@ data class ImportMatchers(
         fundMatchers.firstOrNull { it.matches(importAccountName, importLabels) }
             ?: throw ImportDataException("No fund matcher found for import account name: $importAccountName, import labels: $importLabels.")
 
-    fun getLabelMatchers(importLabels: List<String>): List<LabelMatcher> =
+    fun getCategoryMatcher(importLabels: List<String>): CategoryMatcher? =
         if (importLabels.isEmpty()) {
-            emptyList()
+            null
         } else {
-            labelMatchers.filter { matcher -> matcher.importLabels.any { it in importLabels } }
-                .takeIf { it.isNotEmpty() }
-                ?: throw ImportDataException("No label matcher found for import label: $importLabels.")
+            categoryMatchers.firstOrNull { matcher -> matcher.importLabels.any { it in importLabels } }
+                ?: throw ImportDataException("No category matcher found for import labels: $importLabels.")
         }
 
     fun getExchangeMatcher(importLabels: List<String>): ExchangeMatcher? =
@@ -70,7 +69,7 @@ sealed class ExchangeMatcher {
 }
 
 @Serializable
-data class LabelMatcher(
+data class CategoryMatcher(
     val importLabels: List<String>,
-    val label: Label,
+    val category: Category,
 )

@@ -45,9 +45,9 @@ fun FundServiceException.toStatusCode(): HttpStatusCode = when (this) {
     is FundServiceException.RecordAccountNotFound -> HttpStatusCode.UnprocessableEntity
     is FundServiceException.RecordFundNotFound -> HttpStatusCode.UnprocessableEntity
     is FundServiceException.AccountRecordCurrencyMismatch -> HttpStatusCode.UnprocessableEntity
-    is FundServiceException.LabelNotFound -> HttpStatusCode.NotFound
-    is FundServiceException.LabelNameAlreadyExists -> HttpStatusCode.Conflict
-    is FundServiceException.LabelHasRecords -> HttpStatusCode.Conflict
+    is FundServiceException.CategoryNotFound -> HttpStatusCode.NotFound
+    is FundServiceException.CategoryNameAlreadyExists -> HttpStatusCode.Conflict
+    is FundServiceException.CategoryHasRecords -> HttpStatusCode.Conflict
 }
 
 fun Throwable.toError(): ErrorTO {
@@ -119,19 +119,19 @@ fun FundServiceException.toError(): ErrorTO {
             detail = "Account ${accountName.value} with id $accountId has currency ${accountUnit.value} but record has currency ${recordUnit.value}"
         )
 
-        is FundServiceException.LabelNotFound -> ErrorTO(
-            title = "Label not found",
-            detail = "Label with id '$labelId' not found"
+        is FundServiceException.CategoryNotFound -> ErrorTO(
+            title = "Category not found",
+            detail = "Category with id '$categoryId' not found"
         )
 
-        is FundServiceException.LabelNameAlreadyExists -> ErrorTO(
-            title = "Label name already exists",
-            detail = "Label with name '$labelName' already exists"
+        is FundServiceException.CategoryNameAlreadyExists -> ErrorTO(
+            title = "Category name already exists",
+            detail = "Category with name '$categoryName' already exists"
         )
 
-        is FundServiceException.LabelHasRecords -> ErrorTO(
-            title = "Label has records",
-            detail = "Label with id '$labelId' is used on records and cannot be deleted"
+        is FundServiceException.CategoryHasRecords -> ErrorTO(
+            title = "Category has records",
+            detail = "Category with id '$categoryId' is used on records and cannot be deleted"
         )
     }
 }

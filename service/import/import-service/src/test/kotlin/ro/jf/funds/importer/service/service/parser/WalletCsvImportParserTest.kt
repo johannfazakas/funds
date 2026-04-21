@@ -6,7 +6,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.service.domain.*
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
@@ -24,7 +24,7 @@ class WalletCsvImportParserTest {
         val matchers = ImportMatchers(
             accountMatchers = listOf(AccountMatcher("ING old", AccountName("ING"))),
             fundMatchers = listOf(FundMatcher(FundName("Expenses"), importLabel = "Basic - Food")),
-            labelMatchers = listOf(LabelMatcher(listOf("Basic - Food"), Label("Basic"))),
+            categoryMatchers = listOf(CategoryMatcher(listOf("Basic - Food"), Category("Basic"))),
             exchangeMatchers = emptyList(),
         )
 
@@ -40,7 +40,7 @@ class WalletCsvImportParserTest {
         assertThat(importTransactions[0].records[0].fundName).isEqualTo(FundName("Expenses"))
         assertThat(importTransactions[0].records[0].unit).isEqualTo(Currency.RON)
         assertThat(importTransactions[0].records[0].amount).isEqualTo(BigDecimal.parseString("-13.80"))
-        assertThat(importTransactions[0].records[0].labels).containsExactly(Label("Basic"))
+        assertThat(importTransactions[0].records[0].category).isEqualTo(Category("Basic"))
     }
 
     @Test
@@ -96,7 +96,7 @@ class WalletCsvImportParserTest {
                 FundMatcher(FundName("Expenses"), importAccountName = "Cash RON")
             ),
             exchangeMatchers = listOf(ExchangeMatcher.ByLabel("Exchange")),
-            labelMatchers = listOf(LabelMatcher(listOf("Exchange"), Label("Exchange"))),
+            categoryMatchers = listOf(CategoryMatcher(listOf("Exchange"), Category("Exchange"))),
         )
 
         val results = walletCsvImportParser.parse(matchers, fileContent)
@@ -113,7 +113,7 @@ class WalletCsvImportParserTest {
                 FundName("Expenses"),
                 Currency.EUR,
                 BigDecimal.parseString("-1.89"),
-                listOf(Label("Exchange")),
+                Category("Exchange"),
                 note = "exchange",
             ),
             ImportParsedRecord(
@@ -121,7 +121,7 @@ class WalletCsvImportParserTest {
                 FundName("Expenses"),
                 Currency.RON,
                 BigDecimal.parseString("-1434.00"),
-                listOf(Label("Exchange")),
+                Category("Exchange"),
                 note = "exchange",
             ),
             ImportParsedRecord(
@@ -129,14 +129,14 @@ class WalletCsvImportParserTest {
                 FundName("Expenses"),
                 Currency.EUR,
                 BigDecimal.parseString("301.24"),
-                listOf(Label("Exchange")),
+                Category("Exchange"),
                 note = "exchange",
             )
         )
     }
 
     @Test
-    fun `should parse wallet csv import item with implicit fund transfer based on label`() {
+    fun `should parse wallet csv import item with implicit fund transfer based on category`() {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "740.00", "Gift income", "2019-01-06 02:00:23")
         )
@@ -148,7 +148,7 @@ class WalletCsvImportParserTest {
                 FundMatcher(FundName("Expenses"), importLabel = "Gift income", intermediaryFundName = FundName("Gift income")),
             ),
             exchangeMatchers = emptyList(),
-            labelMatchers = listOf(LabelMatcher(listOf("Gift income"), Label("gifts"))),
+            categoryMatchers = listOf(CategoryMatcher(listOf("Gift income"), Category("gifts"))),
         )
 
         val results = walletCsvImportParser.parse(matchers, fileContent)
@@ -182,7 +182,7 @@ class WalletCsvImportParserTest {
     }
 
     @Test
-    fun `should parse wallet csv import item with implicit fund transfer based on account and label`() {
+    fun `should parse wallet csv import item with implicit fund transfer based on account and category`() {
         val fileContent = generateFileContent(
             WalletCsvRowContent("ING old", "RON", "6740.00", "Work Income", "2019-01-06 02:00:23")
         )
@@ -194,7 +194,7 @@ class WalletCsvImportParserTest {
                 FundMatcher(FundName("Expenses"), importAccountName = "ING old", importLabel = "Work Income", intermediaryFundName = FundName("Work")),
             ),
             exchangeMatchers = emptyList(),
-            labelMatchers = listOf(LabelMatcher(listOf("Work Income"), Label("Work"))),
+            categoryMatchers = listOf(CategoryMatcher(listOf("Work Income"), Category("Work"))),
         )
 
         val results = walletCsvImportParser.parse(matchers, fileContent)
@@ -239,7 +239,7 @@ class WalletCsvImportParserTest {
                 FundMatcher(FundName("Savings"), importAccountName = "ING old")
             ),
             exchangeMatchers = emptyList(),
-            labelMatchers = listOf(LabelMatcher(listOf("Basic - Food"), Label("Basic"))),
+            categoryMatchers = listOf(CategoryMatcher(listOf("Basic - Food"), Category("Basic"))),
         )
 
         val results = walletCsvImportParser.parse(matchers, fileContent)
@@ -342,7 +342,7 @@ class WalletCsvImportParserTest {
         val matchers = ImportMatchers(
             accountMatchers = listOf(AccountMatcher("ING old", AccountName("ING"))),
             fundMatchers = listOf(FundMatcher(FundName("Expenses"), importLabel = "Basic - Food")),
-            labelMatchers = listOf(LabelMatcher(listOf("Basic - Food"), Label("Basic"))),
+            categoryMatchers = listOf(CategoryMatcher(listOf("Basic - Food"), Category("Basic"))),
             exchangeMatchers = emptyList(),
         )
 

@@ -65,14 +65,10 @@ function RecordCard({ record, accountsMap, fundsMap, label }: {
                         <span className="text-sm text-right">{record.note}</span>
                     </div>
                 )}
-                {record.labels.length > 0 && (
+                {record.category != null && (
                     <div className="flex justify-between items-start">
-                        <span className="text-sm text-muted-foreground">Labels</span>
-                        <div className="flex flex-wrap gap-1 justify-end">
-                            {record.labels.map((label, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs">{label}</Badge>
-                            ))}
-                        </div>
+                        <span className="text-sm text-muted-foreground">Category</span>
+                        <Badge variant="outline" className="text-xs">{record.category}</Badge>
                     </div>
                 )}
             </div>

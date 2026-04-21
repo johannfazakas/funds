@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.ktor.ext.get
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.ListTO
 import ro.jf.funds.platform.jvm.config.configureContentNegotiation
 import ro.jf.funds.platform.jvm.config.configureDatabaseMigration
@@ -63,7 +63,7 @@ class TransactionApiTest {
                 fundId = workFund.id,
                 amount = BigDecimal.parseString("-100.25"),
                 unit = Currency.RON,
-                labels = listOf(Label("one"), Label("two"))
+                category = Category("one")
             ),
             destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                 accountId = personalAccount.id,
@@ -108,7 +108,7 @@ class TransactionApiTest {
                     fundId = workFund.id,
                     amount = BigDecimal.parseString("-100.25"),
                     unit = Currency.RON,
-                    labels = listOf(Label("salary"))
+                    category = Category("salary")
                 ),
                 destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                     accountId = account2.id,
@@ -146,7 +146,7 @@ class TransactionApiTest {
         assertThat(fundTransaction1!!.sourceRecord.amount).isEqualByComparingTo(BigDecimal.parseString("-100.25"))
         assertThat(fundTransaction1.sourceRecord.fundId).isEqualTo(workFund.id)
         assertThat(fundTransaction1.sourceRecord.accountId).isEqualTo(account1.id)
-        assertThat(fundTransaction1.sourceRecord.labels).contains(Label("salary"))
+        assertThat(fundTransaction1.sourceRecord.category).isEqualTo(Category("salary"))
         assertThat(fundTransaction1.destinationRecord.amount).isEqualByComparingTo(BigDecimal.parseString("100.25"))
         assertThat(fundTransaction1.destinationRecord.fundId).isEqualTo(expensesFund.id)
         assertThat(fundTransaction1.destinationRecord.accountId).isEqualTo(account2.id)

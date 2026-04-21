@@ -8,9 +8,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.FinancialUnit
-import ro.jf.funds.platform.api.model.Label
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.service.domain.Account
 import ro.jf.funds.fund.service.domain.Fund
@@ -20,6 +17,8 @@ import ro.jf.funds.fund.service.persistence.AccountRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
 import ro.jf.funds.fund.service.persistence.RecordRepository
 import ro.jf.funds.fund.service.persistence.TransactionRepository
+import ro.jf.funds.platform.api.model.Category
+import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.jvm.event.Producer
 import java.util.UUID.randomUUID
 
@@ -67,7 +66,7 @@ class TransactionServiceTest {
                 fundId = workFundId,
                 amount = BigDecimal.parseString("-100.25"),
                 unit = Currency("RON"),
-                labels = listOf(Label("one"), Label("two"))
+                category = Category("one")
             ),
             destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                 accountId = personalAccountId,
@@ -102,15 +101,14 @@ class TransactionServiceTest {
                     fundId = workFundId,
                     amount = BigDecimal.parseString("-100.25"),
                     unit = Currency("RON"),
-                    labels = listOf(Label("one"), Label("two"))
+                    category = Category("one")
                 ),
                 destinationRecord = TransactionRecord.CurrencyRecord(
                     id = record2Id,
                     accountId = personalAccountId,
                     fundId = expensesFundId,
                     amount = BigDecimal.parseString("100.25"),
-                    unit = Currency("RON"),
-                    labels = emptyList()
+                    unit = Currency("RON")
                 )
             )
         )
@@ -148,15 +146,14 @@ class TransactionServiceTest {
                         fundId = workFundId,
                         amount = BigDecimal.parseString("100.25"),
                         unit = Currency("RON"),
-                        labels = listOf(Label("one"), Label("two"))
+                        category = Category("one")
                     ),
                     destinationRecord = TransactionRecord.CurrencyRecord(
                         id = record2Id,
                         accountId = personalAccountId,
                         fundId = expensesFundId,
                         amount = BigDecimal.parseString("50.75"),
-                        unit = Currency("RON"),
-                        labels = emptyList()
+                        unit = Currency("RON")
                     )
                 )
             )
@@ -173,12 +170,12 @@ class TransactionServiceTest {
         assertThat(transaction.sourceRecord.fundId).isEqualTo(workFundId)
         assertThat(transaction.sourceRecord.accountId).isEqualTo(companyAccountId)
         assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal.parseString("100.25"))
-        assertThat(transaction.sourceRecord.labels).containsExactlyInAnyOrder(Label("one"), Label("two"))
+        assertThat(transaction.sourceRecord.category).isEqualTo(Category("one"))
         assertThat(transaction.destinationRecord.id).isEqualTo(record2Id)
         assertThat(transaction.destinationRecord.fundId).isEqualTo(expensesFundId)
         assertThat(transaction.destinationRecord.accountId).isEqualTo(personalAccountId)
         assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal.parseString("50.75"))
-        assertThat(transaction.destinationRecord.labels).isEmpty()
+        assertThat(transaction.destinationRecord.category).isNull()
     }
 
     @Test
@@ -197,15 +194,14 @@ class TransactionServiceTest {
                         fundId = workFundId,
                         amount = BigDecimal.parseString("100.25"),
                         unit = Currency("RON"),
-                        labels = listOf(Label("one"), Label("two"))
+                        category = Category("one")
                     ),
                     destinationRecord = TransactionRecord.CurrencyRecord(
                         id = record2Id,
                         accountId = personalAccountId,
                         fundId = expensesFundId,
                         amount = BigDecimal.parseString("50.75"),
-                        unit = Currency("RON"),
-                        labels = emptyList()
+                        unit = Currency("RON")
                     )
                 )
             )
@@ -222,12 +218,12 @@ class TransactionServiceTest {
         assertThat(transaction.sourceRecord.fundId).isEqualTo(workFundId)
         assertThat(transaction.sourceRecord.accountId).isEqualTo(companyAccountId)
         assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal.parseString("100.25"))
-        assertThat(transaction.sourceRecord.labels).containsExactlyInAnyOrder(Label("one"), Label("two"))
+        assertThat(transaction.sourceRecord.category).isEqualTo(Category("one"))
         assertThat(transaction.destinationRecord.id).isEqualTo(record2Id)
         assertThat(transaction.destinationRecord.fundId).isEqualTo(expensesFundId)
         assertThat(transaction.destinationRecord.accountId).isEqualTo(personalAccountId)
         assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal.parseString("50.75"))
-        assertThat(transaction.destinationRecord.labels).isEmpty()
+        assertThat(transaction.destinationRecord.category).isNull()
     }
 
     @Test

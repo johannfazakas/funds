@@ -3,24 +3,24 @@ package ro.jf.funds.importer.service.web.mapper
 import ro.jf.funds.importer.api.model.AccountMatcherTO
 import ro.jf.funds.importer.api.model.ExchangeMatcherTO
 import ro.jf.funds.importer.api.model.FundMatcherTO
-import ro.jf.funds.importer.api.model.LabelMatcherTO
+import ro.jf.funds.importer.api.model.CategoryMatcherTO
 import ro.jf.funds.importer.service.domain.AccountMatcher
 import ro.jf.funds.importer.service.domain.ExchangeMatcher
 import ro.jf.funds.importer.service.domain.FundMatcher
 import ro.jf.funds.importer.service.domain.ImportMatchers
-import ro.jf.funds.importer.service.domain.LabelMatcher
+import ro.jf.funds.importer.service.domain.CategoryMatcher
 fun ImportMatchers.toMatcherTOs() = MatcherTOs(
     accountMatchers = accountMatchers.map { it.toTO() },
     fundMatchers = fundMatchers.map { it.toTO() },
     exchangeMatchers = exchangeMatchers.map { it.toTO() },
-    labelMatchers = labelMatchers.map { it.toTO() },
+    categoryMatchers = categoryMatchers.map { it.toTO() },
 )
 
 data class MatcherTOs(
     val accountMatchers: List<AccountMatcherTO>,
     val fundMatchers: List<FundMatcherTO>,
     val exchangeMatchers: List<ExchangeMatcherTO>,
-    val labelMatchers: List<LabelMatcherTO>,
+    val categoryMatchers: List<CategoryMatcherTO>,
 )
 
 fun AccountMatcherTO.toDomain() = AccountMatcher(
@@ -57,25 +57,25 @@ fun ExchangeMatcher.toTO(): ExchangeMatcherTO = when (this) {
     is ExchangeMatcher.ByLabel -> ExchangeMatcherTO.ByLabel(label = label)
 }
 
-fun LabelMatcherTO.toDomain() = LabelMatcher(
+fun CategoryMatcherTO.toDomain() = CategoryMatcher(
     importLabels = importLabels,
-    label = label,
+    category = category,
 )
 
-fun LabelMatcher.toTO() = LabelMatcherTO(
+fun CategoryMatcher.toTO() = CategoryMatcherTO(
     importLabels = importLabels,
-    label = label,
+    category = category,
 )
 
 fun toImportMatchers(
     accountMatchers: List<AccountMatcherTO>,
     fundMatchers: List<FundMatcherTO>,
     exchangeMatchers: List<ExchangeMatcherTO>,
-    labelMatchers: List<LabelMatcherTO>,
+    categoryMatchers: List<CategoryMatcherTO>,
 ) = ImportMatchers(
     accountMatchers = accountMatchers.map { it.toDomain() },
     fundMatchers = fundMatchers.map { it.toDomain() },
     exchangeMatchers = exchangeMatchers.map { it.toDomain() },
-    labelMatchers = labelMatchers.map { it.toDomain() },
+    categoryMatchers = categoryMatchers.map { it.toDomain() },
 )
 

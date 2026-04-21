@@ -16,7 +16,7 @@ import org.mockserver.model.MediaType
 import ro.jf.funds.platform.api.model.Currency.Companion.RON
 import ro.jf.funds.platform.api.model.Instrument
 import ro.jf.funds.platform.api.model.ListTO
-import ro.jf.funds.platform.api.model.labelsOf
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.jvm.test.extension.MockServerContainerExtension
 import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
 import ro.jf.funds.reporting.api.model.*
@@ -40,14 +40,14 @@ class ReportingSdkTest {
             dataConfiguration = ReportDataConfigurationTO(
                 currency = RON,
                 groups = listOf(
-                    ReportGroupTO(name = "need", filter = RecordFilterTO.byLabels("need")),
-                    ReportGroupTO(name = "want", filter = RecordFilterTO.byLabels("want"))
+                    ReportGroupTO(name = "need", filter = RecordFilterTO.byCategory("need")),
+                    ReportGroupTO(name = "want", filter = RecordFilterTO.byCategory("want"))
                 ),
                 reports = ReportsConfigurationTO(
-                    net = NetReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want"))),
+                    net = NetReportConfigurationTO(enabled = true, RecordFilterTO(category = null)),
                     valueReport = ValueReportConfigurationTO(
                         enabled = true,
-                        RecordFilterTO(labels = labelsOf("need", "want"))
+                        RecordFilterTO(category = null)
                     ),
                     groupedNet = GenericReportConfigurationTO(enabled = true),
                     groupedBudget = GroupedBudgetReportConfigurationTO(
@@ -93,12 +93,12 @@ class ReportingSdkTest {
             dataConfiguration = ReportDataConfigurationTO(
                 currency = RON,
                 groups = listOf(
-                    ReportGroupTO(name = "need", filter = RecordFilterTO.byLabels("need")),
-                    ReportGroupTO(name = "want", filter = RecordFilterTO.byLabels("want"))
+                    ReportGroupTO(name = "need", filter = RecordFilterTO.byCategory("need")),
+                    ReportGroupTO(name = "want", filter = RecordFilterTO.byCategory("want"))
                 ),
                 reports = ReportsConfigurationTO(
-                    NetReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want"))),
-                    ValueReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want")))
+                    NetReportConfigurationTO(enabled = true, RecordFilterTO(category = null)),
+                    ValueReportConfigurationTO(enabled = true, RecordFilterTO(category = null))
                 )
             )
         )
@@ -118,12 +118,12 @@ class ReportingSdkTest {
             dataConfiguration = ReportDataConfigurationTO(
                 currency = RON,
                 groups = listOf(
-                    ReportGroupTO(name = "need", filter = RecordFilterTO.byLabels("need")),
-                    ReportGroupTO(name = "want", filter = RecordFilterTO.byLabels("want"))
+                    ReportGroupTO(name = "need", filter = RecordFilterTO.byCategory("need")),
+                    ReportGroupTO(name = "want", filter = RecordFilterTO.byCategory("want"))
                 ),
                 reports = ReportsConfigurationTO(
-                    NetReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want"))),
-                    ValueReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want")))
+                    NetReportConfigurationTO(enabled = true, RecordFilterTO(category = null)),
+                    ValueReportConfigurationTO(enabled = true, RecordFilterTO(category = null))
                 )
             )
         )
@@ -144,12 +144,12 @@ class ReportingSdkTest {
                 dataConfiguration = ReportDataConfigurationTO(
                     currency = RON,
                     groups = listOf(
-                        ReportGroupTO(name = "need", RecordFilterTO.byLabels("need")),
-                        ReportGroupTO(name = "want", RecordFilterTO.byLabels("want"))
+                        ReportGroupTO(name = "need", RecordFilterTO.byCategory("need")),
+                        ReportGroupTO(name = "want", RecordFilterTO.byCategory("want"))
                     ),
                     reports = ReportsConfigurationTO(
-                        NetReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want"))),
-                        ValueReportConfigurationTO(enabled = true, RecordFilterTO(labels = labelsOf("need", "want")))
+                        NetReportConfigurationTO(enabled = true, RecordFilterTO(category = null)),
+                        ValueReportConfigurationTO(enabled = true, RecordFilterTO(category = null))
                     )
                 )
             )
@@ -351,11 +351,8 @@ class ReportingSdkTest {
                                             put("filter", buildJsonObject {
                                                 put("type", JsonPrimitive("object"))
                                                 put("properties", buildJsonObject {
-                                                    put("labels", buildJsonObject {
-                                                        put("type", JsonPrimitive("array"))
-                                                        put("items", buildJsonObject {
-                                                            put("type", JsonPrimitive("string"))
-                                                        })
+                                                    put("category", buildJsonObject {
+                                                        put("type", JsonPrimitive("string"))
                                                     })
                                                 })
                                             })
@@ -370,11 +367,8 @@ class ReportingSdkTest {
                                                         put("filter", buildJsonObject {
                                                             put("type", JsonPrimitive("object"))
                                                             put("properties", buildJsonObject {
-                                                                put("labels", buildJsonObject {
-                                                                    put("type", JsonPrimitive("array"))
-                                                                    put("items", buildJsonObject {
-                                                                        put("type", JsonPrimitive("string"))
-                                                                    })
+                                                                put("category", buildJsonObject {
+                                                                    put("type", JsonPrimitive("string"))
                                                                 })
                                                             })
                                                         })
@@ -398,11 +392,8 @@ class ReportingSdkTest {
                                                                 put("filter", buildJsonObject {
                                                                     put("type", JsonPrimitive("object"))
                                                                     put("properties", buildJsonObject {
-                                                                        put("labels", buildJsonObject {
-                                                                            put("type", JsonPrimitive("array"))
-                                                                            put("items", buildJsonObject {
-                                                                                put("type", JsonPrimitive("string"))
-                                                                            })
+                                                                        put("category", buildJsonObject {
+                                                                            put("type", JsonPrimitive("string"))
                                                                         })
                                                                     })
                                                                 })
@@ -423,11 +414,8 @@ class ReportingSdkTest {
                                                                 put("filter", buildJsonObject {
                                                                     put("type", JsonPrimitive("object"))
                                                                     put("properties", buildJsonObject {
-                                                                        put("labels", buildJsonObject {
-                                                                            put("type", JsonPrimitive("array"))
-                                                                            put("items", buildJsonObject {
-                                                                                put("type", JsonPrimitive("string"))
-                                                                            })
+                                                                        put("category", buildJsonObject {
+                                                                            put("type", JsonPrimitive("string"))
                                                                         })
                                                                     })
                                                                 })
@@ -514,11 +502,9 @@ class ReportingSdkTest {
                             buildJsonObject {
                                 put("name", JsonPrimitive(group.name))
                                 put("filter", buildJsonObject {
-                                    put("labels", buildJsonArray {
-                                        group.filter.labels?.forEach { label ->
-                                            add(JsonPrimitive(label.value))
-                                        }
-                                    })
+                                    group.filter.category?.let { cat ->
+                                        put("category", JsonPrimitive(cat.value))
+                                    }
                                 })
                             }
                         )
@@ -528,21 +514,17 @@ class ReportingSdkTest {
                     put("net", buildJsonObject {
                         put("enabled", JsonPrimitive(response.dataConfiguration.reports.net.enabled))
                         put("filter", buildJsonObject {
-                            put("labels", buildJsonArray {
-                                response.dataConfiguration.reports.net.filter?.labels?.forEach { label ->
-                                    add(JsonPrimitive(label.value))
-                                }
-                            })
+                            response.dataConfiguration.reports.net.filter?.category?.let { cat ->
+                                put("category", JsonPrimitive(cat.value))
+                            }
                         })
                     })
                     put("valueReport", buildJsonObject {
                         put("enabled", JsonPrimitive(response.dataConfiguration.reports.valueReport.enabled))
                         put("filter", buildJsonObject {
-                            put("labels", buildJsonArray {
-                                response.dataConfiguration.reports.valueReport.filter?.labels?.forEach { label ->
-                                    add(JsonPrimitive(label.value))
-                                }
-                            })
+                            response.dataConfiguration.reports.valueReport.filter?.category?.let { cat ->
+                                put("category", JsonPrimitive(cat.value))
+                            }
                         })
                     })
                 })

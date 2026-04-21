@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Label, listLabels, createLabel, deleteLabel } from '../api/labelApi';
+import { Category, listCategories, createCategory, deleteCategory } from '../api/categoryApi';
 import { Button } from '../components/ui/button';
 import { ActionButton } from '../components/ui/action-button';
 import { Input } from '../components/ui/input';
@@ -14,75 +14,75 @@ import {
 } from '../components/ui/table';
 import { Loader2, Trash2 } from 'lucide-react';
 
-interface LabelsPageProps {
+interface CategoriesPageProps {
     userId: string;
 }
 
-function LabelsPage({ userId }: LabelsPageProps) {
-    const [labels, setLabels] = useState<Label[]>([]);
+function CategoriesPage({ userId }: CategoriesPageProps) {
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [newLabelName, setNewLabelName] = useState('');
+    const [newCategoryName, setNewCategoryName] = useState('');
     const [creating, setCreating] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
-    const loadLabels = useCallback(async () => {
+    const loadCategories = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await listLabels(userId);
-            setLabels(result);
+            const result = await listCategories(userId);
+            setCategories(result);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to load labels');
+            setError(err instanceof Error ? err.message : 'Failed to load categories');
         } finally {
             setLoading(false);
         }
     }, [userId]);
 
     useEffect(() => {
-        loadLabels();
-    }, [loadLabels]);
+        loadCategories();
+    }, [loadCategories]);
 
     const handleCreate = async () => {
-        if (!newLabelName.trim()) return;
+        if (!newCategoryName.trim()) return;
         setCreating(true);
         setError(null);
         try {
-            await createLabel(userId, newLabelName.trim());
-            setNewLabelName('');
-            await loadLabels();
+            await createCategory(userId, newCategoryName.trim());
+            setNewCategoryName('');
+            await loadCategories();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to create label');
+            setError(err instanceof Error ? err.message : 'Failed to create category');
         } finally {
             setCreating(false);
         }
     };
 
-    const handleDelete = async (label: Label) => {
+    const handleDelete = async (category: Category) => {
         setDeleteError(null);
         try {
-            await deleteLabel(userId, label.id);
-            await loadLabels();
+            await deleteCategory(userId, category.id);
+            await loadCategories();
         } catch (err) {
-            setDeleteError(err instanceof Error ? err.message : 'Failed to delete label');
+            setDeleteError(err instanceof Error ? err.message : 'Failed to delete category');
         }
     };
 
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Labels</h1>
+                <h1 className="text-2xl font-bold">Categories</h1>
             </div>
 
             <div className="mb-4 flex items-center gap-2">
                 <Input
-                    value={newLabelName}
-                    onChange={(e) => setNewLabelName(e.target.value)}
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-                    placeholder="New label name"
+                    placeholder="New category name"
                     className="w-48"
                 />
-                <Button onClick={handleCreate} disabled={creating || !newLabelName.trim()}>
+                <Button onClick={handleCreate} disabled={creating || !newCategoryName.trim()}>
                     {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
                 </Button>
             </div>
@@ -90,7 +90,7 @@ function LabelsPage({ userId }: LabelsPageProps) {
             {error && (
                 <div className="flex items-center gap-4 p-4 mb-4 text-destructive bg-destructive/10 rounded-md">
                     <span>{error}</span>
-                    <Button variant="outline" size="sm" onClick={loadLabels}>Retry</Button>
+                    <Button variant="outline" size="sm" onClick={loadCategories}>Retry</Button>
                 </div>
             )}
 
@@ -107,13 +107,13 @@ function LabelsPage({ userId }: LabelsPageProps) {
                 </div>
             )}
 
-            {!loading && !error && labels.length === 0 && (
+            {!loading && !error && categories.length === 0 && (
                 <div className="text-center text-muted-foreground py-8">
-                    No labels yet.
+                    No categories yet.
                 </div>
             )}
 
-            {!loading && !error && labels.length > 0 && (
+            {!loading && !error && categories.length > 0 && (
                 <Card>
                     <Table>
                         <TableHeader>
@@ -123,12 +123,12 @@ function LabelsPage({ userId }: LabelsPageProps) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {labels.map((label) => (
-                                <TableRow key={label.id}>
-                                    <TableCell>{label.name}</TableCell>
+                            {categories.map((category) => (
+                                <TableRow key={category.id}>
+                                    <TableCell>{category.name}</TableCell>
                                     <TableCell>
                                         <ActionButton icon={Trash2} tooltip="Delete" destructive
-                                            onClick={() => handleDelete(label)} />
+                                            onClick={() => handleDelete(category)} />
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -140,4 +140,4 @@ function LabelsPage({ userId }: LabelsPageProps) {
     );
 }
 
-export default LabelsPage;
+export default CategoriesPage;

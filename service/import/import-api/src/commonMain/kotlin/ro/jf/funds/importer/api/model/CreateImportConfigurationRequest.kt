@@ -8,5 +8,5 @@ data class CreateImportConfigurationRequest(
     val accountMatchers: List<AccountMatcherTO> = emptyList(),
     val fundMatchers: List<FundMatcherTO> = emptyList(),
     val exchangeMatchers: List<ExchangeMatcherTO> = emptyList(),
-    val labelMatchers: List<LabelMatcherTO> = emptyList(),
+    val categoryMatchers: List<CategoryMatcherTO> = emptyList(),
 )

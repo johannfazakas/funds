@@ -58,7 +58,7 @@ function Sidebar({ onLogout }: SidebarProps) {
                             Records
                         </NavLink>
                         <NavLink
-                            to="/labels"
+                            to="/categories"
                             className={({ isActive }) =>
                                 cn(
                                     "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
@@ -68,7 +68,7 @@ function Sidebar({ onLogout }: SidebarProps) {
                                 )
                             }
                         >
-                            Labels
+                            Categories
                         </NavLink>
                     </div>
 

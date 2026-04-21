@@ -10,31 +10,31 @@ import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
 import ro.jf.funds.platform.jvm.web.createHttpClient
 import ro.jf.funds.platform.jvm.web.toApiException
-import ro.jf.funds.fund.api.LabelApi
-import ro.jf.funds.fund.api.model.CreateLabelTO
-import ro.jf.funds.fund.api.model.LabelTO
+import ro.jf.funds.fund.api.CategoryApi
+import ro.jf.funds.fund.api.model.CreateCategoryTO
+import ro.jf.funds.fund.api.model.CategoryTO
 
 private val log = logger { }
 
-class LabelSdk(
+class CategorySdk(
     private val baseUrl: String = LOCALHOST_BASE_URL,
     private val httpClient: HttpClient = createHttpClient(),
-) : LabelApi {
-    override suspend fun listLabels(userId: Uuid): List<LabelTO> = withSuspendingSpan {
-        val response = httpClient.get("$baseUrl$BASE_PATH/labels") {
+) : CategoryApi {
+    override suspend fun listCategories(userId: Uuid): List<CategoryTO> = withSuspendingSpan {
+        val response = httpClient.get("$baseUrl$BASE_PATH/categories") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }
         }
         if (response.status != HttpStatusCode.OK) {
-            log.warn { "Unexpected response on list labels: $response" }
+            log.warn { "Unexpected response on list categories: $response" }
             throw response.toApiException()
         }
         response.body()
     }
 
-    override suspend fun createLabel(userId: Uuid, request: CreateLabelTO): LabelTO = withSuspendingSpan {
-        val response = httpClient.post("$baseUrl$BASE_PATH/labels") {
+    override suspend fun createCategory(userId: Uuid, request: CreateCategoryTO): CategoryTO = withSuspendingSpan {
+        val response = httpClient.post("$baseUrl$BASE_PATH/categories") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }
@@ -42,20 +42,20 @@ class LabelSdk(
             setBody(request)
         }
         if (response.status != HttpStatusCode.Created) {
-            log.warn { "Unexpected response on create label: $response" }
+            log.warn { "Unexpected response on create category: $response" }
             throw response.toApiException()
         }
         response.body()
     }
 
-    override suspend fun deleteLabelById(userId: Uuid, labelId: Uuid) = withSuspendingSpan {
-        val response = httpClient.delete("$baseUrl$BASE_PATH/labels/$labelId") {
+    override suspend fun deleteCategoryById(userId: Uuid, categoryId: Uuid) = withSuspendingSpan {
+        val response = httpClient.delete("$baseUrl$BASE_PATH/categories/$categoryId") {
             headers {
                 append(USER_ID_HEADER, userId.toString())
             }
         }
         if (response.status != HttpStatusCode.NoContent) {
-            log.warn { "Unexpected response on delete label: $response" }
+            log.warn { "Unexpected response on delete category: $response" }
             throw response.toApiException()
         }
     }

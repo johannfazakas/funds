@@ -6,25 +6,25 @@ import { SearchableSelect } from '../ui/searchable-select';
 import { Plus, X } from 'lucide-react';
 import { SortableRow } from './SortableRow';
 
-export interface LabelMatcherRow {
+export interface CategoryMatcherRow {
     importLabel: string;
-    label: string;
+    category: string;
 }
 
-interface LabelMatcherEditorProps {
-    matchers: LabelMatcherRow[];
-    onChange: (matchers: LabelMatcherRow[]) => void;
-    labelNames: string[];
+interface CategoryMatcherEditorProps {
+    matchers: CategoryMatcherRow[];
+    onChange: (matchers: CategoryMatcherRow[]) => void;
+    categoryNames: string[];
     disabled?: boolean;
 }
 
-export function LabelMatcherEditor({ matchers, onChange, labelNames, disabled }: LabelMatcherEditorProps) {
+export function CategoryMatcherEditor({ matchers, onChange, categoryNames, disabled }: CategoryMatcherEditorProps) {
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
     );
 
-    const ids = matchers.map((_, i) => `label-${i}`);
+    const ids = matchers.map((_, i) => `category-${i}`);
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -37,7 +37,7 @@ export function LabelMatcherEditor({ matchers, onChange, labelNames, disabled }:
         onChange(next);
     };
 
-    const updateMatcher = (index: number, updated: LabelMatcherRow) => {
+    const updateMatcher = (index: number, updated: CategoryMatcherRow) => {
         const next = [...matchers];
         next[index] = updated;
         onChange(next);
@@ -48,7 +48,7 @@ export function LabelMatcherEditor({ matchers, onChange, labelNames, disabled }:
     };
 
     const addMatcher = () => {
-        onChange([...matchers, { importLabel: '', label: '' }]);
+        onChange([...matchers, { importLabel: '', category: '' }]);
     };
 
     return (
@@ -58,12 +58,12 @@ export function LabelMatcherEditor({ matchers, onChange, labelNames, disabled }:
                     {matchers.map((matcher, index) => (
                         <SortableRow key={ids[index]} id={ids[index]} disabled={disabled}>
                             <div className="flex items-center gap-1 flex-1 min-w-0">
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">label</span>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">category</span>
                                 <SearchableSelect
-                                    value={matcher.label}
-                                    onValueChange={(name) => updateMatcher(index, { ...matcher, label: name })}
-                                    options={labelNames}
-                                    placeholder="Select label"
+                                    value={matcher.category}
+                                    onValueChange={(name) => updateMatcher(index, { ...matcher, category: name })}
+                                    options={categoryNames}
+                                    placeholder="Select category"
                                     disabled={disabled}
                                     className="h-8 text-sm"
                                 />
@@ -93,7 +93,7 @@ export function LabelMatcherEditor({ matchers, onChange, labelNames, disabled }:
                 </SortableContext>
             </DndContext>
             <Button type="button" variant="outline" size="sm" onClick={addMatcher} disabled={disabled}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Add Label Matcher
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add Category Matcher
             </Button>
         </div>
     );

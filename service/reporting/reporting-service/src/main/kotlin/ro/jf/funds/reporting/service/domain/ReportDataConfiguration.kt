@@ -2,8 +2,8 @@ package ro.jf.funds.reporting.service.domain
 
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.Label
 
 @Serializable
 data class ReportDataConfiguration(
@@ -21,13 +21,13 @@ data class ReportGroup(
 
 @Serializable
 data class RecordFilter(
-    val labels: List<Label>,
+    val category: Category?,
 ) {
     companion object {
-        fun byLabels(vararg labels: String): RecordFilter = RecordFilter(labels.map(::Label))
+        fun byCategory(category: String): RecordFilter = RecordFilter(Category(category))
     }
 
-    fun test(reportRecord: ReportRecord): Boolean = labels.any { reportRecord.labels.contains(it) }
+    fun test(reportRecord: ReportRecord): Boolean = category == null || category == reportRecord.category
 }
 
 @Serializable

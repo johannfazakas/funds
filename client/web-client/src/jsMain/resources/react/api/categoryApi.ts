@@ -1,6 +1,6 @@
 import { handleApiError } from './apiUtils';
 
-export interface Label {
+export interface Category {
     id: string;
     name: string;
 }
@@ -19,17 +19,17 @@ function getBaseUrl(): string {
 
 const BASE_PATH = '/funds-api/fund/v1';
 
-export async function listLabels(userId: string): Promise<Label[]> {
-    const url = `${getBaseUrl()}${BASE_PATH}/labels`;
+export async function listCategories(userId: string): Promise<Category[]> {
+    const url = `${getBaseUrl()}${BASE_PATH}/categories`;
     const response = await fetch(url, {
         headers: { 'FUNDS_USER_ID': userId }
     });
-    if (!response.ok) await handleApiError(response, 'Failed to load labels');
+    if (!response.ok) await handleApiError(response, 'Failed to load categories');
     return response.json();
 }
 
-export async function createLabel(userId: string, name: string): Promise<Label> {
-    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/labels`, {
+export async function createCategory(userId: string, name: string): Promise<Category> {
+    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/categories`, {
         method: 'POST',
         headers: {
             'FUNDS_USER_ID': userId,
@@ -37,14 +37,14 @@ export async function createLabel(userId: string, name: string): Promise<Label> 
         },
         body: JSON.stringify({ name })
     });
-    if (!response.ok) await handleApiError(response, 'Failed to create label');
+    if (!response.ok) await handleApiError(response, 'Failed to create category');
     return response.json();
 }
 
-export async function deleteLabel(userId: string, labelId: string): Promise<void> {
-    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/labels/${labelId}`, {
+export async function deleteCategory(userId: string, categoryId: string): Promise<void> {
+    const response = await fetch(`${getBaseUrl()}${BASE_PATH}/categories/${categoryId}`, {
         method: 'DELETE',
         headers: { 'FUNDS_USER_ID': userId }
     });
-    if (!response.ok) await handleApiError(response, 'Failed to delete label');
+    if (!response.ok) await handleApiError(response, 'Failed to delete category');
 }

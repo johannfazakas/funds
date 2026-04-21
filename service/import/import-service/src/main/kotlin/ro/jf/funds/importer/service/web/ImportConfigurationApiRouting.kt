@@ -29,7 +29,7 @@ fun Routing.importConfigurationApiRouting(
             val configuration = importConfigurationService.createImportConfiguration(
                 userId,
                 request.name,
-                toImportMatchers(request.accountMatchers, request.fundMatchers, request.exchangeMatchers, request.labelMatchers),
+                toImportMatchers(request.accountMatchers, request.fundMatchers, request.exchangeMatchers, request.categoryMatchers),
             )
             call.respond(HttpStatusCode.Created, configuration.toTO())
         }
@@ -61,13 +61,13 @@ fun Routing.importConfigurationApiRouting(
             val request = call.receive<UpdateImportConfigurationRequest>()
             log.info { "Update import configuration $importConfigurationId for user $userId." }
             val matchers = if (request.accountMatchers != null || request.fundMatchers != null ||
-                request.exchangeMatchers != null || request.labelMatchers != null
+                request.exchangeMatchers != null || request.categoryMatchers != null
             ) {
                 toImportMatchers(
                     request.accountMatchers ?: emptyList(),
                     request.fundMatchers ?: emptyList(),
                     request.exchangeMatchers ?: emptyList(),
-                    request.labelMatchers ?: emptyList(),
+                    request.categoryMatchers ?: emptyList(),
                 )
             } else {
                 null

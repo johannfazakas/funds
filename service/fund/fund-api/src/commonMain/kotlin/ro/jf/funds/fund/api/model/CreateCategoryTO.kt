@@ -3,6 +3,6 @@ package ro.jf.funds.fund.api.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class CreateLabelTO(
+data class CreateCategoryTO(
     val name: String,
 )

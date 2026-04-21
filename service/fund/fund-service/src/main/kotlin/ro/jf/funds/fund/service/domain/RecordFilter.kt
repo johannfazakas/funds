@@ -7,7 +7,7 @@ data class RecordFilter(
     val accountId: UUID? = null,
     val fundId: UUID? = null,
     val unit: String? = null,
-    val label: String? = null,
+    val category: String? = null,
     val fromDate: LocalDate? = null,
     val toDate: LocalDate? = null,
 )

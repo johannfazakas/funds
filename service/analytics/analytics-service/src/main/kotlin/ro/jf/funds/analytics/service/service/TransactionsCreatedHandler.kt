@@ -34,7 +34,7 @@ class TransactionsCreatedHandler(
                 amount = record.amount,
                 unit = record.unit,
                 transactionType = type,
-                labels = record.labels,
+                category = record.category,
             )
         }
 }

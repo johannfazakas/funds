@@ -3,7 +3,7 @@ package ro.jf.funds.importer.service.domain
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDateTime
 import ro.jf.funds.platform.api.model.FinancialUnit
-import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
@@ -25,6 +25,6 @@ data class ImportParsedRecord(
     val fundName: FundName,
     val unit: FinancialUnit,
     val amount: BigDecimal,
-    val labels: List<Label> = emptyList(),
+    val category: Category? = null,
     val note: String? = null,
 )

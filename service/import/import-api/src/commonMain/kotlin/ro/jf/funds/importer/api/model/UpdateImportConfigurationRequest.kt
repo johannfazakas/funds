@@ -8,5 +8,5 @@ data class UpdateImportConfigurationRequest(
     val accountMatchers: List<AccountMatcherTO>? = null,
     val fundMatchers: List<FundMatcherTO>? = null,
     val exchangeMatchers: List<ExchangeMatcherTO>? = null,
-    val labelMatchers: List<LabelMatcherTO>? = null,
+    val categoryMatchers: List<CategoryMatcherTO>? = null,
 )

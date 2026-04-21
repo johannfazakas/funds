@@ -56,10 +56,10 @@ abstract class ImportParser {
         val accountMatcher = matchers.getAccountMatcher(importAccountName)
         val accountName = accountMatcher.accountName ?: return null
         val fundMatcher = matchers.getFundMatcher(importAccountName, item.labels)
-        val labels = matchers.getLabelMatchers(item.labels).map { it.label }
+        val category = matchers.getCategoryMatcher(item.labels)?.category
         val note = item.note.takeIf { it.isNotBlank() }
         val recordFund = fundMatcher.intermediaryFundName ?: fundMatcher.fundName
-        return ImportParsedRecord(accountName, recordFund, item.unit, item.amount, labels, note)
+        return ImportParsedRecord(accountName, recordFund, item.unit, item.amount, category, note)
     }
 
     private fun extractImplicitTransferRecords(

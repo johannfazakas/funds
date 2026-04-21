@@ -6,18 +6,18 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Category
 
-class LabelSerializer : KSerializer<Label> {
+class CategorySerializer : KSerializer<Category> {
     override val descriptor: SerialDescriptor
-        get() = PrimitiveSerialDescriptor("Label", PrimitiveKind.STRING)
+        get() = PrimitiveSerialDescriptor("Category", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): Label {
+    override fun deserialize(decoder: Decoder): Category {
         val value = decoder.decodeString()
-        return Label(value)
+        return Category(value)
     }
 
-    override fun serialize(encoder: Encoder, value: Label) {
+    override fun serialize(encoder: Encoder, value: Category) {
         encoder.encodeString(value.value)
     }
 }

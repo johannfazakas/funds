@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.api.model.Instrument
-import ro.jf.funds.platform.api.model.Label
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.serialization.BigDecimalSerializer
 import ro.jf.funds.platform.api.serialization.UuidSerializer
 
@@ -21,7 +21,7 @@ sealed class RecordTO {
     abstract val fundId: Uuid
     abstract val amount: BigDecimal
     abstract val unit: FinancialUnit
-    abstract val labels: List<Label>
+    abstract val category: Category?
     abstract val note: String?
 
     @Serializable
@@ -39,7 +39,7 @@ sealed class RecordTO {
         @Serializable(with = BigDecimalSerializer::class)
         override val amount: BigDecimal,
         override val unit: Currency,
-        override val labels: List<Label>,
+        override val category: Category? = null,
         override val note: String? = null,
     ) : RecordTO()
 
@@ -58,7 +58,7 @@ sealed class RecordTO {
         @Serializable(with = BigDecimalSerializer::class)
         override val amount: BigDecimal,
         override val unit: Instrument,
-        override val labels: List<Label>,
+        override val category: Category? = null,
         override val note: String? = null,
     ) : RecordTO()
 }

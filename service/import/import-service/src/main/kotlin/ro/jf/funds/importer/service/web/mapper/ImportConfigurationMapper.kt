@@ -12,7 +12,7 @@ fun ImportConfiguration.toTO(): ImportConfigurationTO {
         accountMatchers = matcherTOs.accountMatchers,
         fundMatchers = matcherTOs.fundMatchers,
         exchangeMatchers = matcherTOs.exchangeMatchers,
-        labelMatchers = matcherTOs.labelMatchers,
+        categoryMatchers = matcherTOs.categoryMatchers,
         createdAt = createdAt.toKotlinLocalDateTime(),
     )
 }

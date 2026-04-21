@@ -26,6 +26,8 @@ But report data generation shouldn't depend on the report view.
 ### Categories instead of labels?
 
 - [ ] group by label/category
+- [ ] remove kotlin exported code for JS maybe
+- [ ] support spaces in category names
 
 ### Better fund (and not only fund) matching
 

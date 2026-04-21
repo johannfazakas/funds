@@ -61,7 +61,7 @@ fun TransactionRecord.CurrencyRecord.toTO() = TransactionRecordTO.CurrencyRecord
     fundId = fundId,
     amount = amount,
     unit = unit,
-    labels = labels,
+    category = category,
     note = note,
 )
 
@@ -71,7 +71,7 @@ fun TransactionRecord.InstrumentRecord.toTO() = TransactionRecordTO.InstrumentRe
     fundId = fundId,
     amount = amount,
     unit = unit,
-    labels = labels,
+    category = category,
     note = note,
 )
 
@@ -84,7 +84,7 @@ fun Record.toTO(): RecordTO = when (this) {
         fundId = fundId,
         amount = amount,
         unit = unit,
-        labels = labels,
+        category = category,
         note = note,
     )
     is Record.InstrumentRecord -> RecordTO.InstrumentRecord(
@@ -95,7 +95,7 @@ fun Record.toTO(): RecordTO = when (this) {
         fundId = fundId,
         amount = amount,
         unit = unit,
-        labels = labels,
+        category = category,
         note = note,
     )
 }

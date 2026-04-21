@@ -304,8 +304,7 @@ class AccountApiTest {
                     accountId = account.id,
                     fundId = fund.id,
                     amount = 100.0.toKBigDecimal(),
-                    unit = Currency.RON,
-                    labels = emptyList()
+                    unit = Currency.RON
                 )
             )
         )
