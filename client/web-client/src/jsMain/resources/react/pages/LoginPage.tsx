@@ -4,20 +4,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Loader2 } from 'lucide-react';
-
-declare const ro: {
-    jf: {
-        funds: {
-            client: {
-                web: {
-                    UserApi: {
-                        loginWithUsername(username: string): Promise<{ id: string; username: string } | null>;
-                    };
-                };
-            };
-        };
-    };
-};
+import { loginWithUsername } from '../api/userApi';
 
 interface LoginPageProps {
     onLogin: (userId: string) => void;
@@ -40,7 +27,7 @@ function LoginPage({ onLogin }: LoginPageProps) {
         setError(null);
 
         try {
-            const user = await ro.jf.funds.client.web.UserApi.loginWithUsername(username);
+            const user = await loginWithUsername(username);
             if (user) {
                 onLogin(user.id);
             } else {

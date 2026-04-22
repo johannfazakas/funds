@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.kotlin.serialization)
     `maven-publish`
 }
 
@@ -15,7 +14,6 @@ repositories {
 
 kotlin {
     js(IR) {
-        generateTypeScriptDefinitions()
         browser {
             commonWebpackConfig {
                 cssSupport {
@@ -27,26 +25,8 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
-            }
-        }
-
-        val commonTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-            }
-        }
-
         val jsMain by getting {
             dependencies {
-                implementation(project(":client:client-sdk"))
-                implementation("io.ktor:ktor-client-core:3.0.3")
-                implementation("io.ktor:ktor-client-js:3.0.3")
-
                 implementation(npm("react", "18.3.1"))
                 implementation(npm("react-dom", "18.3.1"))
                 implementation(npm("react-router-dom", "6.28.0"))
