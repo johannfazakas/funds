@@ -345,4 +345,60 @@ class AnalyticsServiceTest {
         assertThat(fund1Feb.value).isEqualTo(BigDecimal.parseString("400.00"))
         assertThat(fund2Feb.value).isEqualTo(BigDecimal.parseString("250.00"))
     }
+
+    @Test
+    fun `given category grouping - when getting net change report - then returns separate groups per category`(): Unit = runBlocking {
+        whenever(analyticsRecordRepository.getBucketedGroupedUnitAmounts(any(), any(), any(), any()))
+            .thenReturn(BucketedGroupedUnitAmounts(mapOf(
+                LocalDateTime.parse("2024-01-01T00:00:00") to mapOf(
+                    "food" to unitAmounts(Currency.RON to "300.00"),
+                    "transport" to unitAmounts(Currency.RON to "150.00"),
+                ),
+                LocalDateTime.parse("2024-02-01T00:00:00") to mapOf(
+                    "food" to unitAmounts(Currency.RON to "250.00"),
+                ),
+            )))
+
+        val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.RON, groupBy = GroupingCriteria.CATEGORY)
+
+        assertThat(report.buckets).hasSize(3)
+        val jan = report.buckets[0].groups.sortedBy { it.groupKey }
+        assertThat(jan).hasSize(2)
+        assertThat(jan[0].groupKey).isEqualTo("food")
+        assertThat(jan[0].value).isEqualTo(BigDecimal.parseString("300.00"))
+        assertThat(jan[1].groupKey).isEqualTo("transport")
+        assertThat(jan[1].value).isEqualTo(BigDecimal.parseString("150.00"))
+
+        val feb = report.buckets[1].groups
+        assertThat(feb).hasSize(1)
+        assertThat(feb[0].groupKey).isEqualTo("food")
+        assertThat(feb[0].value).isEqualTo(BigDecimal.parseString("250.00"))
+    }
+
+    @Test
+    fun `given category grouping - when getting balance report - then returns cumulative balance per category`(): Unit = runBlocking {
+        whenever(analyticsRecordRepository.getGroupedUnitAmountsBefore(any(), any(), any(), any()))
+            .thenReturn(GroupedUnitAmounts(mapOf(
+                "food" to unitAmounts(Currency.RON to "500.00"),
+                "transport" to unitAmounts(Currency.RON to "200.00"),
+            )))
+        whenever(analyticsRecordRepository.getBucketedGroupedUnitAmounts(any(), any(), any(), any()))
+            .thenReturn(BucketedGroupedUnitAmounts(mapOf(
+                LocalDateTime.parse("2024-01-01T00:00:00") to mapOf(
+                    "food" to unitAmounts(Currency.RON to "100.00"),
+                ),
+            )))
+
+        val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.RON, groupBy = GroupingCriteria.CATEGORY)
+
+        assertThat(report.buckets).hasSize(3)
+        val jan = report.buckets[0].groups.sortedBy { it.groupKey }
+        assertThat(jan).hasSize(2)
+        assertThat(jan.first { it.groupKey == "food" }.value).isEqualTo(BigDecimal.parseString("500.00"))
+        assertThat(jan.first { it.groupKey == "transport" }.value).isEqualTo(BigDecimal.parseString("200.00"))
+
+        val feb = report.buckets[1].groups.sortedBy { it.groupKey }
+        assertThat(feb.first { it.groupKey == "food" }.value).isEqualTo(BigDecimal.parseString("600.00"))
+        assertThat(feb.first { it.groupKey == "transport" }.value).isEqualTo(BigDecimal.parseString("200.00"))
+    }
 }

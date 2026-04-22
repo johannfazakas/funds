@@ -23,10 +23,10 @@ But report data generation shouldn't depend on the report view.
 
 ### Demo account
 
-### Categories instead of labels?
+### Handle import configurations by id
 
-- [ ] group by label/category
-- [ ] remove kotlin exported code for JS maybe
+- [ ] Use ids in query params instead of names (ex categories)
+- [ ] Use ids in import configuration instead of names
 - [ ] support spaces in category names
 
 ### Better fund (and not only fund) matching

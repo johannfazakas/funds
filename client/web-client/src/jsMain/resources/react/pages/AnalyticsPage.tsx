@@ -34,6 +34,7 @@ const groupByOptions: { value: string; label: string }[] = [
     { value: 'CURRENCY', label: 'Currency' },
     { value: 'ACCOUNT', label: 'Account' },
     { value: 'FUND', label: 'Fund' },
+    { value: 'CATEGORY', label: 'Category' },
 ];
 
 function defaultFromDate(): string {
@@ -79,6 +80,7 @@ function toGroupedChartData(
     report.buckets.forEach(b =>
         b.groups.forEach(g => {
             if (g.groupKey !== null) allGroupKeys.add(g.groupKey);
+            else allGroupKeys.add('');
         })
     );
     const groupKeys = Array.from(allGroupKeys).sort();
@@ -90,7 +92,7 @@ function toGroupedChartData(
         };
         for (const key of groupKeys) {
             const name = resolveGroupName(key);
-            const groupBucket = bucket.groups.find(g => g.groupKey === key);
+            const groupBucket = bucket.groups.find(g => (g.groupKey ?? '') === key);
             point[name] = groupBucket ? Math.round(parseFloat(groupBucket.value)) : 0;
         }
         return point;
@@ -156,6 +158,7 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
     }, [userId]);
 
     const resolveGroupName = (key: string): string => {
+        if (key === '') return 'None';
         if (groupBy === 'FUND') {
             const fund = funds.find(f => f.id === key);
             return fund ? fund.name : key;

@@ -7,4 +7,5 @@ enum class GroupingCriteria {
     CURRENCY,
     ACCOUNT,
     FUND,
+    CATEGORY,
 }

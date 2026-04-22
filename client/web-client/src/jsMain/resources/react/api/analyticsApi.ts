@@ -1,7 +1,7 @@
 import { handleApiError } from './apiUtils';
 
 export type TimeGranularity = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
-export type GroupBy = 'CURRENCY' | 'ACCOUNT' | 'FUND';
+export type GroupBy = 'CURRENCY' | 'ACCOUNT' | 'FUND' | 'CATEGORY';
 
 export interface ReportRequest {
     granularity: TimeGranularity;

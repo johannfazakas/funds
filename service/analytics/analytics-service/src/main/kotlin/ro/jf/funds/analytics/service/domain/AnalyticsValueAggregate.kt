@@ -30,12 +30,12 @@ class BucketedUnitAmounts(
 }
 
 class GroupedUnitAmounts(
-    private val byGroup: Map<String, UnitAmounts>,
+    private val byGroup: Map<String?, UnitAmounts>,
 ) {
     val units: Set<FinancialUnit> = byGroup.values.flatMap { it.units }.toSet()
-    val groupKeys: Set<String> = byGroup.keys
+    val groupKeys: Set<String?> = byGroup.keys
 
-    operator fun get(groupKey: String): UnitAmounts = byGroup[groupKey] ?: UnitAmounts.EMPTY
+    operator fun get(groupKey: String?): UnitAmounts = byGroup[groupKey] ?: UnitAmounts.EMPTY
 
     companion object {
         val EMPTY = GroupedUnitAmounts(emptyMap())
@@ -43,11 +43,11 @@ class GroupedUnitAmounts(
 }
 
 class BucketedGroupedUnitAmounts(
-    private val byBucket: Map<LocalDateTime, Map<String, UnitAmounts>>,
+    private val byBucket: Map<LocalDateTime, Map<String?, UnitAmounts>>,
 ) {
     val units: Set<FinancialUnit> = byBucket.values.flatMap { it.values.flatMap { u -> u.units } }.toSet()
-    val groupKeys: Set<String> = byBucket.values.flatMap { it.keys }.toSet()
+    val groupKeys: Set<String?> = byBucket.values.flatMap { it.keys }.toSet()
 
-    fun getBucket(bucketDateTime: LocalDateTime): Map<String, UnitAmounts> =
+    fun getBucket(bucketDateTime: LocalDateTime): Map<String?, UnitAmounts> =
         byBucket[bucketDateTime] ?: emptyMap()
 }
