@@ -1,80 +1,34 @@
-plugins {
-    alias(libs.plugins.kotlin.multiplatform)
-    `maven-publish`
+tasks.register<Exec>("npmInstall") {
+    group = "build"
+    description = "Install npm dependencies"
+    workingDir(projectDir)
+    commandLine("npm", "install")
+    inputs.file("package.json")
+    outputs.dir("node_modules")
 }
 
-group = rootProject.group
-version = rootProject.version
-
-repositories {
-    mavenCentral()
-    mavenLocal()
-    google()
+tasks.register<Exec>("jsBrowserDevelopmentRun") {
+    group = "application"
+    description = "Start development webpack dev server"
+    dependsOn("npmInstall")
+    workingDir(projectDir)
+    commandLine("npm", "run", "dev")
 }
 
-kotlin {
-    js(IR) {
-        browser {
-            commonWebpackConfig {
-                cssSupport {
-                    enabled.set(true)
-                }
-            }
-        }
-        binaries.executable()
-    }
-
-    sourceSets {
-        val jsMain by getting {
-            dependencies {
-                implementation(npm("react", "18.3.1"))
-                implementation(npm("react-dom", "18.3.1"))
-                implementation(npm("react-router-dom", "6.28.0"))
-                implementation(npm("recharts", "2.12.7"))
-
-                implementation(devNpm("ts-loader", "9.5.1"))
-                implementation(devNpm("@types/react", "18.3.12"))
-                implementation(devNpm("@types/react-dom", "18.3.1"))
-                implementation(devNpm("html-webpack-plugin", "5.6.0"))
-
-                implementation(devNpm("tailwindcss", "3.4.1"))
-                implementation(devNpm("postcss", "8.4.35"))
-                implementation(devNpm("postcss-loader", "8.1.0"))
-                implementation(devNpm("autoprefixer", "10.4.17"))
-
-                implementation(npm("class-variance-authority", "0.7.0"))
-                implementation(npm("clsx", "2.1.0"))
-                implementation(npm("tailwind-merge", "2.2.1"))
-                implementation(npm("lucide-react", "0.344.0"))
-                implementation(npm("@radix-ui/react-dialog", "1.0.5"))
-                implementation(npm("@radix-ui/react-select", "2.0.0"))
-                implementation(npm("@radix-ui/react-popover", "1.0.7"))
-                implementation(npm("cmdk", "0.2.1"))
-                implementation(npm("@radix-ui/react-label", "2.0.2"))
-                implementation(npm("@radix-ui/react-slot", "1.0.2"))
-                implementation(npm("@radix-ui/react-tooltip", "1.0.7"))
-                implementation(npm("@dnd-kit/core", "6.1.0"))
-                implementation(npm("@dnd-kit/sortable", "8.0.0"))
-                implementation(npm("@dnd-kit/utilities", "3.2.2"))
-                implementation(npm("react-day-picker", "8.10.0"))
-                implementation(npm("date-fns", "3.6.0"))
-                implementation(devNpm("tailwindcss-animate", "1.0.7"))
-            }
-        }
-
-        val jsTest by getting
-    }
-}
-
-tasks.named<Sync>("jsBrowserDistribution") {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+tasks.register<Exec>("build") {
+    group = "build"
+    description = "Build webpack production bundle"
+    dependsOn("npmInstall")
+    workingDir(projectDir)
+    commandLine("npm", "run", "build")
+    inputs.dir("src")
+    outputs.dir("dist")
 }
 
 tasks.register<Exec>("buildDockerImage") {
     group = "docker"
     description = "Build the Docker image for the web application"
-    dependsOn("jsBrowserProductionWebpack")
-
+    dependsOn("build")
     workingDir(projectDir)
     commandLine("docker", "build", "-t", "funds/web-client:latest", ".")
 }

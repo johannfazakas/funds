@@ -138,6 +138,22 @@ services:
       - postgres
       - kafka
 
+  web-client:
+    image: funds/web-client:latest
+    container_name: ff_web
+    ports:
+      - '3000:80'
+    environment:
+      - USER_SERVICE_URL=http://localhost:5247
+      - FUND_SERVICE_URL=http://localhost:5253
+      - IMPORT_SERVICE_URL=http://localhost:5207
+      - ANALYTICS_SERVICE_URL=http://localhost:5219
+    depends_on:
+      - user-service
+      - fund-service
+      - import-service
+      - analytics-service
+
   otel-collector:
     profiles: [observability]
     image: otel/opentelemetry-collector-contrib:0.128.0

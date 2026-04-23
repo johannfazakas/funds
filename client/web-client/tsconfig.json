@@ -13,14 +13,8 @@
     "declaration": false,
     "noEmit": false,
     "outDir": "./build/ts-out",
-    "baseUrl": ".",
-    "typeRoots": ["../../build/js/node_modules/@types", "../../build/js/node_modules"],
-    "paths": {
-      "react": ["../../build/js/node_modules/react"],
-      "react-dom": ["../../build/js/node_modules/react-dom"],
-      "react-router-dom": ["../../build/js/node_modules/react-router-dom"]
-    }
+    "baseUrl": "."
   },
   "include": ["src/jsMain/resources/react/**/*"],
-  "exclude": ["node_modules", "build"]
+  "exclude": ["node_modules", "build", "dist"]
 }

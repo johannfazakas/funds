@@ -1,6 +1,6 @@
 const path = require('path');
 
-const nodeModulesPath = path.resolve(__dirname, '../../build/js/node_modules');
+const nodeModulesPath = path.resolve(__dirname, 'node_modules');
 
 module.exports = {
   darkMode: ["class"],
