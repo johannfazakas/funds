@@ -7,7 +7,7 @@ import {
     Legend,
     ResponsiveContainer,
     ComposedChart,
-    Line,
+    Area,
 } from 'recharts';
 
 export interface GroupedValueChartDataPoint {
@@ -19,6 +19,7 @@ interface GroupedValueChartProps {
     title: string;
     data: GroupedValueChartDataPoint[];
     groups: string[];
+    currency?: string;
 }
 
 const COLORS = [
@@ -27,8 +28,17 @@ const COLORS = [
     '#0d9488', '#ca8a04',
 ];
 
-function GroupedValueChart({ title, data, groups }: GroupedValueChartProps) {
+function formatCompact(value: number): string {
+    return Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+}
+
+function formatFull(value: number): string {
+    return Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value);
+}
+
+function GroupedValueChart({ title, data, groups, currency }: GroupedValueChartProps) {
     const [hiddenGroups, setHiddenGroups] = useState<Set<string>>(new Set());
+    const prefix = currency ? `${currency} ` : '';
 
     const handleLegendClick = (dataKey: string) => {
         setHiddenGroups(prev => {
@@ -48,15 +58,17 @@ function GroupedValueChart({ title, data, groups }: GroupedValueChartProps) {
             <div style={{ height: '400px', width: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <CartesianGrid strokeDasharray="none" stroke="hsl(var(--border))" strokeWidth={0.5} />
                         <XAxis
                             dataKey="label"
                             className="text-muted-foreground"
-                            tick={{ fill: 'currentColor' }}
+                            tick={{ fill: 'currentColor', fontSize: 11 }}
                         />
                         <YAxis
                             className="text-muted-foreground"
-                            tick={{ fill: 'currentColor' }}
+                            tick={{ fill: 'currentColor', fontSize: 11 }}
+                            domain={[0, 'auto']}
+                            tickFormatter={(v) => `${prefix}${formatCompact(v)}`}
                         />
                         <Tooltip
                             contentStyle={{
@@ -65,6 +77,7 @@ function GroupedValueChart({ title, data, groups }: GroupedValueChartProps) {
                                 borderRadius: 'var(--radius)',
                                 color: 'hsl(var(--card-foreground))'
                             }}
+                            formatter={(value: number, name: string) => [`${prefix}${formatFull(value)}`, name]}
                         />
                         <Legend
                             onClick={(e) => handleLegendClick(e.dataKey as string)}
@@ -82,18 +95,22 @@ function GroupedValueChart({ title, data, groups }: GroupedValueChartProps) {
                                 </span>
                             )}
                         />
-                        {groups.map((group, index) => (
-                            <Line
-                                key={group}
-                                type="monotone"
-                                dataKey={group}
-                                name={group}
-                                stroke={COLORS[index % COLORS.length]}
-                                strokeWidth={2}
-                                dot={false}
-                                hide={hiddenGroups.has(group)}
-                            />
-                        ))}
+                        {groups.map((group, index) => {
+                            const color = COLORS[index % COLORS.length];
+                            return (
+                                <Area
+                                    key={group}
+                                    type="linear"
+                                    dataKey={group}
+                                    name={group}
+                                    stroke={color}
+                                    fill={color + '30'}
+                                    strokeWidth={1}
+                                    dot={false}
+                                    hide={hiddenGroups.has(group)}
+                                />
+                            );
+                        })}
                     </ComposedChart>
                 </ResponsiveContainer>
             </div>

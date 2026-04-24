@@ -5,7 +5,7 @@ import { listAccounts, Account } from '../api/accountApi';
 import ValueChart, { ValueChartDataPoint } from '../components/ValueChart';
 import GroupedValueChart, { GroupedValueChartDataPoint } from '../components/GroupedValueChart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { MultiSelect, MultiSelectOption } from '../components/ui/multi-select';
+import { MultiSelect, MultiSelectOption, MultiSelectGroup } from '../components/ui/multi-select';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { DatePicker } from '../components/ui/date-picker';
@@ -120,7 +120,7 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
 
     const [funds, setFunds] = useState<Fund[]>([]);
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const [unitOptions, setUnitOptions] = useState<MultiSelectOption[]>([]);
+    const [unitGroups, setUnitGroups] = useState<MultiSelectGroup[]>([]);
 
     useEffect(() => {
         async function loadFilterOptions() {
@@ -132,21 +132,29 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                 setFunds(fundsResult.items);
                 setAccounts(accountsResult.items);
                 const seen = new Set<string>();
-                const units: MultiSelectOption[] = [];
+                const currencyUnits: MultiSelectOption[] = [];
+                const instrumentUnits: MultiSelectOption[] = [];
                 const currencies: string[] = [];
                 for (const account of accountsResult.items) {
                     const key = `${account.unit.type}:${account.unit.value}`;
                     if (!seen.has(key)) {
                         seen.add(key);
-                        units.push({ value: key, label: account.unit.value });
+                        const option = { value: key, label: account.unit.value };
                         if (account.unit.type === 'currency') {
+                            currencyUnits.push(option);
                             currencies.push(account.unit.value);
+                        } else {
+                            instrumentUnits.push(option);
                         }
                     }
                 }
-                units.sort((a, b) => a.label.localeCompare(b.label));
+                currencyUnits.sort((a, b) => a.label.localeCompare(b.label));
+                instrumentUnits.sort((a, b) => a.label.localeCompare(b.label));
                 currencies.sort();
-                setUnitOptions(units);
+                const groups: MultiSelectGroup[] = [];
+                if (currencyUnits.length > 0) groups.push({ label: 'Currencies', options: currencyUnits });
+                if (instrumentUnits.length > 0) groups.push({ label: 'Instruments', options: instrumentUnits });
+                setUnitGroups(groups);
                 if (currencies.length > 0 && !targetCurrency) {
                     setTargetCurrency(currencies[0]);
                 }
@@ -216,7 +224,8 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
     const groupedData = report && isGrouped ? toGroupedChartData(report, resolveGroupName) : null;
 
     const fundMultiSelectOptions: MultiSelectOption[] = funds.map(f => ({ value: f.id, label: f.name }));
-    const currencyOptions = unitOptions
+    const currencyOptions = unitGroups
+        .flatMap(g => g.options)
         .filter(u => u.value.startsWith('currency:'))
         .map(u => ({ value: u.value.split(':')[1], label: u.value.split(':')[1] }));
 
@@ -293,12 +302,12 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                                 />
                             </div>
                             <div className="flex flex-col gap-1">
-                                <label className="text-sm text-muted-foreground">Currencies</label>
+                                <label className="text-sm text-muted-foreground">Financial units</label>
                                 <MultiSelect
                                     values={selectedUnits}
                                     onValuesChange={setSelectedUnits}
-                                    options={unitOptions}
-                                    placeholder="All currencies"
+                                    groups={unitGroups}
+                                    placeholder="All units"
                                     className="w-[180px]"
                                 />
                             </div>
@@ -342,6 +351,7 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                             data={singleSeriesData}
                             seriesName={activeReportType.seriesName}
                             seriesColor={activeReportType.color}
+                            currency={targetCurrency}
                         />
                     </CardContent>
                 </Card>
@@ -354,6 +364,7 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                             title={activeReportType.seriesName}
                             data={groupedData.data}
                             groups={groupedData.groups}
+                            currency={targetCurrency}
                         />
                     </CardContent>
                 </Card>
