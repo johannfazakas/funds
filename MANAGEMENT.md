@@ -32,7 +32,7 @@ But report data generation shouldn't depend on the report view.
 ### Better fund (and not only fund) matching
 
 Maybe it could be done by account first. 
-Maybe we could use domain accounts and labels.
+Maybe we could use domain accounts and categories.
 Maybe matchers could work based on id.
 
 ## Infrastructure

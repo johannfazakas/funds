@@ -65,6 +65,10 @@ class ImportFileService(
 
     suspend fun deleteImportFile(userId: Uuid, importFileId: Uuid): Boolean {
         val importFile = importFileRepository.findById(userId, importFileId) ?: return false
+        if (importFile.status == ImportFileStatus.IMPORTED) {
+            val source = "import-file-$importFileId"
+            transactionSdk.deleteTransactionsBySource(userId, source)
+        }
         deleteS3Object(importFile.s3Key)
         return importFileRepository.delete(userId, importFileId)
     }

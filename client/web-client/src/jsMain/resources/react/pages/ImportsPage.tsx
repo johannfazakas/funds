@@ -480,7 +480,9 @@ function ImportsPage({ userId }: ImportsPageProps) {
                     <DialogHeader>
                         <DialogTitle>Delete Import File</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete "<strong>{fileToDelete?.fileName}</strong>"?
+                            {fileToDelete?.status === 'IMPORTED'
+                                ? <>Are you sure you want to delete "<strong>{fileToDelete?.fileName}</strong>"? This will also revert all transactions imported from this file.</>
+                                : <>Are you sure you want to delete "<strong>{fileToDelete?.fileName}</strong>"?</>}
                         </DialogDescription>
                     </DialogHeader>
                     {deleteError && (
