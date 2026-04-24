@@ -35,6 +35,12 @@ Maybe it could be done by account first.
 Maybe we could use domain accounts and categories.
 Maybe matchers could work based on id.
 
+### Partial transactions
+
+A full transaction might be imported from 2 different import files. 
+I.E. transfers.
+If we would have this, it could make sense to remove the "skipped" accounts from import.
+
 ## Infrastructure
 
 ### Deployment option in kubernetes
