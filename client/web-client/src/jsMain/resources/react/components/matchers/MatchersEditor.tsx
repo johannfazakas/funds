@@ -1,41 +1,25 @@
 import { useState, useEffect } from 'react';
 import { AccountMatcher, FundMatcher, ExchangeMatcher, CategoryMatcher } from '../../api/importConfigurationApi';
-import { listAccounts } from '../../api/accountApi';
-import { listFunds } from '../../api/fundApi';
-import { listCategories } from '../../api/categoryApi';
+import { Account, listAccounts } from '../../api/accountApi';
+import { Fund, listFunds } from '../../api/fundApi';
+import { Category, listCategories } from '../../api/categoryApi';
 import { Badge } from '../ui/badge';
 import { AccountMatcherEditor } from './AccountMatcherEditor';
 import { FundMatcherEditor } from './FundMatcherEditor';
 import { ExchangeMatcherEditor } from './ExchangeMatcherEditor';
-import { CategoryMatcherEditor, CategoryMatcherRow } from './CategoryMatcherEditor';
+import { CategoryMatcherEditor } from './CategoryMatcherEditor';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-
-export function categoryMatchersToRows(matchers: CategoryMatcher[]): CategoryMatcherRow[] {
-    return matchers.flatMap(m =>
-        m.importLabels.map(importLabel => ({
-            importLabel,
-            category: m.category,
-        }))
-    );
-}
-
-export function rowsToCategoryMatchers(rows: CategoryMatcherRow[]): CategoryMatcher[] {
-    return rows.map(r => ({
-        importLabels: [r.importLabel],
-        category: r.category,
-    }));
-}
 
 interface MatchersEditorProps {
     userId: string;
     accountMatchers: AccountMatcher[];
     fundMatchers: FundMatcher[];
     exchangeMatchers: ExchangeMatcher[];
-    categoryMatcherRows: CategoryMatcherRow[];
+    categoryMatchers: CategoryMatcher[];
     onAccountMatchersChange: (matchers: AccountMatcher[]) => void;
     onFundMatchersChange: (matchers: FundMatcher[]) => void;
     onExchangeMatchersChange: (matchers: ExchangeMatcher[]) => void;
-    onCategoryMatcherRowsChange: (rows: CategoryMatcherRow[]) => void;
+    onCategoryMatchersChange: (matchers: CategoryMatcher[]) => void;
     disabled?: boolean;
 }
 
@@ -70,39 +54,39 @@ export function MatchersEditor({
     accountMatchers,
     fundMatchers,
     exchangeMatchers,
-    categoryMatcherRows,
+    categoryMatchers,
     onAccountMatchersChange,
     onFundMatchersChange,
     onExchangeMatchersChange,
-    onCategoryMatcherRowsChange,
+    onCategoryMatchersChange,
     disabled,
 }: MatchersEditorProps) {
-    const [accountNames, setAccountNames] = useState<string[]>([]);
-    const [fundNames, setFundNames] = useState<string[]>([]);
-    const [categoryNames, setCategoryNames] = useState<string[]>([]);
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [funds, setFunds] = useState<Fund[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
 
     useEffect(() => {
         listAccounts(userId, { pagination: { offset: 0, limit: 1000 }, sort: { field: 'name', order: 'asc' } })
-            .then(result => setAccountNames(result.items.map(a => a.name)))
+            .then(result => setAccounts(result.items))
             .catch(() => {});
         listFunds(userId, { pagination: { offset: 0, limit: 1000 }, sort: { field: 'name', order: 'asc' } })
-            .then(result => setFundNames(result.items.map(f => f.name)))
+            .then(result => setFunds(result.items))
             .catch(() => {});
         listCategories(userId)
-            .then(categories => setCategoryNames(categories.map(c => c.name).sort()))
+            .then(cats => setCategories(cats.sort((a, b) => a.name.localeCompare(b.name))))
             .catch(() => {});
     }, [userId]);
 
     return (
         <div className="space-y-2">
             <CollapsibleSection title="Account Matchers" count={accountMatchers.length}>
-                <AccountMatcherEditor matchers={accountMatchers} onChange={onAccountMatchersChange} accountNames={accountNames} disabled={disabled} />
+                <AccountMatcherEditor matchers={accountMatchers} onChange={onAccountMatchersChange} accounts={accounts} disabled={disabled} />
+            </CollapsibleSection>
+            <CollapsibleSection title="Category Matchers" count={categoryMatchers.length}>
+                <CategoryMatcherEditor matchers={categoryMatchers} onChange={onCategoryMatchersChange} categories={categories} disabled={disabled} />
             </CollapsibleSection>
             <CollapsibleSection title="Fund Matchers" count={fundMatchers.length}>
-                <FundMatcherEditor matchers={fundMatchers} onChange={onFundMatchersChange} fundNames={fundNames} disabled={disabled} />
-            </CollapsibleSection>
-            <CollapsibleSection title="Category Matchers" count={categoryMatcherRows.length}>
-                <CategoryMatcherEditor matchers={categoryMatcherRows} onChange={onCategoryMatcherRowsChange} categoryNames={categoryNames} disabled={disabled} />
+                <FundMatcherEditor matchers={fundMatchers} onChange={onFundMatchersChange} accounts={accounts} funds={funds} categories={categories} disabled={disabled} />
             </CollapsibleSection>
             <CollapsibleSection title="Exchange Matchers" count={exchangeMatchers.length}>
                 <ExchangeMatcherEditor matchers={exchangeMatchers} onChange={onExchangeMatchersChange} disabled={disabled} />

@@ -1,21 +1,26 @@
 package ro.jf.funds.importer.service.service.parser
 
+import com.benasher44.uuid.uuid4
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import ro.jf.funds.fund.api.model.AccountName
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.Instrument
-import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.service.domain.*
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 
 class FundsFormatImportParserTest {
     private val fundsFormatImportParser = FundsFormatImportParser(CsvParser())
 
+    private val btEurAccountId = uuid4()
+    private val xtbEurAccountId = uuid4()
+    private val xtbEunlAccountId = uuid4()
+    private val expensesFundId = uuid4()
+    private val investmentsFundId = uuid4()
+    private val investmentCategoryId = uuid4()
+
     @Test
-    fun `given investment transactions - when parsing - then should return parsed transactions`() {
+    fun `given investment transactions - when parsing - then returns parsed transactions`() {
         val fileContent = generateFileContent(
             FundsFormatCsvRowContent(
                 "2022-04-04", "BT EUR", "-2970.0", "RON", "currency", "transfer XTB 600 EUR", "investment"
@@ -32,17 +37,16 @@ class FundsFormatImportParserTest {
         )
         val matchers = ImportMatchers(
             accountMatchers = listOf(
-                AccountMatcher("BT EUR", AccountName("BT EUR")),
-                AccountMatcher("XTB EUR", AccountName("XTB EUR")),
-                AccountMatcher("XTB EUNL", AccountName("XTB EUNL")),
+                AccountMatcher(listOf("BT EUR"), btEurAccountId),
+                AccountMatcher(listOf("XTB EUR"), xtbEurAccountId),
+                AccountMatcher(listOf("XTB EUNL"), xtbEunlAccountId),
             ),
             fundMatchers = listOf(
-                FundMatcher(FundName("Expenses"), importAccountName = "BT EUR"),
-                FundMatcher(FundName("Investments"), importAccountName = "XTB EUR"),
-                FundMatcher(FundName("Investments"), importAccountName = "XTB EUNL"),
+                FundMatcher(listOf(btEurAccountId), defaultFundId = expensesFundId),
+                FundMatcher(listOf(xtbEurAccountId, xtbEunlAccountId), defaultFundId = investmentsFundId),
             ),
             categoryMatchers = listOf(
-                CategoryMatcher(listOf("investment"), Category("investment")),
+                CategoryMatcher(listOf("investment"), investmentCategoryId),
             ),
         )
 
@@ -55,31 +59,31 @@ class FundsFormatImportParserTest {
         assertThat(transfer.transactionExternalId).isNotNull
         assertThat(transfer.dateTime).isEqualTo(LocalDateTime.parse("2022-04-04T00:00:00"))
         assertThat(transfer.records).hasSize(2)
-        assertThat(transfer.records[0].accountName).isEqualTo(AccountName("BT EUR"))
-        assertThat(transfer.records[0].fundName).isEqualTo(FundName("Expenses"))
+        assertThat(transfer.records[0].accountId).isEqualTo(btEurAccountId)
+        assertThat(transfer.records[0].fundId).isEqualTo(expensesFundId)
         assertThat(transfer.records[0].unit).isEqualTo(Currency.RON)
         assertThat(transfer.records[0].amount).isEqualByComparingTo(BigDecimal.parseString("-2970.0"))
-        assertThat(transfer.records[0].category).isEqualTo(Category("investment"))
-        assertThat(transfer.records[1].accountName).isEqualTo(AccountName("XTB EUR"))
-        assertThat(transfer.records[1].fundName).isEqualTo(FundName("Investments"))
+        assertThat(transfer.records[0].categoryId).isEqualTo(investmentCategoryId)
+        assertThat(transfer.records[1].accountId).isEqualTo(xtbEurAccountId)
+        assertThat(transfer.records[1].fundId).isEqualTo(investmentsFundId)
         assertThat(transfer.records[1].unit).isEqualTo(Currency.EUR)
         assertThat(transfer.records[1].amount).isEqualByComparingTo(BigDecimal.parseString("600.0"))
-        assertThat(transfer.records[1].category).isEqualTo(Category("investment"))
+        assertThat(transfer.records[1].categoryId).isEqualTo(investmentCategoryId)
 
         val investment = importTransactions[1]
         assertThat(investment.transactionExternalId).isNotNull
         assertThat(investment.dateTime).isEqualTo(LocalDateTime.parse("2022-04-05T00:00:00"))
         assertThat(investment.records).hasSize(2)
-        assertThat(investment.records[0].accountName).isEqualTo(AccountName("XTB EUR"))
-        assertThat(investment.records[0].fundName).isEqualTo(FundName("Investments"))
+        assertThat(investment.records[0].accountId).isEqualTo(xtbEurAccountId)
+        assertThat(investment.records[0].fundId).isEqualTo(investmentsFundId)
         assertThat(investment.records[0].unit).isEqualTo(Currency.EUR)
         assertThat(investment.records[0].amount).isEqualByComparingTo(BigDecimal.parseString("-544.25"))
-        assertThat(investment.records[0].category).isNull()
-        assertThat(investment.records[1].accountName).isEqualTo(AccountName("XTB EUNL"))
-        assertThat(investment.records[1].fundName).isEqualTo(FundName("Investments"))
+        assertThat(investment.records[0].categoryId).isNull()
+        assertThat(investment.records[1].accountId).isEqualTo(xtbEunlAccountId)
+        assertThat(investment.records[1].fundId).isEqualTo(investmentsFundId)
         assertThat(investment.records[1].unit).isEqualTo(Instrument("EUNL"))
         assertThat(investment.records[1].amount).isEqualByComparingTo(BigDecimal.parseString("7.0"))
-        assertThat(investment.records[1].category).isNull()
+        assertThat(investment.records[1].categoryId).isNull()
     }
 
     data class FundsFormatCsvRowContent(

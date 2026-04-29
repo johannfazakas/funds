@@ -1,9 +1,7 @@
 package ro.jf.funds.importer.service.service
 
 import ro.jf.funds.importer.api.model.ImportConfigurationSortField
-import ro.jf.funds.importer.service.domain.AccountMatcher
 import ro.jf.funds.importer.service.domain.CreateImportConfigurationCommand
-import ro.jf.funds.importer.service.domain.FundMatcher
 import ro.jf.funds.importer.service.domain.ImportConfiguration
 import ro.jf.funds.importer.service.domain.ImportMatchers
 import ro.jf.funds.importer.service.domain.ImportFileStatus
@@ -29,8 +27,6 @@ class ImportConfigurationService(
         if (importConfigurationRepository.existsByName(userId, name)) {
             throw ImportConfigurationValidationException("Import configuration with name '$name' already exists.")
         }
-        validateAccountMatchers(matchers.accountMatchers)
-        validateFundMatchers(matchers.fundMatchers)
         return importConfigurationRepository.create(CreateImportConfigurationCommand(userId, name, matchers))
     }
 
@@ -60,8 +56,6 @@ class ImportConfigurationService(
             if (importFileRepository.existsByConfigurationIdAndStatus(userId, importConfigurationId, ImportFileStatus.IMPORTED)) {
                 throw ImportConfigurationInUseException(importConfigurationId, "Cannot update matchers: configuration is used by an imported file.")
             }
-            validateAccountMatchers(it.accountMatchers)
-            validateFundMatchers(it.fundMatchers)
         }
         return importConfigurationRepository.update(userId, importConfigurationId, command)
     }
@@ -71,24 +65,5 @@ class ImportConfigurationService(
             throw ImportConfigurationInUseException(importConfigurationId, "Cannot delete: configuration is used by an import file.")
         }
         return importConfigurationRepository.delete(userId, importConfigurationId)
-    }
-
-    private fun validateFundMatchers(matchers: List<FundMatcher>) {
-        matchers.forEach { matcher ->
-            if (matcher.importAccountName == null && matcher.importLabel == null) {
-                throw ImportConfigurationValidationException("Fund matcher for '${matcher.fundName}' must have at least importAccountName or importLabel.")
-            }
-        }
-    }
-
-    private fun validateAccountMatchers(matchers: List<AccountMatcher>) {
-        matchers.forEach { matcher ->
-            if (matcher.skipped && matcher.accountName != null) {
-                throw ImportConfigurationValidationException("Skipped account matcher '${matcher.importAccountName}' must not have an accountName.")
-            }
-            if (!matcher.skipped && matcher.accountName == null) {
-                throw ImportConfigurationValidationException("Non-skipped account matcher '${matcher.importAccountName}' must have an accountName.")
-            }
-        }
     }
 }

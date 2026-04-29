@@ -12,7 +12,6 @@ import ro.jf.funds.platform.api.model.*
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.AccountSdk
-import ro.jf.funds.fund.sdk.FundSdk
 import ro.jf.funds.fund.sdk.CategorySdk
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionResponse
@@ -29,11 +28,7 @@ import com.ionspin.kotlin.bignum.decimal.BigDecimal
 
 class ImportFundConversionServiceTest {
     private val accountSdk = mock<AccountSdk>()
-    private val accountService = AccountService(accountSdk)
-    private val fundSdk = mock<FundSdk>()
-    private val fundService = FundService(fundSdk)
     private val categorySdk = mock<CategorySdk>()
-    private val categoryService = CategoryService(categorySdk)
     private val conversionSdk = mock<ConversionSdk>()
     private val importTransactionConverterRegistry = ImportTransactionConverterRegistry(
         listOf(
@@ -45,9 +40,8 @@ class ImportFundConversionServiceTest {
     )
     private val importFundConversionService =
         ImportFundConversionService(
-            accountService,
-            fundService,
-            categoryService,
+            accountSdk,
+            categorySdk,
             importTransactionConverterRegistry,
             conversionSdk,
         )
@@ -56,6 +50,8 @@ class ImportFundConversionServiceTest {
 
     private val allCategories = listOf("one", "two", "Basic", "work_income", "basic", "exchange", "finance", "stock_purchase", "stock_sale")
         .map { CategoryTO(uuid4(), it) }
+
+    private fun categoryId(name: String): Uuid = allCategories.first { it.name == name }.id
 
     @BeforeEach
     fun setUp(): Unit = runBlocking {
@@ -67,25 +63,24 @@ class ImportFundConversionServiceTest {
     fun `should map single record import transactions`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:17:00")
         val transactionExternalId = "transaction-1"
+        val bankAccount = account("Revolut")
+        val expensedFund = fund("Expenses")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = transactionExternalId,
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("Revolut"),
-                        FundName("Expenses"),
+                        bankAccount.id,
+                        expensedFund.id,
                         Currency.RON,
                         BigDecimal.parseString("-100.00"),
-                        Category("one")
+                        categoryId("one")
                     )
                 )
             )
         )
-        val bankAccount = account("Revolut")
-        val expensedFund = fund("Expenses")
         whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(bankAccount), 1))
-        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expensedFund), 1))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -111,25 +106,24 @@ class ImportFundConversionServiceTest {
     fun `should map single record import transactions with currency conversion`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:17:00")
         val transactionDate = transactionDateTime.date
+        val bankAccount = account("Revolut", Currency.EUR)
+        val expensedFund = fund("Expenses")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = "transaction-1",
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("Revolut"),
-                        FundName("Expenses"),
+                        bankAccount.id,
+                        expensedFund.id,
                         Currency.RON,
                         BigDecimal.parseString("-100.00"),
-                        Category("one")
+                        categoryId("one")
                     )
                 )
             )
         )
-        val bankAccount = account("Revolut", Currency.EUR)
-        val expensedFund = fund("Expenses")
         whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(bankAccount), 1))
-        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expensedFund), 1))
         val conversionRequest = ConversionRequest(Currency.RON, Currency.EUR, transactionDate)
         val conversionResponse = ConversionResponse(Currency.RON, Currency.EUR, transactionDate, BigDecimal.parseString("0.2"))
         whenever(conversionSdk.convert(ConversionsRequest(listOf(conversionRequest))))
@@ -154,34 +148,33 @@ class ImportFundConversionServiceTest {
     fun `should map transfer import transactions`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:18:00")
         val transactionExternalId = "transaction-2"
+        val cashAccount = account("Cash RON")
+        val companyAccount = account("Company")
+        val expensedFund = fund("Expenses")
+        val incomeFund = fund("Income")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = transactionExternalId,
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("Company"),
-                        FundName("Income"),
+                        companyAccount.id,
+                        incomeFund.id,
                         Currency.RON,
                         BigDecimal.parseString("-50.00"),
-                        Category("Basic")
+                        categoryId("Basic")
                     ),
                     ImportParsedRecord(
-                        AccountName("Cash RON"),
-                        FundName("Expenses"),
+                        cashAccount.id,
+                        expensedFund.id,
                         Currency.RON,
                         BigDecimal.parseString("50.00"),
-                        Category("Basic")
+                        categoryId("Basic")
                     )
                 )
             )
         )
-        val cashAccount = account("Cash RON")
-        val companyAccount = account("Company")
-        val expensedFund = fund("Expenses")
-        val incomeFund = fund("Income")
         whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(cashAccount, companyAccount), 2))
-        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expensedFund, incomeFund), 2))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -214,34 +207,33 @@ class ImportFundConversionServiceTest {
     fun `should map transfer import transactions with currency conversion`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:18:00")
         val transactionDate = transactionDateTime.date
+        val cashAccount = account("Cash RON", Currency.EUR)
+        val companyAccount = account("Company", Currency.EUR)
+        val expensedFund = fund("Expenses")
+        val incomeFund = fund("Income")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = "transaction-2",
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("Company"),
-                        FundName("Income"),
+                        companyAccount.id,
+                        incomeFund.id,
                         Currency.RON,
                         BigDecimal.parseString("-50.00"),
-                        Category("work_income")
+                        categoryId("work_income")
                     ),
                     ImportParsedRecord(
-                        AccountName("Cash RON"),
-                        FundName("Expenses"),
+                        cashAccount.id,
+                        expensedFund.id,
                         Currency.RON,
                         BigDecimal.parseString("50.00"),
-                        Category("basic")
+                        categoryId("basic")
                     )
                 )
             )
         )
-        val cashAccount = account("Cash RON", Currency.EUR)
-        val companyAccount = account("Company", Currency.EUR)
-        val expensedFund = fund("Expenses")
-        val incomeFund = fund("Income")
         whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(cashAccount, companyAccount), 2))
-        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expensedFund, incomeFund), 2))
 
         val conversionRequest = ConversionRequest(Currency.RON, Currency.EUR, transactionDate)
         val conversionResponse = ConversionResponse(Currency.RON, Currency.EUR, transactionDate, BigDecimal.parseString("0.20"))
@@ -272,25 +264,24 @@ class ImportFundConversionServiceTest {
     @Test
     fun `should map implicit transfer transaction`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:18:00")
+        val account = account("BT RON", Currency.RON)
+        val expenseFund = fund("Expenses")
+        val incomeFund = fund("Income")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = "transaction-id",
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("BT RON"), FundName("Income"), Currency.RON, BigDecimal.parseString("-50.00"), null
+                        account.id, incomeFund.id, Currency.RON, BigDecimal.parseString("-50.00"), null
                     ),
                     ImportParsedRecord(
-                        AccountName("BT RON"), FundName("Expenses"), Currency.RON, BigDecimal.parseString("50.00"), null
+                        account.id, expenseFund.id, Currency.RON, BigDecimal.parseString("50.00"), null
                     ),
                 )
             )
         )
-        val account = account("BT RON", Currency.RON)
-        val expenseFund = fund("Expenses")
-        val incomeFund = fund("Income")
         whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(account), 1))
-        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expenseFund, incomeFund), 2))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -319,41 +310,40 @@ class ImportFundConversionServiceTest {
     @Test
     fun `should map exchange transaction`(): Unit = runBlocking {
         val dateTime = LocalDateTime.parse("2019-04-01T09:18:00")
+        val eurAccount = account("Cash EUR", Currency.EUR)
+        val ronAccount = account("Cash RON", Currency.RON)
+        val expenses = fund("Expenses")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = "transaction-1",
                 dateTime = dateTime,
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("Cash EUR"),
-                        FundName("Expenses"),
+                        eurAccount.id,
+                        expenses.id,
                         Currency.EUR,
                         BigDecimal.parseString("-1.89"),
-                        Category("exchange")
+                        categoryId("exchange")
                     ),
                     ImportParsedRecord(
-                        AccountName("Cash RON"),
-                        FundName("Expenses"),
+                        ronAccount.id,
+                        expenses.id,
                         Currency.RON,
                         BigDecimal.parseString("-1434.00"),
-                        Category("exchange")
+                        categoryId("exchange")
                     ),
                     ImportParsedRecord(
-                        AccountName("Cash EUR"),
-                        FundName("Expenses"),
+                        eurAccount.id,
+                        expenses.id,
                         Currency.EUR,
                         BigDecimal.parseString("301.24"),
-                        Category("exchange")
+                        categoryId("exchange")
                     )
                 )
             )
         )
-        val eurAccount = account("Cash EUR", Currency.EUR)
-        val ronAccount = account("Cash RON", Currency.RON)
-        val expenses = fund("Expenses")
 
         whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(eurAccount, ronAccount), 2))
-        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(expenses), 1))
 
         val conversionsRequest = ConversionsRequest(
             listOf(
@@ -402,51 +392,53 @@ class ImportFundConversionServiceTest {
     @Test
     fun `given account not found - when converting - then returns error`(): Unit = runBlocking {
         val userId = uuid4()
+        val unknownAccountId = uuid4()
+        val expensedFund = fund("Expenses")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = "transaction-1",
                 dateTime = LocalDateTime(2024, 7, 22, 9, 17),
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("Revolut"),
-                        FundName("Expenses"),
+                        unknownAccountId,
+                        expensedFund.id,
                         Currency.RON,
                         BigDecimal.parseString("-100.00"),
-                        Category("basic")
+                        categoryId("basic")
                     )
                 )
             )
         )
         whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(account("Cash RON")), 1))
-        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(fund("Expenses")), 1))
 
         val results = importFundConversionService.mapToFundRequest(userId, importParsedTransactions)
         val errors = results.mapNotNull { it.exceptionOrNull() as? ImportDataException }
 
         assertThat(errors).isNotEmpty
-        assertThat(errors.flatMap { it.problems }).anyMatch { it.contains("Revolut") }
+        assertThat(errors.flatMap { it.problems }).anyMatch { it.contains(unknownAccountId.toString()) }
     }
 
     @Test
     fun `given fund not found - when converting - then returns error`(): Unit = runBlocking {
         val userId = uuid4()
+        val unknownAccountId = uuid4()
+        val expensedFund = fund("Expenses")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = "transaction-1",
                 dateTime = LocalDateTime(2024, 7, 22, 9, 17),
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("Revolut"),
-                        FundName("Expenses"),
+                        unknownAccountId,
+                        expensedFund.id,
                         Currency.RON,
                         BigDecimal.parseString("-100.00"),
-                        Category("basic")
+                        categoryId("basic")
                     )
                 )
             )
         )
         whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(account("Revolut")), 1))
-        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(fund("Investments")), 1))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -454,40 +446,39 @@ class ImportFundConversionServiceTest {
         val errors = results.mapNotNull { it.exceptionOrNull() as? ImportDataException }
 
         assertThat(errors).isNotEmpty
-        assertThat(errors.flatMap { it.problems }).anyMatch { it.contains("Expenses") }
+        assertThat(errors.flatMap { it.problems }).anyMatch { it.contains(unknownAccountId.toString()) }
     }
 
     @Test
     fun `should map investment transaction with OPEN_POSITION type`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T09:17:00")
         val transactionExternalId = "investment-1"
+        val brokerAccount = account("Broker USD", Currency.USD)
+        val stockAccount = account("AAPL Stock", Instrument("AAPL"))
+        val investmentsFund = fund("Investments")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = transactionExternalId,
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("Broker USD"),
-                        FundName("Investments"),
+                        brokerAccount.id,
+                        investmentsFund.id,
                         Currency.USD,
                         BigDecimal.parseString("-1000.00"),
-                        Category("stock_purchase")
+                        categoryId("stock_purchase")
                     ),
                     ImportParsedRecord(
-                        AccountName("AAPL Stock"),
-                        FundName("Investments"),
+                        stockAccount.id,
+                        investmentsFund.id,
                         Instrument("AAPL"),
                         BigDecimal.parseString("5.0"),
-                        Category("stock_purchase")
+                        categoryId("stock_purchase")
                     )
                 )
             )
         )
-        val brokerAccount = account("Broker USD", Currency.USD)
-        val stockAccount = account("AAPL Stock", Instrument("AAPL"))
-        val investmentsFund = fund("Investments")
         whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(brokerAccount, stockAccount), 2))
-        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(investmentsFund), 1))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 
@@ -519,33 +510,32 @@ class ImportFundConversionServiceTest {
     fun `should map investment transaction with CLOSE_POSITION type`(): Unit = runBlocking {
         val transactionDateTime = LocalDateTime.parse("2024-07-22T10:30:00")
         val transactionExternalId = "investment-2"
+        val brokerAccount = account("Broker USD", Currency.USD)
+        val stockAccount = account("AAPL Stock", Instrument("AAPL"))
+        val investmentsFund = fund("Investments")
         val importParsedTransactions = listOf(
             ImportParsedTransaction(
                 transactionExternalId = transactionExternalId,
                 dateTime = transactionDateTime,
                 records = listOf(
                     ImportParsedRecord(
-                        AccountName("Broker USD"),
-                        FundName("Investments"),
+                        brokerAccount.id,
+                        investmentsFund.id,
                         Currency.USD,
                         BigDecimal.parseString("1200.00"),
-                        Category("stock_sale")
+                        categoryId("stock_sale")
                     ),
                     ImportParsedRecord(
-                        AccountName("AAPL Stock"),
-                        FundName("Investments"),
+                        stockAccount.id,
+                        investmentsFund.id,
                         Instrument("AAPL"),
                         BigDecimal.parseString("-5.0"),
-                        Category("stock_sale")
+                        categoryId("stock_sale")
                     )
                 )
             )
         )
-        val brokerAccount = account("Broker USD", Currency.USD)
-        val stockAccount = account("AAPL Stock", Instrument("AAPL"))
-        val investmentsFund = fund("Investments")
         whenever(accountSdk.listAccounts(userId)).thenReturn(PageTO(listOf(brokerAccount, stockAccount), 2))
-        whenever(fundSdk.listFunds(userId)).thenReturn(PageTO(listOf(investmentsFund), 1))
         whenever(conversionSdk.convert(ConversionsRequest(emptyList())))
             .thenReturn(ConversionsResponse.empty())
 

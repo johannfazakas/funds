@@ -1,10 +1,15 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
+import com.benasher44.uuid.Uuid
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
-import ro.jf.funds.fund.api.model.*
+import ro.jf.funds.fund.api.model.AccountTO
+import ro.jf.funds.fund.api.model.CategoryTO
+import ro.jf.funds.fund.api.model.CreateTransactionRecordTO
+import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
@@ -17,12 +22,12 @@ import ro.jf.funds.importer.service.service.conversion.toFundRecordAmount
 class ExchangeSingleTransactionConverter : ImportTransactionConverter {
     override fun matches(
         transaction: ImportParsedTransaction,
-        accountStore: Store<AccountName, AccountTO>,
+        accountStore: Store<AccountTO>,
     ): Boolean {
         if (transaction.records.size !in 2..3) {
             return false
         }
-        val targetUnits = transaction.records.map { accountStore[it.accountName] }.map { it.unit }.distinct()
+        val targetUnits = transaction.records.map { accountStore[it.accountId] }.map { it.unit }.distinct()
         if (targetUnits.size != 2 || targetUnits.any { it !is Currency }) {
             return false
         }
@@ -30,21 +35,21 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
         if (positiveRecords.size != 1) {
             return false
         }
-        val accounts = transaction.records.map { it.accountName }.distinct()
+        val accounts = transaction.records.map { it.accountId }.distinct()
         return accounts.size == 2
     }
 
     override fun getRequiredConversions(
         transaction: ImportParsedTransaction,
-        accountStore: Store<AccountName, AccountTO>,
+        accountStore: Store<AccountTO>,
     ): List<Conversion> {
         val importConversions = transaction.getRequiredImportConversions(accountStore)
         val targetCurrency = transaction.records
             .filter { it.amount > BigDecimal.ZERO }
-            .map { accountStore[it.accountName].unit }
+            .map { accountStore[it.accountId].unit }
             .first() as? Currency ?: throw ImportDataException("Invalid target currency: $transaction")
         val sourceCurrency = transaction.records
-            .map { accountStore[it.accountName].unit }
+            .map { accountStore[it.accountId].unit }
             .first { it != targetCurrency } as? Currency ?: throw ImportDataException("Invalid source currency: $transaction")
         return importConversions +
                 Conversion(transaction.dateTime.date, sourceCurrency, targetCurrency) +
@@ -54,38 +59,38 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
     override fun mapToTransaction(
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
-        fundStore: Store<FundName, FundTO>,
-        accountStore: Store<AccountName, AccountTO>,
+        accountStore: Store<AccountTO>,
+        categoryStore: Store<CategoryTO>,
     ): CreateTransactionTO {
         val date = transaction.dateTime.date
 
         val creditRecord = transaction.records.single { it.amount > BigDecimal.ZERO }
-        val creditAmount = creditRecord
-            .toFundRecordAmount(date, accountStore[creditRecord.accountName], conversions)
+        val creditAccount = accountStore[creditRecord.accountId]
+        val creditAmount = creditRecord.toFundRecordAmount(date, creditAccount, conversions)
         val creditFundRecord = CreateTransactionRecordTO.CurrencyRecord(
-            fundId = fundStore[creditRecord.fundName].id,
-            accountId = accountStore[creditRecord.accountName].id,
+            fundId = creditRecord.fundId,
+            accountId = creditRecord.accountId,
             amount = creditAmount,
             unit = creditRecord.unit as Currency,
-            category = creditRecord.category,
+            category = creditRecord.categoryId?.let { Category(categoryStore[it].name) },
             note = creditRecord.note,
         )
 
         val (debitRecord, debitTotalAmount) = transaction.records
             .asSequence()
             .filter { it.amount < BigDecimal.ZERO }
-            .map { it to it.toFundRecordAmount(date, accountStore[it.accountName], conversions) }
+            .map { it to it.toFundRecordAmount(date, accountStore[it.accountId], conversions) }
             .sortedByDescending { (_, amount) -> (creditAmount + amount).abs() }
             .first()
         val rate = conversions.getConversionRate(creditRecord.unit, debitRecord.unit, date, transaction)
 
         val debitAmount = creditAmount.negate() * rate
         val debitFundRecord = CreateTransactionRecordTO.CurrencyRecord(
-            fundId = fundStore[debitRecord.fundName].id,
-            accountId = accountStore[debitRecord.accountName].id,
+            fundId = debitRecord.fundId,
+            accountId = debitRecord.accountId,
             amount = debitAmount,
             unit = debitRecord.unit as Currency,
-            category = debitRecord.category,
+            category = debitRecord.categoryId?.let { Category(categoryStore[it].name) },
             note = debitRecord.note,
         )
 
@@ -95,11 +100,11 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             .takeIf { it.compareTo(BigDecimal.ZERO) != 0 }
             ?.let {
                 CreateTransactionRecordTO.CurrencyRecord(
-                    fundId = fundStore[debitRecord.fundName].id,
-                    accountId = accountStore[debitRecord.accountName].id,
+                    fundId = debitRecord.fundId,
+                    accountId = debitRecord.accountId,
                     amount = feeAmount,
                     unit = debitRecord.unit as Currency,
-                    category = feeRecord?.category ?: debitRecord.category,
+                    category = (feeRecord?.categoryId ?: debitRecord.categoryId)?.let { Category(categoryStore[it].name) },
                     note = feeRecord?.note ?: debitRecord.note,
                 )
             }

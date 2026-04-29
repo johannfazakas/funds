@@ -26,7 +26,7 @@ But report data generation shouldn't depend on the report view.
 ### Handle import configurations by id
 
 - [ ] Use ids in query params instead of names (ex categories)
-- [ ] Use ids in import configuration instead of names
+- [x] Use ids in import configuration instead of names
 - [ ] support spaces in category names
 
 ### Better fund (and not only fund) matching
@@ -91,3 +91,5 @@ One idea could be to handle generating multiple requests at a higher level, mayb
 
 - [ ] expose relevant READMEs
 - [ ] offer some demo setup
+
+### Evaluate removing conversion classes from importer service, sdk might be enough

@@ -54,12 +54,14 @@ abstract class ImportParser {
     ): ImportParsedRecord? {
         val importAccountName = item.accountName
         val accountMatcher = matchers.getAccountMatcher(importAccountName)
-        val accountName = accountMatcher.accountName ?: return null
-        val fundMatcher = matchers.getFundMatcher(importAccountName, item.labels)
-        val category = matchers.getCategoryMatcher(item.labels)?.category
+        val accountId = accountMatcher.accountId ?: return null
+        val categoryMatcher = matchers.findCategoryMatcher(item.labels)
+        val categoryId = categoryMatcher?.categoryId
+        val fundMatcher = matchers.getFundMatcher(accountId)
+        val resolved = fundMatcher.resolve(categoryId)
+        val recordFundId = resolved.intermediaryFundId ?: resolved.fundId
         val note = item.note.takeIf { it.isNotBlank() }
-        val recordFund = fundMatcher.intermediaryFundName ?: fundMatcher.fundName
-        return ImportParsedRecord(accountName, recordFund, item.unit, item.amount, category, note)
+        return ImportParsedRecord(accountId, recordFundId, item.unit, item.amount, categoryId, note)
     }
 
     private fun extractImplicitTransferRecords(
@@ -69,13 +71,16 @@ abstract class ImportParser {
         val importAccountName = item.accountName
         val accountMatcher = matchers.getAccountMatcher(importAccountName)
         if (accountMatcher.skipped) throw ImportDataException("Account skipped on implicit transfer: $item")
-        val accountName = accountMatcher.accountName ?: return emptyList()
-        val fundMatcher = matchers.getFundMatcher(importAccountName, item.labels)
-        val intermediary = fundMatcher.intermediaryFundName ?: return emptyList()
+        val accountId = accountMatcher.accountId ?: return emptyList()
+        val categoryMatcher = matchers.findCategoryMatcher(item.labels)
+        val categoryId = categoryMatcher?.categoryId
+        val fundMatcher = matchers.getFundMatcher(accountId)
+        val resolved = fundMatcher.resolve(categoryId)
+        val intermediaryFundId = resolved.intermediaryFundId ?: return emptyList()
         val amount = item.amount
         return listOf(
-            ImportParsedRecord(accountName, intermediary, item.unit, amount.negate()),
-            ImportParsedRecord(accountName, fundMatcher.fundName, item.unit, amount)
+            ImportParsedRecord(accountId, intermediaryFundId, item.unit, amount.negate()),
+            ImportParsedRecord(accountId, resolved.fundId, item.unit, amount)
         )
     }
 

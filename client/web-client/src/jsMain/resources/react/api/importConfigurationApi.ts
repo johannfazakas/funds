@@ -4,16 +4,21 @@ import { handleApiError } from './apiUtils';
 export type ImportConfigurationSortField = 'NAME' | 'CREATED_AT';
 
 export interface AccountMatcher {
-    importAccountName: string;
-    accountName?: string;
+    importAccountNames: string[];
+    accountId?: string;
     skipped?: boolean;
 }
 
+export interface FundMatcherCategoryRule {
+    categoryId: string;
+    fundId: string;
+    intermediaryFundId?: string;
+}
+
 export interface FundMatcher {
-    fundName: string;
-    importAccountName?: string;
-    importLabel?: string;
-    intermediaryFundName?: string;
+    accountIds: string[];
+    defaultFundId?: string;
+    categoryRules: FundMatcherCategoryRule[];
 }
 
 export interface ExchangeMatcher {
@@ -23,7 +28,7 @@ export interface ExchangeMatcher {
 
 export interface CategoryMatcher {
     importLabels: string[];
-    category: string;
+    categoryId: string;
 }
 
 export interface ImportConfiguration {

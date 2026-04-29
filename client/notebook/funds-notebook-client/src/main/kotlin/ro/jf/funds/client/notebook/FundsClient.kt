@@ -27,6 +27,8 @@ import ro.jf.funds.fund.api.model.AccountTO
 import ro.jf.funds.fund.api.model.CreateAccountTO
 import ro.jf.funds.fund.sdk.AccountSdk
 import ro.jf.funds.client.notebook.model.InitialBalances
+import ro.jf.funds.client.notebook.model.NameBasedExchangeMatcher
+import ro.jf.funds.client.notebook.model.NameBasedImportConfiguration
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.sdk.FundSdk
@@ -125,9 +127,10 @@ class FundsClient(
     fun importTransactions(
         user: UserTO,
         fileType: ImportFileTypeTO,
-        configurationRequest: CreateImportConfigurationRequest,
+        namedConfig: NameBasedImportConfiguration,
         csvFiles: List<File>,
     ): List<ImportFileTO> = run {
+        val configurationRequest = resolveImportConfiguration(user, namedConfig)
         val existingConfigurations = importConfigurationSdk.listImportConfigurations(user.id)
         val configuration = existingConfigurations.items.firstOrNull { it.name == configurationRequest.name }
             ?: importConfigurationSdk.createImportConfiguration(user.id, configurationRequest)
@@ -338,6 +341,58 @@ class FundsClient(
                 ?: error("Path '$path' not found in YAML file '${yamlFile.name}'")
         }
         return yaml.decodeFromYamlNode(yamlNode)
+    }
+
+    private suspend fun resolveImportConfiguration(
+        user: UserTO,
+        config: NameBasedImportConfiguration,
+    ): CreateImportConfigurationRequest {
+        val accounts = accountSdk.listAccounts(user.id).items
+        val funds = fundSdk.listFunds(user.id).items
+        val categories = categorySdk.listCategories(user.id)
+        val accountsByName = accounts.associateBy { it.name.value }
+        val fundsByName = funds.associateBy { it.name.value }
+        val categoriesByName = categories.associateBy { it.name }
+
+        fun resolveAccountId(name: String) = accountsByName[name]?.id ?: error("Account '$name' not found")
+        fun resolveFundId(name: String) = fundsByName[name]?.id ?: error("Fund '$name' not found")
+        fun resolveCategoryId(name: String) = categoriesByName[name]?.id ?: error("Category '$name' not found")
+
+        return CreateImportConfigurationRequest(
+            name = config.name,
+            accountMatchers = config.accountMatchers.map { matcher ->
+                AccountMatcherTO(
+                    importAccountNames = matcher.importAccountNames,
+                    accountId = matcher.accountName?.let { resolveAccountId(it) },
+                    skipped = matcher.skipped,
+                )
+            },
+            fundMatchers = config.fundMatchers.map { matcher ->
+                FundMatcherTO(
+                    accountIds = matcher.accountNames.map { resolveAccountId(it) },
+                    defaultFundId = matcher.defaultFundName?.let { resolveFundId(it) },
+                    categoryRules = matcher.byCategory.map { (categoryName, rule) ->
+                        FundMatcherTO.CategoryRule(
+                            categoryId = resolveCategoryId(categoryName),
+                            fundId = resolveFundId(rule.fundName),
+                            intermediaryFundId = rule.intermediaryFundName?.let { resolveFundId(it) },
+                        )
+                    },
+                )
+            },
+            exchangeMatchers = config.exchangeMatchers.map { matcher ->
+                when (matcher) {
+                    is NameBasedExchangeMatcher.ByLabel ->
+                        ExchangeMatcherTO.ByLabel(matcher.label)
+                }
+            },
+            categoryMatchers = config.categoryMatchers.map { matcher ->
+                CategoryMatcherTO(
+                    importLabels = matcher.importLabels,
+                    categoryId = resolveCategoryId(matcher.categoryName),
+                )
+            },
+        )
     }
 
     private suspend fun getReportViewByName(user: UserTO, reportName: String): ReportViewTO {

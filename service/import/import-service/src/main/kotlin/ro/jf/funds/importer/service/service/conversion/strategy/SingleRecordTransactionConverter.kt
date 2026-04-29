@@ -1,7 +1,10 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
+import com.benasher44.uuid.Uuid
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.fund.api.model.*
+import ro.jf.funds.fund.api.model.AccountTO
+import ro.jf.funds.fund.api.model.CategoryTO
+import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
@@ -13,18 +16,18 @@ import ro.jf.funds.importer.service.service.conversion.toImportCurrencyFundRecor
 class SingleRecordTransactionConverter : ImportTransactionConverter {
     override fun matches(
         transaction: ImportParsedTransaction,
-        accountStore: Store<AccountName, AccountTO>,
+        accountStore: Store<AccountTO>,
     ): Boolean {
         if (transaction.records.size != 1) {
             return false
         }
         val singleRecord = transaction.records.first()
-        return singleRecord.unit is Currency && accountStore[singleRecord.accountName].unit is Currency
+        return singleRecord.unit is Currency && accountStore[singleRecord.accountId].unit is Currency
     }
 
     override fun getRequiredConversions(
         transaction: ImportParsedTransaction,
-        accountStore: Store<AccountName, AccountTO>,
+        accountStore: Store<AccountTO>,
     ): List<Conversion> {
         return transaction.getRequiredImportConversions(accountStore)
     }
@@ -32,8 +35,8 @@ class SingleRecordTransactionConverter : ImportTransactionConverter {
     override fun mapToTransaction(
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
-        fundStore: Store<FundName, FundTO>,
-        accountStore: Store<AccountName, AccountTO>,
+        accountStore: Store<AccountTO>,
+        categoryStore: Store<CategoryTO>,
     ): CreateTransactionTO {
         val record = transaction.records.first()
         return CreateTransactionTO.SingleRecord(
@@ -41,9 +44,9 @@ class SingleRecordTransactionConverter : ImportTransactionConverter {
             externalId = transaction.transactionExternalId,
             record = record.toImportCurrencyFundRecord(
                 transaction.dateTime.date,
-                fundStore[record.fundName].id,
-                accountStore[record.accountName],
+                accountStore[record.accountId],
                 conversions,
+                categoryStore,
             )
         )
     }

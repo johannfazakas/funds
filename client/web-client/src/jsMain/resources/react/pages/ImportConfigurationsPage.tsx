@@ -5,6 +5,7 @@ import {
     AccountMatcher,
     FundMatcher,
     ExchangeMatcher,
+    CategoryMatcher,
     listImportConfigurations,
     createImportConfiguration,
     updateImportConfiguration,
@@ -35,12 +36,7 @@ import {
 import { Loader2, Trash2 } from 'lucide-react';
 import { Pagination } from '../components/Pagination';
 import { SortableTableHead } from '../components/SortableTableHead';
-import {
-    MatchersEditor,
-    categoryMatchersToRows,
-    rowsToCategoryMatchers,
-} from '../components/matchers/MatchersEditor';
-import { CategoryMatcherRow } from '../components/matchers/CategoryMatcherEditor';
+import { MatchersEditor } from '../components/matchers/MatchersEditor';
 
 interface ImportConfigurationsPageProps {
     userId: string;
@@ -61,19 +57,19 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newName, setNewName] = useState('');
-    const [newAccountMatcherRows, setNewAccountMatcherRows] = useState<AccountMatcher[]>([]);
+    const [newAccountMatchers, setNewAccountMatchers] = useState<AccountMatcher[]>([]);
     const [newFundMatchers, setNewFundMatchers] = useState<FundMatcher[]>([]);
     const [newExchangeMatchers, setNewExchangeMatchers] = useState<ExchangeMatcher[]>([]);
-    const [newCategoryMatcherRows, setNewCategoryMatcherRows] = useState<CategoryMatcherRow[]>([]);
+    const [newCategoryMatchers, setNewCategoryMatchers] = useState<CategoryMatcher[]>([]);
     const [creating, setCreating] = useState(false);
     const [createError, setCreateError] = useState<string | null>(null);
 
     const [configToEdit, setConfigToEdit] = useState<ImportConfiguration | null>(null);
     const [editName, setEditName] = useState('');
-    const [editAccountMatcherRows, setEditAccountMatcherRows] = useState<AccountMatcher[]>([]);
+    const [editAccountMatchers, setEditAccountMatchers] = useState<AccountMatcher[]>([]);
     const [editFundMatchers, setEditFundMatchers] = useState<FundMatcher[]>([]);
     const [editExchangeMatchers, setEditExchangeMatchers] = useState<ExchangeMatcher[]>([]);
-    const [editCategoryMatcherRows, setEditCategoryMatcherRows] = useState<CategoryMatcherRow[]>([]);
+    const [editCategoryMatchers, setEditCategoryMatchers] = useState<CategoryMatcher[]>([]);
     const [editing, setEditing] = useState(false);
     const [editError, setEditError] = useState<string | null>(null);
 
@@ -123,10 +119,10 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
 
     const openCreateModal = () => {
         setNewName('');
-        setNewAccountMatcherRows([]);
+        setNewAccountMatchers([]);
         setNewFundMatchers([]);
         setNewExchangeMatchers([]);
-        setNewCategoryMatcherRows([]);
+        setNewCategoryMatchers([]);
         setCreateError(null);
         setShowCreateModal(true);
     };
@@ -143,10 +139,10 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
         try {
             await createImportConfiguration(userId, {
                 name: newName.trim(),
-                accountMatchers: newAccountMatcherRows,
+                accountMatchers: newAccountMatchers,
                 fundMatchers: newFundMatchers,
                 exchangeMatchers: newExchangeMatchers,
-                categoryMatchers: rowsToCategoryMatchers(newCategoryMatcherRows),
+                categoryMatchers: newCategoryMatchers,
             });
             setShowCreateModal(false);
             setOffset(0);
@@ -161,10 +157,10 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
     const openEditModal = (config: ImportConfiguration) => {
         setConfigToEdit(config);
         setEditName(config.name);
-        setEditAccountMatcherRows([...config.accountMatchers]);
+        setEditAccountMatchers([...config.accountMatchers]);
         setEditFundMatchers([...config.fundMatchers]);
         setEditExchangeMatchers([...config.exchangeMatchers]);
-        setEditCategoryMatcherRows(categoryMatchersToRows(config.categoryMatchers));
+        setEditCategoryMatchers([...config.categoryMatchers]);
         setEditError(null);
     };
 
@@ -181,10 +177,10 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
         try {
             await updateImportConfiguration(userId, configToEdit.importConfigurationId, {
                 name: editName.trim(),
-                accountMatchers: editAccountMatcherRows,
+                accountMatchers: editAccountMatchers,
                 fundMatchers: editFundMatchers,
                 exchangeMatchers: editExchangeMatchers,
-                categoryMatchers: rowsToCategoryMatchers(editCategoryMatcherRows),
+                categoryMatchers: editCategoryMatchers,
             });
             setConfigToEdit(null);
             await loadConfigurations();
@@ -208,10 +204,10 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
         try {
             await createImportConfiguration(userId, {
                 name: editName.trim(),
-                accountMatchers: editAccountMatcherRows,
+                accountMatchers: editAccountMatchers,
                 fundMatchers: editFundMatchers,
                 exchangeMatchers: editExchangeMatchers,
-                categoryMatchers: rowsToCategoryMatchers(editCategoryMatcherRows),
+                categoryMatchers: editCategoryMatchers,
             });
             setConfigToEdit(null);
             await loadConfigurations();
@@ -360,14 +356,14 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
                                 <Label>Matchers</Label>
                                 <MatchersEditor
                                     userId={userId}
-                                    accountMatchers={newAccountMatcherRows}
+                                    accountMatchers={newAccountMatchers}
                                     fundMatchers={newFundMatchers}
                                     exchangeMatchers={newExchangeMatchers}
-                                    categoryMatcherRows={newCategoryMatcherRows}
-                                    onAccountMatchersChange={setNewAccountMatcherRows}
+                                    categoryMatchers={newCategoryMatchers}
+                                    onAccountMatchersChange={setNewAccountMatchers}
                                     onFundMatchersChange={setNewFundMatchers}
                                     onExchangeMatchersChange={setNewExchangeMatchers}
-                                    onCategoryMatcherRowsChange={setNewCategoryMatcherRows}
+                                    onCategoryMatchersChange={setNewCategoryMatchers}
                                     disabled={creating}
                                 />
                             </div>
@@ -421,14 +417,14 @@ function ImportConfigurationsPage({ userId }: ImportConfigurationsPageProps) {
                                 <Label>Matchers</Label>
                                 <MatchersEditor
                                     userId={userId}
-                                    accountMatchers={editAccountMatcherRows}
+                                    accountMatchers={editAccountMatchers}
                                     fundMatchers={editFundMatchers}
                                     exchangeMatchers={editExchangeMatchers}
-                                    categoryMatcherRows={editCategoryMatcherRows}
-                                    onAccountMatchersChange={setEditAccountMatcherRows}
+                                    categoryMatchers={editCategoryMatchers}
+                                    onAccountMatchersChange={setEditAccountMatchers}
                                     onFundMatchersChange={setEditFundMatchers}
                                     onExchangeMatchersChange={setEditExchangeMatchers}
-                                    onCategoryMatcherRowsChange={setEditCategoryMatcherRows}
+                                    onCategoryMatchersChange={setEditCategoryMatchers}
                                     disabled={editing}
                                 />
                             </div>

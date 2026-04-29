@@ -1,12 +1,10 @@
 package ro.jf.funds.importer.service.domain
 
+import com.benasher44.uuid.Uuid
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDateTime
-import ro.jf.funds.platform.api.model.FinancialUnit
-import ro.jf.funds.platform.api.model.Category
-import ro.jf.funds.fund.api.model.AccountName
-import ro.jf.funds.fund.api.model.FundName
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
+import ro.jf.funds.platform.api.model.FinancialUnit
 
 data class ImportParsedTransaction(
     val transactionExternalId: String,
@@ -21,10 +19,10 @@ data class ImportParsedTransaction(
 }
 
 data class ImportParsedRecord(
-    val accountName: AccountName,
-    val fundName: FundName,
+    val accountId: Uuid,
+    val fundId: Uuid,
     val unit: FinancialUnit,
     val amount: BigDecimal,
-    val category: Category? = null,
+    val categoryId: Uuid? = null,
     val note: String? = null,
 )

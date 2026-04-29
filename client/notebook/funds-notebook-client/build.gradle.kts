@@ -9,6 +9,7 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "2.1.20"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.20"
+    id("com.gradleup.shadow") version "9.0.0-beta15"
     `maven-publish`
     `java-library`
 }
@@ -54,7 +55,7 @@ publishing {
 
 tasks.register("installLocal") {
     group = "build"
-    description = "Build the artifact, publish it to local maven"
+    description = "Build the fat jar"
 
-    dependsOn("build", "publishToMavenLocal")
+    dependsOn("build", "shadowJar")
 }

@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as Popover from "@radix-ui/react-popover"
-import { Check, ChevronDown } from "lucide-react"
+import { Check, ChevronDown, X } from "lucide-react"
 import { cn } from "../../lib/utils"
 
 export interface MultiSelectOption {
@@ -44,13 +44,7 @@ export function MultiSelect({
         );
     };
 
-    const selectedLabels = allOptions
-        .filter(o => values.includes(o.value))
-        .map(o => o.label);
-
-    const displayText = selectedLabels.length === 0
-        ? placeholder
-        : selectedLabels.join(", ");
+    const selectedOptions = allOptions.filter(o => values.includes(o.value));
 
     const renderOption = (option: MultiSelectOption) => (
         <button
@@ -72,13 +66,35 @@ export function MultiSelect({
                 <button
                     type="button"
                     className={cn(
-                        "flex h-9 items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                        "flex w-full items-center justify-between rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
                         className
                     )}
                 >
-                    <span className={cn("truncate", values.length === 0 && "text-muted-foreground")}>
-                        {displayText}
-                    </span>
+                    {selectedOptions.length === 0 ? (
+                        <span className="text-muted-foreground py-0.5">{placeholder}</span>
+                    ) : (
+                        <span className="flex flex-wrap gap-1">
+                            {selectedOptions.map(o => (
+                                <span
+                                    key={o.value}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs"
+                                >
+                                    {o.label}
+                                    <span
+                                        role="button"
+                                        onPointerDown={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            toggle(o.value);
+                                        }}
+                                        className="text-muted-foreground hover:text-destructive cursor-pointer"
+                                    >
+                                        <X className="h-2.5 w-2.5" />
+                                    </span>
+                                </span>
+                            ))}
+                        </span>
+                    )}
                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </button>
             </Popover.Trigger>
@@ -88,8 +104,9 @@ export function MultiSelect({
                     align="start"
                     sideOffset={4}
                     onOpenAutoFocus={(e) => e.preventDefault()}
+                    onWheel={(e) => e.stopPropagation()}
                 >
-                    <div className="max-h-48 overflow-y-auto p-1">
+                    <div className="max-h-64 overflow-y-auto p-1">
                         {groups ? (
                             groups.map((group, idx) => (
                                 <React.Fragment key={group.label}>

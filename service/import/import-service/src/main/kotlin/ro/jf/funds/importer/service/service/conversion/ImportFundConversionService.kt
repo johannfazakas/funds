@@ -2,7 +2,11 @@ package ro.jf.funds.importer.service.service.conversion
 
 import mu.KotlinLogging.logger
 import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
-import ro.jf.funds.fund.api.model.*
+import ro.jf.funds.fund.api.model.AccountTO
+import ro.jf.funds.fund.api.model.CategoryTO
+import ro.jf.funds.fund.api.model.CreateTransactionTO
+import ro.jf.funds.fund.sdk.AccountSdk
+import ro.jf.funds.fund.sdk.CategorySdk
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionsRequest
 import ro.jf.funds.conversion.api.model.ConversionsResponse
@@ -16,9 +20,8 @@ import ro.jf.funds.importer.service.service.conversion.strategy.ImportTransactio
 private val log = logger { }
 
 class ImportFundConversionService(
-    private val accountService: AccountService,
-    private val fundService: FundService,
-    private val categoryService: CategoryService,
+    private val accountSdk: AccountSdk,
+    private val categorySdk: CategorySdk,
     private val converterRegistry: ImportTransactionConverterRegistry,
     private val conversionSdk: ConversionSdk,
 ) {
@@ -27,9 +30,8 @@ class ImportFundConversionService(
         parsedTransactions: List<ImportParsedTransaction>,
     ): List<Result<CreateTransactionTO>> = withSuspendingSpan {
         log.info { "Handling import >> user = $userId items size = ${parsedTransactions.size}." }
-        val accountStore = accountService.getAccountStore(userId)
-        val fundStore = fundService.getFundStore(userId)
-        val categoryStore = categoryService.getCategoryStore(userId)
+        val accountStore = Store(accountSdk.listAccounts(userId).items) { it.id }
+        val categoryStore = Store(categorySdk.listCategories(userId)) { it.id }
 
         val importTransactionsToConverter = parsedTransactions
             .map { transaction -> runCatching { transaction to transaction.getConverterStrategy(accountStore) } }
@@ -38,7 +40,7 @@ class ImportFundConversionService(
         importTransactionsToConverter.map { result ->
             result.fold(
                 onSuccess = { (transaction, strategy) ->
-                    convertTransaction(transaction, strategy, conversions, fundStore, accountStore, categoryStore)
+                    convertTransaction(transaction, strategy, conversions, accountStore, categoryStore)
                 },
                 onFailure = { Result.failure(ImportDataException(it)) }
             )
@@ -47,7 +49,7 @@ class ImportFundConversionService(
 
     private suspend fun fetchConversions(
         matched: List<Pair<ImportParsedTransaction, ImportTransactionConverter>>,
-        accountStore: Store<AccountName, AccountTO>,
+        accountStore: Store<AccountTO>,
     ): ConversionsResponse {
         val requests = matched
             .flatMap { (transaction, strategy) -> strategy.getRequiredConversions(transaction, accountStore) }
@@ -60,39 +62,16 @@ class ImportFundConversionService(
         transaction: ImportParsedTransaction,
         strategy: ImportTransactionConverter,
         conversions: ConversionsResponse,
-        fundStore: Store<FundName, FundTO>,
-        accountStore: Store<AccountName, AccountTO>,
-        categoryStore: Store<String, CategoryTO>,
+        accountStore: Store<AccountTO>,
+        categoryStore: Store<CategoryTO>,
     ): Result<CreateTransactionTO> {
-        val mappingResult = runCatching {
-            strategy.mapToTransaction(transaction, conversions, fundStore, accountStore)
-        }
-        val mappingErrors = mappingResult.exceptionOrNull()
-            ?.let { listOf(ImportDataException(it)) }
-            ?: emptyList()
-        val categoryErrors = validateCategories(transaction, categoryStore)
-
-        val allErrors = categoryErrors + mappingErrors
-        if (allErrors.isNotEmpty()) return Result.failure(allErrors.reduce { acc, e -> acc + e })
-
-        return mappingResult
-    }
-
-    private fun validateCategories(
-        transaction: ImportParsedTransaction,
-        categoryStore: Store<String, *>,
-    ): List<ImportDataException> {
-        return transaction.records
-            .mapNotNull { it.category }
-            .map { it.value }
-            .distinct()
-            .mapNotNull { category ->
-                runCatching { categoryStore[category] }.exceptionOrNull()?.let { ImportDataException(it) }
-            }
+        return runCatching {
+            strategy.mapToTransaction(transaction, conversions, accountStore, categoryStore)
+        }.recoverCatching { Result.failure<CreateTransactionTO>(ImportDataException(it)); throw it }
     }
 
     private fun ImportParsedTransaction.getConverterStrategy(
-        accountStore: Store<AccountName, AccountTO>,
+        accountStore: Store<AccountTO>,
     ): ImportTransactionConverter {
         return converterRegistry.converters
             .firstOrNull { it.matches(this, accountStore) }

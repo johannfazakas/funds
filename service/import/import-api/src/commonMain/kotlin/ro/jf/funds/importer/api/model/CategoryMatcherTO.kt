@@ -1,10 +1,12 @@
 package ro.jf.funds.importer.api.model
 
+import com.benasher44.uuid.Uuid
 import kotlinx.serialization.Serializable
-import ro.jf.funds.platform.api.model.Category
+import ro.jf.funds.platform.api.serialization.UuidSerializer
 
 @Serializable
 data class CategoryMatcherTO(
     val importLabels: List<String>,
-    val category: Category,
+    @Serializable(with = UuidSerializer::class)
+    val categoryId: Uuid,
 )

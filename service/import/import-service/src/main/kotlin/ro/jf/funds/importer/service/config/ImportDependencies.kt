@@ -133,15 +133,12 @@ private val Application.importServiceDependencies
         single<WalletCsvImportParser> { WalletCsvImportParser(get()) }
         single<FundsFormatImportParser> { FundsFormatImportParser(get()) }
         single<ImportParserRegistry> { ImportParserRegistry(get(), get()) }
-        single<AccountService> { AccountService(get()) }
-        single<FundService> { FundService(get()) }
-        single<CategoryService> { CategoryService(get()) }
         single<SingleRecordTransactionConverter> { SingleRecordTransactionConverter() } bind ImportTransactionConverter::class
         single<TransferTransactionConverter> { TransferTransactionConverter() } bind ImportTransactionConverter::class
         single<ExchangeSingleTransactionConverter> { ExchangeSingleTransactionConverter() } bind ImportTransactionConverter::class
         single<InvestmentTransactionConverter> { InvestmentTransactionConverter() } bind ImportTransactionConverter::class
         single<ImportTransactionConverterRegistry> { ImportTransactionConverterRegistry(getAll()) }
-        single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get(), get(), get()) }
+        single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get(), get()) }
         single<ImportConfigurationService> { ImportConfigurationService(get(), get()) }
         single<S3Configuration> {
             S3Configuration(

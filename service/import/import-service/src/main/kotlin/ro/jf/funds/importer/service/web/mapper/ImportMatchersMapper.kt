@@ -9,6 +9,7 @@ import ro.jf.funds.importer.service.domain.ExchangeMatcher
 import ro.jf.funds.importer.service.domain.FundMatcher
 import ro.jf.funds.importer.service.domain.ImportMatchers
 import ro.jf.funds.importer.service.domain.CategoryMatcher
+
 fun ImportMatchers.toMatcherTOs() = MatcherTOs(
     accountMatchers = accountMatchers.map { it.toTO() },
     fundMatchers = fundMatchers.map { it.toTO() },
@@ -24,29 +25,39 @@ data class MatcherTOs(
 )
 
 fun AccountMatcherTO.toDomain() = AccountMatcher(
-    importAccountName = importAccountName,
-    accountName = accountName,
+    importAccountNames = importAccountNames,
+    accountId = accountId,
     skipped = skipped,
 )
 
 fun AccountMatcher.toTO() = AccountMatcherTO(
-    importAccountName = importAccountName,
-    accountName = accountName,
+    importAccountNames = importAccountNames,
+    accountId = accountId,
     skipped = skipped,
 )
 
 fun FundMatcherTO.toDomain() = FundMatcher(
-    fundName = fundName,
-    importAccountName = importAccountName,
-    importLabel = importLabel,
-    intermediaryFundName = intermediaryFundName,
+    accountIds = accountIds,
+    defaultFundId = defaultFundId,
+    categoryRules = categoryRules.map { it.toDomain() },
+)
+
+fun FundMatcherTO.CategoryRule.toDomain() = FundMatcher.CategoryRule(
+    categoryId = categoryId,
+    fundId = fundId,
+    intermediaryFundId = intermediaryFundId,
 )
 
 fun FundMatcher.toTO() = FundMatcherTO(
-    fundName = fundName,
-    importAccountName = importAccountName,
-    importLabel = importLabel,
-    intermediaryFundName = intermediaryFundName,
+    accountIds = accountIds,
+    defaultFundId = defaultFundId,
+    categoryRules = categoryRules.map { it.toTO() },
+)
+
+fun FundMatcher.CategoryRule.toTO() = FundMatcherTO.CategoryRule(
+    categoryId = categoryId,
+    fundId = fundId,
+    intermediaryFundId = intermediaryFundId,
 )
 
 fun ExchangeMatcherTO.toDomain(): ExchangeMatcher = when (this) {
@@ -59,12 +70,12 @@ fun ExchangeMatcher.toTO(): ExchangeMatcherTO = when (this) {
 
 fun CategoryMatcherTO.toDomain() = CategoryMatcher(
     importLabels = importLabels,
-    category = category,
+    categoryId = categoryId,
 )
 
 fun CategoryMatcher.toTO() = CategoryMatcherTO(
     importLabels = importLabels,
-    category = category,
+    categoryId = categoryId,
 )
 
 fun toImportMatchers(
@@ -78,4 +89,3 @@ fun toImportMatchers(
     exchangeMatchers = exchangeMatchers.map { it.toDomain() },
     categoryMatchers = categoryMatchers.map { it.toDomain() },
 )
-
