@@ -1,19 +1,16 @@
 package ro.jf.funds.importer.service.service.conversion
 
-import com.benasher44.uuid.Uuid
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.Category
-import ro.jf.funds.fund.api.model.AccountTO
-import ro.jf.funds.fund.api.model.CategoryTO
-import ro.jf.funds.fund.api.model.CreateTransactionRecordTO
 import ro.jf.funds.conversion.api.model.ConversionsResponse
+import ro.jf.funds.fund.api.model.AccountTO
+import ro.jf.funds.fund.api.model.CreateTransactionRecordTO
 import ro.jf.funds.importer.service.domain.Conversion
 import ro.jf.funds.importer.service.domain.ImportParsedRecord
 import ro.jf.funds.importer.service.domain.ImportParsedTransaction
 import ro.jf.funds.importer.service.domain.Store
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
+import ro.jf.funds.platform.api.model.Currency
 
 fun ImportParsedTransaction.getRequiredImportConversions(
     accountStore: Store<AccountTO>,
@@ -29,14 +26,13 @@ fun ImportParsedRecord.toImportCurrencyFundRecord(
     date: LocalDate,
     account: AccountTO,
     conversions: ConversionsResponse,
-    categoryStore: Store<CategoryTO>,
 ): CreateTransactionRecordTO.CurrencyRecord {
     return CreateTransactionRecordTO.CurrencyRecord(
         fundId = fundId,
         accountId = account.id,
         amount = toFundRecordAmount(date, account, conversions),
         unit = account.unit as Currency,
-        category = categoryId?.let { Category(categoryStore[it].name) },
+        categoryId = categoryId,
         note = note,
     )
 }

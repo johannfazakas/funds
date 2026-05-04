@@ -12,6 +12,7 @@ import ro.jf.funds.platform.jvm.persistence.getDataSource
 import ro.jf.funds.platform.jvm.web.createHttpClient
 import ro.jf.funds.conversion.sdk.ConversionSdk
 import java.time.Duration
+import ro.jf.funds.fund.sdk.CategorySdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.api.event.ReportingEvents
 import ro.jf.funds.reporting.service.domain.CreateReportViewCommand
@@ -61,6 +62,9 @@ private val Application.integrationDependencies
         single<TransactionSdk> {
             TransactionSdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
         }
+        single<CategorySdk> {
+            CategorySdk(environment.getStringProperty(FUND_SERVICE_BASE_URL_PROPERTY), get())
+        }
         single<ConversionSdk> {
             ConversionSdk(
                 baseUrl = environment.getStringProperty(CONVERSION_SERVICE_BASE_URL_PROPERTY),
@@ -92,6 +96,6 @@ private val Application.serviceDependencies
                 get(), get(), get(), get(), get(), get(), get(), get()
             )
         }
-        single<ReportTransactionService> { ReportTransactionService(get()) }
+        single<ReportTransactionService> { ReportTransactionService(get(), get()) }
         single<ReportDataService> { ReportDataService(get(), get(), get()) }
     }

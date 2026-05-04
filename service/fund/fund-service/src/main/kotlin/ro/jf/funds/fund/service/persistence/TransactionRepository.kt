@@ -194,7 +194,7 @@ class TransactionRepository(
                 this[RecordTable.amount] = it.second.amount
                 this[RecordTable.unitType] = it.second.unit.type.value
                 this[RecordTable.unit] = it.second.unit.value
-                this[RecordTable.category] = it.second.category?.value
+                this[RecordTable.categoryId] = it.second.categoryId
                 this[RecordTable.note] = it.second.note
             }
 
@@ -209,7 +209,7 @@ class TransactionRepository(
                     amount = storedRecord[RecordTable.amount],
                     unitType = request.unit.type,
                     unitValue = storedRecord[RecordTable.unit],
-                    category = storedRecord[RecordTable.category]?.let { Category(it) },
+                    categoryId = storedRecord[RecordTable.categoryId],
                     note = storedRecord[RecordTable.note],
                 )
                 transactionId to record
@@ -230,7 +230,7 @@ class TransactionRepository(
             it[amount] = record.amount
             it[unit] = record.unit.value
             it[unitType] = record.unit.type.value
-            it[category] = record.category?.value
+            it[categoryId] = record.categoryId
             it[note] = record.note
         }
         return toTransactionRecord(
@@ -240,7 +240,7 @@ class TransactionRepository(
             amount = insertResult[RecordTable.amount],
             unitType = record.unit.type,
             unitValue = insertResult[RecordTable.unit],
-            category = insertResult[RecordTable.category]?.let { Category(it) },
+            categoryId = insertResult[RecordTable.categoryId],
             note = insertResult[RecordTable.note],
         )
     }
@@ -256,7 +256,7 @@ class TransactionRepository(
         amount: com.ionspin.kotlin.bignum.decimal.BigDecimal,
         unitType: UnitType,
         unitValue: String,
-        category: Category?,
+        categoryId: UUID?,
         note: String?,
     ): TransactionRecord = when (unitType) {
         UnitType.CURRENCY -> TransactionRecord.CurrencyRecord(
@@ -265,7 +265,7 @@ class TransactionRepository(
             fundId = fundId,
             amount = amount,
             unit = Currency(unitValue),
-            category = category,
+            categoryId = categoryId,
             note = note,
         )
         UnitType.INSTRUMENT -> TransactionRecord.InstrumentRecord(
@@ -274,7 +274,7 @@ class TransactionRepository(
             fundId = fundId,
             amount = amount,
             unit = Instrument(unitValue),
-            category = category,
+            categoryId = categoryId,
             note = note,
         )
     }
@@ -322,7 +322,7 @@ class TransactionRepository(
             amount = row[RecordTable.amount],
             unitType = UnitType.entries.first { it.value == row[RecordTable.unitType] },
             unitValue = row[RecordTable.unit],
-            category = row[RecordTable.category]?.let { Category(it) },
+            categoryId = row[RecordTable.categoryId],
             note = row[RecordTable.note],
         )
     }

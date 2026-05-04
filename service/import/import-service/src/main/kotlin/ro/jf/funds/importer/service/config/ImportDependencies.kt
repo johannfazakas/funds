@@ -138,7 +138,7 @@ private val Application.importServiceDependencies
         single<ExchangeSingleTransactionConverter> { ExchangeSingleTransactionConverter() } bind ImportTransactionConverter::class
         single<InvestmentTransactionConverter> { InvestmentTransactionConverter() } bind ImportTransactionConverter::class
         single<ImportTransactionConverterRegistry> { ImportTransactionConverterRegistry(getAll()) }
-        single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get(), get()) }
+        single<ImportFundConversionService> { ImportFundConversionService(get(), get(), get()) }
         single<ImportConfigurationService> { ImportConfigurationService(get(), get()) }
         single<S3Configuration> {
             S3Configuration(

@@ -10,7 +10,7 @@ export interface Record {
     fundId: string;
     amount: string;
     unit: string;
-    category: string | null;
+    categoryId: string | null;
     note: string | null;
 }
 
@@ -18,7 +18,7 @@ export interface RecordFilter {
     accountId?: string;
     fundId?: string;
     unit?: string;
-    category?: string;
+    categoryId?: string;
     fromDate?: string;
     toDate?: string;
 }
@@ -89,8 +89,8 @@ export async function listRecords(
         if (params.filter.unit) {
             queryParams.set('unit', params.filter.unit);
         }
-        if (params.filter.category) {
-            queryParams.set('category', params.filter.category);
+        if (params.filter.categoryId) {
+            queryParams.set('categoryId', params.filter.categoryId);
         }
         if (params.filter.fromDate) {
             queryParams.set('fromDate', params.filter.fromDate);

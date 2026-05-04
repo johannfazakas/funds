@@ -13,7 +13,6 @@ import kotlinx.datetime.LocalDateTime
 import ro.jf.funds.fund.service.domain.Record
 import ro.jf.funds.fund.service.persistence.RecordRepository
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.PageRequest
 import ro.jf.funds.platform.api.model.SortOrder
 import ro.jf.funds.platform.api.model.SortRequest
@@ -40,7 +39,7 @@ class RecordServiceTest {
             fundId = fundId,
             amount = BigDecimal.parseString("100.50"),
             unit = Currency("RON"),
-            category = Category("groceries")
+            categoryId = randomUUID()
         )
         whenever(recordRepository.list(userId, null, null, null))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -112,8 +111,9 @@ class RecordServiceTest {
     }
 
     @Test
-    fun `given filter by category - when list records - then delegates filter to repository`(): Unit = runBlocking {
-        val filter = RecordFilter(category = "groceries")
+    fun `given filter by category id - when list records - then delegates filter to repository`(): Unit = runBlocking {
+        val categoryId = randomUUID()
+        val filter = RecordFilter(categoryId = categoryId)
         val record = Record.CurrencyRecord(
             transactionId = transactionId, dateTime = dateTime,
             id = recordId,
@@ -121,7 +121,7 @@ class RecordServiceTest {
             fundId = fundId,
             amount = BigDecimal.parseString("150.00"),
             unit = Currency("RON"),
-            category = Category("groceries")
+            categoryId = categoryId
         )
         whenever(recordRepository.list(userId, filter, null, null))
             .thenReturn(PagedResult(listOf(record), 1L))
@@ -129,7 +129,7 @@ class RecordServiceTest {
         val result = recordService.listRecords(userId, filter, null, null)
 
         assertThat(result.items).hasSize(1)
-        assertThat(result.items.first().category).isEqualTo(Category("groceries"))
+        assertThat(result.items.first().categoryId).isEqualTo(categoryId)
     }
 
     @Test

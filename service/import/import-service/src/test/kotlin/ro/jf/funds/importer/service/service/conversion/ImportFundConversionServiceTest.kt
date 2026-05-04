@@ -3,16 +3,13 @@ package ro.jf.funds.importer.service.service.conversion
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
-import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import ro.jf.funds.platform.api.model.*
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.api.model.*
 import ro.jf.funds.fund.sdk.AccountSdk
-import ro.jf.funds.fund.sdk.CategorySdk
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionResponse
 import ro.jf.funds.conversion.api.model.ConversionsRequest
@@ -28,7 +25,6 @@ import com.ionspin.kotlin.bignum.decimal.BigDecimal
 
 class ImportFundConversionServiceTest {
     private val accountSdk = mock<AccountSdk>()
-    private val categorySdk = mock<CategorySdk>()
     private val conversionSdk = mock<ConversionSdk>()
     private val importTransactionConverterRegistry = ImportTransactionConverterRegistry(
         listOf(
@@ -41,23 +37,25 @@ class ImportFundConversionServiceTest {
     private val importFundConversionService =
         ImportFundConversionService(
             accountSdk,
-            categorySdk,
             importTransactionConverterRegistry,
             conversionSdk,
         )
 
     private val userId: Uuid = uuid4()
 
-    private val allCategories = listOf("one", "two", "Basic", "work_income", "basic", "exchange", "finance", "stock_purchase", "stock_sale")
-        .map { CategoryTO(uuid4(), it) }
+    private val categoryIds = mapOf(
+        "one" to uuid4(),
+        "two" to uuid4(),
+        "Basic" to uuid4(),
+        "work_income" to uuid4(),
+        "basic" to uuid4(),
+        "exchange" to uuid4(),
+        "finance" to uuid4(),
+        "stock_purchase" to uuid4(),
+        "stock_sale" to uuid4(),
+    )
 
-    private fun categoryId(name: String): Uuid = allCategories.first { it.name == name }.id
-
-    @BeforeEach
-    fun setUp(): Unit = runBlocking {
-        whenever(categorySdk.listCategories(any())).thenReturn(allCategories)
-        Unit
-    }
+    private fun categoryId(name: String): Uuid = categoryIds.getValue(name)
 
     @Test
     fun `should map single record import transactions`(): Unit = runBlocking {
@@ -96,7 +94,7 @@ class ImportFundConversionServiceTest {
                     accountId = bankAccount.id,
                     amount = BigDecimal.parseString("-100.00"),
                     unit = Currency.RON,
-                    category = Category("one")
+                    categoryId = categoryId("one")
                 )
             )
         )
@@ -141,7 +139,7 @@ class ImportFundConversionServiceTest {
 
         assertThat(singleRecord.record.amount).isEqualByComparingTo(BigDecimal.parseString("-20.00"))
         assertThat(singleRecord.record.unit).isEqualTo(Currency.EUR)
-        assertThat(singleRecord.record.category).isEqualTo(Category("one"))
+        assertThat(singleRecord.record.categoryId).isEqualTo(categoryId("one"))
     }
 
     @Test
@@ -190,14 +188,14 @@ class ImportFundConversionServiceTest {
                     accountId = companyAccount.id,
                     amount = BigDecimal.parseString("-50.00"),
                     unit = Currency.RON,
-                    category = Category("Basic")
+                    categoryId = categoryId("Basic")
                 ),
                 destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                     fundId = expensedFund.id,
                     accountId = cashAccount.id,
                     amount = BigDecimal.parseString("50.00"),
                     unit = Currency.RON,
-                    category = Category("Basic")
+                    categoryId = categoryId("Basic")
                 )
             )
         )
@@ -252,12 +250,12 @@ class ImportFundConversionServiceTest {
 
         assertThat(transfer.sourceRecord.amount).isEqualByComparingTo(BigDecimal.parseString("-10.00"))
         assertThat(transfer.sourceRecord.unit).isEqualTo(Currency.EUR)
-        assertThat(transfer.sourceRecord.category).isEqualTo(Category("work_income"))
+        assertThat(transfer.sourceRecord.categoryId).isEqualTo(categoryId("work_income"))
         assertThat(transfer.sourceRecord.accountId).isEqualTo(companyAccount.id)
 
         assertThat(transfer.destinationRecord.amount).isEqualByComparingTo(BigDecimal.parseString("10.00"))
         assertThat(transfer.destinationRecord.unit).isEqualTo(Currency.EUR)
-        assertThat(transfer.destinationRecord.category).isEqualTo(Category("basic"))
+        assertThat(transfer.destinationRecord.categoryId).isEqualTo(categoryId("basic"))
         assertThat(transfer.destinationRecord.accountId).isEqualTo(cashAccount.id)
     }
 
@@ -298,13 +296,13 @@ class ImportFundConversionServiceTest {
         assertThat(transfer.sourceRecord.fundId).isEqualTo(incomeFund.id)
         assertThat(transfer.sourceRecord.amount).isEqualByComparingTo(BigDecimal.parseString("-50.00"))
         assertThat(transfer.sourceRecord.unit).isEqualTo(Currency.RON)
-        assertThat(transfer.sourceRecord.category).isNull()
+        assertThat(transfer.sourceRecord.categoryId).isNull()
 
         assertThat(transfer.destinationRecord.fundId).isEqualTo(expenseFund.id)
         assertThat(transfer.destinationRecord.accountId).isEqualTo(account.id)
         assertThat(transfer.destinationRecord.amount).isEqualByComparingTo(BigDecimal.parseString("50.00"))
         assertThat(transfer.destinationRecord.unit).isEqualTo(Currency.RON)
-        assertThat(transfer.destinationRecord.category).isNull()
+        assertThat(transfer.destinationRecord.categoryId).isNull()
     }
 
     @Test
@@ -373,20 +371,20 @@ class ImportFundConversionServiceTest {
         assertThat(exchange.destinationRecord.accountId).isEqualTo(eurAccount.id)
         assertThat(exchange.destinationRecord.fundId).isEqualTo(expenses.id)
         assertThat(exchange.destinationRecord.unit).isEqualTo(Currency.EUR)
-        assertThat(exchange.destinationRecord.category).isEqualTo(Category("exchange"))
+        assertThat(exchange.destinationRecord.categoryId).isEqualTo(categoryId("exchange"))
 
         assertThat(exchange.sourceRecord.amount).isEqualByComparingTo(BigDecimal.parseString("-1434.6103140"))
         assertThat(exchange.sourceRecord.accountId).isEqualTo(ronAccount.id)
         assertThat(exchange.sourceRecord.fundId).isEqualTo(expenses.id)
         assertThat(exchange.sourceRecord.unit).isEqualTo(Currency.RON)
-        assertThat(exchange.sourceRecord.category).isEqualTo(Category("exchange"))
+        assertThat(exchange.sourceRecord.categoryId).isEqualTo(categoryId("exchange"))
 
         assertThat(exchange.feeRecord).isNotNull
         assertThat(exchange.feeRecord!!.amount).isEqualByComparingTo(BigDecimal.parseString("0.6103140"))
         assertThat(exchange.feeRecord!!.accountId).isEqualTo(ronAccount.id)
         assertThat(exchange.feeRecord!!.fundId).isEqualTo(expenses.id)
         assertThat(exchange.feeRecord!!.unit).isEqualTo(Currency.RON)
-        assertThat(exchange.feeRecord!!.category).isEqualTo(Category("exchange"))
+        assertThat(exchange.feeRecord!!.categoryId).isEqualTo(categoryId("exchange"))
     }
 
     @Test
@@ -497,13 +495,13 @@ class ImportFundConversionServiceTest {
         assertThat(openPosition.currencyRecord.unit).isEqualTo(Currency.USD)
         assertThat(openPosition.currencyRecord.accountId).isEqualTo(brokerAccount.id)
         assertThat(openPosition.currencyRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(openPosition.currencyRecord.category).isEqualTo(Category("stock_purchase"))
+        assertThat(openPosition.currencyRecord.categoryId).isEqualTo(categoryId("stock_purchase"))
 
         assertThat(openPosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal.parseString("5.0"))
         assertThat(openPosition.instrumentRecord.unit).isEqualTo(Instrument("AAPL"))
         assertThat(openPosition.instrumentRecord.accountId).isEqualTo(stockAccount.id)
         assertThat(openPosition.instrumentRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(openPosition.instrumentRecord.category).isEqualTo(Category("stock_purchase"))
+        assertThat(openPosition.instrumentRecord.categoryId).isEqualTo(categoryId("stock_purchase"))
     }
 
     @Test
@@ -554,13 +552,13 @@ class ImportFundConversionServiceTest {
         assertThat(closePosition.currencyRecord.unit).isEqualTo(Currency.USD)
         assertThat(closePosition.currencyRecord.accountId).isEqualTo(brokerAccount.id)
         assertThat(closePosition.currencyRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(closePosition.currencyRecord.category).isEqualTo(Category("stock_sale"))
+        assertThat(closePosition.currencyRecord.categoryId).isEqualTo(categoryId("stock_sale"))
 
         assertThat(closePosition.instrumentRecord.amount).isEqualByComparingTo(BigDecimal.parseString("-5.0"))
         assertThat(closePosition.instrumentRecord.unit).isEqualTo(Instrument("AAPL"))
         assertThat(closePosition.instrumentRecord.accountId).isEqualTo(stockAccount.id)
         assertThat(closePosition.instrumentRecord.fundId).isEqualTo(investmentsFund.id)
-        assertThat(closePosition.instrumentRecord.category).isEqualTo(Category("stock_sale"))
+        assertThat(closePosition.instrumentRecord.categoryId).isEqualTo(categoryId("stock_sale"))
     }
 
     private fun account(name: String, unit: FinancialUnit = Currency.RON): AccountTO =

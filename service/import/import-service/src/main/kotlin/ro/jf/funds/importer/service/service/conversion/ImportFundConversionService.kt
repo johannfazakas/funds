@@ -3,10 +3,8 @@ package ro.jf.funds.importer.service.service.conversion
 import mu.KotlinLogging.logger
 import ro.jf.funds.platform.jvm.observability.tracing.withSuspendingSpan
 import ro.jf.funds.fund.api.model.AccountTO
-import ro.jf.funds.fund.api.model.CategoryTO
 import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.fund.sdk.AccountSdk
-import ro.jf.funds.fund.sdk.CategorySdk
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionsRequest
 import ro.jf.funds.conversion.api.model.ConversionsResponse
@@ -21,7 +19,6 @@ private val log = logger { }
 
 class ImportFundConversionService(
     private val accountSdk: AccountSdk,
-    private val categorySdk: CategorySdk,
     private val converterRegistry: ImportTransactionConverterRegistry,
     private val conversionSdk: ConversionSdk,
 ) {
@@ -31,7 +28,6 @@ class ImportFundConversionService(
     ): List<Result<CreateTransactionTO>> = withSuspendingSpan {
         log.info { "Handling import >> user = $userId items size = ${parsedTransactions.size}." }
         val accountStore = Store(accountSdk.listAccounts(userId).items) { it.id }
-        val categoryStore = Store(categorySdk.listCategories(userId)) { it.id }
 
         val importTransactionsToConverter = parsedTransactions
             .map { transaction -> runCatching { transaction to transaction.getConverterStrategy(accountStore) } }
@@ -40,7 +36,7 @@ class ImportFundConversionService(
         importTransactionsToConverter.map { result ->
             result.fold(
                 onSuccess = { (transaction, strategy) ->
-                    convertTransaction(transaction, strategy, conversions, accountStore, categoryStore)
+                    convertTransaction(transaction, strategy, conversions, accountStore)
                 },
                 onFailure = { Result.failure(ImportDataException(it)) }
             )
@@ -63,10 +59,9 @@ class ImportFundConversionService(
         strategy: ImportTransactionConverter,
         conversions: ConversionsResponse,
         accountStore: Store<AccountTO>,
-        categoryStore: Store<CategoryTO>,
     ): Result<CreateTransactionTO> {
         return runCatching {
-            strategy.mapToTransaction(transaction, conversions, accountStore, categoryStore)
+            strategy.mapToTransaction(transaction, conversions, accountStore)
         }.recoverCatching { Result.failure<CreateTransactionTO>(ImportDataException(it)); throw it }
     }
 

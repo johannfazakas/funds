@@ -1,10 +1,8 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
-import com.benasher44.uuid.Uuid
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.api.model.AccountTO
-import ro.jf.funds.fund.api.model.CategoryTO
 import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
@@ -44,14 +42,12 @@ class TransferTransactionConverter : ImportTransactionConverter {
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         accountStore: Store<AccountTO>,
-        categoryStore: Store<CategoryTO>,
     ): CreateTransactionTO {
         val records = transaction.records.map { record ->
             record.toImportCurrencyFundRecord(
                 transaction.dateTime.date,
                 accountStore[record.accountId],
                 conversions,
-                categoryStore,
             )
         }
         return CreateTransactionTO.Transfer(

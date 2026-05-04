@@ -48,6 +48,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
     const [financialUnits, setFinancialUnits] = useState<FinancialUnit[]>([]);
     const [fundsMap, setFundsMap] = useState<Map<string, string>>(new Map());
     const [accountsMap, setAccountsMap] = useState<Map<string, string>>(new Map());
+    const [categoriesMap, setCategoriesMap] = useState<Map<string, string>>(new Map());
 
     const [offset, setOffset] = useState(0);
     const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
@@ -77,6 +78,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
                 setFinancialUnits(financialUnitsResult);
                 setFundsMap(new Map(fundsResult.items.map(f => [f.id, f.name])));
                 setAccountsMap(new Map(accountsResult.items.map(a => [a.id, a.name])));
+                setCategoriesMap(new Map(categoriesResult.map(c => [c.id, c.name])));
             } catch {
                 // Ignore errors loading reference data
             }
@@ -92,7 +94,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
         if (filterAccountId) filter.accountId = filterAccountId;
         if (filterFundId) filter.fundId = filterFundId;
         if (filterUnit.trim()) filter.unit = filterUnit.trim();
-        if (filterCategory) filter.category = filterCategory;
+        if (filterCategory) filter.categoryId = filterCategory;
         if (filterFromDate) filter.fromDate = filterFromDate;
         if (filterToDate) filter.toDate = filterToDate;
 
@@ -257,7 +259,7 @@ function RecordsPage({ userId }: RecordsPageProps) {
                         <SelectContent>
                             <SelectItem value="all">All categories</SelectItem>
                             {categories.map(category => (
-                                <SelectItem key={category.id} value={category.name}>
+                                <SelectItem key={category.id} value={category.id}>
                                     {category.name}
                                 </SelectItem>
                             ))}
@@ -334,9 +336,9 @@ function RecordsPage({ userId }: RecordsPageProps) {
                                     <TableCell>{fundsMap.get(record.fundId) || record.fundId}</TableCell>
                                     <TableCell>{accountsMap.get(record.accountId) || record.accountId}</TableCell>
                                     <TableCell>
-                                        {record.category && (
+                                        {record.categoryId && (
                                             <Badge variant="outline" className="text-xs">
-                                                {record.category}
+                                                {categoriesMap.get(record.categoryId) || record.categoryId}
                                             </Badge>
                                         )}
                                     </TableCell>

@@ -14,6 +14,7 @@ import org.koin.dsl.module
 import org.koin.ktor.ext.get
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import ro.jf.funds.platform.jvm.config.configureContentNegotiation
@@ -32,9 +33,11 @@ import ro.jf.funds.platform.jvm.test.utils.createJsonHttpClient
 import ro.jf.funds.platform.jvm.test.utils.dbConfig
 import ro.jf.funds.platform.jvm.test.utils.kafkaConfig
 import ro.jf.funds.platform.jvm.web.USER_ID_HEADER
+import ro.jf.funds.fund.api.model.CategoryTO
 import ro.jf.funds.fund.api.model.TransactionFilterTO
 import ro.jf.funds.fund.api.model.TransactionRecordTO
 import ro.jf.funds.fund.api.model.TransactionTO
+import ro.jf.funds.fund.sdk.CategorySdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.api.model.*
 import ro.jf.funds.reporting.service.config.configureReportingErrorHandling
@@ -55,6 +58,12 @@ class ReportingApiTest {
     private val reportViewRepository = ReportViewRepository(PostgresContainerExtension.connection)
     private val transactionSdk = mock<TransactionSdk>()
     private val conversionRateService = mock<ConversionRateService>()
+    private val needCategoryId = uuid4()
+    private val categorySdk = org.mockito.kotlin.mock<CategorySdk> {
+        onBlocking { listCategories(any()) } doReturn listOf(
+            CategoryTO(needCategoryId, "need"),
+        )
+    }
 
     private val userId = uuid4()
     private val expenseFundId = uuid4()
@@ -85,7 +94,7 @@ class ReportingApiTest {
         val transaction =
             singleRecordTransaction(
                 userId, date,
-                record(expenseFundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, Category("need"))
+                record(expenseFundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, needCategoryId)
             )
         whenever(transactionSdk.listTransactions(userId, TransactionFilterTO(fundId = expenseFundId)))
             .thenReturn(ListTO.of(transaction))
@@ -184,13 +193,13 @@ class ReportingApiTest {
                 singleRecordTransaction(
                     userId, LocalDate(2021, 1, 2),
                     record(
-                        reportView.fundId, cashAccountId, BigDecimal.parseString("-25.0"), RON, Category("need")
+                        reportView.fundId, cashAccountId, BigDecimal.parseString("-25.0"), RON, needCategoryId
                     )
                 ),
                 singleRecordTransaction(
                     userId, LocalDate(2021, 1, 2),
                     record(
-                        reportView.fundId, cashAccountId, BigDecimal.parseString("-10.0"), EUR, Category("want")
+                        reportView.fundId, cashAccountId, BigDecimal.parseString("-10.0"), EUR, needCategoryId
                     )
                 )
             )
@@ -244,8 +253,8 @@ class ReportingApiTest {
             interval, investmentReportView.fundId, listOf(
                 openPositionTransaction(
                     userId, LocalDate(2021, 2, 15),
-                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, Category("need")),
-                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), Category("need"))
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, needCategoryId),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), needCategoryId)
                 )
             )
         )
@@ -284,8 +293,8 @@ class ReportingApiTest {
             interval, investmentReportView.fundId, listOf(
                 openPositionTransaction(
                     userId, LocalDate(2021, 2, 15),
-                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, Category("need")),
-                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), Category("need"))
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, needCategoryId),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), needCategoryId)
                 )
             )
         )
@@ -326,8 +335,8 @@ class ReportingApiTest {
             interval, investmentReportView.fundId, listOf(
                 openPositionTransaction(
                     userId, LocalDate(2021, 2, 15),
-                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, Category("need")),
-                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), Category("need"))
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, needCategoryId),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), needCategoryId)
                 )
             )
         )
@@ -367,8 +376,8 @@ class ReportingApiTest {
             interval, investmentReportView.fundId, listOf(
                 openPositionTransaction(
                     userId, LocalDate(2021, 2, 15),
-                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, Category("need")),
-                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), Category("need"))
+                    currencyRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("-100.0"), RON, needCategoryId),
+                    instrumentRecord = record(investmentReportView.fundId, cashAccountId, BigDecimal.parseString("1.0"), Instrument("AAPL"), needCategoryId)
                 )
             )
         )
@@ -454,22 +463,23 @@ class ReportingApiTest {
         accountId: Uuid,
         amount: BigDecimal,
         currency: Currency,
-        category: Category?,
+        categoryId: Uuid?,
     ): TransactionRecordTO.CurrencyRecord =
-        TransactionRecordTO.CurrencyRecord(uuid4(), accountId, fundId, amount, currency, category)
+        TransactionRecordTO.CurrencyRecord(uuid4(), accountId, fundId, amount, currency, categoryId)
 
     fun record(
         fundId: Uuid,
         accountId: Uuid,
         amount: BigDecimal,
         instrument: Instrument,
-        category: Category?,
+        categoryId: Uuid?,
     ): TransactionRecordTO.InstrumentRecord =
-        TransactionRecordTO.InstrumentRecord(uuid4(), accountId, fundId, amount, instrument, category)
+        TransactionRecordTO.InstrumentRecord(uuid4(), accountId, fundId, amount, instrument, categoryId)
 
     private fun Application.testModule() {
         val importAppTestModule = module {
             single<TransactionSdk> { transactionSdk }
+            single<CategorySdk> { categorySdk }
             single<ConversionRateService> { conversionRateService }
         }
         configureDependencies(reportingDependencies, importAppTestModule)

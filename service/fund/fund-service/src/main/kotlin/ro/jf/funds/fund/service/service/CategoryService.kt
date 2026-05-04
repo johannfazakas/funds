@@ -31,7 +31,7 @@ class CategoryService(
     suspend fun deleteCategory(userId: UUID, categoryId: UUID) {
         val category = categoryRepository.findById(userId, categoryId)
             ?: throw FundServiceException.CategoryNotFound(categoryId)
-        val records = recordRepository.list(userId, RecordFilter(category = category.name))
+        val records = recordRepository.list(userId, RecordFilter(categoryId = category.id))
         if (records.items.isNotEmpty()) {
             throw FundServiceException.CategoryHasRecords(categoryId)
         }

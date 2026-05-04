@@ -9,7 +9,6 @@ import kotlinx.serialization.Transient
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.api.model.Instrument
-import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.serialization.BigDecimalSerializer
 import ro.jf.funds.platform.api.serialization.UuidSerializer
 
@@ -108,7 +107,7 @@ sealed class CreateTransactionRecordTO {
     abstract val fundId: Uuid
     abstract val amount: BigDecimal
     abstract val unit: FinancialUnit
-    abstract val category: Category?
+    abstract val categoryId: Uuid?
     abstract val note: String?
 
     @Serializable
@@ -121,7 +120,8 @@ sealed class CreateTransactionRecordTO {
         @Serializable(with = BigDecimalSerializer::class)
         override val amount: BigDecimal,
         override val unit: Currency,
-        override val category: Category? = null,
+        @Serializable(with = UuidSerializer::class)
+        override val categoryId: Uuid? = null,
         override val note: String? = null,
     ) : CreateTransactionRecordTO()
 
@@ -135,7 +135,8 @@ sealed class CreateTransactionRecordTO {
         @Serializable(with = BigDecimalSerializer::class)
         override val amount: BigDecimal,
         override val unit: Instrument,
-        override val category: Category? = null,
+        @Serializable(with = UuidSerializer::class)
+        override val categoryId: Uuid? = null,
         override val note: String? = null,
     ) : CreateTransactionRecordTO()
 }

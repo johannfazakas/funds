@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.ktor.ext.get
 import ro.jf.funds.platform.api.model.Currency
-import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.ListTO
 import ro.jf.funds.platform.jvm.config.configureContentNegotiation
 import ro.jf.funds.platform.jvm.config.configureDatabaseMigration
@@ -29,6 +28,7 @@ import ro.jf.funds.fund.service.config.configureFundRouting
 import ro.jf.funds.fund.service.config.fundDependencies
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import ro.jf.funds.fund.service.persistence.AccountRepository
+import ro.jf.funds.fund.service.persistence.CategoryRepository
 import ro.jf.funds.fund.service.persistence.TransactionRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
 import java.util.UUID.randomUUID
@@ -40,6 +40,7 @@ class TransactionApiTest {
     private val database = PostgresContainerExtension.connection
     private val fundRepository = FundRepository(database)
     private val accountRepository = AccountRepository(database)
+    private val categoryRepository = CategoryRepository(database)
     private val transactionRepository = TransactionRepository(database)
 
     private val userId = randomUUID()
@@ -50,6 +51,7 @@ class TransactionApiTest {
 
         val companyAccount = accountRepository.save(userId, CreateAccountTO(AccountName("Company Account"), Currency.RON))
         val personalAccount = accountRepository.save(userId, CreateAccountTO(AccountName("Personal Account"), Currency.RON))
+        val category = categoryRepository.save(userId, CreateCategoryTO("salary"))
 
         val transactionTime = LocalDateTime.parse("2021-09-01T12:00:00")
         val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
@@ -63,7 +65,7 @@ class TransactionApiTest {
                 fundId = workFund.id,
                 amount = BigDecimal.parseString("-100.25"),
                 unit = Currency.RON,
-                category = Category("one")
+                categoryId = category.id
             ),
             destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                 accountId = personalAccount.id,
@@ -94,6 +96,7 @@ class TransactionApiTest {
 
         val account1 = accountRepository.save(userId, CreateAccountTO(AccountName("Revolut"), Currency.RON))
         val account2 = accountRepository.save(userId, CreateAccountTO(AccountName("BT"), Currency.RON))
+        val category = categoryRepository.save(userId, CreateCategoryTO("salary"))
 
         val workFund = fundRepository.save(userId, CreateFundTO(FundName("Work")))
         val expensesFund = fundRepository.save(userId, CreateFundTO(FundName("Expenses")))
@@ -108,7 +111,7 @@ class TransactionApiTest {
                     fundId = workFund.id,
                     amount = BigDecimal.parseString("-100.25"),
                     unit = Currency.RON,
-                    category = Category("salary")
+                    categoryId = category.id
                 ),
                 destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                     accountId = account2.id,
@@ -146,7 +149,7 @@ class TransactionApiTest {
         assertThat(fundTransaction1!!.sourceRecord.amount).isEqualByComparingTo(BigDecimal.parseString("-100.25"))
         assertThat(fundTransaction1.sourceRecord.fundId).isEqualTo(workFund.id)
         assertThat(fundTransaction1.sourceRecord.accountId).isEqualTo(account1.id)
-        assertThat(fundTransaction1.sourceRecord.category).isEqualTo(Category("salary"))
+        assertThat(fundTransaction1.sourceRecord.categoryId).isNotNull()
         assertThat(fundTransaction1.destinationRecord.amount).isEqualByComparingTo(BigDecimal.parseString("100.25"))
         assertThat(fundTransaction1.destinationRecord.fundId).isEqualTo(expensesFund.id)
         assertThat(fundTransaction1.destinationRecord.accountId).isEqualTo(account2.id)

@@ -2,11 +2,9 @@ package ro.jf.funds.importer.service.service.conversion.strategy
 
 import com.benasher44.uuid.Uuid
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
-import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.Instrument
 import ro.jf.funds.fund.api.model.AccountTO
-import ro.jf.funds.fund.api.model.CategoryTO
 import ro.jf.funds.fund.api.model.CreateTransactionRecordTO
 import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.conversion.api.model.ConversionsResponse
@@ -66,7 +64,6 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         accountStore: Store<AccountTO>,
-        categoryStore: Store<CategoryTO>,
     ): CreateTransactionTO {
         val currencyRecord = transaction.records.first { it.unit is Currency }
         val instrumentRecord = transaction.records.first { it.unit is Instrument }
@@ -75,14 +72,13 @@ class InvestmentTransactionConverter : ImportTransactionConverter {
             date = transaction.dateTime.date,
             account = accountStore[currencyRecord.accountId],
             conversions = conversions,
-            categoryStore = categoryStore,
         )
         val instrumentRecordTO = CreateTransactionRecordTO.InstrumentRecord(
             fundId = instrumentRecord.fundId,
             accountId = instrumentRecord.accountId,
             amount = instrumentRecord.amount,
             unit = instrumentRecord.unit as Instrument,
-            category = instrumentRecord.categoryId?.let { Category(categoryStore[it].name) },
+            categoryId = instrumentRecord.categoryId,
             note = instrumentRecord.note,
         )
         return when {

@@ -8,6 +8,7 @@ import kotlinx.datetime.atTime
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -19,9 +20,11 @@ import ro.jf.funds.platform.api.model.Instrument
 import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.ListTO
 import ro.jf.funds.platform.jvm.model.*
+import ro.jf.funds.fund.api.model.CategoryTO
 import ro.jf.funds.fund.api.model.TransactionFilterTO
 import ro.jf.funds.fund.api.model.TransactionRecordTO
 import ro.jf.funds.fund.api.model.TransactionTO
+import ro.jf.funds.fund.sdk.CategorySdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.reporting.service.domain.*
 import ro.jf.funds.reporting.service.persistence.ReportViewRepository
@@ -39,7 +42,21 @@ class ReportDataServiceTest {
     private val reportViewRepository = mock<ReportViewRepository>()
     private val conversionRateService = mock<ConversionRateService>()
     private val fundTransactionSdk = mock<TransactionSdk>()
-    private val reportTransactionService = ReportTransactionService(fundTransactionSdk)
+    private val needCategoryId = randomUUID()
+    private val wantCategoryId = randomUUID()
+    private val otherCategoryId = randomUUID()
+    private val incomeCategoryId = randomUUID()
+    private val investmentCategoryId = randomUUID()
+    private val categorySdk = mock<CategorySdk> {
+        onBlocking { listCategories(any()) } doReturn listOf(
+            CategoryTO(needCategoryId, "need"),
+            CategoryTO(wantCategoryId, "want"),
+            CategoryTO(otherCategoryId, "other"),
+            CategoryTO(incomeCategoryId, "income"),
+            CategoryTO(investmentCategoryId, "investment"),
+        )
+    }
+    private val reportTransactionService = ReportTransactionService(fundTransactionSdk, categorySdk)
     private val forecastStrategy = AverageForecastStrategy()
 
     private val resolverRegistry = ReportDataResolverRegistry(
@@ -76,10 +93,10 @@ class ReportDataServiceTest {
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 11))
         mockTransactions(
             interval, expensesFundId, listOf(
-                ronTransaction(LocalDate(2021, 9, 3), -100, Category("need")),
-                eurTransaction(LocalDate(2021, 9, 15), -40, Category("want")),
-                ronTransaction(LocalDate(2021, 10, 7), -30, Category("want")),
-                ronTransaction(LocalDate(2021, 10, 8), -16, Category("other")),
+                ronTransaction(LocalDate(2021, 9, 3), -100, needCategoryId),
+                eurTransaction(LocalDate(2021, 9, 15), -40, wantCategoryId),
+                ronTransaction(LocalDate(2021, 10, 7), -30, wantCategoryId),
+                ronTransaction(LocalDate(2021, 10, 8), -16, otherCategoryId),
             )
         )
 
@@ -119,12 +136,12 @@ class ReportDataServiceTest {
         )
         mockTransactions(
             interval, expensesFundId, listOf(
-                ronTransaction(LocalDate(2021, 1, 3), -100, Category("need")),
-                ronTransaction(LocalDate(2021, 2, 15), -40, Category("want")),
-                ronTransaction(LocalDate(2021, 3, 7), -30, Category("want")),
-                ronTransaction(LocalDate(2021, 4, 8), -20, Category("need")),
-                ronTransaction(LocalDate(2021, 5, 8), -40, Category("need")),
-                ronTransaction(LocalDate(2021, 6, 8), -50, Category("want")),
+                ronTransaction(LocalDate(2021, 1, 3), -100, needCategoryId),
+                ronTransaction(LocalDate(2021, 2, 15), -40, wantCategoryId),
+                ronTransaction(LocalDate(2021, 3, 7), -30, wantCategoryId),
+                ronTransaction(LocalDate(2021, 4, 8), -20, needCategoryId),
+                ronTransaction(LocalDate(2021, 5, 8), -40, needCategoryId),
+                ronTransaction(LocalDate(2021, 6, 8), -50, wantCategoryId),
             )
         )
         whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
@@ -170,11 +187,11 @@ class ReportDataServiceTest {
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 10))
         mockTransactions(
             interval, expensesFundId, listOf(
-                ronTransaction(LocalDate.parse("2021-09-03"), -100, Category("need")),
-                eurTransaction(LocalDate.parse("2021-09-04"), -10, Category("need")),
-                eurTransaction(LocalDate.parse("2021-09-15"), -40, Category("want")),
-                ronTransaction(LocalDate.parse("2021-10-18"), -30, Category("want")),
-                ronTransaction(LocalDate.parse("2021-09-28"), -16, Category("other")),
+                ronTransaction(LocalDate.parse("2021-09-03"), -100, needCategoryId),
+                eurTransaction(LocalDate.parse("2021-09-04"), -10, needCategoryId),
+                eurTransaction(LocalDate.parse("2021-09-15"), -40, wantCategoryId),
+                ronTransaction(LocalDate.parse("2021-10-18"), -30, wantCategoryId),
+                ronTransaction(LocalDate.parse("2021-09-28"), -16, otherCategoryId),
             )
         )
         whenever(conversionRateService.getRate(any(), eq(RON), eq(RON))).thenReturn(BigDecimal.ONE)
@@ -223,14 +240,14 @@ class ReportDataServiceTest {
         mockTransactions(
             interval, expensesFundId, listOf(
                 // previous month with specific distribution
-                ronTransaction(LocalDate(2020, 1, 5), 1000, Category("income")),
+                ronTransaction(LocalDate(2020, 1, 5), 1000, incomeCategoryId),
                 eurTransaction(LocalDate(2020, 1, 10), 500, null),
                 // first month
-                ronTransaction(LocalDate(2020, 2, 5), amount = 1500, category = null),
-                ronTransaction(LocalDate(2020, 2, 10), amount = -300, category = null),
+                ronTransaction(LocalDate(2020, 2, 5), amount = 1500, categoryId = null),
+                ronTransaction(LocalDate(2020, 2, 10), amount = -300, categoryId = null),
                 eurTransaction(LocalDate(2020, 2, 15), 300, null),
                 // second month
-                ronTransaction(LocalDate(2020, 3, 5), amount = 2000, category = null),
+                ronTransaction(LocalDate(2020, 3, 5), amount = 2000, categoryId = null),
             )
         )
 
@@ -305,14 +322,14 @@ class ReportDataServiceTest {
         mockTransactions(
             interval, expensesFundId, listOf(
                 // previous month with specific distribution
-                ronTransaction(LocalDate(2020, 1, 5), 1000, Category("income")),
+                ronTransaction(LocalDate(2020, 1, 5), 1000, incomeCategoryId),
                 // first month
                 ronTransaction(LocalDate(2020, 2, 5), 2000, null),
-                ronTransaction(LocalDate(2020, 2, 10), -100, Category("need")),
+                ronTransaction(LocalDate(2020, 2, 10), -100, needCategoryId),
                 eurTransaction(LocalDate(2020, 2, 15), 500, null),
-                ronTransaction(LocalDate(2020, 2, 20), -200, Category("need")),
-                ronTransaction(LocalDate(2020, 2, 21), -500, Category("need")),
-                eurTransaction(LocalDate(2020, 2, 25), -100, Category("want")),
+                ronTransaction(LocalDate(2020, 2, 20), -200, needCategoryId),
+                ronTransaction(LocalDate(2020, 2, 21), -500, needCategoryId),
+                eurTransaction(LocalDate(2020, 2, 25), -100, wantCategoryId),
             )
         )
 
@@ -392,13 +409,13 @@ class ReportDataServiceTest {
                 // first month
                 ronTransaction(LocalDate(2020, 2, 5), 2000, null),
                 eurTransaction(LocalDate(2020, 2, 15), 500, null),
-                ronTransaction(LocalDate(2020, 2, 10), -800, Category("need")),
-                eurTransaction(LocalDate(2020, 2, 25), -100, Category("want")),
+                ronTransaction(LocalDate(2020, 2, 10), -800, needCategoryId),
+                eurTransaction(LocalDate(2020, 2, 25), -100, wantCategoryId),
                 // second month
                 ronTransaction(LocalDate(2020, 3, 5), 2500, null),
                 eurTransaction(LocalDate(2020, 3, 15), 400, null),
-                ronTransaction(LocalDate(2020, 3, 20), -300, Category("want")),
-                eurTransaction(LocalDate(2020, 3, 25), -200, Category("need")),
+                ronTransaction(LocalDate(2020, 3, 20), -300, wantCategoryId),
+                eurTransaction(LocalDate(2020, 3, 25), -200, needCategoryId),
             )
         )
 
@@ -503,13 +520,13 @@ class ReportDataServiceTest {
                 // first month
                 ronTransaction(LocalDate(2020, 2, 5), 2000, null),
                 eurTransaction(LocalDate(2020, 2, 15), 500, null),
-                ronTransaction(LocalDate(2020, 2, 10), -800, Category("need")),
-                eurTransaction(LocalDate(2020, 2, 25), -100, Category("want")),
+                ronTransaction(LocalDate(2020, 2, 10), -800, needCategoryId),
+                eurTransaction(LocalDate(2020, 2, 25), -100, wantCategoryId),
                 // second month
                 ronTransaction(LocalDate(2020, 3, 5), 2500, null),
                 eurTransaction(LocalDate(2020, 3, 15), 400, null),
-                ronTransaction(LocalDate(2020, 3, 20), -300, Category("want")),
-                eurTransaction(LocalDate(2020, 3, 25), -200, Category("need")),
+                ronTransaction(LocalDate(2020, 3, 20), -300, wantCategoryId),
+                eurTransaction(LocalDate(2020, 3, 25), -200, needCategoryId),
             )
         )
 
@@ -615,21 +632,21 @@ class ReportDataServiceTest {
             interval, expensesFundId, listOf(
                 // first month
                 ronTransaction(LocalDate(2020, 1, 5), 2000, null),
-                ronTransaction(LocalDate(2020, 1, 10), -500, Category("need")),
-                ronTransaction(LocalDate(2020, 1, 12), -400, Category("want")),
+                ronTransaction(LocalDate(2020, 1, 10), -500, needCategoryId),
+                ronTransaction(LocalDate(2020, 1, 12), -400, wantCategoryId),
                 // second month
                 ronTransaction(LocalDate(2020, 2, 5), 2500, null),
-                ronTransaction(LocalDate(2020, 2, 20), -600, Category("need")),
-                ronTransaction(LocalDate(2020, 2, 21), -300, Category("want")),
+                ronTransaction(LocalDate(2020, 2, 20), -600, needCategoryId),
+                ronTransaction(LocalDate(2020, 2, 21), -300, wantCategoryId),
                 // third month
                 ronTransaction(LocalDate(2020, 3, 5), 1500, null),
-                ronTransaction(LocalDate(2020, 3, 20), -700, Category("need")),
-                ronTransaction(LocalDate(2020, 3, 21), -300, Category("want")),
+                ronTransaction(LocalDate(2020, 3, 20), -700, needCategoryId),
+                ronTransaction(LocalDate(2020, 3, 21), -300, wantCategoryId),
                 // fourth month
                 // second month
                 ronTransaction(LocalDate(2020, 4, 5), 2000, null),
-                ronTransaction(LocalDate(2020, 4, 20), -600, Category("need")),
-                ronTransaction(LocalDate(2020, 4, 21), -400, Category("want")),
+                ronTransaction(LocalDate(2020, 4, 20), -600, needCategoryId),
+                ronTransaction(LocalDate(2020, 4, 21), -400, wantCategoryId),
             )
         )
 
@@ -668,13 +685,13 @@ class ReportDataServiceTest {
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 11))
         mockTransactions(
             interval, expensesFundId, listOf(
-                ronTransaction(LocalDate.parse("2021-08-02"), 100, Category("need")),
-                ronTransaction(LocalDate.parse("2021-09-02"), 200, Category("need")),
-                ronTransaction(LocalDate.parse("2021-09-03"), -100, Category("need")),
-                ronTransaction(LocalDate.parse("2021-09-15"), -40, Category("want")),
-                ronTransaction(LocalDate.parse("2021-10-07"), 400, Category("want")),
-                ronTransaction(LocalDate.parse("2021-10-07"), -30, Category("want")),
-                ronTransaction(LocalDate.parse("2021-10-08"), -16, Category("other")),
+                ronTransaction(LocalDate.parse("2021-08-02"), 100, needCategoryId),
+                ronTransaction(LocalDate.parse("2021-09-02"), 200, needCategoryId),
+                ronTransaction(LocalDate.parse("2021-09-03"), -100, needCategoryId),
+                ronTransaction(LocalDate.parse("2021-09-15"), -40, wantCategoryId),
+                ronTransaction(LocalDate.parse("2021-10-07"), 400, wantCategoryId),
+                ronTransaction(LocalDate.parse("2021-10-07"), -30, wantCategoryId),
+                ronTransaction(LocalDate.parse("2021-10-08"), -16, otherCategoryId),
             )
         )
 
@@ -709,10 +726,10 @@ class ReportDataServiceTest {
         val interval = ReportDataInterval.Monthly(YearMonth(2021, 9), YearMonth(2021, 10))
         mockTransactions(
             interval, expensesFundId, listOf(
-                ronTransaction(LocalDate.parse("2021-08-02"), 100, Category("need")),
-                eurTransaction(LocalDate.parse("2021-08-05"), 20, Category("need")),
-                ronTransaction(LocalDate.parse("2021-09-02"), 100, Category("need")),
-                eurTransaction(LocalDate.parse("2021-09-03"), 20, Category("need")),
+                ronTransaction(LocalDate.parse("2021-08-02"), 100, needCategoryId),
+                eurTransaction(LocalDate.parse("2021-08-05"), 20, needCategoryId),
+                ronTransaction(LocalDate.parse("2021-09-02"), 100, needCategoryId),
+                eurTransaction(LocalDate.parse("2021-09-03"), 20, needCategoryId),
             )
         )
         whenever(conversionRateService.getRate(any(), eq(EUR), eq(RON))).thenAnswer {
@@ -1099,12 +1116,12 @@ class ReportDataServiceTest {
     ) = ReportView(reportViewId, userId, reportViewName, fundId, dataConfiguration)
 
     private fun ronTransaction(
-        date: LocalDate, amount: Int, category: Category?,
-    ) = transaction(date, RON, amount, category)
+        date: LocalDate, amount: Int, categoryId: UUID?,
+    ) = transaction(date, RON, amount, categoryId)
 
     private fun eurTransaction(
-        date: LocalDate, amount: Int, category: Category?,
-    ) = transaction(date, EUR, amount, category)
+        date: LocalDate, amount: Int, categoryId: UUID?,
+    ) = transaction(date, EUR, amount, categoryId)
 
     private fun investmentEurTransfer(date: LocalDate, amountEur: Int) =
         TransactionTO.Transfer(
@@ -1118,7 +1135,7 @@ class ReportDataServiceTest {
                 accountId = randomUUID(),
                 amount = com.ionspin.kotlin.bignum.decimal.BigDecimal.fromInt(amountEur * -1),
                 unit = EUR,
-                category = Category("investment")
+                categoryId = investmentCategoryId
             ),
             destinationRecord = TransactionRecordTO.CurrencyRecord(
                 id = randomUUID(),
@@ -1126,7 +1143,7 @@ class ReportDataServiceTest {
                 accountId = randomUUID(),
                 amount = com.ionspin.kotlin.bignum.decimal.BigDecimal.fromInt(amountEur),
                 unit = EUR,
-                category = Category("investment")
+                categoryId = investmentCategoryId
             )
         )
 
@@ -1142,7 +1159,7 @@ class ReportDataServiceTest {
                 accountId = randomUUID(),
                 amount = com.ionspin.kotlin.bignum.decimal.BigDecimal.fromInt(eurAmount * -1),
                 unit = EUR,
-                category = null,
+                categoryId = null,
             ),
             instrumentRecord = TransactionRecordTO.InstrumentRecord(
                 id = randomUUID(),
@@ -1150,12 +1167,12 @@ class ReportDataServiceTest {
                 accountId = randomUUID(),
                 amount = com.ionspin.kotlin.bignum.decimal.BigDecimal.fromInt(instrumentAmount),
                 unit = instrument,
-                category = null,
+                categoryId = null,
             )
         )
 
     private fun transaction(
-        date: LocalDate, unit: Currency, amount: Int, category: Category?,
+        date: LocalDate, unit: Currency, amount: Int, categoryId: UUID?,
     ) = TransactionTO.SingleRecord(
         id = randomUUID(),
         userId = userId,
@@ -1166,7 +1183,7 @@ class ReportDataServiceTest {
             fundId = expensesFundId,
             unit = unit,
             amount = com.ionspin.kotlin.bignum.decimal.BigDecimal.fromInt(amount),
-            category = category,
+            categoryId = categoryId,
             accountId = randomUUID()
         )
     )

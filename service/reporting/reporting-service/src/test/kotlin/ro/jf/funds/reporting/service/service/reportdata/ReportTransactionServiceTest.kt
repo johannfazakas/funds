@@ -6,11 +6,14 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.atTime
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import ro.jf.funds.fund.api.model.TransactionFilterTO
 import ro.jf.funds.fund.api.model.TransactionRecordTO
 import ro.jf.funds.fund.api.model.TransactionTO
+import ro.jf.funds.fund.sdk.CategorySdk
 import ro.jf.funds.fund.sdk.TransactionSdk
 import ro.jf.funds.platform.api.model.Currency.Companion.EUR
 import ro.jf.funds.platform.api.model.Currency.Companion.RON
@@ -21,7 +24,10 @@ import java.util.UUID.randomUUID
 
 class ReportTransactionServiceTest {
     private val transactionSdk = mock<TransactionSdk>()
-    private val service = ReportTransactionService(transactionSdk)
+    private val categorySdk = mock<CategorySdk>() {
+        onBlocking { listCategories(any()) } doReturn emptyList()
+    }
+    private val service = ReportTransactionService(transactionSdk, categorySdk)
 
     private val userId = randomUUID()
     private val fundA = randomUUID()
@@ -239,7 +245,7 @@ class ReportTransactionServiceTest {
         fundId = fundId,
         amount = BigDecimal.fromInt(amount),
         unit = currency,
-        category = null,
+        categoryId = null,
     )
 
     private fun instrumentRecord(
@@ -252,7 +258,7 @@ class ReportTransactionServiceTest {
         fundId = fundId,
         amount = BigDecimal.fromInt(amount),
         unit = instrument,
-        category = null,
+        categoryId = null,
     )
 
     private suspend fun mockTransactions(

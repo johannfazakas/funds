@@ -17,7 +17,6 @@ import ro.jf.funds.fund.service.persistence.AccountRepository
 import ro.jf.funds.fund.service.persistence.FundRepository
 import ro.jf.funds.fund.service.persistence.RecordRepository
 import ro.jf.funds.fund.service.persistence.TransactionRepository
-import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.jvm.event.Producer
 import java.util.UUID.randomUUID
@@ -49,6 +48,7 @@ class TransactionServiceTest {
 
     private val record1Id = randomUUID()
     private val record2Id = randomUUID()
+    private val categoryId = randomUUID()
 
     @Test
     fun `given create valid transaction`(): Unit = runBlocking {
@@ -66,7 +66,7 @@ class TransactionServiceTest {
                 fundId = workFundId,
                 amount = BigDecimal.parseString("-100.25"),
                 unit = Currency("RON"),
-                category = Category("one")
+                categoryId = categoryId
             ),
             destinationRecord = CreateTransactionRecordTO.CurrencyRecord(
                 accountId = personalAccountId,
@@ -101,7 +101,7 @@ class TransactionServiceTest {
                     fundId = workFundId,
                     amount = BigDecimal.parseString("-100.25"),
                     unit = Currency("RON"),
-                    category = Category("one")
+                    categoryId = categoryId
                 ),
                 destinationRecord = TransactionRecord.CurrencyRecord(
                     id = record2Id,
@@ -146,7 +146,7 @@ class TransactionServiceTest {
                         fundId = workFundId,
                         amount = BigDecimal.parseString("100.25"),
                         unit = Currency("RON"),
-                        category = Category("one")
+                        categoryId = categoryId
                     ),
                     destinationRecord = TransactionRecord.CurrencyRecord(
                         id = record2Id,
@@ -170,12 +170,12 @@ class TransactionServiceTest {
         assertThat(transaction.sourceRecord.fundId).isEqualTo(workFundId)
         assertThat(transaction.sourceRecord.accountId).isEqualTo(companyAccountId)
         assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal.parseString("100.25"))
-        assertThat(transaction.sourceRecord.category).isEqualTo(Category("one"))
+        assertThat(transaction.sourceRecord.categoryId).isEqualTo(categoryId)
         assertThat(transaction.destinationRecord.id).isEqualTo(record2Id)
         assertThat(transaction.destinationRecord.fundId).isEqualTo(expensesFundId)
         assertThat(transaction.destinationRecord.accountId).isEqualTo(personalAccountId)
         assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal.parseString("50.75"))
-        assertThat(transaction.destinationRecord.category).isNull()
+        assertThat(transaction.destinationRecord.categoryId).isNull()
     }
 
     @Test
@@ -194,7 +194,7 @@ class TransactionServiceTest {
                         fundId = workFundId,
                         amount = BigDecimal.parseString("100.25"),
                         unit = Currency("RON"),
-                        category = Category("one")
+                        categoryId = categoryId
                     ),
                     destinationRecord = TransactionRecord.CurrencyRecord(
                         id = record2Id,
@@ -218,12 +218,12 @@ class TransactionServiceTest {
         assertThat(transaction.sourceRecord.fundId).isEqualTo(workFundId)
         assertThat(transaction.sourceRecord.accountId).isEqualTo(companyAccountId)
         assertThat(transaction.sourceRecord.amount).isEqualTo(BigDecimal.parseString("100.25"))
-        assertThat(transaction.sourceRecord.category).isEqualTo(Category("one"))
+        assertThat(transaction.sourceRecord.categoryId).isEqualTo(categoryId)
         assertThat(transaction.destinationRecord.id).isEqualTo(record2Id)
         assertThat(transaction.destinationRecord.fundId).isEqualTo(expensesFundId)
         assertThat(transaction.destinationRecord.accountId).isEqualTo(personalAccountId)
         assertThat(transaction.destinationRecord.amount).isEqualTo(BigDecimal.parseString("50.75"))
-        assertThat(transaction.destinationRecord.category).isNull()
+        assertThat(transaction.destinationRecord.categoryId).isNull()
     }
 
     @Test

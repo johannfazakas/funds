@@ -5,7 +5,6 @@ import kotlinx.datetime.LocalDateTime
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.api.model.Instrument
-import ro.jf.funds.platform.api.model.Category
 import java.util.*
 
 sealed class Record {
@@ -16,7 +15,7 @@ sealed class Record {
     abstract val fundId: UUID
     abstract val amount: BigDecimal
     abstract val unit: FinancialUnit
-    abstract val category: Category?
+    abstract val categoryId: UUID?
     abstract val note: String?
 
     data class CurrencyRecord(
@@ -27,7 +26,7 @@ sealed class Record {
         override val fundId: UUID,
         override val amount: BigDecimal,
         override val unit: Currency,
-        override val category: Category? = null,
+        override val categoryId: UUID? = null,
         override val note: String? = null,
     ) : Record()
 
@@ -39,7 +38,7 @@ sealed class Record {
         override val fundId: UUID,
         override val amount: BigDecimal,
         override val unit: Instrument,
-        override val category: Category? = null,
+        override val categoryId: UUID? = null,
         override val note: String? = null,
     ) : Record()
 }

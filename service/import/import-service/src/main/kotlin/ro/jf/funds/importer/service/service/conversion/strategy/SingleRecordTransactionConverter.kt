@@ -1,9 +1,7 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
-import com.benasher44.uuid.Uuid
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.fund.api.model.AccountTO
-import ro.jf.funds.fund.api.model.CategoryTO
 import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.conversion.api.model.ConversionsResponse
 import ro.jf.funds.importer.service.domain.Conversion
@@ -36,7 +34,6 @@ class SingleRecordTransactionConverter : ImportTransactionConverter {
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         accountStore: Store<AccountTO>,
-        categoryStore: Store<CategoryTO>,
     ): CreateTransactionTO {
         val record = transaction.records.first()
         return CreateTransactionTO.SingleRecord(
@@ -46,7 +43,6 @@ class SingleRecordTransactionConverter : ImportTransactionConverter {
                 transaction.dateTime.date,
                 accountStore[record.accountId],
                 conversions,
-                categoryStore,
             )
         )
     }

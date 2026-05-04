@@ -1,13 +1,10 @@
 package ro.jf.funds.importer.service.service.conversion.strategy
 
-import com.benasher44.uuid.Uuid
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
-import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.fund.api.model.AccountTO
-import ro.jf.funds.fund.api.model.CategoryTO
 import ro.jf.funds.fund.api.model.CreateTransactionRecordTO
 import ro.jf.funds.fund.api.model.CreateTransactionTO
 import ro.jf.funds.conversion.api.model.ConversionsResponse
@@ -60,7 +57,6 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
         transaction: ImportParsedTransaction,
         conversions: ConversionsResponse,
         accountStore: Store<AccountTO>,
-        categoryStore: Store<CategoryTO>,
     ): CreateTransactionTO {
         val date = transaction.dateTime.date
 
@@ -72,7 +68,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             accountId = creditRecord.accountId,
             amount = creditAmount,
             unit = creditRecord.unit as Currency,
-            category = creditRecord.categoryId?.let { Category(categoryStore[it].name) },
+            categoryId = creditRecord.categoryId,
             note = creditRecord.note,
         )
 
@@ -90,7 +86,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
             accountId = debitRecord.accountId,
             amount = debitAmount,
             unit = debitRecord.unit as Currency,
-            category = debitRecord.categoryId?.let { Category(categoryStore[it].name) },
+            categoryId = debitRecord.categoryId,
             note = debitRecord.note,
         )
 
@@ -104,7 +100,7 @@ class ExchangeSingleTransactionConverter : ImportTransactionConverter {
                     accountId = debitRecord.accountId,
                     amount = feeAmount,
                     unit = debitRecord.unit as Currency,
-                    category = (feeRecord?.categoryId ?: debitRecord.categoryId)?.let { Category(categoryStore[it].name) },
+                    categoryId = feeRecord?.categoryId ?: debitRecord.categoryId,
                     note = feeRecord?.note ?: debitRecord.note,
                 )
             }

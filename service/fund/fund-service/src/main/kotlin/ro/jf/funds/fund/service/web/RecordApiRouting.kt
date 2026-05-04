@@ -32,7 +32,7 @@ fun Routing.recordApiRouting(recordService: RecordService) {
                 accountId = call.request.queryParameters["accountId"]?.let(UUID::fromString),
                 fundId = call.request.queryParameters["fundId"]?.let(UUID::fromString),
                 unit = call.request.queryParameters["unit"],
-                category = call.request.queryParameters["category"],
+                categoryId = call.request.queryParameters["categoryId"]?.let(UUID::fromString),
                 fromDate = call.request.queryParameters["fromDate"]?.let(LocalDate::parse),
                 toDate = call.request.queryParameters["toDate"]?.let(LocalDate::parse),
             )

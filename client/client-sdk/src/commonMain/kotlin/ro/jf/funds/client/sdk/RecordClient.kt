@@ -36,7 +36,7 @@ class RecordClient(
                 filter?.accountId?.let { parameters.append("accountId", it.toString()) }
                 filter?.fundId?.let { parameters.append("fundId", it.toString()) }
                 filter?.unit?.let { parameters.append("unit", it) }
-                filter?.category?.let { parameters.append("category", it) }
+                filter?.categoryId?.let { parameters.append("categoryId", it.toString()) }
                 filter?.fromDate?.let { parameters.append("fromDate", it.toString()) }
                 filter?.toDate?.let { parameters.append("toDate", it.toString()) }
                 parameters.appendPageRequest(pageRequest)
