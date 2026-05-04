@@ -8,8 +8,6 @@ import ro.jf.funds.fund.service.persistence.CategoryRepository
 import ro.jf.funds.fund.service.persistence.RecordRepository
 import java.util.*
 
-private val CATEGORY_PATTERN = Regex("^[a-zA-Z0-9_]+$")
-
 class CategoryService(
     private val categoryRepository: CategoryRepository,
     private val recordRepository: RecordRepository,
@@ -20,7 +18,6 @@ class CategoryService(
 
     suspend fun createCategory(userId: UUID, request: CreateCategoryTO): Category {
         require(request.name.isNotBlank()) { "Category name must not be blank" }
-        require(request.name.matches(CATEGORY_PATTERN)) { "Category name must contain only letters, numbers or underscore" }
         val existing = categoryRepository.findByName(userId, request.name)
         if (existing != null) {
             throw FundServiceException.CategoryNameAlreadyExists(request.name)
