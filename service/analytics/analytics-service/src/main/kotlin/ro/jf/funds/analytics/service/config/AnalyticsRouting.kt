@@ -4,10 +4,12 @@ import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.get
 import ro.jf.funds.analytics.service.service.AnalyticsService
+import ro.jf.funds.analytics.service.service.InterestRateService
+import ro.jf.funds.analytics.service.service.PerformanceService
 import ro.jf.funds.analytics.service.web.analyticsApiRouting
 
 fun Application.configureAnalyticsRouting() {
     routing {
-        analyticsApiRouting(get<AnalyticsService>())
+        analyticsApiRouting(get<AnalyticsService>(), get<PerformanceService>(), get<InterestRateService>())
     }
 }
