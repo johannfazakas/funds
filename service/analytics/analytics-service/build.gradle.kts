@@ -9,6 +9,7 @@ dependencies {
     implementation(project(":service:fund:fund-api"))
     implementation(project(":service:conversion:conversion-sdk"))
     implementation(project(":platform:platform-jvm"))
+    implementation(libs.big.math)
     testImplementation(project(":platform:platform-jvm-test"))
 }
 
