@@ -297,7 +297,7 @@ class AnalyticsServiceTest {
         givenRate(Currency.RON, Currency.EUR, "2024-01-01", "0.20")
         givenRate(Currency.RON, Currency.EUR, "2024-02-01", "0.20")
 
-        val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.EUR, groupBy = GroupingCriteria.CURRENCY)
+        val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.EUR, groupBy = GroupingCriteria.FINANCIAL_UNIT)
 
         assertThat(report.buckets).hasSize(3)
         val jan = report.buckets[0].groups.sortedBy { it.groupKey }

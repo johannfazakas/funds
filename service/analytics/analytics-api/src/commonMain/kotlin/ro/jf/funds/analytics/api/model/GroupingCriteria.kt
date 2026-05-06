@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class GroupingCriteria {
-    CURRENCY,
+    FINANCIAL_UNIT,
     ACCOUNT,
     FUND,
     CATEGORY,

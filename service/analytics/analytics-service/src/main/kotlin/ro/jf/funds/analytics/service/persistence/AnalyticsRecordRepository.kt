@@ -163,14 +163,14 @@ class AnalyticsRecordRepository(
     }
 
     private fun GroupingCriteria.toColumn(): Column<*> = when (this) {
-        GroupingCriteria.CURRENCY -> AnalyticsRecordTable.unit
+        GroupingCriteria.FINANCIAL_UNIT -> AnalyticsRecordTable.unit
         GroupingCriteria.ACCOUNT -> AnalyticsRecordTable.accountId
         GroupingCriteria.FUND -> AnalyticsRecordTable.fundId
         GroupingCriteria.CATEGORY -> AnalyticsRecordTable.category
     }
 
     private fun ResultRow.extractGroupKey(groupBy: GroupingCriteria): String? = when (groupBy) {
-        GroupingCriteria.CURRENCY -> this[AnalyticsRecordTable.unit].value
+        GroupingCriteria.FINANCIAL_UNIT -> this[AnalyticsRecordTable.unit].value
         GroupingCriteria.ACCOUNT -> this[AnalyticsRecordTable.accountId].toString()
         GroupingCriteria.FUND -> this[AnalyticsRecordTable.fundId].toString()
         GroupingCriteria.CATEGORY -> this[AnalyticsRecordTable.category]
