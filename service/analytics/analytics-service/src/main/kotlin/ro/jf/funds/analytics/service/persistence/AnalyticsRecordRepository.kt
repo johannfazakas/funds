@@ -14,6 +14,8 @@ import org.jetbrains.exposed.sql.json.json
 import ro.jf.funds.analytics.api.model.GroupingCriteria
 import ro.jf.funds.analytics.api.model.TimeGranularity
 import ro.jf.funds.analytics.service.domain.*
+import ro.jf.funds.fund.api.model.TransactionType
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.jvm.persistence.bigDecimal
 import ro.jf.funds.platform.jvm.persistence.blockingTransaction
@@ -162,6 +164,48 @@ class AnalyticsRecordRepository(
             })
     }
 
+    suspend fun getRecords(
+        userId: Uuid,
+        interval: ReportInterval,
+        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
+    ): List<AnalyticsRecord> = blockingTransaction {
+        AnalyticsRecordTable
+            .selectAll()
+            .where { AnalyticsRecordTable.userId eq userId.toJavaUuid() }
+            .andWhere { AnalyticsRecordTable.dateTime greaterEq interval.from.toJavaLocalDateTime() }
+            .andWhere { AnalyticsRecordTable.dateTime lessEq interval.to.toJavaLocalDateTime() }
+            .applyFilter(filter)
+            .orderBy(AnalyticsRecordTable.dateTime)
+            .map { it.toAnalyticsRecord() }
+    }
+
+    suspend fun getRecordsBefore(
+        userId: Uuid,
+        before: LocalDateTime,
+        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
+    ): List<AnalyticsRecord> = blockingTransaction {
+        AnalyticsRecordTable
+            .selectAll()
+            .where { AnalyticsRecordTable.userId eq userId.toJavaUuid() }
+            .andWhere { AnalyticsRecordTable.dateTime less before.toJavaLocalDateTime() }
+            .applyFilter(filter)
+            .orderBy(AnalyticsRecordTable.dateTime)
+            .map { it.toAnalyticsRecord() }
+    }
+
+    private fun ResultRow.toAnalyticsRecord() = AnalyticsRecord(
+        id = Uuid.fromString(this[AnalyticsRecordTable.id].toString()),
+        userId = Uuid.fromString(this[AnalyticsRecordTable.userId].toString()),
+        fundId = Uuid.fromString(this[AnalyticsRecordTable.fundId].toString()),
+        accountId = Uuid.fromString(this[AnalyticsRecordTable.accountId].toString()),
+        transactionId = Uuid.fromString(this[AnalyticsRecordTable.transactionId].toString()),
+        transactionType = TransactionType.valueOf(this[AnalyticsRecordTable.transactionType]),
+        dateTime = this[AnalyticsRecordTable.dateTime].toKotlinLocalDateTime(),
+        amount = this[AnalyticsRecordTable.amount],
+        unit = this[AnalyticsRecordTable.unit],
+        category = this[AnalyticsRecordTable.category]?.let { Category(it) },
+    )
+
     private fun GroupingCriteria.toColumn(): Column<*> = when (this) {
         GroupingCriteria.FINANCIAL_UNIT -> AnalyticsRecordTable.unit
         GroupingCriteria.ACCOUNT -> AnalyticsRecordTable.accountId
@@ -189,6 +233,11 @@ class AnalyticsRecordRepository(
                         AnalyticsRecordTable.unit.contains(Json.encodeToString(FinancialUnit.serializer(), it))
                     }.reduce { acc, op -> acc or op }
                 }
+            else query
+        }
+        .let { query ->
+            if (filter.transactionTypes.isNotEmpty())
+                query.andWhere { AnalyticsRecordTable.transactionType inList filter.transactionTypes.map { it.name } }
             else query
         }
 
