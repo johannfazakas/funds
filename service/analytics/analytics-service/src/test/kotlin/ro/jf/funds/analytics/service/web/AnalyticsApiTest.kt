@@ -14,6 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.ktor.ext.get
 import ro.jf.funds.analytics.api.model.AnalyticsReportTO
 import ro.jf.funds.analytics.api.model.AnalyticsReportRequestTO
+import ro.jf.funds.analytics.api.model.InterestRateDataTO
+import ro.jf.funds.analytics.api.model.PerformanceDataTO
 import ro.jf.funds.analytics.api.model.TimeGranularity
 import ro.jf.funds.analytics.service.config.analyticsDependencies
 import ro.jf.funds.analytics.service.config.configureAnalyticsRouting
@@ -163,6 +165,60 @@ class AnalyticsApiTest {
 
             assertThat(report.buckets[2].dateTime).isEqualTo(LocalDateTime.parse("2024-03-01T00:00:00"))
             assertThat(report.buckets[2].groups[0].value).isEqualTo(BigDecimal.parseString("150.00"))
+        }
+
+    @Test
+    fun `given no records - when requesting performance report - then returns zero-filled report`(): Unit =
+        testApplication {
+            configureEnvironment({ testModule() }, dbConfig, kafkaConfig, conversionServiceConfig)
+
+            val client = createJsonHttpClient()
+            val response = client.post("/funds-api/analytics/v1/reports/performance") {
+                contentType(ContentType.Application.Json)
+                header(USER_ID_HEADER, userId)
+                setBody(
+                    AnalyticsReportRequestTO(
+                        granularity = TimeGranularity.MONTHLY,
+                        from = LocalDateTime.parse("2024-01-01T00:00:00"),
+                        to = LocalDateTime.parse("2024-03-01T00:00:00"),
+                        targetCurrency = Currency.RON,
+                    )
+                )
+            }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val report = response.body<AnalyticsReportTO<PerformanceDataTO>>()
+            assertThat(report.granularity).isEqualTo(TimeGranularity.MONTHLY)
+            assertThat(report.buckets).hasSize(2)
+            assertThat(report.buckets[0].groups[0].value.totalInvestment).isEqualTo(BigDecimal.ZERO)
+            assertThat(report.buckets[0].groups[0].value.totalProfit).isEqualTo(BigDecimal.ZERO)
+        }
+
+    @Test
+    fun `given no records - when requesting interest rate report - then returns zero-filled report`(): Unit =
+        testApplication {
+            configureEnvironment({ testModule() }, dbConfig, kafkaConfig, conversionServiceConfig)
+
+            val client = createJsonHttpClient()
+            val response = client.post("/funds-api/analytics/v1/reports/interest-rate") {
+                contentType(ContentType.Application.Json)
+                header(USER_ID_HEADER, userId)
+                setBody(
+                    AnalyticsReportRequestTO(
+                        granularity = TimeGranularity.MONTHLY,
+                        from = LocalDateTime.parse("2024-01-01T00:00:00"),
+                        to = LocalDateTime.parse("2024-03-01T00:00:00"),
+                        targetCurrency = Currency.RON,
+                    )
+                )
+            }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val report = response.body<AnalyticsReportTO<InterestRateDataTO>>()
+            assertThat(report.granularity).isEqualTo(TimeGranularity.MONTHLY)
+            assertThat(report.buckets).hasSize(2)
+            assertThat(report.buckets[0].groups[0].value.totalInterestRate).isEqualTo(BigDecimal.ZERO)
+            assertThat(report.buckets[0].groups[0].value.currentInterestRate).isEqualTo(BigDecimal.ZERO)
         }
 
     private fun analyticsRecord(
