@@ -1,25 +1,26 @@
+@file:UseSerializers(BigDecimalSerializer::class)
+
 package ro.jf.funds.analytics.api.model
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import ro.jf.funds.platform.api.serialization.BigDecimalSerializer
 
 @Serializable
-data class AnalyticsReportTO(
+data class AnalyticsReportTO<T>(
     val granularity: TimeGranularity,
-    val buckets: List<AnalyticsBucketTO>,
+    val buckets: List<AnalyticsBucketTO<T>>,
 )
 
 @Serializable
-data class AnalyticsBucketTO(
+data class AnalyticsBucketTO<T>(
     val dateTime: LocalDateTime,
-    val groups: List<AnalyticsGroupBucketTO>,
+    val groups: List<AnalyticsGroupBucketTO<T>>,
 )
 
 @Serializable
-data class AnalyticsGroupBucketTO(
+data class AnalyticsGroupBucketTO<T>(
     val groupKey: String? = null,
-    @Serializable(with = BigDecimalSerializer::class)
-    val value: BigDecimal,
+    val value: T,
 )

@@ -6,6 +6,7 @@ import ro.jf.funds.analytics.service.domain.AnalyticsRecord
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
 import ro.jf.funds.fund.api.model.TransactionTO
 import ro.jf.funds.fund.api.model.TransactionsCreatedTO
+import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.jvm.event.Event
 import ro.jf.funds.platform.jvm.event.EventHandler
 
@@ -34,7 +35,7 @@ class TransactionsCreatedHandler(
                 amount = record.amount,
                 unit = record.unit,
                 transactionType = type,
-                category = record.category,
+                category = record.categoryId?.let { Category(it.toString()) },
             )
         }
 }

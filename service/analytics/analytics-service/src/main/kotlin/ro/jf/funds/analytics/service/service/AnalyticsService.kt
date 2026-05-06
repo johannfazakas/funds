@@ -29,7 +29,7 @@ class AnalyticsService(
         filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
         targetCurrency: Currency,
         groupBy: GroupingCriteria? = null,
-    ): AnalyticsReportTO {
+    ): AnalyticsReportTO<BigDecimal> {
         log.info { "Generating balance report for user $userId, interval=$interval, targetCurrency=$targetCurrency, groupBy=$groupBy" }
         return if (groupBy != null)
             getGroupedBalanceReport(userId, interval, filter, targetCurrency, groupBy)
@@ -43,7 +43,7 @@ class AnalyticsService(
         filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
         targetCurrency: Currency,
         groupBy: GroupingCriteria? = null,
-    ): AnalyticsReportTO {
+    ): AnalyticsReportTO<BigDecimal> {
         log.info { "Generating net change report for user $userId, interval=$interval, targetCurrency=$targetCurrency, groupBy=$groupBy" }
         return if (groupBy != null)
             getGroupedNetChangeReport(userId, interval, filter, targetCurrency, groupBy)
@@ -56,7 +56,7 @@ class AnalyticsService(
         interval: ReportInterval,
         filter: AnalyticsRecordFilter,
         targetCurrency: Currency,
-    ): AnalyticsReportTO {
+    ): AnalyticsReportTO<BigDecimal> {
         val previousBalance = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, filter)
         val bucketedUnitAmounts = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, filter)
 
@@ -74,7 +74,7 @@ class AnalyticsService(
         filter: AnalyticsRecordFilter,
         targetCurrency: Currency,
         groupBy: GroupingCriteria,
-    ): AnalyticsReportTO {
+    ): AnalyticsReportTO<BigDecimal> {
         val previousBalances =
             analyticsRecordRepository.getGroupedUnitAmountsBefore(userId, interval.from, filter, groupBy)
         val bucketedGroupedUnitAmounts =
@@ -107,7 +107,7 @@ class AnalyticsService(
         interval: ReportInterval,
         filter: AnalyticsRecordFilter,
         targetCurrency: Currency,
-    ): AnalyticsReportTO {
+    ): AnalyticsReportTO<BigDecimal> {
         val bucketedUnitAmounts = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, filter)
 
         val buckets = interval.generateBucketedData { dateTime ->
@@ -123,7 +123,7 @@ class AnalyticsService(
         filter: AnalyticsRecordFilter,
         targetCurrency: Currency,
         groupBy: GroupingCriteria,
-    ): AnalyticsReportTO {
+    ): AnalyticsReportTO<BigDecimal> {
         val bucketedGroupedUnitAmounts =
             analyticsRecordRepository.getBucketedGroupedUnitAmounts(userId, interval, filter, groupBy)
 

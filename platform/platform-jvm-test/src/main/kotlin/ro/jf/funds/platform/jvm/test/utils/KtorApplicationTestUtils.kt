@@ -6,6 +6,7 @@ import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import kotlinx.serialization.json.Json
+import ro.jf.funds.platform.jvm.config.platformJson
 import ro.jf.funds.platform.jvm.event.TopicSupplier
 import ro.jf.funds.platform.jvm.test.extension.KafkaContainerExtension
 import ro.jf.funds.platform.jvm.test.extension.PostgresContainerExtension
@@ -14,7 +15,11 @@ import java.util.UUID.randomUUID
 private const val TEST_ENVIRONMENT = "test"
 
 fun ApplicationTestBuilder.createJsonHttpClient() =
-    createClient { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
+    createClient {
+        install(ContentNegotiation) {
+            json(Json(platformJson) { ignoreUnknownKeys = true })
+        }
+    }
 
 fun ApplicationTestBuilder.configureEnvironment(
     module: Application.() -> Unit,

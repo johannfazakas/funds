@@ -78,7 +78,7 @@ class AnalyticsApiTest {
             }
 
             assertThat(unfilteredResponse.status).isEqualTo(HttpStatusCode.OK)
-            val unfilteredReport = unfilteredResponse.body<AnalyticsReportTO>()
+            val unfilteredReport = unfilteredResponse.body<AnalyticsReportTO<BigDecimal>>()
             assertThat(unfilteredReport.granularity).isEqualTo(TimeGranularity.MONTHLY)
             assertThat(unfilteredReport.buckets).hasSize(3)
 
@@ -106,7 +106,7 @@ class AnalyticsApiTest {
             }
 
             assertThat(filteredResponse.status).isEqualTo(HttpStatusCode.OK)
-            val filteredReport = filteredResponse.body<AnalyticsReportTO>()
+            val filteredReport = filteredResponse.body<AnalyticsReportTO<BigDecimal>>()
             assertThat(filteredReport.buckets).hasSize(3)
 
             assertThat(filteredReport.buckets[0].dateTime).isEqualTo(LocalDateTime.parse("2024-01-01T00:00:00"))
@@ -151,7 +151,7 @@ class AnalyticsApiTest {
             }
 
             assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-            val report = response.body<AnalyticsReportTO>()
+            val report = response.body<AnalyticsReportTO<BigDecimal>>()
             assertThat(report.granularity).isEqualTo(TimeGranularity.MONTHLY)
             assertThat(report.buckets).hasSize(3)
 
