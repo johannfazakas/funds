@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getBalanceReport, getNetChangeReport, TimeGranularity, GroupBy, ReportResponse } from '../api/analyticsApi';
+import { getBalanceReport, getNetChangeReport, getPerformanceReport, getInterestRateReport, extractMetric, TimeGranularity, GroupBy, ReportResponse, PerformanceData, InterestRateData } from '../api/analyticsApi';
 import { listFunds, Fund } from '../api/fundApi';
 import { listAccounts, Account } from '../api/accountApi';
 import ValueChart, { ValueChartDataPoint } from '../components/ValueChart';
@@ -15,11 +15,13 @@ interface AnalyticsPageProps {
     userId: string;
 }
 
-type ReportType = 'balance' | 'netChange';
+type ReportType = 'balance' | 'netChange' | 'performance' | 'interestRate';
 
 const reportTypeOptions: { value: ReportType; label: string; seriesName: string; color: string }[] = [
     { value: 'balance', label: 'Balance', seriesName: 'Balance', color: '#2563eb' },
     { value: 'netChange', label: 'Net Change', seriesName: 'Net Change', color: '#16a34a' },
+    { value: 'performance', label: 'Performance', seriesName: 'Performance', color: '#9333ea' },
+    { value: 'interestRate', label: 'Interest Rate', seriesName: 'Interest Rate', color: '#ea580c' },
 ];
 
 const granularityOptions: { value: TimeGranularity; label: string }[] = [
@@ -31,10 +33,24 @@ const granularityOptions: { value: TimeGranularity; label: string }[] = [
 
 const groupByOptions: { value: string; label: string }[] = [
     { value: 'NONE', label: 'None' },
-    { value: 'CURRENCY', label: 'Currency' },
+    { value: 'FINANCIAL_UNIT', label: 'Financial Unit' },
     { value: 'ACCOUNT', label: 'Account' },
     { value: 'FUND', label: 'Fund' },
     { value: 'CATEGORY', label: 'Category' },
+];
+
+const performanceMetrics: { value: keyof PerformanceData; label: string }[] = [
+    { value: 'totalInvestment', label: 'Total Investment' },
+    { value: 'currentInvestment', label: 'Current Investment' },
+    { value: 'totalProfit', label: 'Total Profit' },
+    { value: 'currentProfit', label: 'Current Profit' },
+    { value: 'totalInstrumentValue', label: 'Total Instrument Value' },
+    { value: 'currencyValue', label: 'Currency Value' },
+];
+
+const interestRateMetrics: { value: keyof InterestRateData; label: string }[] = [
+    { value: 'totalInterestRate', label: 'Total Interest Rate' },
+    { value: 'currentInterestRate', label: 'Current Interest Rate' },
 ];
 
 function defaultFromDate(): string {
@@ -117,6 +133,7 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
     const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
     const [targetCurrency, setTargetCurrency] = useState<string>('');
     const [groupBy, setGroupBy] = useState<string>('NONE');
+    const [selectedMetric, setSelectedMetric] = useState<string>('totalProfit');
 
     const [funds, setFunds] = useState<Fund[]>([]);
     const [accounts, setAccounts] = useState<Account[]>([]);
@@ -196,9 +213,18 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                 targetCurrency,
                 groupBy: groupBy !== 'NONE' ? groupBy as GroupBy : undefined,
             };
-            const data = reportType === 'balance'
-                ? await getBalanceReport(userId, request)
-                : await getNetChangeReport(userId, request);
+            let data: ReportResponse;
+            if (reportType === 'balance') {
+                data = await getBalanceReport(userId, request);
+            } else if (reportType === 'netChange') {
+                data = await getNetChangeReport(userId, request);
+            } else if (reportType === 'performance') {
+                const perfData = await getPerformanceReport(userId, request);
+                data = extractMetric(perfData, selectedMetric as keyof PerformanceData);
+            } else {
+                const rateData = await getInterestRateReport(userId, request);
+                data = extractMetric(rateData, selectedMetric as keyof InterestRateData);
+            }
             setReport(data);
         } catch (err) {
             setError('Failed to load analytics data: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -214,6 +240,11 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
             loadData();
         }
     }, [targetCurrency]);
+
+    useEffect(() => {
+        if (reportType === 'performance') setSelectedMetric('totalProfit');
+        else if (reportType === 'interestRate') setSelectedMetric('totalInterestRate');
+    }, [reportType]);
 
     const activeReportType = reportTypeOptions.find(r => r.value === reportType)!;
 
@@ -250,6 +281,21 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                                     </SelectContent>
                                 </Select>
                             </div>
+                            {(reportType === 'performance' || reportType === 'interestRate') && (
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm text-muted-foreground">Metric</label>
+                                    <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+                                        <SelectTrigger className="w-[200px] h-9">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {(reportType === 'performance' ? performanceMetrics : interestRateMetrics).map(m => (
+                                                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm text-muted-foreground">Granularity</label>
                                 <Select value={granularity} onValueChange={(v) => setGranularity(v as TimeGranularity)}>
