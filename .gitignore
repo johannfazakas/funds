@@ -23,6 +23,9 @@ gradle-app.setting
 # IntelliJ
 .idea/
 
+# Claude Code
+.claude/
+
 # Docker local volumes
 infra/local/volumes/**
 !infra/local/volumes/otel-collector/otel-collector-config.yaml

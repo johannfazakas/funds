@@ -23,17 +23,7 @@ But report data generation shouldn't depend on the report view.
 
 ### Demo account
 
-### Handle import configurations by id
-
-- [ ] Use ids in query params instead of names (ex categories)
-- [x] Use ids in import configuration instead of names
-- [ ] support spaces in category names
-
-### Better fund (and not only fund) matching
-
-Maybe it could be done by account first. 
-Maybe we could use domain accounts and categories.
-Maybe matchers could work based on id.
+### Analytics Forecasting
 
 ### Partial transactions
 
@@ -93,3 +83,7 @@ One idea could be to handle generating multiple requests at a higher level, mayb
 - [ ] offer some demo setup
 
 ### Evaluate removing conversion classes from importer service, sdk might be enough
+
+### Use non-blocking DB
+
+### Use non-blocking Kafka

@@ -1,5 +1,6 @@
 package ro.jf.funds.importer.service.service.parser
 
+import kotlinx.datetime.LocalDateTime
 import ro.jf.funds.importer.service.domain.*
 import ro.jf.funds.importer.service.domain.exception.ImportDataException
 
@@ -33,7 +34,7 @@ abstract class ImportParser {
 
     private fun extractTransaction(
         transactionId: String,
-        dateTime: kotlinx.datetime.LocalDateTime,
+        dateTime: LocalDateTime,
         items: List<ImportItem>,
         rowExtractor: (ImportItem) -> List<ImportParsedRecord>?,
     ): Result<ImportParsedTransaction?> {
