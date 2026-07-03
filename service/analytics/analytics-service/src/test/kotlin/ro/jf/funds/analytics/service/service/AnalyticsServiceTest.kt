@@ -9,12 +9,14 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import ro.jf.funds.analytics.api.model.GroupingCriteria
 import ro.jf.funds.analytics.api.model.TimeGranularity
 import ro.jf.funds.analytics.service.domain.BucketedGroupedUnitAmounts
-import ro.jf.funds.analytics.service.domain.BucketedUnitAmounts
+import ro.jf.funds.analytics.service.domain.GroupKey
 import ro.jf.funds.analytics.service.domain.GroupedUnitAmounts
 import ro.jf.funds.analytics.service.domain.ReportInterval
 import ro.jf.funds.analytics.service.domain.UnitAmounts
@@ -64,23 +66,29 @@ class AnalyticsServiceTest {
     private fun unitAmounts(vararg pairs: Pair<Currency, String>) =
         UnitAmounts(pairs.associate { (unit, amount) -> unit to BigDecimal.parseString(amount) })
 
+    private fun ungroupedBuckets(vararg entries: Pair<LocalDateTime, UnitAmounts>) =
+        BucketedGroupedUnitAmounts(entries.associate { (dt, ua) -> dt to GroupedUnitAmounts(mapOf(GroupKey.Ungrouped to ua)) })
+
+    private fun ungroupedAmounts(amounts: UnitAmounts) =
+        GroupedUnitAmounts(mapOf(GroupKey.Ungrouped to amounts))
+
     @Test
     fun `given single-currency records - when getting balance report - then returns cumulative balance`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any()))
-            .thenReturn(unitAmounts(Currency.RON to "500.00"))
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
-            .thenReturn(BucketedUnitAmounts(mapOf(
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedAmounts(unitAmounts(Currency.RON to "500.00")))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedBuckets(
                 LocalDateTime.parse("2024-01-01T00:00:00") to unitAmounts(Currency.RON to "100.00"),
                 LocalDateTime.parse("2024-02-01T00:00:00") to unitAmounts(Currency.RON to "-50.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.RON to "200.00"),
-            )))
+            ))
 
         val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.RON)
 
         assertThat(report.granularity).isEqualTo(TimeGranularity.MONTHLY)
         assertThat(report.buckets).hasSize(3)
         assertThat(report.buckets[0].groups).hasSize(1)
-        assertThat(report.buckets[0].groups[0].groupKey).isNull()
+        assertThat(report.buckets[0].groups[0].groupKey).isEqualTo("UNGROUPED")
         assertThat(report.buckets[0].groups[0].value).isEqualTo(BigDecimal.parseString("500.00"))
         assertThat(report.buckets[1].groups[0].value).isEqualTo(BigDecimal.parseString("600.00"))
         assertThat(report.buckets[2].groups[0].value).isEqualTo(BigDecimal.parseString("550.00"))
@@ -88,12 +96,12 @@ class AnalyticsServiceTest {
 
     @Test
     fun `given single-currency records - when getting net change report - then returns per-bucket net changes`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
-            .thenReturn(BucketedUnitAmounts(mapOf(
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedBuckets(
                 LocalDateTime.parse("2024-01-01T00:00:00") to unitAmounts(Currency.RON to "100.00"),
                 LocalDateTime.parse("2024-02-01T00:00:00") to unitAmounts(Currency.RON to "-50.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.RON to "200.00"),
-            )))
+            ))
 
         val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.RON)
 
@@ -106,13 +114,13 @@ class AnalyticsServiceTest {
 
     @Test
     fun `given gap in monthly aggregates - when getting balance report - then fills missing buckets with zero net change`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any()))
-            .thenReturn(unitAmounts(Currency.RON to "500.00"))
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
-            .thenReturn(BucketedUnitAmounts(mapOf(
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedAmounts(unitAmounts(Currency.RON to "500.00")))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedBuckets(
                 LocalDateTime.parse("2024-01-01T00:00:00") to unitAmounts(Currency.RON to "100.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.RON to "200.00"),
-            )))
+            ))
 
         val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.RON)
 
@@ -127,11 +135,11 @@ class AnalyticsServiceTest {
 
     @Test
     fun `given gap in monthly aggregates - when getting net change report - then fills missing buckets with zero`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
-            .thenReturn(BucketedUnitAmounts(mapOf(
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedBuckets(
                 LocalDateTime.parse("2024-01-01T00:00:00") to unitAmounts(Currency.RON to "100.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.RON to "200.00"),
-            )))
+            ))
 
         val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.RON)
 
@@ -146,10 +154,10 @@ class AnalyticsServiceTest {
 
     @Test
     fun `given no baseline and no aggregates - when getting balance report - then returns zero-filled buckets`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any()))
-            .thenReturn(UnitAmounts.EMPTY)
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
-            .thenReturn(BucketedUnitAmounts(emptyMap()))
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
+            .thenReturn(BucketedGroupedUnitAmounts.EMPTY)
 
         val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.RON)
 
@@ -165,14 +173,14 @@ class AnalyticsServiceTest {
             from = LocalDateTime.parse("2024-01-03T00:00:00"),
             to = LocalDateTime.parse("2024-01-22T00:00:00"),
         )
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any()))
-            .thenReturn(unitAmounts(Currency.RON to "1000.00"))
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
-            .thenReturn(BucketedUnitAmounts(mapOf(
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedAmounts(unitAmounts(Currency.RON to "1000.00")))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedBuckets(
                 LocalDateTime.parse("2024-01-03T00:00:00") to unitAmounts(Currency.RON to "50.00"),
                 LocalDateTime.parse("2024-01-08T00:00:00") to unitAmounts(Currency.RON to "100.00"),
                 LocalDateTime.parse("2024-01-15T00:00:00") to unitAmounts(Currency.RON to "-30.00"),
-            )))
+            ))
 
         val report = service.getBalanceReport(userId, midWeekInterval, targetCurrency = Currency.RON)
 
@@ -192,14 +200,14 @@ class AnalyticsServiceTest {
             from = LocalDateTime.parse("2024-01-15T00:00:00"),
             to = LocalDateTime.parse("2024-04-01T00:00:00"),
         )
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any()))
-            .thenReturn(unitAmounts(Currency.RON to "200.00"))
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
-            .thenReturn(BucketedUnitAmounts(mapOf(
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedAmounts(unitAmounts(Currency.RON to "200.00")))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedBuckets(
                 LocalDateTime.parse("2024-01-15T00:00:00") to unitAmounts(Currency.RON to "80.00"),
                 LocalDateTime.parse("2024-02-01T00:00:00") to unitAmounts(Currency.RON to "-20.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.RON to "150.00"),
-            )))
+            ))
 
         val report = service.getBalanceReport(userId, midMonthInterval, targetCurrency = Currency.RON)
 
@@ -214,8 +222,8 @@ class AnalyticsServiceTest {
 
     @Test
     fun `given no baseline and no aggregates - when getting net change report - then returns zero-filled buckets`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
-            .thenReturn(BucketedUnitAmounts(emptyMap()))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
+            .thenReturn(BucketedGroupedUnitAmounts.EMPTY)
 
         val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.RON)
 
@@ -226,14 +234,14 @@ class AnalyticsServiceTest {
 
     @Test
     fun `given multi-currency records and target currency - when getting balance report - then returns converted cumulative balance`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any()))
-            .thenReturn(unitAmounts(Currency.RON to "1000.00", Currency.EUR to "200.00"))
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
-            .thenReturn(BucketedUnitAmounts(mapOf(
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedAmounts(unitAmounts(Currency.RON to "1000.00", Currency.EUR to "200.00")))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedBuckets(
                 LocalDateTime.parse("2024-01-01T00:00:00") to unitAmounts(Currency.RON to "500.00", Currency.EUR to "100.00"),
                 LocalDateTime.parse("2024-02-01T00:00:00") to unitAmounts(Currency.RON to "-200.00"),
                 LocalDateTime.parse("2024-03-01T00:00:00") to unitAmounts(Currency.EUR to "50.00"),
-            )))
+            ))
         givenRate(Currency.RON, Currency.EUR, "2024-01-01", "0.20")
         givenRate(Currency.RON, Currency.EUR, "2024-02-01", "0.20")
         givenRate(Currency.RON, Currency.EUR, "2024-03-01", "0.20")
@@ -248,11 +256,11 @@ class AnalyticsServiceTest {
 
     @Test
     fun `given multi-currency records and target currency - when getting net change report - then returns converted per-bucket values`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
-            .thenReturn(BucketedUnitAmounts(mapOf(
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedBuckets(
                 LocalDateTime.parse("2024-01-01T00:00:00") to unitAmounts(Currency.RON to "500.00", Currency.EUR to "100.00"),
                 LocalDateTime.parse("2024-02-01T00:00:00") to unitAmounts(Currency.RON to "-200.00"),
-            )))
+            ))
         givenRate(Currency.RON, Currency.EUR, "2024-01-01", "0.20")
         givenRate(Currency.RON, Currency.EUR, "2024-02-01", "0.20")
 
@@ -266,10 +274,10 @@ class AnalyticsServiceTest {
 
     @Test
     fun `given varying exchange rates - when getting balance report - then converts per-unit balances at each bucket rate`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any()))
-            .thenReturn(unitAmounts(Currency.RON to "1000.00"))
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any()))
-            .thenReturn(BucketedUnitAmounts(emptyMap()))
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any(), isNull()))
+            .thenReturn(ungroupedAmounts(unitAmounts(Currency.RON to "1000.00")))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
+            .thenReturn(BucketedGroupedUnitAmounts.EMPTY)
         givenRate(Currency.RON, Currency.EUR, "2024-01-01", "0.20")
         givenRate(Currency.RON, Currency.EUR, "2024-02-01", "0.22")
         givenRate(Currency.RON, Currency.EUR, "2024-03-01", "0.25")
@@ -284,15 +292,15 @@ class AnalyticsServiceTest {
 
     @Test
     fun `given currency grouping - when getting net change report - then returns separate groups per currency`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getBucketedGroupedUnitAmounts(any(), any(), any(), any()))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), eq(GroupingCriteria.FINANCIAL_UNIT)))
             .thenReturn(BucketedGroupedUnitAmounts(mapOf(
-                LocalDateTime.parse("2024-01-01T00:00:00") to mapOf(
-                    "RON" to unitAmounts(Currency.RON to "500.00"),
-                    "EUR" to unitAmounts(Currency.EUR to "100.00"),
-                ),
-                LocalDateTime.parse("2024-02-01T00:00:00") to mapOf(
-                    "RON" to unitAmounts(Currency.RON to "-200.00"),
-                ),
+                LocalDateTime.parse("2024-01-01T00:00:00") to GroupedUnitAmounts(mapOf(
+                    GroupKey.ByFinancialUnit("RON") to unitAmounts(Currency.RON to "500.00"),
+                    GroupKey.ByFinancialUnit("EUR") to unitAmounts(Currency.EUR to "100.00"),
+                )),
+                LocalDateTime.parse("2024-02-01T00:00:00") to GroupedUnitAmounts(mapOf(
+                    GroupKey.ByFinancialUnit("RON") to unitAmounts(Currency.RON to "-200.00"),
+                )),
             )))
         givenRate(Currency.RON, Currency.EUR, "2024-01-01", "0.20")
         givenRate(Currency.RON, Currency.EUR, "2024-02-01", "0.20")
@@ -308,26 +316,26 @@ class AnalyticsServiceTest {
         assertThat(jan[1].value).isEqualTo(BigDecimal.parseString("100.00"))
 
         val feb = report.buckets[1].groups.sortedBy { it.groupKey }
-        assertThat(feb).hasSize(1)
-        assertThat(feb[0].groupKey).isEqualTo("RON")
-        assertThat(feb[0].value).isEqualTo(BigDecimal.parseString("-40.00"))
+        assertThat(feb).hasSize(2)
+        assertThat(feb.first { it.groupKey == "RON" }.value).isEqualTo(BigDecimal.parseString("-40.00"))
+        assertThat(feb.first { it.groupKey == "EUR" }.value).isEqualTo(BigDecimal.ZERO)
     }
 
     @Test
     fun `given fund grouping - when getting balance report - then returns separate groups per fund`(): Unit = runBlocking {
         val fund1 = uuid4().toString()
         val fund2 = uuid4().toString()
-        whenever(analyticsRecordRepository.getGroupedUnitAmountsBefore(any(), any(), any(), any()))
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any(), eq(GroupingCriteria.FUND)))
             .thenReturn(GroupedUnitAmounts(mapOf(
-                fund1 to unitAmounts(Currency.RON to "300.00"),
-                fund2 to unitAmounts(Currency.RON to "200.00"),
+                GroupKey.ByFund(fund1) to unitAmounts(Currency.RON to "300.00"),
+                GroupKey.ByFund(fund2) to unitAmounts(Currency.RON to "200.00"),
             )))
-        whenever(analyticsRecordRepository.getBucketedGroupedUnitAmounts(any(), any(), any(), any()))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), eq(GroupingCriteria.FUND)))
             .thenReturn(BucketedGroupedUnitAmounts(mapOf(
-                LocalDateTime.parse("2024-01-01T00:00:00") to mapOf(
-                    fund1 to unitAmounts(Currency.RON to "100.00"),
-                    fund2 to unitAmounts(Currency.RON to "50.00"),
-                ),
+                LocalDateTime.parse("2024-01-01T00:00:00") to GroupedUnitAmounts(mapOf(
+                    GroupKey.ByFund(fund1) to unitAmounts(Currency.RON to "100.00"),
+                    GroupKey.ByFund(fund2) to unitAmounts(Currency.RON to "50.00"),
+                )),
             )))
 
         val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.RON, groupBy = GroupingCriteria.FUND)
@@ -348,15 +356,15 @@ class AnalyticsServiceTest {
 
     @Test
     fun `given category grouping - when getting net change report - then returns separate groups per category`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getBucketedGroupedUnitAmounts(any(), any(), any(), any()))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), eq(GroupingCriteria.CATEGORY)))
             .thenReturn(BucketedGroupedUnitAmounts(mapOf(
-                LocalDateTime.parse("2024-01-01T00:00:00") to mapOf(
-                    "food" to unitAmounts(Currency.RON to "300.00"),
-                    "transport" to unitAmounts(Currency.RON to "150.00"),
-                ),
-                LocalDateTime.parse("2024-02-01T00:00:00") to mapOf(
-                    "food" to unitAmounts(Currency.RON to "250.00"),
-                ),
+                LocalDateTime.parse("2024-01-01T00:00:00") to GroupedUnitAmounts(mapOf(
+                    GroupKey.ByCategory("food") to unitAmounts(Currency.RON to "300.00"),
+                    GroupKey.ByCategory("transport") to unitAmounts(Currency.RON to "150.00"),
+                )),
+                LocalDateTime.parse("2024-02-01T00:00:00") to GroupedUnitAmounts(mapOf(
+                    GroupKey.ByCategory("food") to unitAmounts(Currency.RON to "250.00"),
+                )),
             )))
 
         val report = service.getNetChangeReport(userId, interval, targetCurrency = Currency.RON, groupBy = GroupingCriteria.CATEGORY)
@@ -369,24 +377,24 @@ class AnalyticsServiceTest {
         assertThat(jan[1].groupKey).isEqualTo("transport")
         assertThat(jan[1].value).isEqualTo(BigDecimal.parseString("150.00"))
 
-        val feb = report.buckets[1].groups
-        assertThat(feb).hasSize(1)
-        assertThat(feb[0].groupKey).isEqualTo("food")
-        assertThat(feb[0].value).isEqualTo(BigDecimal.parseString("250.00"))
+        val feb = report.buckets[1].groups.sortedBy { it.groupKey }
+        assertThat(feb).hasSize(2)
+        assertThat(feb.first { it.groupKey == "food" }.value).isEqualTo(BigDecimal.parseString("250.00"))
+        assertThat(feb.first { it.groupKey == "transport" }.value).isEqualTo(BigDecimal.ZERO)
     }
 
     @Test
     fun `given category grouping - when getting balance report - then returns cumulative balance per category`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getGroupedUnitAmountsBefore(any(), any(), any(), any()))
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any(), eq(GroupingCriteria.CATEGORY)))
             .thenReturn(GroupedUnitAmounts(mapOf(
-                "food" to unitAmounts(Currency.RON to "500.00"),
-                "transport" to unitAmounts(Currency.RON to "200.00"),
+                GroupKey.ByCategory("food") to unitAmounts(Currency.RON to "500.00"),
+                GroupKey.ByCategory("transport") to unitAmounts(Currency.RON to "200.00"),
             )))
-        whenever(analyticsRecordRepository.getBucketedGroupedUnitAmounts(any(), any(), any(), any()))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), eq(GroupingCriteria.CATEGORY)))
             .thenReturn(BucketedGroupedUnitAmounts(mapOf(
-                LocalDateTime.parse("2024-01-01T00:00:00") to mapOf(
-                    "food" to unitAmounts(Currency.RON to "100.00"),
-                ),
+                LocalDateTime.parse("2024-01-01T00:00:00") to GroupedUnitAmounts(mapOf(
+                    GroupKey.ByCategory("food") to unitAmounts(Currency.RON to "100.00"),
+                )),
             )))
 
         val report = service.getBalanceReport(userId, interval, targetCurrency = Currency.RON, groupBy = GroupingCriteria.CATEGORY)

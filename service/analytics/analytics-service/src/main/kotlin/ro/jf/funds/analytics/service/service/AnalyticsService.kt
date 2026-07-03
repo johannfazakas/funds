@@ -8,7 +8,8 @@ import ro.jf.funds.analytics.api.model.AnalyticsBucketTO
 import ro.jf.funds.analytics.api.model.AnalyticsGroupBucketTO
 import ro.jf.funds.analytics.api.model.AnalyticsReportTO
 import ro.jf.funds.analytics.api.model.GroupingCriteria
-import ro.jf.funds.analytics.service.domain.AnalyticsRecordFilter
+import ro.jf.funds.analytics.service.domain.AnalyticsInputRecordFilter
+import ro.jf.funds.analytics.service.domain.GroupKey
 import ro.jf.funds.analytics.service.domain.ReportInterval
 import ro.jf.funds.analytics.service.domain.UnitAmounts
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
@@ -26,61 +27,17 @@ class AnalyticsService(
     suspend fun getBalanceReport(
         userId: Uuid,
         interval: ReportInterval,
-        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
+        filter: AnalyticsInputRecordFilter = AnalyticsInputRecordFilter(),
         targetCurrency: Currency,
         groupBy: GroupingCriteria? = null,
     ): AnalyticsReportTO<BigDecimal> {
         log.info { "Generating balance report for user $userId, interval=$interval, targetCurrency=$targetCurrency, groupBy=$groupBy" }
-        return if (groupBy != null)
-            getGroupedBalanceReport(userId, interval, filter, targetCurrency, groupBy)
-        else
-            getUngroupedBalanceReport(userId, interval, filter, targetCurrency)
-    }
+        val dbFilter = filter.toDbFilter()
+        val previousBalances = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, dbFilter, groupBy)
+        val bucketedAmounts = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, dbFilter, groupBy)
 
-    suspend fun getNetChangeReport(
-        userId: Uuid,
-        interval: ReportInterval,
-        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
-        targetCurrency: Currency,
-        groupBy: GroupingCriteria? = null,
-    ): AnalyticsReportTO<BigDecimal> {
-        log.info { "Generating net change report for user $userId, interval=$interval, targetCurrency=$targetCurrency, groupBy=$groupBy" }
-        return if (groupBy != null)
-            getGroupedNetChangeReport(userId, interval, filter, targetCurrency, groupBy)
-        else
-            getUngroupedNetChangeReport(userId, interval, filter, targetCurrency)
-    }
-
-    private suspend fun getUngroupedBalanceReport(
-        userId: Uuid,
-        interval: ReportInterval,
-        filter: AnalyticsRecordFilter,
-        targetCurrency: Currency,
-    ): AnalyticsReportTO<BigDecimal> {
-        val previousBalance = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, filter)
-        val bucketedUnitAmounts = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, filter)
-
-        val buckets = interval.generateBucketedData(previousBalance) { dateTime, balance ->
-            val convertedTotal = convert(balance, targetCurrency, dateTime.date)
-            val updatedBalance = balance + bucketedUnitAmounts.getBucket(dateTime)
-            AnalyticsBucketTO(dateTime, listOf(AnalyticsGroupBucketTO(value = convertedTotal))) to updatedBalance
-        }
-        return AnalyticsReportTO(granularity = interval.granularity, buckets = buckets)
-    }
-
-    private suspend fun getGroupedBalanceReport(
-        userId: Uuid,
-        interval: ReportInterval,
-        filter: AnalyticsRecordFilter,
-        targetCurrency: Currency,
-        groupBy: GroupingCriteria,
-    ): AnalyticsReportTO<BigDecimal> {
-        val previousBalances =
-            analyticsRecordRepository.getGroupedUnitAmountsBefore(userId, interval.from, filter, groupBy)
-        val bucketedGroupedUnitAmounts =
-            analyticsRecordRepository.getBucketedGroupedUnitAmounts(userId, interval, filter, groupBy)
-
-        val allGroupKeys = previousBalances.groupKeys + bucketedGroupedUnitAmounts.groupKeys
+        val allGroupKeys = (previousBalances.groupKeys + bucketedAmounts.groupKeys)
+            .ifEmpty { setOf(GroupKey.Ungrouped) }
         val initialBalances = allGroupKeys.associateWith { groupKey ->
             previousBalances[groupKey]
         }.toMutableMap()
@@ -88,50 +45,40 @@ class AnalyticsService(
         val buckets = interval.generateBucketedData(initialBalances) { dateTime, balancesByGroup ->
             val groupBuckets = balancesByGroup.map { (groupKey, balance) ->
                 AnalyticsGroupBucketTO(
-                    groupKey = groupKey,
+                    groupKey = groupKey.apiValue,
                     value = convert(balance, targetCurrency, dateTime.date)
                 )
             }
-            val bucketAggregates = bucketedGroupedUnitAmounts.getBucket(dateTime)
-            for ((groupKey, amounts) in bucketAggregates) {
+            val bucketAggregates = bucketedAmounts.getBucket(dateTime)
+            for (groupKey in bucketAggregates.groupKeys) {
                 val current = balancesByGroup[groupKey] ?: UnitAmounts.EMPTY
-                balancesByGroup[groupKey] = current + amounts
+                balancesByGroup[groupKey] = current + bucketAggregates[groupKey]
             }
             AnalyticsBucketTO(dateTime, groupBuckets) to balancesByGroup
         }
         return AnalyticsReportTO(granularity = interval.granularity, buckets = buckets)
     }
 
-    private suspend fun getUngroupedNetChangeReport(
+    suspend fun getNetChangeReport(
         userId: Uuid,
         interval: ReportInterval,
-        filter: AnalyticsRecordFilter,
+        filter: AnalyticsInputRecordFilter = AnalyticsInputRecordFilter(),
         targetCurrency: Currency,
+        groupBy: GroupingCriteria? = null,
     ): AnalyticsReportTO<BigDecimal> {
-        val bucketedUnitAmounts = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, filter)
+        log.info { "Generating net change report for user $userId, interval=$interval, targetCurrency=$targetCurrency, groupBy=$groupBy" }
+        val dbFilter = filter.toDbFilter()
+        val bucketedAmounts = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, dbFilter, groupBy)
+
+        val allGroupKeys = bucketedAmounts.groupKeys
+            .ifEmpty { setOf(GroupKey.Ungrouped) }
 
         val buckets = interval.generateBucketedData { dateTime ->
-            val convertedTotal = convert(bucketedUnitAmounts.getBucket(dateTime), targetCurrency, dateTime.date)
-            AnalyticsBucketTO(dateTime, listOf(AnalyticsGroupBucketTO(value = convertedTotal)))
-        }
-        return AnalyticsReportTO(granularity = interval.granularity, buckets = buckets)
-    }
-
-    private suspend fun getGroupedNetChangeReport(
-        userId: Uuid,
-        interval: ReportInterval,
-        filter: AnalyticsRecordFilter,
-        targetCurrency: Currency,
-        groupBy: GroupingCriteria,
-    ): AnalyticsReportTO<BigDecimal> {
-        val bucketedGroupedUnitAmounts =
-            analyticsRecordRepository.getBucketedGroupedUnitAmounts(userId, interval, filter, groupBy)
-
-        val buckets = interval.generateBucketedData { dateTime ->
-            val bucketGroups = bucketedGroupedUnitAmounts.getBucket(dateTime)
-            val groupBuckets = bucketGroups.map { (groupKey, amounts) ->
+            val bucketGroups = bucketedAmounts.getBucket(dateTime)
+            val groupBuckets = allGroupKeys.map { groupKey ->
+                val amounts = bucketGroups[groupKey]
                 AnalyticsGroupBucketTO(
-                    groupKey = groupKey,
+                    groupKey = groupKey.apiValue,
                     value = convert(amounts, targetCurrency, dateTime.date)
                 )
             }

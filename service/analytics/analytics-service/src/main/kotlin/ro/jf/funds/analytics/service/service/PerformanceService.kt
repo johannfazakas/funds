@@ -5,7 +5,8 @@ import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.analytics.api.model.*
-import ro.jf.funds.analytics.service.domain.AnalyticsRecordFilter
+import ro.jf.funds.analytics.service.domain.AnalyticsInputRecordFilter
+import ro.jf.funds.analytics.service.domain.GroupKey
 import ro.jf.funds.analytics.service.domain.ReportInterval
 import ro.jf.funds.analytics.service.domain.UnitAmounts
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
@@ -22,77 +23,83 @@ class PerformanceService(
     private val analyticsRecordRepository: AnalyticsRecordRepository,
     private val conversionSdk: ConversionSdk,
 ) {
+    private data class PerformanceState(
+        val investment: UnitAmounts,
+        val instruments: UnitAmounts,
+        val currency: UnitAmounts,
+        val previousTotalProfit: BigDecimal,
+    )
+
     suspend fun getPerformanceReport(
         userId: Uuid,
         interval: ReportInterval,
-        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
+        filter: AnalyticsInputRecordFilter = AnalyticsInputRecordFilter(),
         targetCurrency: Currency,
         groupBy: GroupingCriteria? = null,
     ): AnalyticsReportTO<PerformanceDataTO> {
-        log.info { "Generating performance report for user $userId, interval=$interval, targetCurrency=$targetCurrency" }
-        return getUngroupedPerformanceReport(userId, interval, filter, targetCurrency)
-    }
+        log.info { "Generating performance report for user $userId, interval=$interval, targetCurrency=$targetCurrency, groupBy=$groupBy" }
 
-    private suspend fun getUngroupedPerformanceReport(
-        userId: Uuid,
-        interval: ReportInterval,
-        filter: AnalyticsRecordFilter,
-        targetCurrency: Currency,
-    ): AnalyticsReportTO<PerformanceDataTO> {
-        val investmentFilter = AnalyticsRecordFilter(
-            fundIds = filter.fundIds,
-            transactionTypes = listOf(TransactionType.OPEN_POSITION),
-        )
-        val instrumentFilter = AnalyticsRecordFilter(
-            fundIds = filter.fundIds,
-            transactionTypes = listOf(TransactionType.OPEN_POSITION, TransactionType.CLOSE_POSITION),
-        )
-        val currencyFilter = AnalyticsRecordFilter(fundIds = filter.fundIds)
+        val investmentFilter = filter.toDbFilter(transactionTypes = listOf(TransactionType.OPEN_POSITION))
+        val instrumentFilter = filter.toDbFilter(transactionTypes = listOf(TransactionType.OPEN_POSITION, TransactionType.CLOSE_POSITION))
+        val currencyFilter = filter.toDbFilter()
 
-        val previousInvestment = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, investmentFilter)
-        val previousInstruments = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, instrumentFilter)
-        val previousCurrency = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, currencyFilter)
+        val prevInvestment = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, investmentFilter, groupBy)
+        val prevInstruments = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, instrumentFilter, groupBy)
+        val prevCurrency = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, currencyFilter, groupBy)
 
-        val bucketedInvestment = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, investmentFilter)
-        val bucketedInstruments = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, instrumentFilter)
-        val bucketedCurrency = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, currencyFilter)
+        val bucketedInvestment = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, investmentFilter, groupBy)
+        val bucketedInstruments = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, instrumentFilter, groupBy)
+        val bucketedCurrency = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, currencyFilter, groupBy)
 
-        data class State(
-            val investment: UnitAmounts,
-            val instruments: UnitAmounts,
-            val currency: UnitAmounts,
-            val previousTotalProfit: BigDecimal,
-        )
+        val allGroupKeys = (prevInvestment.groupKeys + prevInstruments.groupKeys + prevCurrency.groupKeys +
+            bucketedInvestment.groupKeys + bucketedInstruments.groupKeys + bucketedCurrency.groupKeys)
+            .ifEmpty { setOf(GroupKey.Ungrouped) }
 
-        val seed = State(previousInvestment, previousInstruments, previousCurrency, BigDecimal.ZERO)
-
-        val buckets = interval.generateBucketedData(seed) { dateTime, state ->
-            val currentBucketInvestment = bucketedInvestment.getBucket(dateTime)
-            val updatedState = State(
-                investment = state.investment + currentBucketInvestment,
-                instruments = state.instruments + bucketedInstruments.getBucket(dateTime),
-                currency = state.currency + bucketedCurrency.getBucket(dateTime),
+        val initialStates = allGroupKeys.associateWith { groupKey ->
+            PerformanceState(
+                investment = prevInvestment[groupKey],
+                instruments = prevInstruments[groupKey],
+                currency = prevCurrency[groupKey],
                 previousTotalProfit = BigDecimal.ZERO,
             )
+        }.toMutableMap()
 
-            val totalInvestment = convertCurrencyUnits(updatedState.investment, targetCurrency, dateTime.date).negate()
-            val currentInvestment = convertCurrencyUnits(currentBucketInvestment, targetCurrency, dateTime.date).negate()
-            val totalInstrumentValue = convertAll(updatedState.instruments, targetCurrency, dateTime.date)
-            val currencyValue = convertCurrencyUnits(updatedState.currency, targetCurrency, dateTime.date)
-            val totalProfit = totalInstrumentValue - totalInvestment
-            val currentProfit = totalProfit - state.previousTotalProfit
+        val buckets = interval.generateBucketedData(initialStates) { dateTime, statesByGroup ->
+            val investmentBucket = bucketedInvestment.getBucket(dateTime)
+            val instrumentsBucket = bucketedInstruments.getBucket(dateTime)
+            val currencyBucket = bucketedCurrency.getBucket(dateTime)
 
-            val data = PerformanceDataTO(
-                totalInvestment = totalInvestment,
-                currentInvestment = currentInvestment,
-                totalProfit = totalProfit,
-                currentProfit = currentProfit,
-                totalInstrumentValue = totalInstrumentValue,
-                currencyValue = currencyValue,
-            )
+            val groupBuckets = statesByGroup.map { (groupKey, state) ->
+                val currentBucketInvestment = investmentBucket[groupKey]
+                val updatedState = PerformanceState(
+                    investment = state.investment + currentBucketInvestment,
+                    instruments = state.instruments + instrumentsBucket[groupKey],
+                    currency = state.currency + currencyBucket[groupKey],
+                    previousTotalProfit = BigDecimal.ZERO,
+                )
 
-            val nextState = updatedState.copy(previousTotalProfit = totalProfit)
-            AnalyticsBucketTO(dateTime, listOf(AnalyticsGroupBucketTO(value = data))) to nextState
+                val totalInvestment = convertCurrencyUnits(updatedState.investment, targetCurrency, dateTime.date).negate()
+                val currentInvestment = convertCurrencyUnits(currentBucketInvestment, targetCurrency, dateTime.date).negate()
+                val totalInstrumentValue = convertAll(updatedState.instruments, targetCurrency, dateTime.date)
+                val currencyValue = convertCurrencyUnits(updatedState.currency, targetCurrency, dateTime.date)
+                val totalProfit = totalInstrumentValue - totalInvestment
+                val currentProfit = totalProfit - state.previousTotalProfit
+
+                statesByGroup[groupKey] = updatedState.copy(previousTotalProfit = totalProfit)
+
+                AnalyticsGroupBucketTO(
+                    groupKey = groupKey.apiValue,
+                    value = PerformanceDataTO(
+                        totalInvestment = totalInvestment,
+                        currentInvestment = currentInvestment,
+                        totalProfit = totalProfit,
+                        currentProfit = currentProfit,
+                        totalInstrumentValue = totalInstrumentValue,
+                        currencyValue = currencyValue,
+                    ),
+                )
+            }
+            AnalyticsBucketTO(dateTime, groupBuckets) to statesByGroup
         }
         return AnalyticsReportTO(granularity = interval.granularity, buckets = buckets)
     }
@@ -129,5 +136,4 @@ class PerformanceService(
             acc + amount * rate
         }
     }
-
 }

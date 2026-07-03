@@ -19,7 +19,7 @@ import ro.jf.funds.platform.api.model.Category
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.jvm.persistence.bigDecimal
 import ro.jf.funds.platform.jvm.persistence.blockingTransaction
-import java.util.UUID
+import java.util.*
 
 class AnalyticsRecordRepository(
     private val database: Database,
@@ -55,125 +55,75 @@ class AnalyticsRecordRepository(
     suspend fun getBucketedUnitAmounts(
         userId: Uuid,
         interval: ReportInterval,
-        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
-    ): BucketedUnitAmounts = blockingTransaction {
-        val bucketFunction = dateTrunc(interval.granularity, AnalyticsRecordTable.dateTime)
-        val totalAmount = AnalyticsRecordTable.amount.sum()
-
-        val truncatedFrom = interval.truncate(interval.from)
-        val rows = AnalyticsRecordTable
-            .select(bucketFunction, AnalyticsRecordTable.unit, totalAmount)
-            .where { AnalyticsRecordTable.userId eq userId.toJavaUuid() }
-            .andWhere { AnalyticsRecordTable.dateTime greaterEq interval.from.toJavaLocalDateTime() }
-            .andWhere { AnalyticsRecordTable.dateTime lessEq interval.to.toJavaLocalDateTime() }
-            .applyFilter(filter)
-            .groupBy(bucketFunction, AnalyticsRecordTable.unit)
-            .orderBy(bucketFunction)
-            .groupBy { row ->
-                val dateTime = row[bucketFunction].toKotlinLocalDateTime()
-                if (dateTime == truncatedFrom) interval.from else dateTime
-            }
-            .mapValues { (_, rows) ->
-                UnitAmounts(rows.associate { row ->
-                    row[AnalyticsRecordTable.unit] to (row[totalAmount] ?: BigDecimal.ZERO)
-                })
-            }
-        BucketedUnitAmounts(rows)
-    }
-
-    suspend fun getBucketedGroupedUnitAmounts(
-        userId: Uuid,
-        interval: ReportInterval,
-        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
-        groupBy: GroupingCriteria,
+        filter: AnalyticsDbRecordFilter = AnalyticsDbRecordFilter(),
+        groupBy: GroupingCriteria? = null,
     ): BucketedGroupedUnitAmounts = blockingTransaction {
         val bucket = dateTrunc(interval.granularity, AnalyticsRecordTable.dateTime)
+        val groupColumn = groupBy?.toColumn()
         val totalAmount = AnalyticsRecordTable.amount.sum()
-        val groupColumn = groupBy.toColumn()
 
-        val truncatedFrom = interval.truncate(interval.from)
-        val rows = AnalyticsRecordTable
-            .select(bucket, groupColumn, AnalyticsRecordTable.unit, totalAmount)
-            .where { AnalyticsRecordTable.userId eq userId.toJavaUuid() }
-            .andWhere { AnalyticsRecordTable.dateTime greaterEq interval.from.toJavaLocalDateTime() }
-            .andWhere { AnalyticsRecordTable.dateTime lessEq interval.to.toJavaLocalDateTime() }
-            .applyFilter(filter)
-            .groupBy(bucket, groupColumn, AnalyticsRecordTable.unit)
-            .orderBy(bucket)
-            .toList()
-
-        val result = rows
-            .groupBy { row ->
-                val dateTime = row[bucket].toKotlinLocalDateTime()
-                if (dateTime == truncatedFrom) interval.from else dateTime
-            }
-            .mapValues { (_, bucketRows) ->
-                bucketRows
-                    .groupBy { row -> row.extractGroupKey(groupBy) }
-                    .mapValues { (_, groupRows) ->
-                        UnitAmounts(groupRows.associate { row ->
-                            row[AnalyticsRecordTable.unit] to (row[totalAmount] ?: BigDecimal.ZERO)
-                        })
-                    }
-            }
-        BucketedGroupedUnitAmounts(result)
+        BucketedGroupedUnitAmounts(
+            AnalyticsRecordTable
+                .select(listOfNotNull(bucket, groupColumn, AnalyticsRecordTable.unit, totalAmount).distinct())
+                .where { AnalyticsRecordTable.userId eq userId.toJavaUuid() }
+                .andWhere { AnalyticsRecordTable.dateTime greaterEq interval.from.toJavaLocalDateTime() }
+                .andWhere { AnalyticsRecordTable.dateTime less interval.to.toJavaLocalDateTime() }
+                .applyFilter(filter)
+                .groupBy(*listOfNotNull(bucket, groupColumn, AnalyticsRecordTable.unit).distinct().toTypedArray())
+                .orderBy(bucket)
+                .toList()
+                .groupBy { row ->
+                    val dateTime = row[bucket].toKotlinLocalDateTime()
+                    if (dateTime == interval.truncate(interval.from)) interval.from else dateTime
+                }
+                .mapValues { (_, bucketRows) ->
+                    GroupedUnitAmounts(
+                        bucketRows
+                            .groupBy { row -> groupBy?.let { row.extractGroupKey(it) } ?: GroupKey.Ungrouped }
+                            .mapValues { (_, groupRows) ->
+                                UnitAmounts(groupRows.associate { row ->
+                                    row[AnalyticsRecordTable.unit] to (row[totalAmount] ?: BigDecimal.ZERO)
+                                })
+                            })
+                }
+        )
     }
 
     suspend fun getUnitAmountsBefore(
         userId: Uuid,
         before: LocalDateTime,
-        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
-    ): UnitAmounts = blockingTransaction {
-        val totalAmount = AnalyticsRecordTable.amount.sum()
-
-        val result = AnalyticsRecordTable
-            .select(AnalyticsRecordTable.unit, totalAmount)
-            .where { AnalyticsRecordTable.userId eq userId.toJavaUuid() }
-            .andWhere { AnalyticsRecordTable.dateTime less before.toJavaLocalDateTime() }
-            .applyFilter(filter)
-            .groupBy(AnalyticsRecordTable.unit)
-            .associate { row ->
-                row[AnalyticsRecordTable.unit] to (row[totalAmount] ?: BigDecimal.ZERO)
-            }
-        UnitAmounts(result)
-    }
-
-    suspend fun getGroupedUnitAmountsBefore(
-        userId: Uuid,
-        before: LocalDateTime,
-        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
-        groupBy: GroupingCriteria,
+        filter: AnalyticsDbRecordFilter = AnalyticsDbRecordFilter(),
+        groupBy: GroupingCriteria? = null,
     ): GroupedUnitAmounts = blockingTransaction {
+        val groupColumn = groupBy?.toColumn()
         val totalAmount = AnalyticsRecordTable.amount.sum()
-        val groupColumn = groupBy.toColumn()
 
-        val rows = AnalyticsRecordTable
-            .select(groupColumn, AnalyticsRecordTable.unit, totalAmount)
-            .where { AnalyticsRecordTable.userId eq userId.toJavaUuid() }
-            .andWhere { AnalyticsRecordTable.dateTime less before.toJavaLocalDateTime() }
-            .applyFilter(filter)
-            .groupBy(groupColumn, AnalyticsRecordTable.unit)
-            .toList()
-
-        GroupedUnitAmounts(rows
-            .groupBy { row -> row.extractGroupKey(groupBy) }
-            .mapValues { (_, groupRows) ->
-                UnitAmounts(groupRows.associate { row ->
-                    row[AnalyticsRecordTable.unit] to (row[totalAmount] ?: BigDecimal.ZERO)
+        GroupedUnitAmounts(
+            AnalyticsRecordTable
+                .select(listOfNotNull(groupColumn, AnalyticsRecordTable.unit, totalAmount).distinct())
+                .where { AnalyticsRecordTable.userId eq userId.toJavaUuid() }
+                .andWhere { AnalyticsRecordTable.dateTime less before.toJavaLocalDateTime() }
+                .applyFilter(filter)
+                .groupBy(*listOfNotNull(groupColumn, AnalyticsRecordTable.unit).distinct().toTypedArray())
+                .toList()
+                .groupBy { row -> groupBy?.let { row.extractGroupKey(it) } ?: GroupKey.Ungrouped }
+                .mapValues { (_, groupRows) ->
+                    UnitAmounts(groupRows.associate { row ->
+                        row[AnalyticsRecordTable.unit] to (row[totalAmount] ?: BigDecimal.ZERO)
+                    })
                 })
-            })
     }
 
     suspend fun getRecords(
         userId: Uuid,
         interval: ReportInterval,
-        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
+        filter: AnalyticsDbRecordFilter = AnalyticsDbRecordFilter(),
     ): List<AnalyticsRecord> = blockingTransaction {
         AnalyticsRecordTable
             .selectAll()
             .where { AnalyticsRecordTable.userId eq userId.toJavaUuid() }
             .andWhere { AnalyticsRecordTable.dateTime greaterEq interval.from.toJavaLocalDateTime() }
-            .andWhere { AnalyticsRecordTable.dateTime lessEq interval.to.toJavaLocalDateTime() }
+            .andWhere { AnalyticsRecordTable.dateTime less interval.to.toJavaLocalDateTime() }
             .applyFilter(filter)
             .orderBy(AnalyticsRecordTable.dateTime)
             .map { it.toAnalyticsRecord() }
@@ -182,7 +132,7 @@ class AnalyticsRecordRepository(
     suspend fun getRecordsBefore(
         userId: Uuid,
         before: LocalDateTime,
-        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
+        filter: AnalyticsDbRecordFilter = AnalyticsDbRecordFilter(),
     ): List<AnalyticsRecord> = blockingTransaction {
         AnalyticsRecordTable
             .selectAll()
@@ -213,14 +163,14 @@ class AnalyticsRecordRepository(
         GroupingCriteria.CATEGORY -> AnalyticsRecordTable.category
     }
 
-    private fun ResultRow.extractGroupKey(groupBy: GroupingCriteria): String? = when (groupBy) {
-        GroupingCriteria.FINANCIAL_UNIT -> this[AnalyticsRecordTable.unit].value
-        GroupingCriteria.ACCOUNT -> this[AnalyticsRecordTable.accountId].toString()
-        GroupingCriteria.FUND -> this[AnalyticsRecordTable.fundId].toString()
-        GroupingCriteria.CATEGORY -> this[AnalyticsRecordTable.category]
+    private fun ResultRow.extractGroupKey(groupBy: GroupingCriteria): GroupKey = when (groupBy) {
+        GroupingCriteria.FINANCIAL_UNIT -> GroupKey.ByFinancialUnit(this[AnalyticsRecordTable.unit].value)
+        GroupingCriteria.ACCOUNT -> GroupKey.ByAccount(this[AnalyticsRecordTable.accountId].toString())
+        GroupingCriteria.FUND -> GroupKey.ByFund(this[AnalyticsRecordTable.fundId].toString())
+        GroupingCriteria.CATEGORY -> GroupKey.ByCategory(this[AnalyticsRecordTable.category])
     }
 
-    private fun Query.applyFilter(filter: AnalyticsRecordFilter): Query = this
+    private fun Query.applyFilter(filter: AnalyticsDbRecordFilter): Query = this
         .let { query ->
             if (filter.fundIds.isNotEmpty())
                 query.andWhere { AnalyticsRecordTable.fundId inList filter.fundIds.map { it.toJavaUuid() } }

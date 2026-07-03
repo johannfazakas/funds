@@ -21,7 +21,7 @@ application {
 
 ktor {
     docker {
-        jreVersion.set(JavaVersion.VERSION_17)
+        jreVersion.set(JavaVersion.VERSION_21)
         localImageName.set("funds/analytics-service")
     }
 }

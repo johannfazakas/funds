@@ -6,7 +6,13 @@ import com.ionspin.kotlin.bignum.decimal.toJavaBigDecimal
 import kotlinx.datetime.LocalDate
 import mu.KotlinLogging.logger
 import ro.jf.funds.analytics.api.model.*
-import ro.jf.funds.analytics.service.domain.*
+import ro.jf.funds.analytics.service.domain.AnalyticsInputRecordFilter
+import ro.jf.funds.analytics.service.domain.AnalyticsRecord
+import ro.jf.funds.analytics.service.domain.GroupKey
+import ro.jf.funds.analytics.service.domain.InterestRateCalculationCommand
+import ro.jf.funds.analytics.service.domain.InterestRateCalculator
+import ro.jf.funds.analytics.service.domain.ReportInterval
+import ro.jf.funds.analytics.service.domain.UnitAmounts
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
 import ro.jf.funds.conversion.api.model.ConversionRequest
 import ro.jf.funds.conversion.api.model.ConversionsRequest
@@ -23,17 +29,6 @@ class InterestRateService(
     private val conversionSdk: ConversionSdk,
     private val interestRateCalculator: InterestRateCalculator,
 ) {
-    suspend fun getInterestRateReport(
-        userId: Uuid,
-        interval: ReportInterval,
-        filter: AnalyticsRecordFilter = AnalyticsRecordFilter(),
-        targetCurrency: Currency,
-        groupBy: GroupingCriteria? = null,
-    ): AnalyticsReportTO<InterestRateDataTO> {
-        log.info { "Generating interest rate report for user $userId, interval=$interval, targetCurrency=$targetCurrency" }
-        return getUngroupedInterestRateReport(userId, interval, filter, targetCurrency)
-    }
-
     private data class InterestRateState(
         val allPositions: List<InterestRateCalculationCommand.Position>,
         val instrumentUnits: UnitAmounts,
@@ -41,75 +36,88 @@ class InterestRateService(
         val previousValuationDate: LocalDate,
     )
 
-    private suspend fun getUngroupedInterestRateReport(
+    suspend fun getInterestRateReport(
         userId: Uuid,
         interval: ReportInterval,
-        filter: AnalyticsRecordFilter,
+        filter: AnalyticsInputRecordFilter = AnalyticsInputRecordFilter(),
         targetCurrency: Currency,
+        groupBy: GroupingCriteria? = null,
     ): AnalyticsReportTO<InterestRateDataTO> {
-        val positionFilter = filter.copy(transactionTypes = listOf(TransactionType.OPEN_POSITION))
-        val instrumentFilter = filter.copy(
-            transactionTypes = listOf(TransactionType.OPEN_POSITION, TransactionType.CLOSE_POSITION),
-            units = filter.units.filter { it.type == UnitType.INSTRUMENT },
-        )
+        log.info { "Generating interest rate report for user $userId, interval=$interval, targetCurrency=$targetCurrency, groupBy=$groupBy" }
+
+        val positionFilter = filter.toDbFilter(transactionTypes = listOf(TransactionType.OPEN_POSITION))
+        val instrumentFilter = filter.copy(units = filter.units.filter { it.type == UnitType.INSTRUMENT })
+            .toDbFilter(transactionTypes = listOf(TransactionType.OPEN_POSITION, TransactionType.CLOSE_POSITION))
 
         val previousPositionRecords = analyticsRecordRepository.getRecordsBefore(userId, interval.from, positionFilter)
-        val previousPositions = previousPositionRecords.toPositions(targetCurrency)
+        val previousPositionsByGroup = previousPositionRecords.groupByKey(groupBy)
 
-        val prevInstrumentUnits = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, instrumentFilter)
-        val bucketedInstrumentUnits = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, instrumentFilter)
+        val prevInstrumentUnits = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, instrumentFilter, groupBy)
+        val bucketedInstrumentUnits = analyticsRecordRepository.getBucketedUnitAmounts(userId, interval, instrumentFilter, groupBy)
 
         val bucketPositionRecords = analyticsRecordRepository.getRecords(userId, interval, positionFilter)
+        val bucketPositionsByGroup = bucketPositionRecords.groupByKey(groupBy)
+
+        val allGroupKeys = (previousPositionsByGroup.keys + prevInstrumentUnits.groupKeys +
+            bucketedInstrumentUnits.groupKeys + bucketPositionsByGroup.keys)
+            .ifEmpty { setOf(GroupKey.Ungrouped) }
 
         val prevValuationDate = interval.from.date
-        val prevValuation = convert(prevInstrumentUnits, targetCurrency, prevValuationDate)
 
-        val initialState = InterestRateState(
-            allPositions = previousPositions,
-            instrumentUnits = prevInstrumentUnits,
-            previousValuation = prevValuation,
-            previousValuationDate = prevValuationDate,
-        )
+        val initialStates = allGroupKeys.associateWith { groupKey ->
+            val prevPositions = (previousPositionsByGroup[groupKey] ?: emptyList()).toPositions(targetCurrency)
+            val prevInstruments = prevInstrumentUnits[groupKey]
+            val prevValuation = convert(prevInstruments, targetCurrency, prevValuationDate)
+            InterestRateState(
+                allPositions = prevPositions,
+                instrumentUnits = prevInstruments,
+                previousValuation = prevValuation,
+                previousValuationDate = prevValuationDate,
+            )
+        }.toMutableMap()
 
-        val buckets = interval.generateBucketedData(initialState) { dateTime, state ->
-            val bucketInstruments = bucketedInstrumentUnits.getBucket(dateTime)
-            val totalInstrumentUnits = state.instrumentUnits + bucketInstruments
-
+        val buckets = interval.generateBucketedData(initialStates) { dateTime, statesByGroup ->
+            val instrumentBucket = bucketedInstrumentUnits.getBucket(dateTime)
             val valuationDate = dateTime.date
-            val valuation = convert(totalInstrumentUnits, targetCurrency, valuationDate)
 
-            val currentBucketRecords = bucketPositionRecords.filter { record ->
-                record.dateTime >= dateTime
+            val groupBuckets = statesByGroup.map { (groupKey, state) ->
+                val bucketInstruments = instrumentBucket[groupKey]
+                val totalInstrumentUnits = state.instrumentUnits + bucketInstruments
+                val valuation = convert(totalInstrumentUnits, targetCurrency, valuationDate)
+
+                val currentBucketRecords = (bucketPositionsByGroup[groupKey] ?: emptyList())
+                    .filter { it.dateTime >= dateTime }
+                val currentPositions = currentBucketRecords
+                    .filter { it.unit.type == UnitType.CURRENCY }
+                    .map { record ->
+                        val rate = getRate(record.unit, targetCurrency, record.dateTime.date)
+                        InterestRateCalculationCommand.Position(
+                            date = record.dateTime.date,
+                            amount = record.amount.negate().toJavaBigDecimal() * rate,
+                        )
+                    }
+
+                val allPositions = state.allPositions + currentPositions
+                val totalInterestRate = calculateRate(allPositions, valuation.toJavaBigDecimal(), valuationDate)
+                val previousAggregated = InterestRateCalculationCommand.Position(state.previousValuationDate, state.previousValuation.toJavaBigDecimal())
+                val currentInterestRate = calculateRate(currentPositions + previousAggregated, valuation.toJavaBigDecimal(), valuationDate)
+
+                statesByGroup[groupKey] = InterestRateState(
+                    allPositions = allPositions,
+                    instrumentUnits = totalInstrumentUnits,
+                    previousValuation = valuation,
+                    previousValuationDate = valuationDate,
+                )
+
+                AnalyticsGroupBucketTO(
+                    groupKey = groupKey.apiValue,
+                    value = InterestRateDataTO(
+                        totalInterestRate = BigDecimal.parseString(totalInterestRate.toPlainString()),
+                        currentInterestRate = BigDecimal.parseString(currentInterestRate.toPlainString()),
+                    ),
+                )
             }
-            val currentPositions = currentBucketRecords
-                .filter { it.unit.type == UnitType.CURRENCY }
-                .map { record ->
-                    val rate = getRate(record.unit, targetCurrency, record.dateTime.date)
-                    InterestRateCalculationCommand.Position(
-                        date = record.dateTime.date,
-                        amount = record.amount.negate().toJavaBigDecimal() * rate,
-                    )
-                }
-
-            val allPositions = state.allPositions + currentPositions
-
-            val totalInterestRate = calculateRate(allPositions, valuation.toJavaBigDecimal(), valuationDate)
-            val previousAggregated = InterestRateCalculationCommand.Position(state.previousValuationDate, state.previousValuation.toJavaBigDecimal())
-            val currentInterestRate = calculateRate(currentPositions + previousAggregated, valuation.toJavaBigDecimal(), valuationDate)
-
-            val data = InterestRateDataTO(
-                totalInterestRate = BigDecimal.parseString(totalInterestRate.toPlainString()),
-                currentInterestRate = BigDecimal.parseString(currentInterestRate.toPlainString()),
-            )
-
-            val nextState = InterestRateState(
-                allPositions = allPositions,
-                instrumentUnits = totalInstrumentUnits,
-                previousValuation = valuation,
-                previousValuationDate = valuationDate,
-            )
-
-            AnalyticsBucketTO(dateTime, listOf(AnalyticsGroupBucketTO(value = data))) to nextState
+            AnalyticsBucketTO(dateTime, groupBuckets) to statesByGroup
         }
         return AnalyticsReportTO(granularity = interval.granularity, buckets = buckets)
     }
@@ -154,4 +162,15 @@ class InterestRateService(
                     amount = record.amount.negate().toJavaBigDecimal(),
                 )
             }
+
+    private fun List<AnalyticsRecord>.groupByKey(groupBy: GroupingCriteria?): Map<GroupKey, List<AnalyticsRecord>> =
+        if (groupBy != null) groupBy { it.toGroupKey(groupBy) }
+        else mapOf(GroupKey.Ungrouped to this)
+
+    private fun AnalyticsRecord.toGroupKey(groupBy: GroupingCriteria): GroupKey = when (groupBy) {
+        GroupingCriteria.FINANCIAL_UNIT -> GroupKey.ByFinancialUnit(unit.value)
+        GroupingCriteria.ACCOUNT -> GroupKey.ByAccount(accountId.toString())
+        GroupingCriteria.FUND -> GroupKey.ByFund(fundId.toString())
+        GroupingCriteria.CATEGORY -> GroupKey.ByCategory(category?.value)
+    }
 }

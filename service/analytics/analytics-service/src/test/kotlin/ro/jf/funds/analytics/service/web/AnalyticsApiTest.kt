@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.koin.ktor.ext.get
 import ro.jf.funds.analytics.api.model.AnalyticsReportTO
 import ro.jf.funds.analytics.api.model.AnalyticsReportRequestTO
+import ro.jf.funds.analytics.api.model.GroupingCriteria
 import ro.jf.funds.analytics.api.model.InterestRateDataTO
 import ro.jf.funds.analytics.api.model.PerformanceDataTO
 import ro.jf.funds.analytics.api.model.TimeGranularity
@@ -219,6 +220,57 @@ class AnalyticsApiTest {
             assertThat(report.buckets).hasSize(2)
             assertThat(report.buckets[0].groups[0].value.totalInterestRate).isEqualTo(BigDecimal.ZERO)
             assertThat(report.buckets[0].groups[0].value.currentInterestRate).isEqualTo(BigDecimal.ZERO)
+        }
+
+    @Test
+    fun `given records in two funds - when requesting grouped balance report by fund - then returns per-fund balances`(): Unit =
+        testApplication {
+            configureEnvironment({ testModule() }, dbConfig, kafkaConfig, conversionServiceConfig)
+
+            analyticsRecordRepository.saveAll(
+                listOf(
+                    analyticsRecord(dateTime = LocalDateTime.parse("2023-12-01T10:00:00"), amount = "300.00", fundId = fundId),
+                    analyticsRecord(dateTime = LocalDateTime.parse("2024-01-10T10:00:00"), amount = "100.00", fundId = fundId),
+                    analyticsRecord(dateTime = LocalDateTime.parse("2023-12-01T10:00:00"), amount = "200.00", fundId = otherFundId),
+                    analyticsRecord(dateTime = LocalDateTime.parse("2024-01-15T10:00:00"), amount = "50.00", fundId = otherFundId),
+                    analyticsRecord(dateTime = LocalDateTime.parse("2024-02-10T10:00:00"), amount = "-80.00", fundId = fundId),
+                )
+            )
+
+            val client = createJsonHttpClient()
+
+            val response = client.post("/funds-api/analytics/v1/reports/balance") {
+                contentType(ContentType.Application.Json)
+                header(USER_ID_HEADER, userId)
+                setBody(
+                    AnalyticsReportRequestTO(
+                        granularity = TimeGranularity.MONTHLY,
+                        from = LocalDateTime.parse("2024-01-01T00:00:00"),
+                        to = LocalDateTime.parse("2024-03-01T00:00:00"),
+                        targetCurrency = Currency.RON,
+                        groupBy = GroupingCriteria.FUND,
+                    )
+                )
+            }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val report = response.body<AnalyticsReportTO<BigDecimal>>()
+            assertThat(report.granularity).isEqualTo(TimeGranularity.MONTHLY)
+            assertThat(report.buckets).hasSize(2)
+
+            val jan = report.buckets[0].groups.sortedBy { it.groupKey }
+            assertThat(jan).hasSize(2)
+            val janFund1 = jan.first { it.groupKey == fundId.toString() }
+            val janFund2 = jan.first { it.groupKey == otherFundId.toString() }
+            assertThat(janFund1.value).isEqualTo(BigDecimal.parseString("300.00"))
+            assertThat(janFund2.value).isEqualTo(BigDecimal.parseString("200.00"))
+
+            val feb = report.buckets[1].groups.sortedBy { it.groupKey }
+            assertThat(feb).hasSize(2)
+            val febFund1 = feb.first { it.groupKey == fundId.toString() }
+            val febFund2 = feb.first { it.groupKey == otherFundId.toString() }
+            assertThat(febFund1.value).isEqualTo(BigDecimal.parseString("400.00"))
+            assertThat(febFund2.value).isEqualTo(BigDecimal.parseString("250.00"))
         }
 
     private fun analyticsRecord(

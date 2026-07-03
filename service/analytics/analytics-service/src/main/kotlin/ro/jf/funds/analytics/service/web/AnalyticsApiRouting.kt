@@ -8,7 +8,7 @@ import io.ktor.server.routing.*
 import mu.KotlinLogging.logger
 import ro.jf.funds.analytics.api.model.AnalyticsReportRequestTO
 import ro.jf.funds.analytics.service.domain.ReportInterval
-import ro.jf.funds.analytics.service.domain.AnalyticsRecordFilter
+import ro.jf.funds.analytics.service.domain.AnalyticsInputRecordFilter
 import ro.jf.funds.analytics.service.service.AnalyticsService
 import ro.jf.funds.analytics.service.service.InterestRateService
 import ro.jf.funds.analytics.service.service.PerformanceService
@@ -27,7 +27,7 @@ fun Routing.analyticsApiRouting(
             val request = call.receive<AnalyticsReportRequestTO>()
             log.info { "Balance report request for user $userId: $request" }
             val interval = ReportInterval(request.granularity, request.from, request.to)
-            val filter = AnalyticsRecordFilter(fundIds = request.fundIds, units = request.units)
+            val filter = AnalyticsInputRecordFilter(fundIds = request.fundIds, units = request.units)
             val report = analyticsService.getBalanceReport(userId, interval, filter, request.targetCurrency, request.groupBy)
             call.respond(HttpStatusCode.OK, report)
         }
@@ -36,7 +36,7 @@ fun Routing.analyticsApiRouting(
             val request = call.receive<AnalyticsReportRequestTO>()
             log.info { "Net change report request for user $userId: $request" }
             val interval = ReportInterval(request.granularity, request.from, request.to)
-            val filter = AnalyticsRecordFilter(fundIds = request.fundIds, units = request.units)
+            val filter = AnalyticsInputRecordFilter(fundIds = request.fundIds, units = request.units)
             val report = analyticsService.getNetChangeReport(userId, interval, filter, request.targetCurrency, request.groupBy)
             call.respond(HttpStatusCode.OK, report)
         }
@@ -45,7 +45,7 @@ fun Routing.analyticsApiRouting(
             val request = call.receive<AnalyticsReportRequestTO>()
             log.info { "Performance report request for user $userId: $request" }
             val interval = ReportInterval(request.granularity, request.from, request.to)
-            val filter = AnalyticsRecordFilter(fundIds = request.fundIds, units = request.units)
+            val filter = AnalyticsInputRecordFilter(fundIds = request.fundIds, units = request.units)
             val report = performanceService.getPerformanceReport(userId, interval, filter, request.targetCurrency, request.groupBy)
             call.respond(HttpStatusCode.OK, report)
         }
@@ -54,7 +54,7 @@ fun Routing.analyticsApiRouting(
             val request = call.receive<AnalyticsReportRequestTO>()
             log.info { "Interest rate report request for user $userId: $request" }
             val interval = ReportInterval(request.granularity, request.from, request.to)
-            val filter = AnalyticsRecordFilter(fundIds = request.fundIds, units = request.units)
+            val filter = AnalyticsInputRecordFilter(fundIds = request.fundIds, units = request.units)
             val report = interestRateService.getInterestRateReport(userId, interval, filter, request.targetCurrency, request.groupBy)
             call.respond(HttpStatusCode.OK, report)
         }

@@ -21,6 +21,6 @@ data class AnalyticsBucketTO<T>(
 
 @Serializable
 data class AnalyticsGroupBucketTO<T>(
-    val groupKey: String? = null,
+    val groupKey: String = "UNGROUPED",
     val value: T,
 )
