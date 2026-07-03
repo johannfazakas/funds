@@ -46,8 +46,10 @@ class InterestRateService(
         log.info { "Generating interest rate report for user $userId, interval=$interval, targetCurrency=$targetCurrency, groupBy=$groupBy" }
 
         val positionFilter = filter.toDbFilter(transactionTypes = listOf(TransactionType.OPEN_POSITION))
-        val instrumentFilter = filter.copy(units = filter.units.filter { it.type == UnitType.INSTRUMENT })
-            .toDbFilter(transactionTypes = listOf(TransactionType.OPEN_POSITION, TransactionType.CLOSE_POSITION))
+        val instrumentFilter = filter.toDbFilter(
+            transactionTypes = listOf(TransactionType.OPEN_POSITION, TransactionType.CLOSE_POSITION),
+            unitTypes = listOf(UnitType.INSTRUMENT),
+        )
 
         val previousPositionRecords = analyticsRecordRepository.getRecordsBefore(userId, interval.from, positionFilter)
         val previousPositionsByGroup = previousPositionRecords.groupByKey(groupBy)

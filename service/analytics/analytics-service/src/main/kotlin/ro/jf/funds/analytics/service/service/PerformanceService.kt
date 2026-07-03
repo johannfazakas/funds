@@ -3,6 +3,7 @@ package ro.jf.funds.analytics.service.service
 import com.benasher44.uuid.Uuid
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import mu.KotlinLogging.logger
 import ro.jf.funds.analytics.api.model.*
 import ro.jf.funds.analytics.service.domain.AnalyticsInputRecordFilter
@@ -39,9 +40,17 @@ class PerformanceService(
     ): AnalyticsReportTO<PerformanceDataTO> {
         log.info { "Generating performance report for user $userId, interval=$interval, targetCurrency=$targetCurrency, groupBy=$groupBy" }
 
-        val investmentFilter = filter.toDbFilter(transactionTypes = listOf(TransactionType.OPEN_POSITION))
-        val instrumentFilter = filter.toDbFilter(transactionTypes = listOf(TransactionType.OPEN_POSITION, TransactionType.CLOSE_POSITION))
-        val currencyFilter = filter.toDbFilter()
+        val investmentFilter = filter.toDbFilter(
+            transactionTypes = listOf(TransactionType.OPEN_POSITION),
+            unitTypes = listOf(UnitType.CURRENCY),
+        )
+        val instrumentFilter = filter.toDbFilter(
+            transactionTypes = listOf(TransactionType.OPEN_POSITION, TransactionType.CLOSE_POSITION),
+            unitTypes = listOf(UnitType.INSTRUMENT),
+        )
+        val currencyFilter = filter.toDbFilter(
+            unitTypes = listOf(UnitType.CURRENCY),
+        )
 
         val prevInvestment = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, investmentFilter, groupBy)
         val prevInstruments = analyticsRecordRepository.getUnitAmountsBefore(userId, interval.from, instrumentFilter, groupBy)
@@ -64,7 +73,7 @@ class PerformanceService(
             )
         }.toMutableMap()
 
-        val buckets = interval.generateBucketedData(initialStates) { dateTime, statesByGroup ->
+        val buckets = interval.generateBucketedData(initialStates) { dateTime: LocalDateTime, statesByGroup: MutableMap<GroupKey, PerformanceState> ->
             val investmentBucket = bucketedInvestment.getBucket(dateTime)
             val instrumentsBucket = bucketedInstruments.getBucket(dateTime)
             val currencyBucket = bucketedCurrency.getBucket(dateTime)
@@ -78,10 +87,10 @@ class PerformanceService(
                     previousTotalProfit = BigDecimal.ZERO,
                 )
 
-                val totalInvestment = convertCurrencyUnits(updatedState.investment, targetCurrency, dateTime.date).negate()
-                val currentInvestment = convertCurrencyUnits(currentBucketInvestment, targetCurrency, dateTime.date).negate()
-                val totalInstrumentValue = convertInstrumentUnits(updatedState.instruments, targetCurrency, dateTime.date)
-                val currencyValue = convertCurrencyUnits(updatedState.currency, targetCurrency, dateTime.date)
+                val totalInvestment = convertUnits(updatedState.investment, targetCurrency, dateTime.date).negate()
+                val currentInvestment = convertUnits(currentBucketInvestment, targetCurrency, dateTime.date).negate()
+                val totalInstrumentValue = convertUnits(updatedState.instruments, targetCurrency, dateTime.date)
+                val currencyValue = convertUnits(updatedState.currency, targetCurrency, dateTime.date)
                 val totalProfit = totalInstrumentValue - totalInvestment
                 val currentProfit = totalProfit - state.previousTotalProfit
 
@@ -104,31 +113,13 @@ class PerformanceService(
         return AnalyticsReportTO(granularity = interval.granularity, buckets = buckets)
     }
 
-    private suspend fun convertCurrencyUnits(
+    private suspend fun convertUnits(
         amounts: UnitAmounts, targetCurrency: Currency, date: LocalDate,
     ): BigDecimal {
-        val currencyEntries = amounts.entries.filter { it.key.type == UnitType.CURRENCY }
-        if (currencyEntries.isEmpty()) return BigDecimal.ZERO
-        val request = ConversionsRequest(currencyEntries.map { ConversionRequest(it.key, targetCurrency, date) })
+        if (amounts.units.isEmpty()) return BigDecimal.ZERO
+        val request = ConversionsRequest(amounts.units.map { ConversionRequest(it, targetCurrency, date) })
         val rates = conversionSdk.convert(request)
-        return currencyEntries.fold(BigDecimal.ZERO) { acc, (unit, amount) ->
-            val rate = rates.getRate(unit, targetCurrency, date)
-            if (rate == null) {
-                log.warn { "Conversion rate not found for $unit -> $targetCurrency on $date, treating as zero" }
-                return@fold acc
-            }
-            acc + amount * rate
-        }
-    }
-
-    private suspend fun convertInstrumentUnits(
-        amounts: UnitAmounts, targetCurrency: Currency, date: LocalDate,
-    ): BigDecimal {
-        val instrumentEntries = amounts.entries.filter { it.key.type == UnitType.INSTRUMENT }
-        if (instrumentEntries.isEmpty()) return BigDecimal.ZERO
-        val request = ConversionsRequest(instrumentEntries.map { ConversionRequest(it.key, targetCurrency, date) })
-        val rates = conversionSdk.convert(request)
-        return instrumentEntries.fold(BigDecimal.ZERO) { acc, (unit, amount) ->
+        return amounts.entries.fold(BigDecimal.ZERO) { acc, (unit, amount) ->
             val rate = rates.getRate(unit, targetCurrency, date)
             if (rate == null) {
                 log.warn { "Conversion rate not found for $unit -> $targetCurrency on $date, treating as zero" }

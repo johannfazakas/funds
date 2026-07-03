@@ -190,6 +190,15 @@ class AnalyticsRecordRepository(
                 query.andWhere { AnalyticsRecordTable.transactionType inList filter.transactionTypes.map { it.name } }
             else query
         }
+        .let { query ->
+            if (filter.unitTypes.isNotEmpty())
+                query.andWhere {
+                    filter.unitTypes.map<_, Op<Boolean>> { unitType ->
+                        AnalyticsRecordTable.unit.contains("""{"type":"${unitType.value}"}""")
+                    }.reduce { acc, op -> acc or op }
+                }
+            else query
+        }
 
     private fun dateTrunc(
         granularity: TimeGranularity,

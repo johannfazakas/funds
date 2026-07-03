@@ -1,0 +1,1 @@
+No spec-level changes. This is a pure internal refactoring — query filtering behavior is an implementation detail that does not affect the external contract defined in existing performance and interest-rate report specs.

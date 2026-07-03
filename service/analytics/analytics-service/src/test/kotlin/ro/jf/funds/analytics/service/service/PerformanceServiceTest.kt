@@ -30,6 +30,7 @@ import ro.jf.funds.fund.api.model.TransactionType
 import ro.jf.funds.platform.api.model.Currency
 import ro.jf.funds.platform.api.model.FinancialUnit
 import ro.jf.funds.platform.api.model.Instrument
+import ro.jf.funds.platform.api.model.UnitType
 
 class PerformanceServiceTest {
     private val analyticsRecordRepository = mock<AnalyticsRecordRepository>()
@@ -67,11 +68,17 @@ class PerformanceServiceTest {
     }
 
     private val vt = Instrument("VT")
-    private val investmentFilter = AnalyticsDbRecordFilter(transactionTypes = listOf(TransactionType.OPEN_POSITION))
-    private val instrumentFilter = AnalyticsDbRecordFilter(
-        transactionTypes = listOf(TransactionType.OPEN_POSITION, TransactionType.CLOSE_POSITION)
+    private val investmentFilter = AnalyticsDbRecordFilter(
+        transactionTypes = listOf(TransactionType.OPEN_POSITION),
+        unitTypes = listOf(UnitType.CURRENCY),
     )
-    private val currencyFilter = AnalyticsDbRecordFilter()
+    private val instrumentFilter = AnalyticsDbRecordFilter(
+        transactionTypes = listOf(TransactionType.OPEN_POSITION, TransactionType.CLOSE_POSITION),
+        unitTypes = listOf(UnitType.INSTRUMENT),
+    )
+    private val currencyFilter = AnalyticsDbRecordFilter(
+        unitTypes = listOf(UnitType.CURRENCY),
+    )
 
     private fun ungroupedBuckets(vararg entries: Pair<LocalDateTime, UnitAmounts>) =
         BucketedGroupedUnitAmounts(entries.associate { (dt, ua) -> dt to GroupedUnitAmounts(mapOf(GroupKey.Ungrouped to ua)) })
@@ -239,52 +246,6 @@ class PerformanceServiceTest {
         assertThat(report.buckets[0].groups).hasSize(1)
         assertThat(report.buckets[0].groups[0].groupKey).isEqualTo("UNGROUPED")
         assertThat(report.buckets[0].groups[0].value.totalInvestment).isEqualTo(BigDecimal.parseString("1000.00"))
-    }
-
-    @Test
-    fun `given instrument records with currency units - when getting performance report - then totalInstrumentValue excludes currency amounts`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(investmentFilter), isNull()))
-            .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(instrumentFilter), isNull()))
-            .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(currencyFilter), isNull()))
-            .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
-
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(investmentFilter), isNull()))
-            .thenReturn(ungroupedBuckets(
-                LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(
-                    Currency.RON to BigDecimal.parseString("-1000.00"),
-                    vt to BigDecimal.parseString("10.00"),
-                )),
-            ))
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(instrumentFilter), isNull()))
-            .thenReturn(ungroupedBuckets(
-                LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(
-                    Currency.RON to BigDecimal.parseString("-1000.00"),
-                    vt to BigDecimal.parseString("10.00"),
-                )),
-            ))
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(currencyFilter), isNull()))
-            .thenReturn(ungroupedBuckets(
-                LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(
-                    Currency.RON to BigDecimal.parseString("-1000.00"),
-                    vt to BigDecimal.parseString("10.00"),
-                )),
-            ))
-
-        givenRate(vt, Currency.RON, "2024-01-01", "120.00")
-        givenRate(vt, Currency.RON, "2024-02-01", "130.00")
-
-        val report = service.getPerformanceReport(userId, interval, targetCurrency = Currency.RON)
-
-        val jan = report.buckets[0].groups[0].value
-        assertThat(jan.totalInvestment).isEqualTo(BigDecimal.parseString("1000.00"))
-        assertThat(jan.totalInstrumentValue).isEqualTo(BigDecimal.parseString("1200.00"))
-        assertThat(jan.totalProfit).isEqualTo(BigDecimal.parseString("200.00"))
-
-        val feb = report.buckets[1].groups[0].value
-        assertThat(feb.totalInstrumentValue).isEqualTo(BigDecimal.parseString("1300.00"))
-        assertThat(feb.totalProfit).isEqualTo(BigDecimal.parseString("300.00"))
     }
 
     private val fund1 = uuid4().toString()
