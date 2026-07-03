@@ -80,7 +80,7 @@ class PerformanceService(
 
                 val totalInvestment = convertCurrencyUnits(updatedState.investment, targetCurrency, dateTime.date).negate()
                 val currentInvestment = convertCurrencyUnits(currentBucketInvestment, targetCurrency, dateTime.date).negate()
-                val totalInstrumentValue = convertAll(updatedState.instruments, targetCurrency, dateTime.date)
+                val totalInstrumentValue = convertInstrumentUnits(updatedState.instruments, targetCurrency, dateTime.date)
                 val currencyValue = convertCurrencyUnits(updatedState.currency, targetCurrency, dateTime.date)
                 val totalProfit = totalInstrumentValue - totalInvestment
                 val currentProfit = totalProfit - state.previousTotalProfit
@@ -121,13 +121,14 @@ class PerformanceService(
         }
     }
 
-    private suspend fun convertAll(
+    private suspend fun convertInstrumentUnits(
         amounts: UnitAmounts, targetCurrency: Currency, date: LocalDate,
     ): BigDecimal {
-        if (amounts.units.isEmpty()) return BigDecimal.ZERO
-        val request = ConversionsRequest(amounts.units.map { ConversionRequest(it, targetCurrency, date) })
+        val instrumentEntries = amounts.entries.filter { it.key.type == UnitType.INSTRUMENT }
+        if (instrumentEntries.isEmpty()) return BigDecimal.ZERO
+        val request = ConversionsRequest(instrumentEntries.map { ConversionRequest(it.key, targetCurrency, date) })
         val rates = conversionSdk.convert(request)
-        return amounts.entries.fold(BigDecimal.ZERO) { acc, (unit, amount) ->
+        return instrumentEntries.fold(BigDecimal.ZERO) { acc, (unit, amount) ->
             val rate = rates.getRate(unit, targetCurrency, date)
             if (rate == null) {
                 log.warn { "Conversion rate not found for $unit -> $targetCurrency on $date, treating as zero" }

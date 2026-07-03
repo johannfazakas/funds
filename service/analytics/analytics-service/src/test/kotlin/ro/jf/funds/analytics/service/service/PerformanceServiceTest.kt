@@ -241,6 +241,52 @@ class PerformanceServiceTest {
         assertThat(report.buckets[0].groups[0].value.totalInvestment).isEqualTo(BigDecimal.parseString("1000.00"))
     }
 
+    @Test
+    fun `given instrument records with currency units - when getting performance report - then totalInstrumentValue excludes currency amounts`(): Unit = runBlocking {
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(investmentFilter), isNull()))
+            .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(instrumentFilter), isNull()))
+            .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(currencyFilter), isNull()))
+            .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
+
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(investmentFilter), isNull()))
+            .thenReturn(ungroupedBuckets(
+                LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(
+                    Currency.RON to BigDecimal.parseString("-1000.00"),
+                    vt to BigDecimal.parseString("10.00"),
+                )),
+            ))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(instrumentFilter), isNull()))
+            .thenReturn(ungroupedBuckets(
+                LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(
+                    Currency.RON to BigDecimal.parseString("-1000.00"),
+                    vt to BigDecimal.parseString("10.00"),
+                )),
+            ))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(currencyFilter), isNull()))
+            .thenReturn(ungroupedBuckets(
+                LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(
+                    Currency.RON to BigDecimal.parseString("-1000.00"),
+                    vt to BigDecimal.parseString("10.00"),
+                )),
+            ))
+
+        givenRate(vt, Currency.RON, "2024-01-01", "120.00")
+        givenRate(vt, Currency.RON, "2024-02-01", "130.00")
+
+        val report = service.getPerformanceReport(userId, interval, targetCurrency = Currency.RON)
+
+        val jan = report.buckets[0].groups[0].value
+        assertThat(jan.totalInvestment).isEqualTo(BigDecimal.parseString("1000.00"))
+        assertThat(jan.totalInstrumentValue).isEqualTo(BigDecimal.parseString("1200.00"))
+        assertThat(jan.totalProfit).isEqualTo(BigDecimal.parseString("200.00"))
+
+        val feb = report.buckets[1].groups[0].value
+        assertThat(feb.totalInstrumentValue).isEqualTo(BigDecimal.parseString("1300.00"))
+        assertThat(feb.totalProfit).isEqualTo(BigDecimal.parseString("300.00"))
+    }
+
     private val fund1 = uuid4().toString()
     private val fund2 = uuid4().toString()
 
