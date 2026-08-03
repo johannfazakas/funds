@@ -16,6 +16,7 @@ import org.mockito.kotlin.whenever
 import ro.jf.funds.analytics.api.model.GroupingCriteria
 import ro.jf.funds.analytics.api.model.TimeGranularity
 import ro.jf.funds.analytics.service.domain.AnalyticsDbRecordFilter
+import ro.jf.funds.analytics.service.domain.AnalyticsRecord
 import ro.jf.funds.analytics.service.domain.BucketedGroupedUnitAmounts
 import ro.jf.funds.analytics.service.domain.GroupKey
 import ro.jf.funds.analytics.service.domain.GroupedUnitAmounts
@@ -38,6 +39,8 @@ class PerformanceServiceTest {
     private val service = PerformanceService(analyticsRecordRepository, conversionSdk)
 
     private val userId = uuid4()
+    private val fundId = uuid4()
+    private val accountId = uuid4()
     private val interval = ReportInterval(
         granularity = TimeGranularity.MONTHLY,
         from = LocalDateTime.parse("2024-01-01T00:00:00"),
@@ -70,7 +73,6 @@ class PerformanceServiceTest {
     private val vt = Instrument("VT")
     private val investmentFilter = AnalyticsDbRecordFilter(
         transactionTypes = listOf(TransactionType.OPEN_POSITION),
-        unitTypes = listOf(UnitType.CURRENCY),
     )
     private val instrumentFilter = AnalyticsDbRecordFilter(
         transactionTypes = listOf(TransactionType.OPEN_POSITION, TransactionType.CLOSE_POSITION),
@@ -86,21 +88,47 @@ class PerformanceServiceTest {
     private fun ungroupedAmounts(amounts: UnitAmounts) =
         GroupedUnitAmounts(mapOf(GroupKey.Ungrouped to amounts))
 
+    private fun openPositionRecords(
+        dateTime: LocalDateTime,
+        currencyUnit: Currency,
+        currencyAmount: BigDecimal,
+        instrumentUnit: Instrument,
+        instrumentAmount: BigDecimal,
+        txFundId: com.benasher44.uuid.Uuid = fundId,
+        txAccountId: com.benasher44.uuid.Uuid = accountId,
+        category: String? = null,
+    ): List<AnalyticsRecord> {
+        val transactionId = uuid4()
+        return listOf(
+            AnalyticsRecord(
+                id = uuid4(), userId = userId, fundId = txFundId, accountId = txAccountId,
+                transactionId = transactionId, transactionType = TransactionType.OPEN_POSITION,
+                dateTime = dateTime, amount = currencyAmount, unit = currencyUnit, category = category?.let { ro.jf.funds.platform.api.model.Category(it) },
+            ),
+            AnalyticsRecord(
+                id = uuid4(), userId = userId, fundId = txFundId, accountId = txAccountId,
+                transactionId = transactionId, transactionType = TransactionType.OPEN_POSITION,
+                dateTime = dateTime, amount = instrumentAmount, unit = instrumentUnit, category = category?.let { ro.jf.funds.platform.api.model.Category(it) },
+            ),
+        )
+    }
+
     @Test
     fun `given open position records - when getting performance report - then returns correct investment and instrument values`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(investmentFilter), isNull()))
-            .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
+        whenever(analyticsRecordRepository.getRecordsBefore(any(), any(), eq(investmentFilter)))
+            .thenReturn(emptyList())
+        whenever(analyticsRecordRepository.getRecords(any(), any(), eq(investmentFilter)))
+            .thenReturn(openPositionRecords(
+                dateTime = LocalDateTime.parse("2024-01-15T00:00:00"),
+                currencyUnit = Currency.RON, currencyAmount = BigDecimal.parseString("-1000.00"),
+                instrumentUnit = vt, instrumentAmount = BigDecimal.parseString("10.00"),
+            ))
+
         whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(instrumentFilter), isNull()))
             .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
         whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(currencyFilter), isNull()))
             .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
 
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(investmentFilter), isNull()))
-            .thenReturn(ungroupedBuckets(
-                LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(
-                    Currency.RON to BigDecimal.parseString("-1000.00")
-                )),
-            ))
         whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(instrumentFilter), isNull()))
             .thenReturn(ungroupedBuckets(
                 LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(
@@ -141,19 +169,24 @@ class PerformanceServiceTest {
 
     @Test
     fun `given accumulating positions over buckets - when getting performance report - then accumulates investment and instruments`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(investmentFilter), isNull()))
-            .thenReturn(ungroupedAmounts(UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-500.00")))))
+        whenever(analyticsRecordRepository.getRecordsBefore(any(), any(), eq(investmentFilter)))
+            .thenReturn(openPositionRecords(
+                dateTime = LocalDateTime.parse("2023-12-15T00:00:00"),
+                currencyUnit = Currency.RON, currencyAmount = BigDecimal.parseString("-500.00"),
+                instrumentUnit = vt, instrumentAmount = BigDecimal.parseString("5.00"),
+            ))
+        whenever(analyticsRecordRepository.getRecords(any(), any(), eq(investmentFilter)))
+            .thenReturn(openPositionRecords(
+                dateTime = LocalDateTime.parse("2024-02-15T00:00:00"),
+                currencyUnit = Currency.RON, currencyAmount = BigDecimal.parseString("-300.00"),
+                instrumentUnit = vt, instrumentAmount = BigDecimal.parseString("3.00"),
+            ))
+
         whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(instrumentFilter), isNull()))
             .thenReturn(ungroupedAmounts(UnitAmounts(mapOf(vt to BigDecimal.parseString("5.00")))))
         whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(currencyFilter), isNull()))
             .thenReturn(ungroupedAmounts(UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-500.00")))))
 
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(investmentFilter), isNull()))
-            .thenReturn(ungroupedBuckets(
-                LocalDateTime.parse("2024-02-01T00:00:00") to UnitAmounts(mapOf(
-                    Currency.RON to BigDecimal.parseString("-300.00")
-                )),
-            ))
         whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(instrumentFilter), isNull()))
             .thenReturn(ungroupedBuckets(
                 LocalDateTime.parse("2024-02-01T00:00:00") to UnitAmounts(mapOf(
@@ -189,6 +222,10 @@ class PerformanceServiceTest {
 
     @Test
     fun `given no records - when getting performance report - then returns zero-filled buckets`(): Unit = runBlocking {
+        whenever(analyticsRecordRepository.getRecordsBefore(any(), any(), any()))
+            .thenReturn(emptyList())
+        whenever(analyticsRecordRepository.getRecords(any(), any(), any()))
+            .thenReturn(emptyList())
         whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any(), isNull()))
             .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
         whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), isNull()))
@@ -211,19 +248,20 @@ class PerformanceServiceTest {
 
     @Test
     fun `given no groupBy - when getting performance report - then returns ungrouped report with UNGROUPED group key`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(investmentFilter), isNull()))
-            .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
+        whenever(analyticsRecordRepository.getRecordsBefore(any(), any(), eq(investmentFilter)))
+            .thenReturn(emptyList())
+        whenever(analyticsRecordRepository.getRecords(any(), any(), eq(investmentFilter)))
+            .thenReturn(openPositionRecords(
+                dateTime = LocalDateTime.parse("2024-01-15T00:00:00"),
+                currencyUnit = Currency.RON, currencyAmount = BigDecimal.parseString("-1000.00"),
+                instrumentUnit = vt, instrumentAmount = BigDecimal.parseString("10.00"),
+            ))
+
         whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(instrumentFilter), isNull()))
             .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
         whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(currencyFilter), isNull()))
             .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
 
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(investmentFilter), isNull()))
-            .thenReturn(ungroupedBuckets(
-                LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(
-                    Currency.RON to BigDecimal.parseString("-1000.00")
-                )),
-            ))
         whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(instrumentFilter), isNull()))
             .thenReturn(ungroupedBuckets(
                 LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(
@@ -248,35 +286,201 @@ class PerformanceServiceTest {
         assertThat(report.buckets[0].groups[0].value.totalInvestment).isEqualTo(BigDecimal.parseString("1000.00"))
     }
 
-    private val fund1 = uuid4().toString()
-    private val fund2 = uuid4().toString()
+    @Test
+    fun `given cross-currency investment - when getting performance report - then converts investment at transaction date`(): Unit = runBlocking {
+        whenever(analyticsRecordRepository.getRecordsBefore(any(), any(), eq(investmentFilter)))
+            .thenReturn(emptyList())
+        whenever(analyticsRecordRepository.getRecords(any(), any(), eq(investmentFilter)))
+            .thenReturn(
+                openPositionRecords(
+                    dateTime = LocalDateTime.parse("2024-01-10T00:00:00"),
+                    currencyUnit = Currency.EUR, currencyAmount = BigDecimal.parseString("-100.00"),
+                    instrumentUnit = vt, instrumentAmount = BigDecimal.parseString("10.00"),
+                ) + openPositionRecords(
+                    dateTime = LocalDateTime.parse("2024-02-10T00:00:00"),
+                    currencyUnit = Currency.EUR, currencyAmount = BigDecimal.parseString("-100.00"),
+                    instrumentUnit = vt, instrumentAmount = BigDecimal.parseString("10.00"),
+                )
+            )
+
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(instrumentFilter), isNull()))
+            .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(currencyFilter), isNull()))
+            .thenReturn(ungroupedAmounts(UnitAmounts.EMPTY))
+
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(instrumentFilter), isNull()))
+            .thenReturn(ungroupedBuckets(
+                LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(vt to BigDecimal.parseString("10.00"))),
+                LocalDateTime.parse("2024-02-01T00:00:00") to UnitAmounts(mapOf(vt to BigDecimal.parseString("10.00"))),
+            ))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(currencyFilter), isNull()))
+            .thenReturn(ungroupedBuckets(
+                LocalDateTime.parse("2024-01-01T00:00:00") to UnitAmounts(mapOf(Currency.EUR to BigDecimal.parseString("-100.00"))),
+                LocalDateTime.parse("2024-02-01T00:00:00") to UnitAmounts(mapOf(Currency.EUR to BigDecimal.parseString("-100.00"))),
+            ))
+
+        givenRate(Currency.EUR, Currency.RON, "2024-01-10", "4.90")
+        givenRate(Currency.EUR, Currency.RON, "2024-02-10", "4.95")
+        givenRate(Currency.EUR, Currency.RON, "2024-01-01", "4.88")
+        givenRate(Currency.EUR, Currency.RON, "2024-02-01", "4.93")
+        givenRate(vt, Currency.RON, "2024-01-01", "50.00")
+        givenRate(vt, Currency.RON, "2024-02-01", "55.00")
+
+        val report = service.getPerformanceReport(userId, interval, targetCurrency = Currency.RON)
+
+        val jan = report.buckets[0].groups[0].value
+        assertThat(jan.totalInvestment).isEqualTo(BigDecimal.parseString("490.00"))
+        assertThat(jan.totalInstrumentValue).isEqualTo(BigDecimal.parseString("500.00"))
+        assertThat(jan.totalProfit).isEqualTo(BigDecimal.parseString("10.00"))
+
+        val feb = report.buckets[1].groups[0].value
+        assertThat(feb.totalInvestment).isEqualTo(BigDecimal.parseString("985.00"))
+        assertThat(feb.totalInstrumentValue).isEqualTo(BigDecimal.parseString("1100.00"))
+        assertThat(feb.totalProfit).isEqualTo(BigDecimal.parseString("115.00"))
+    }
+
+    @Test
+    fun `given grouped by financial unit - when getting performance report - then investment attributed to paired instrument group`(): Unit = runBlocking {
+        whenever(analyticsRecordRepository.getRecordsBefore(any(), any(), eq(investmentFilter)))
+            .thenReturn(emptyList())
+        whenever(analyticsRecordRepository.getRecords(any(), any(), eq(investmentFilter)))
+            .thenReturn(openPositionRecords(
+                dateTime = LocalDateTime.parse("2024-01-15T00:00:00"),
+                currencyUnit = Currency.RON, currencyAmount = BigDecimal.parseString("-1000.00"),
+                instrumentUnit = vt, instrumentAmount = BigDecimal.parseString("10.00"),
+            ))
+
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(instrumentFilter), eq(GroupingCriteria.FINANCIAL_UNIT)))
+            .thenReturn(GroupedUnitAmounts(emptyMap()))
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(currencyFilter), eq(GroupingCriteria.FINANCIAL_UNIT)))
+            .thenReturn(GroupedUnitAmounts(emptyMap()))
+
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(instrumentFilter), eq(GroupingCriteria.FINANCIAL_UNIT)))
+            .thenReturn(BucketedGroupedUnitAmounts(mapOf(
+                LocalDateTime.parse("2024-01-01T00:00:00") to GroupedUnitAmounts(mapOf(
+                    GroupKey.ByFinancialUnit("VT") to UnitAmounts(mapOf(vt to BigDecimal.parseString("10.00"))),
+                )),
+            )))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(currencyFilter), eq(GroupingCriteria.FINANCIAL_UNIT)))
+            .thenReturn(BucketedGroupedUnitAmounts(mapOf(
+                LocalDateTime.parse("2024-01-01T00:00:00") to GroupedUnitAmounts(mapOf(
+                    GroupKey.ByFinancialUnit("RON") to UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-1000.00"))),
+                )),
+            )))
+
+        givenRate(vt, Currency.RON, "2024-01-01", "120.00")
+        givenRate(vt, Currency.RON, "2024-02-01", "130.00")
+
+        val report = service.getPerformanceReport(userId, interval, targetCurrency = Currency.RON, groupBy = GroupingCriteria.FINANCIAL_UNIT)
+
+        val jan = report.buckets[0]
+        val vtGroup = jan.groups.first { it.groupKey == "VT" }
+        assertThat(vtGroup.value.totalInvestment).isEqualTo(BigDecimal.parseString("1000.00"))
+        assertThat(vtGroup.value.totalInstrumentValue).isEqualTo(BigDecimal.parseString("1200.00"))
+        assertThat(vtGroup.value.totalProfit).isEqualTo(BigDecimal.parseString("200.00"))
+
+        val ronGroup = jan.groups.firstOrNull { it.groupKey == "RON" }
+        if (ronGroup != null) {
+            assertThat(ronGroup.value.totalInvestment).isEqualTo(BigDecimal.ZERO)
+        }
+    }
+
+    @Test
+    fun `given grouped by financial unit with multiple instruments - when getting performance report - then correct per-instrument totalInvestment`(): Unit = runBlocking {
+        val sxr8 = Instrument("SXR8")
+
+        whenever(analyticsRecordRepository.getRecordsBefore(any(), any(), eq(investmentFilter)))
+            .thenReturn(emptyList())
+        whenever(analyticsRecordRepository.getRecords(any(), any(), eq(investmentFilter)))
+            .thenReturn(
+                openPositionRecords(
+                    dateTime = LocalDateTime.parse("2024-01-15T00:00:00"),
+                    currencyUnit = Currency.RON, currencyAmount = BigDecimal.parseString("-1000.00"),
+                    instrumentUnit = vt, instrumentAmount = BigDecimal.parseString("10.00"),
+                ) + openPositionRecords(
+                    dateTime = LocalDateTime.parse("2024-01-20T00:00:00"),
+                    currencyUnit = Currency.RON, currencyAmount = BigDecimal.parseString("-500.00"),
+                    instrumentUnit = sxr8, instrumentAmount = BigDecimal.parseString("5.00"),
+                )
+            )
+
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(instrumentFilter), eq(GroupingCriteria.FINANCIAL_UNIT)))
+            .thenReturn(GroupedUnitAmounts(emptyMap()))
+        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(currencyFilter), eq(GroupingCriteria.FINANCIAL_UNIT)))
+            .thenReturn(GroupedUnitAmounts(emptyMap()))
+
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(instrumentFilter), eq(GroupingCriteria.FINANCIAL_UNIT)))
+            .thenReturn(BucketedGroupedUnitAmounts(mapOf(
+                LocalDateTime.parse("2024-01-01T00:00:00") to GroupedUnitAmounts(mapOf(
+                    GroupKey.ByFinancialUnit("VT") to UnitAmounts(mapOf(vt to BigDecimal.parseString("10.00"))),
+                    GroupKey.ByFinancialUnit("SXR8") to UnitAmounts(mapOf(sxr8 to BigDecimal.parseString("5.00"))),
+                )),
+            )))
+        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(currencyFilter), eq(GroupingCriteria.FINANCIAL_UNIT)))
+            .thenReturn(BucketedGroupedUnitAmounts(mapOf(
+                LocalDateTime.parse("2024-01-01T00:00:00") to GroupedUnitAmounts(mapOf(
+                    GroupKey.ByFinancialUnit("RON") to UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-1500.00"))),
+                )),
+            )))
+
+        givenRate(vt, Currency.RON, "2024-01-01", "120.00")
+        givenRate(vt, Currency.RON, "2024-02-01", "130.00")
+        givenRate(sxr8, Currency.RON, "2024-01-01", "200.00")
+        givenRate(sxr8, Currency.RON, "2024-02-01", "210.00")
+
+        val report = service.getPerformanceReport(userId, interval, targetCurrency = Currency.RON, groupBy = GroupingCriteria.FINANCIAL_UNIT)
+
+        val jan = report.buckets[0]
+        val vtGroup = jan.groups.first { it.groupKey == "VT" }
+        assertThat(vtGroup.value.totalInvestment).isEqualTo(BigDecimal.parseString("1000.00"))
+        assertThat(vtGroup.value.totalInstrumentValue).isEqualTo(BigDecimal.parseString("1200.00"))
+        assertThat(vtGroup.value.totalProfit).isEqualTo(BigDecimal.parseString("200.00"))
+
+        val sxr8Group = jan.groups.first { it.groupKey == "SXR8" }
+        assertThat(sxr8Group.value.totalInvestment).isEqualTo(BigDecimal.parseString("500.00"))
+        assertThat(sxr8Group.value.totalInstrumentValue).isEqualTo(BigDecimal.parseString("1000.00"))
+        assertThat(sxr8Group.value.totalProfit).isEqualTo(BigDecimal.parseString("500.00"))
+    }
+
+    private val fund1 = uuid4()
+    private val fund2 = uuid4()
 
     @Test
     fun `given two funds - when getting grouped performance report by fund - then returns per-fund metrics`(): Unit = runBlocking {
         val sxr8 = Instrument("SXR8")
 
+        whenever(analyticsRecordRepository.getRecordsBefore(any(), any(), eq(investmentFilter)))
+            .thenReturn(emptyList())
+        whenever(analyticsRecordRepository.getRecords(any(), any(), eq(investmentFilter)))
+            .thenReturn(
+                openPositionRecords(
+                    dateTime = LocalDateTime.parse("2024-01-15T00:00:00"),
+                    currencyUnit = Currency.RON, currencyAmount = BigDecimal.parseString("-1000.00"),
+                    instrumentUnit = vt, instrumentAmount = BigDecimal.parseString("10.00"),
+                    txFundId = fund1,
+                ) + openPositionRecords(
+                    dateTime = LocalDateTime.parse("2024-01-20T00:00:00"),
+                    currencyUnit = Currency.RON, currencyAmount = BigDecimal.parseString("-500.00"),
+                    instrumentUnit = sxr8, instrumentAmount = BigDecimal.parseString("5.00"),
+                    txFundId = fund2,
+                )
+            )
+
         whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), any(), eq(GroupingCriteria.FUND)))
             .thenReturn(GroupedUnitAmounts(emptyMap()))
 
-        whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(investmentFilter), eq(GroupingCriteria.FUND)))
-            .thenReturn(BucketedGroupedUnitAmounts(mapOf(
-                LocalDateTime.parse("2024-01-01T00:00:00") to GroupedUnitAmounts(mapOf(
-                    GroupKey.ByFund(fund1) to UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-1000.00"))),
-                    GroupKey.ByFund(fund2) to UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-500.00"))),
-                )),
-            )))
         whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(instrumentFilter), eq(GroupingCriteria.FUND)))
             .thenReturn(BucketedGroupedUnitAmounts(mapOf(
                 LocalDateTime.parse("2024-01-01T00:00:00") to GroupedUnitAmounts(mapOf(
-                    GroupKey.ByFund(fund1) to UnitAmounts(mapOf(vt to BigDecimal.parseString("10.00"))),
-                    GroupKey.ByFund(fund2) to UnitAmounts(mapOf(sxr8 to BigDecimal.parseString("5.00"))),
+                    GroupKey.ByFund(fund1.toString()) to UnitAmounts(mapOf(vt to BigDecimal.parseString("10.00"))),
+                    GroupKey.ByFund(fund2.toString()) to UnitAmounts(mapOf(sxr8 to BigDecimal.parseString("5.00"))),
                 )),
             )))
         whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), eq(currencyFilter), eq(GroupingCriteria.FUND)))
             .thenReturn(BucketedGroupedUnitAmounts(mapOf(
                 LocalDateTime.parse("2024-01-01T00:00:00") to GroupedUnitAmounts(mapOf(
-                    GroupKey.ByFund(fund1) to UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-1000.00"))),
-                    GroupKey.ByFund(fund2) to UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-500.00"))),
+                    GroupKey.ByFund(fund1.toString()) to UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-1000.00"))),
+                    GroupKey.ByFund(fund2.toString()) to UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-500.00"))),
                 )),
             )))
 
@@ -291,8 +495,8 @@ class PerformanceServiceTest {
 
         val jan = report.buckets[0].groups.sortedBy { it.groupKey }
         assertThat(jan).hasSize(2)
-        val janFund1 = jan.first { it.groupKey == fund1 }
-        val janFund2 = jan.first { it.groupKey == fund2 }
+        val janFund1 = jan.first { it.groupKey == fund1.toString() }
+        val janFund2 = jan.first { it.groupKey == fund2.toString() }
         assertThat(janFund1.value.totalInvestment).isEqualTo(BigDecimal.parseString("1000.00"))
         assertThat(janFund1.value.totalInstrumentValue).isEqualTo(BigDecimal.parseString("1200.00"))
         assertThat(janFund1.value.totalProfit).isEqualTo(BigDecimal.parseString("200.00"))
@@ -301,8 +505,8 @@ class PerformanceServiceTest {
         assertThat(janFund2.value.totalProfit).isEqualTo(BigDecimal.parseString("500.00"))
 
         val feb = report.buckets[1].groups.sortedBy { it.groupKey }
-        val febFund1 = feb.first { it.groupKey == fund1 }
-        val febFund2 = feb.first { it.groupKey == fund2 }
+        val febFund1 = feb.first { it.groupKey == fund1.toString() }
+        val febFund2 = feb.first { it.groupKey == fund2.toString() }
         assertThat(febFund1.value.totalInstrumentValue).isEqualTo(BigDecimal.parseString("1300.00"))
         assertThat(febFund1.value.totalProfit).isEqualTo(BigDecimal.parseString("300.00"))
         assertThat(febFund1.value.currentProfit).isEqualTo(BigDecimal.parseString("100.00"))
@@ -313,17 +517,23 @@ class PerformanceServiceTest {
 
     @Test
     fun `given previous balances and bucket data - when getting grouped performance report by fund - then accumulates state per group`(): Unit = runBlocking {
-        whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(investmentFilter), eq(GroupingCriteria.FUND)))
-            .thenReturn(GroupedUnitAmounts(mapOf(
-                GroupKey.ByFund(fund1) to UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-500.00"))),
-            )))
+        whenever(analyticsRecordRepository.getRecordsBefore(any(), any(), eq(investmentFilter)))
+            .thenReturn(openPositionRecords(
+                dateTime = LocalDateTime.parse("2023-12-15T00:00:00"),
+                currencyUnit = Currency.RON, currencyAmount = BigDecimal.parseString("-500.00"),
+                instrumentUnit = vt, instrumentAmount = BigDecimal.parseString("5.00"),
+                txFundId = fund1,
+            ))
+        whenever(analyticsRecordRepository.getRecords(any(), any(), eq(investmentFilter)))
+            .thenReturn(emptyList())
+
         whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(instrumentFilter), eq(GroupingCriteria.FUND)))
             .thenReturn(GroupedUnitAmounts(mapOf(
-                GroupKey.ByFund(fund1) to UnitAmounts(mapOf(vt to BigDecimal.parseString("5.00"))),
+                GroupKey.ByFund(fund1.toString()) to UnitAmounts(mapOf(vt to BigDecimal.parseString("5.00"))),
             )))
         whenever(analyticsRecordRepository.getUnitAmountsBefore(any(), any(), eq(currencyFilter), eq(GroupingCriteria.FUND)))
             .thenReturn(GroupedUnitAmounts(mapOf(
-                GroupKey.ByFund(fund1) to UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-500.00"))),
+                GroupKey.ByFund(fund1.toString()) to UnitAmounts(mapOf(Currency.RON to BigDecimal.parseString("-500.00"))),
             )))
 
         whenever(analyticsRecordRepository.getBucketedUnitAmounts(any(), any(), any(), eq(GroupingCriteria.FUND)))
@@ -337,7 +547,7 @@ class PerformanceServiceTest {
         assertThat(report.buckets).hasSize(2)
         val jan = report.buckets[0].groups
         assertThat(jan).hasSize(1)
-        assertThat(jan[0].groupKey).isEqualTo(fund1)
+        assertThat(jan[0].groupKey).isEqualTo(fund1.toString())
         assertThat(jan[0].value.totalInvestment).isEqualTo(BigDecimal.parseString("500.00"))
         assertThat(jan[0].value.totalInstrumentValue).isEqualTo(BigDecimal.parseString("550.00"))
         assertThat(jan[0].value.totalProfit).isEqualTo(BigDecimal.parseString("50.00"))
