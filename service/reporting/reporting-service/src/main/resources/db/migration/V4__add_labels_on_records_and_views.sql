@@ -1,5 +1,0 @@
-ALTER TABLE report_record
-    ADD COLUMN labels VARCHAR(100) NOT NULL DEFAULT '';
-
-ALTER TABLE report_view
-    ADD COLUMN labels VARCHAR(100) NOT NULL DEFAULT '';

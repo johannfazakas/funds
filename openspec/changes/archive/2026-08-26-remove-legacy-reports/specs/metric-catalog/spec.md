@@ -1,37 +1,6 @@
-# Metric Catalog
+# metric-catalog (delta)
 
-## Purpose
-
-Defines the concrete set of metrics in the registry: the ten exposed metrics, the internal intermediate metrics they share, and the self-contained calculation semantics of each exposed metric.
-
-## Requirements
-
-### Requirement: Exposed metric set
-The registry SHALL expose exactly these ten metrics, covering the functional scope of the four legacy report endpoints:
-
-| Metric | Unit type |
-|---|---|
-| `BALANCE` | CURRENCY |
-| `NET_CHANGE` | CURRENCY |
-| `TOTAL_INVESTMENT` | CURRENCY |
-| `CURRENT_INVESTMENT` | CURRENCY |
-| `TOTAL_INSTRUMENT_VALUE` | CURRENCY |
-| `CURRENCY_VALUE` | CURRENCY |
-| `TOTAL_PROFIT` | CURRENCY |
-| `CURRENT_PROFIT` | CURRENCY |
-| `TOTAL_INTEREST_RATE` | PERCENTAGE |
-| `CURRENT_INTEREST_RATE` | PERCENTAGE |
-
-#### Scenario: Catalog completeness
-- **WHEN** the discovery endpoint is called
-- **THEN** exactly these ten metrics are returned with the unit types above
-
-### Requirement: Internal intermediate metrics
-The catalog SHALL include internal metrics for shared intermediate data: record-set leaves that are the only metrics reading the repository, each issuing a query scoped to the transaction types its consumers need (position records for investment metrics; transaction records for balance/net-change metrics), plus paired positions (dated cash flows paired by transactionId, performed once per request) and instrument holdings. Exposed metrics SHALL obtain records, positions, and holdings only through these internal metrics, never by querying the repository directly. Internal wiring MAY be refined during implementation as long as exposed-metric semantics are preserved.
-
-#### Scenario: Positions paired once
-- **WHEN** both performance metrics and interest-rate metrics are resolved in one request
-- **THEN** transactionId pairing of open-position records is performed once, by the paired-positions metric
+## ADDED Requirements
 
 ### Requirement: Metric calculation semantics
 Metric values SHALL be computed with the following semantics, independent of any other capability:
@@ -53,3 +22,9 @@ Metric values SHALL be computed with the following semantics, independent of any
 #### Scenario: Current interest rate opening position
 - **WHEN** `CURRENT_INTEREST_RATE` is resolved for bucket N
 - **THEN** the calculation opens with bucket N−1's valuation (or the pre-interval holdings valuation for the first bucket)
+
+## REMOVED Requirements
+
+### Requirement: Parity with legacy report semantics
+**Reason**: Defined metric values by reference to the legacy report capabilities (`ungrouped/grouped-performance-report`, `ungrouped/grouped-interest-rate-report`), which are removed in this change. Replaced by the self-contained "Metric calculation semantics" requirement above; the numeric expectations formerly enforced by the parity tests are frozen as fixed values in the metrics API tests.
+**Migration**: None — values unchanged.

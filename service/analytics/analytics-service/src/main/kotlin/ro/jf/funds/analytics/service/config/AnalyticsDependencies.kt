@@ -10,10 +10,7 @@ import java.time.Duration
 import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
 import ro.jf.funds.analytics.service.domain.InterestRateCalculator
-import ro.jf.funds.analytics.service.service.AnalyticsService
 import ro.jf.funds.analytics.service.service.MetricResolutionService
-import ro.jf.funds.analytics.service.service.InterestRateService
-import ro.jf.funds.analytics.service.service.PerformanceService
 import ro.jf.funds.analytics.service.domain.Series
 import ro.jf.funds.analytics.service.service.series.*
 import ro.jf.funds.analytics.service.service.TransactionsCreatedHandler
@@ -80,10 +77,7 @@ private val Application.analyticsIntegrationDependencies
 private val Application.analyticsServiceDependencies
     get() = module {
         single<TransactionsCreatedHandler> { TransactionsCreatedHandler(get()) }
-        single<AnalyticsService> { AnalyticsService(get(), get()) }
         single<InterestRateCalculator> { InterestRateCalculator() }
-        single<PerformanceService> { PerformanceService(get(), get()) }
-        single<InterestRateService> { InterestRateService(get(), get(), get()) }
         single<SeriesRegistry> {
             val repository = get<AnalyticsRecordRepository>()
             val interestRateCalculator = get<InterestRateCalculator>()

@@ -1,2 +1,0 @@
-ALTER TABLE report_view
-    ADD COLUMN currency VARCHAR(50) NOT NULL DEFAULT 'RON';

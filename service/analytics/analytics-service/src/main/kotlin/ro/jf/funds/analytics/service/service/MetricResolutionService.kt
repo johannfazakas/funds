@@ -17,7 +17,7 @@ class MetricResolutionService(
     private val registry: SeriesRegistry,
 ) {
     suspend fun resolve(request: MetricResolutionRequest): MetricResolutionReport = coroutineScope {
-        val buckets = request.interval.generateBucketedData { it }
+        val buckets = request.interval.generateBuckets()
         val collected = linkedMapOf<Series.Metric, MutableMap<LocalDateTime, Map<GroupKey, BigDecimal>>>()
         request.metrics.distinct().forEach { collected[it] = mutableMapOf() }
 
@@ -33,7 +33,7 @@ class MetricResolutionService(
 
     fun resolveFlow(request: MetricResolutionRequest): Flow<MetricBucketValue> = channelFlow {
         log.info { "Resolving metrics ${request.metrics} for user ${request.userId}, interval=${request.interval}, targetCurrency=${request.targetCurrency}, grouping=${request.grouping}" }
-        val buckets = request.interval.generateBucketedData { it }
+        val buckets = request.interval.generateBuckets()
         val requested = request.metrics.distinct()
         val flows = wireNodeFlows(requested, request, buckets, this)
 

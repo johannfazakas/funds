@@ -2,13 +2,6 @@
 
 ## Functional Tasks
 
-### Remove legacy analytics report endpoints
-
-The unified metric resolution API (`POST/GET /funds-api/analytics/v1/metrics`) replaces the four
-`/funds-api/analytics/v1/reports/*` endpoints. Once the web client migration is verified, remove the legacy
-endpoints, `AnalyticsService`/`PerformanceService`/`InterestRateService`, and archive/update the legacy report
-specs (`ungrouped/grouped-performance-report`, `ungrouped/grouped-interest-rate-report`).
-
 ### Investment Report
 
 ### Budgeted expense report

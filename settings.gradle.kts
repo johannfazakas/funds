@@ -32,9 +32,6 @@ include("service:import:import-api")
 include("service:import:import-sdk")
 include("service:import:import-service")
 
-include("service:reporting:reporting-api")
-include("service:reporting:reporting-sdk")
-include("service:reporting:reporting-service")
 
 include("service:analytics:analytics-api")
 include("service:analytics:analytics-sdk")
