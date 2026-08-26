@@ -21,7 +21,7 @@
 - [x] 3.5 Rewrite `TOTAL_INSTRUMENT_VALUE` and `CURRENCY_VALUE` (running unit-amount state, convert at bucket date)
 - [x] 3.6 Rewrite `TOTAL_PROFIT` (same-bucket join) and `CURRENT_PROFIT` (previous-profit state)
 - [x] 3.7 Rewrite `TOTAL_INTEREST_RATE` (accumulated-position state) and `CURRENT_INTEREST_RATE` (previous-valuation state seeded from previous holdings)
-- [ ] 3.8 Adapt the resolver unit tests to the new contract, keeping the given-when-then names and expected values unchanged
+- [x] 3.8 Adapt the resolver unit tests to the new contract, keeping the given-when-then names and expected values unchanged
 
 ## 4. Typed metrics and request shape (added during implementation)
 
