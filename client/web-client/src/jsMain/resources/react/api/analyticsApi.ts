@@ -84,3 +84,74 @@ export async function getMetricsReport(
     if (!response.ok) await handleApiError(response, 'Failed to load metrics report');
     return response.json();
 }
+
+export interface MetricsStreamBuckets {
+    granularity: TimeGranularity;
+    buckets: string[];
+}
+
+export interface MetricsStreamValue {
+    queryId: string;
+    bucket: string;
+    values: Record<string, string>;
+}
+
+export interface MetricsStreamHandlers {
+    onBuckets: (buckets: MetricsStreamBuckets) => void;
+    onValue: (value: MetricsStreamValue) => void;
+    onComplete: () => void;
+    onError: (message: string) => void;
+}
+
+function dispatchSseFrame(frame: string, handlers: MetricsStreamHandlers): void {
+    const lines = frame.split('\n');
+    const event = lines.find(l => l.startsWith('event:'))?.slice('event:'.length).trim();
+    const data = lines
+        .filter(l => l.startsWith('data:'))
+        .map(l => l.slice('data:'.length).trim())
+        .join('\n');
+    switch (event) {
+        case 'buckets':
+            handlers.onBuckets(JSON.parse(data));
+            break;
+        case 'value':
+            handlers.onValue(JSON.parse(data));
+            break;
+        case 'complete':
+            handlers.onComplete();
+            break;
+        case 'error':
+            handlers.onError(JSON.parse(data).message ?? 'Metric resolution failed');
+            break;
+    }
+}
+
+export async function streamMetricsReport(
+    userId: string,
+    request: MetricsReportRequest,
+    handlers: MetricsStreamHandlers,
+    signal: AbortSignal
+): Promise<void> {
+    const response = await fetch(`${getBaseUrl()}${METRICS_PATH}/stream`, {
+        method: 'POST',
+        headers: { 'FUNDS_USER_ID': userId, 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+        signal
+    });
+    if (!response.ok) await handleApiError(response, 'Failed to stream metrics report');
+    if (!response.body) throw new Error('Streaming is not supported by this browser');
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+        let frameEnd;
+        while ((frameEnd = buffer.indexOf('\n\n')) >= 0) {
+            const frame = buffer.slice(0, frameEnd);
+            buffer = buffer.slice(frameEnd + 2);
+            if (frame.trim()) dispatchSseFrame(frame, handlers);
+        }
+    }
+}

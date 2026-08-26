@@ -48,7 +48,8 @@ under-declaring shares nodes whose outputs differ and yields wrong numbers.
   deadlock-free diamonds), one coroutine per node inside a per-request `coroutineScope` (first failure —
   shared node or not — cancels the whole graph, all queries included). Buckets are strictly sequential within
   a node; concurrency comes from independent branches and pipeline skew. `resolveFlow(request)` exposes the
-  per-bucket event stream tagged with query ids (the seam for a future streaming endpoint);
+  per-bucket event stream tagged with query ids — the SSE endpoint (`POST .../metrics/stream` in
+  `MetricsApiRouting`) forwards it frame by frame as `buckets`/`value`/`complete`/`error` events;
   `resolve(request)` collects it into a `MetricResolutionReport` keyed by query id, zero-backfilling groups
   that first appear mid-interval.
 - Domain types (`Series`, `SeriesSlice`, `SeriesEmission`, `SeriesBucketResolver`, `QueryContext`,

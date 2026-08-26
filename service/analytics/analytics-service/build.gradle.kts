@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":service:conversion:conversion-sdk"))
     implementation(project(":platform:platform-jvm"))
     implementation(libs.big.math)
+    implementation(libs.ktor.server.sse)
     testImplementation(project(":platform:platform-jvm-test"))
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { listMetrics, getMetricsReport, TimeGranularity, GroupBy, MetricInfo, MetricsReport } from '../api/analyticsApi';
+import { listMetrics, streamMetricsReport, TimeGranularity, GroupBy, MetricInfo, MetricsReport, MetricsStreamValue } from '../api/analyticsApi';
 import { listFunds, Fund } from '../api/fundApi';
 import { listAccounts, Account } from '../api/accountApi';
 import MultiSeriesChart, { ChartLine, MultiSeriesChartDataPoint } from '../components/MultiSeriesChart';
@@ -252,19 +252,51 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
         return key;
     };
 
+    const abortRef = useRef<AbortController | null>(null);
+
+    const metricUnit = (name: string) => metrics.find(m => m.metric === name)?.unit ?? 'CURRENCY';
+
+    const mergeValue = (report: MetricsReport, value: MetricsStreamValue): MetricsReport => {
+        const bucketIndex = report.buckets.indexOf(value.bucket);
+        if (bucketIndex < 0) return report;
+        return {
+            ...report,
+            series: report.series.map(series => {
+                if (series.queryId !== value.queryId) return series;
+                const groups = series.groups.map(g => ({ ...g, values: [...g.values] }));
+                for (const [groupKey, groupValue] of Object.entries(value.values)) {
+                    let group = groups.find(g => g.groupKey === groupKey);
+                    if (!group) {
+                        group = { groupKey, values: report.buckets.map(() => '0') };
+                        groups.push(group);
+                        groups.sort((a, b) => a.groupKey.localeCompare(b.groupKey));
+                    }
+                    group.values[bucketIndex] = groupValue;
+                }
+                return { ...series, groups };
+            }),
+        };
+    };
+
     const loadData = async () => {
         if (!targetCurrency) return;
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
         setLoading(true);
         setError(null);
+        setReport(null);
+        const requestQueries = queries;
+        let current: MetricsReport | null = null;
         try {
-            const data = await getMetricsReport(userId, {
+            await streamMetricsReport(userId, {
                 interval: {
                     granularity,
                     from: toLocalDateTime(fromDate),
                     to: toLocalDateTime(toDate),
                 },
                 targetCurrency,
-                queries: queries.map(query => {
+                queries: requestQueries.map(query => {
                     const units = query.units.map(key => {
                         const [type, value] = key.split(':');
                         return { type, value };
@@ -279,13 +311,40 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                         },
                     };
                 }),
-            });
-            setReport(data);
+            }, {
+                onBuckets: (buckets) => {
+                    current = {
+                        granularity: buckets.granularity,
+                        buckets: buckets.buckets,
+                        series: requestQueries.map(query => ({
+                            queryId: query.id,
+                            metric: query.metric,
+                            unit: metricUnit(query.metric),
+                            currency: metricUnit(query.metric) === 'CURRENCY' ? targetCurrency : null,
+                            groups: [],
+                        })),
+                    };
+                    setReport(current);
+                    setLoading(false);
+                },
+                onValue: (value) => {
+                    if (!current) return;
+                    current = mergeValue(current, value);
+                    setReport(current);
+                },
+                onComplete: () => {},
+                onError: (message) => {
+                    current = null;
+                    setReport(null);
+                    setError('Failed to load analytics data: ' + message);
+                },
+            }, controller.signal);
         } catch (err) {
+            if (controller.signal.aborted) return;
             setReport(null);
             setError('Failed to load analytics data: ' + (err instanceof Error ? err.message : 'Unknown error'));
         } finally {
-            setLoading(false);
+            if (abortRef.current === controller) setLoading(false);
         }
     };
 
