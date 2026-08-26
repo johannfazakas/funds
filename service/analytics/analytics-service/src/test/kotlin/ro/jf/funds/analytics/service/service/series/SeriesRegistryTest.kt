@@ -4,10 +4,11 @@ import kotlinx.datetime.LocalDateTime
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import ro.jf.funds.analytics.service.domain.ContextDimension
 import ro.jf.funds.analytics.service.domain.DependencySlices
 import ro.jf.funds.analytics.service.domain.Series
 import ro.jf.funds.analytics.service.domain.SeriesBucketResolver
-import ro.jf.funds.analytics.service.domain.MetricResolutionRequest
+import ro.jf.funds.analytics.service.domain.SeriesResolutionContext
 import ro.jf.funds.analytics.service.domain.SeriesSlice
 
 class SeriesRegistryTest {
@@ -21,8 +22,8 @@ class SeriesRegistryTest {
     }
 
     private fun definition(metric: Series.Metric, vararg dependencies: Series<*>) =
-        object : SeriesDefinition<SeriesSlice.Scalars>(metric, dependencies.toList()) {
-            override fun createResolver(request: MetricResolutionRequest) = StubResolver
+        object : SeriesDefinition<SeriesSlice.Scalars>(metric, ContextDimension.ALL, dependencies.toList()) {
+            override fun createResolver(context: SeriesResolutionContext) = StubResolver
         }
 
     @Test

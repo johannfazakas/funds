@@ -112,10 +112,14 @@ abstract class MetricResolutionTestBase {
             userId = userId,
             interval = interval,
             targetCurrency = targetCurrency,
-            grouping = groupBy,
-            metrics = metrics,
+            queries = metrics.map { metric ->
+                MetricQuery(id = QueryId(metric.api.name), metric = metric, context = QueryContext(grouping = groupBy))
+            },
         )
     )
+
+    protected operator fun MetricResolutionReport.get(metric: Series.Metric): ScalarSeries =
+        series.getValue(QueryId(metric.api.name))
 
     protected fun ungroupedAmounts(amounts: UnitAmounts) =
         GroupedUnitAmounts(mapOf(GroupKey.Ungrouped to amounts))

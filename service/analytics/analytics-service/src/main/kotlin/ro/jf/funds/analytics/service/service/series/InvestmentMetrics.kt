@@ -3,29 +3,30 @@ package ro.jf.funds.analytics.service.service.series
 import ro.jf.funds.analytics.service.service.AnalyticsConversionService
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.datetime.LocalDateTime
+import ro.jf.funds.analytics.service.domain.ContextDimension
 import ro.jf.funds.analytics.service.domain.DependencySlices
 import ro.jf.funds.analytics.service.domain.GroupKey
 import ro.jf.funds.analytics.service.domain.InvestmentPosition
 import ro.jf.funds.analytics.service.domain.Series
 import ro.jf.funds.analytics.service.domain.SeriesBucketResolver
-import ro.jf.funds.analytics.service.domain.MetricResolutionRequest
+import ro.jf.funds.analytics.service.domain.SeriesResolutionContext
 import ro.jf.funds.analytics.service.domain.SeriesSlice
 import ro.jf.funds.analytics.service.domain.UnitAmounts
 import ro.jf.funds.analytics.service.domain.toGroupKey
 
 class TotalInvestmentSeriesDefinition(
     private val conversions: AnalyticsConversionService,
-) : SeriesDefinition<SeriesSlice.Scalars>(Series.TotalInvestment, dependencies = listOf(POSITIONS)) {
+) : SeriesDefinition<SeriesSlice.Scalars>(Series.TotalInvestment, ContextDimension.ALL, dependencies = listOf(POSITIONS)) {
 
     companion object Dependencies {
         private val POSITIONS = Series.PairedPositions
     }
 
-    override fun createResolver(request: MetricResolutionRequest): SeriesBucketResolver<SeriesSlice.Scalars> =
-        Resolver(request)
+    override fun createResolver(context: SeriesResolutionContext): SeriesBucketResolver<SeriesSlice.Scalars> =
+        Resolver(context)
 
     private inner class Resolver(
-        private val request: MetricResolutionRequest,
+        private val context: SeriesResolutionContext,
     ) : SeriesBucketResolver<SeriesSlice.Scalars> {
         private val runningInvestment = mutableMapOf<GroupKey, BigDecimal>()
 
@@ -40,8 +41,8 @@ class TotalInvestmentSeriesDefinition(
         }
 
         private suspend fun accumulate(positions: List<InvestmentPosition>) {
-            positions.groupBy { it.toGroupKey(request.grouping) }.forEach { (groupKey, groupPositions) ->
-                val converted = conversions.convertPositionsAtHistoricalCost(groupPositions, request.targetCurrency)
+            positions.groupBy { it.toGroupKey(context.grouping) }.forEach { (groupKey, groupPositions) ->
+                val converted = conversions.convertPositionsAtHistoricalCost(groupPositions, context.targetCurrency)
                 runningInvestment[groupKey] = (runningInvestment[groupKey] ?: BigDecimal.ZERO) + converted
             }
         }
@@ -50,26 +51,26 @@ class TotalInvestmentSeriesDefinition(
 
 class CurrentInvestmentSeriesDefinition(
     private val conversions: AnalyticsConversionService,
-) : SeriesDefinition<SeriesSlice.Scalars>(Series.CurrentInvestment, dependencies = listOf(POSITIONS)) {
+) : SeriesDefinition<SeriesSlice.Scalars>(Series.CurrentInvestment, ContextDimension.ALL, dependencies = listOf(POSITIONS)) {
 
     companion object Dependencies {
         private val POSITIONS = Series.PairedPositions
     }
 
-    override fun createResolver(request: MetricResolutionRequest): SeriesBucketResolver<SeriesSlice.Scalars> =
-        Resolver(request)
+    override fun createResolver(context: SeriesResolutionContext): SeriesBucketResolver<SeriesSlice.Scalars> =
+        Resolver(context)
 
     private inner class Resolver(
-        private val request: MetricResolutionRequest,
+        private val context: SeriesResolutionContext,
     ) : SeriesBucketResolver<SeriesSlice.Scalars> {
         override suspend fun resolvePrevious(previous: DependencySlices): SeriesSlice.Scalars =
             SeriesSlice.Scalars.EMPTY
 
         override suspend fun resolveBucket(bucket: LocalDateTime, inputs: DependencySlices): SeriesSlice.Scalars {
             val values = inputs[POSITIONS].positions
-                .groupBy { it.toGroupKey(request.grouping) }
+                .groupBy { it.toGroupKey(context.grouping) }
                 .mapValues { (_, groupPositions) ->
-                    conversions.convertPositionsAtHistoricalCost(groupPositions, request.targetCurrency)
+                    conversions.convertPositionsAtHistoricalCost(groupPositions, context.targetCurrency)
                 }
             return SeriesSlice.Scalars(values)
         }
@@ -80,13 +81,13 @@ abstract class CumulativeValueSeriesDefinition(
     metric: Series.Metric,
     private val dependency: Series.Internal<SeriesSlice.Amounts>,
     private val conversions: AnalyticsConversionService,
-) : SeriesDefinition<SeriesSlice.Scalars>(metric, dependencies = listOf(dependency)) {
+) : SeriesDefinition<SeriesSlice.Scalars>(metric, ContextDimension.ALL, dependencies = listOf(dependency)) {
 
-    override fun createResolver(request: MetricResolutionRequest): SeriesBucketResolver<SeriesSlice.Scalars> =
-        Resolver(request)
+    override fun createResolver(context: SeriesResolutionContext): SeriesBucketResolver<SeriesSlice.Scalars> =
+        Resolver(context)
 
     private inner class Resolver(
-        private val request: MetricResolutionRequest,
+        private val context: SeriesResolutionContext,
     ) : SeriesBucketResolver<SeriesSlice.Scalars> {
         private val amounts = mutableMapOf<GroupKey, UnitAmounts>()
 
@@ -103,7 +104,7 @@ abstract class CumulativeValueSeriesDefinition(
             }
             val values = mutableMapOf<GroupKey, BigDecimal>()
             for ((groupKey, groupAmounts) in amounts) {
-                values[groupKey] = conversions.convertAmounts(groupAmounts, request.targetCurrency, bucket.date)
+                values[groupKey] = conversions.convertAmounts(groupAmounts, context.targetCurrency, bucket.date)
             }
             return SeriesSlice.Scalars(values)
         }
@@ -117,14 +118,14 @@ class CurrencyValueSeriesDefinition(conversions: AnalyticsConversionService) :
     CumulativeValueSeriesDefinition(Series.CurrencyValue, Series.CurrencyAmounts, conversions)
 
 class TotalProfitSeriesDefinition :
-    SeriesDefinition<SeriesSlice.Scalars>(Series.TotalProfit, dependencies = listOf(VALUE, INVESTMENT)) {
+    SeriesDefinition<SeriesSlice.Scalars>(Series.TotalProfit, ContextDimension.ALL, dependencies = listOf(VALUE, INVESTMENT)) {
 
     companion object Dependencies {
         private val VALUE = Series.TotalInstrumentValue
         private val INVESTMENT = Series.TotalInvestment
     }
 
-    override fun createResolver(request: MetricResolutionRequest): SeriesBucketResolver<SeriesSlice.Scalars> =
+    override fun createResolver(context: SeriesResolutionContext): SeriesBucketResolver<SeriesSlice.Scalars> =
         Resolver()
 
     private inner class Resolver : SeriesBucketResolver<SeriesSlice.Scalars> {
@@ -143,13 +144,13 @@ class TotalProfitSeriesDefinition :
 }
 
 class CurrentProfitSeriesDefinition :
-    SeriesDefinition<SeriesSlice.Scalars>(Series.CurrentProfit, dependencies = listOf(TOTAL_PROFIT)) {
+    SeriesDefinition<SeriesSlice.Scalars>(Series.CurrentProfit, ContextDimension.ALL, dependencies = listOf(TOTAL_PROFIT)) {
 
     companion object Dependencies {
         private val TOTAL_PROFIT = Series.TotalProfit
     }
 
-    override fun createResolver(request: MetricResolutionRequest): SeriesBucketResolver<SeriesSlice.Scalars> =
+    override fun createResolver(context: SeriesResolutionContext): SeriesBucketResolver<SeriesSlice.Scalars> =
         Resolver()
 
     private inner class Resolver : SeriesBucketResolver<SeriesSlice.Scalars> {

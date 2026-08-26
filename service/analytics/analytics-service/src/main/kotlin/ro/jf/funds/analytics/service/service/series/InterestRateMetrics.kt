@@ -6,6 +6,7 @@ import com.ionspin.kotlin.bignum.decimal.toJavaBigDecimal
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import ro.jf.funds.analytics.service.domain.AnalyticsRecord
+import ro.jf.funds.analytics.service.domain.ContextDimension
 import ro.jf.funds.analytics.service.domain.DependencySlices
 import ro.jf.funds.analytics.service.domain.GroupKey
 import ro.jf.funds.analytics.service.domain.GroupedUnitAmounts
@@ -13,7 +14,7 @@ import ro.jf.funds.analytics.service.domain.InterestRateCalculationCommand
 import ro.jf.funds.analytics.service.domain.InterestRateCalculator
 import ro.jf.funds.analytics.service.domain.Series
 import ro.jf.funds.analytics.service.domain.SeriesBucketResolver
-import ro.jf.funds.analytics.service.domain.MetricResolutionRequest
+import ro.jf.funds.analytics.service.domain.SeriesResolutionContext
 import ro.jf.funds.analytics.service.domain.SeriesSlice
 import ro.jf.funds.analytics.service.domain.toGroupKey
 import ro.jf.funds.platform.api.model.UnitType
@@ -21,25 +22,29 @@ import ro.jf.funds.platform.api.model.UnitType
 class TotalInterestRateSeriesDefinition(
     private val conversions: AnalyticsConversionService,
     private val interestRateCalculator: InterestRateCalculator,
-) : SeriesDefinition<SeriesSlice.Scalars>(Series.TotalInterestRate, dependencies = listOf(RECORDS, VALUATIONS)) {
+) : SeriesDefinition<SeriesSlice.Scalars>(
+    Series.TotalInterestRate,
+    ContextDimension.ALL,
+    dependencies = listOf(RECORDS, VALUATIONS),
+) {
 
     companion object Dependencies {
         private val RECORDS = Series.OpenPositionRecords
         private val VALUATIONS = Series.TotalInstrumentValue
     }
 
-    override fun createResolver(request: MetricResolutionRequest): SeriesBucketResolver<SeriesSlice.Scalars> =
-        Resolver(request)
+    override fun createResolver(context: SeriesResolutionContext): SeriesBucketResolver<SeriesSlice.Scalars> =
+        Resolver(context)
 
     private inner class Resolver(
-        private val request: MetricResolutionRequest,
+        private val context: SeriesResolutionContext,
     ) : SeriesBucketResolver<SeriesSlice.Scalars> {
         private val accumulated = mutableMapOf<GroupKey, MutableList<InterestRateCalculationCommand.Position>>()
         private val pending = mutableMapOf<GroupKey, MutableList<InterestRateCalculationCommand.Position>>()
         private val groupKeys = mutableSetOf<GroupKey>()
 
         override suspend fun resolvePrevious(previous: DependencySlices): SeriesSlice.Scalars {
-            previous[RECORDS].records.toPositionsByGroup(conversions, request)
+            previous[RECORDS].records.toPositionsByGroup(conversions, context)
                 .forEach { (groupKey, positions) ->
                     groupKeys.add(groupKey)
                     accumulated.getOrPut(groupKey) { mutableListOf() }.addAll(positions)
@@ -48,7 +53,7 @@ class TotalInterestRateSeriesDefinition(
         }
 
         override suspend fun resolveBucket(bucket: LocalDateTime, inputs: DependencySlices): SeriesSlice.Scalars {
-            inputs[RECORDS].records.toPositionsByGroup(conversions, request)
+            inputs[RECORDS].records.toPositionsByGroup(conversions, context)
                 .forEach { (groupKey, positions) ->
                     groupKeys.add(groupKey)
                     pending.getOrPut(groupKey) { mutableListOf() }.addAll(positions)
@@ -77,6 +82,7 @@ class CurrentInterestRateSeriesDefinition(
     private val interestRateCalculator: InterestRateCalculator,
 ) : SeriesDefinition<SeriesSlice.Scalars>(
     Series.CurrentInterestRate,
+    ContextDimension.ALL,
     dependencies = listOf(RECORDS, VALUATIONS, HOLDINGS),
 ) {
 
@@ -86,11 +92,11 @@ class CurrentInterestRateSeriesDefinition(
         private val HOLDINGS = Series.InstrumentHoldings
     }
 
-    override fun createResolver(request: MetricResolutionRequest): SeriesBucketResolver<SeriesSlice.Scalars> =
-        Resolver(request)
+    override fun createResolver(context: SeriesResolutionContext): SeriesBucketResolver<SeriesSlice.Scalars> =
+        Resolver(context)
 
     private inner class Resolver(
-        private val request: MetricResolutionRequest,
+        private val context: SeriesResolutionContext,
     ) : SeriesBucketResolver<SeriesSlice.Scalars> {
         private val pending = mutableMapOf<GroupKey, MutableList<InterestRateCalculationCommand.Position>>()
         private val previousValuations = mutableMapOf<GroupKey, InterestRateCalculationCommand.Position>()
@@ -99,12 +105,12 @@ class CurrentInterestRateSeriesDefinition(
 
         override suspend fun resolvePrevious(previous: DependencySlices): SeriesSlice.Scalars {
             previousHoldings = previous[HOLDINGS].amounts
-            groupKeys.addAll(previous[RECORDS].records.map { it.toGroupKey(request.grouping) })
+            groupKeys.addAll(previous[RECORDS].records.map { it.toGroupKey(context.grouping) })
             return SeriesSlice.Scalars.EMPTY
         }
 
         override suspend fun resolveBucket(bucket: LocalDateTime, inputs: DependencySlices): SeriesSlice.Scalars {
-            inputs[RECORDS].records.toPositionsByGroup(conversions, request)
+            inputs[RECORDS].records.toPositionsByGroup(conversions, context)
                 .forEach { (groupKey, positions) ->
                     groupKeys.add(groupKey)
                     pending.getOrPut(groupKey) { mutableListOf() }.addAll(positions)
@@ -130,8 +136,8 @@ class CurrentInterestRateSeriesDefinition(
         }
 
         private suspend fun previousHoldingsValuation(groupKey: GroupKey): InterestRateCalculationCommand.Position {
-            val fromDate = request.interval.from.date
-            val valuation = conversions.convertAmounts(previousHoldings[groupKey], request.targetCurrency, fromDate)
+            val fromDate = context.interval.from.date
+            val valuation = conversions.convertAmounts(previousHoldings[groupKey], context.targetCurrency, fromDate)
             return InterestRateCalculationCommand.Position(fromDate, valuation.toJavaBigDecimal())
         }
     }
@@ -139,14 +145,14 @@ class CurrentInterestRateSeriesDefinition(
 
 private suspend fun List<AnalyticsRecord>.toPositionsByGroup(
     conversions: AnalyticsConversionService,
-    request: MetricResolutionRequest,
+    context: SeriesResolutionContext,
 ): Map<GroupKey, List<InterestRateCalculationCommand.Position>> =
-    groupBy { it.toGroupKey(request.grouping) }
+    groupBy { it.toGroupKey(context.grouping) }
         .mapValues { (_, groupRecords) ->
             groupRecords
                 .filter { it.unit.type == UnitType.CURRENCY }
                 .map { record ->
-                    val rate = conversions.rateOrOne(record.unit, request.targetCurrency, record.dateTime.date)
+                    val rate = conversions.rateOrOne(record.unit, context.targetCurrency, record.dateTime.date)
                     InterestRateCalculationCommand.Position(
                         date = record.dateTime.date,
                         amount = record.amount.negate().toJavaBigDecimal() * rate,

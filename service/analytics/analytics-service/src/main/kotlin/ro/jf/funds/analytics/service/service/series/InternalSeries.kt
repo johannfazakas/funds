@@ -3,9 +3,10 @@ package ro.jf.funds.analytics.service.service.series
 import kotlinx.datetime.LocalDateTime
 import ro.jf.funds.analytics.service.domain.AnalyticsRecord
 import ro.jf.funds.analytics.service.domain.BucketedGroupedUnitAmounts
+import ro.jf.funds.analytics.service.domain.ContextDimension
 import ro.jf.funds.analytics.service.domain.DependencySlices
 import ro.jf.funds.analytics.service.domain.InvestmentPosition
-import ro.jf.funds.analytics.service.domain.MetricResolutionRequest
+import ro.jf.funds.analytics.service.domain.SeriesResolutionContext
 import ro.jf.funds.analytics.service.domain.Series
 import ro.jf.funds.analytics.service.domain.SeriesBucketResolver
 import ro.jf.funds.analytics.service.domain.SeriesSlice
@@ -20,20 +21,20 @@ abstract class UnitAmountsLeafSeriesDefinition(
     private val repository: AnalyticsRecordRepository,
     private val transactionTypes: List<TransactionType> = emptyList(),
     private val unitTypes: List<UnitType> = emptyList(),
-) : SeriesDefinition<SeriesSlice.Amounts>(series) {
+) : SeriesDefinition<SeriesSlice.Amounts>(series, ContextDimension.ALL) {
 
-    override fun createResolver(request: MetricResolutionRequest): SeriesBucketResolver<SeriesSlice.Amounts> =
-        Resolver(request)
+    override fun createResolver(context: SeriesResolutionContext): SeriesBucketResolver<SeriesSlice.Amounts> =
+        Resolver(context)
 
     private inner class Resolver(
-        private val request: MetricResolutionRequest,
+        private val context: SeriesResolutionContext,
     ) : SeriesBucketResolver<SeriesSlice.Amounts> {
-        private val dbFilter = request.filter.toDbFilter(transactionTypes, unitTypes)
+        private val dbFilter = context.filter.toDbFilter(transactionTypes, unitTypes)
         private var bucketed: BucketedGroupedUnitAmounts? = null
 
         override suspend fun resolvePrevious(previous: DependencySlices): SeriesSlice.Amounts =
             SeriesSlice.Amounts(
-                repository.getUnitAmountsBefore(request.userId, request.interval.from, dbFilter, request.grouping)
+                repository.getUnitAmountsBefore(context.userId, context.interval.from, dbFilter, context.grouping)
             )
 
         override suspend fun resolveBucket(bucket: LocalDateTime, inputs: DependencySlices): SeriesSlice.Amounts =
@@ -41,7 +42,7 @@ abstract class UnitAmountsLeafSeriesDefinition(
 
         private suspend fun bucketed(): BucketedGroupedUnitAmounts =
             bucketed
-                ?: repository.getBucketedUnitAmounts(request.userId, request.interval, dbFilter, request.grouping)
+                ?: repository.getBucketedUnitAmounts(context.userId, context.interval, dbFilter, context.grouping)
                     .also { bucketed = it }
     }
 }
@@ -61,39 +62,45 @@ class CurrencyAmountsSeriesDefinition(repository: AnalyticsRecordRepository) :
 
 class OpenPositionRecordsSeriesDefinition(
     private val repository: AnalyticsRecordRepository,
-) : SeriesDefinition<SeriesSlice.Records>(Series.OpenPositionRecords) {
+) : SeriesDefinition<SeriesSlice.Records>(
+    Series.OpenPositionRecords,
+    contextSensitivity = setOf(ContextDimension.FILTER),
+) {
 
-    override fun createResolver(request: MetricResolutionRequest): SeriesBucketResolver<SeriesSlice.Records> =
-        Resolver(request)
+    override fun createResolver(context: SeriesResolutionContext): SeriesBucketResolver<SeriesSlice.Records> =
+        Resolver(context)
 
     private inner class Resolver(
-        private val request: MetricResolutionRequest,
+        private val context: SeriesResolutionContext,
     ) : SeriesBucketResolver<SeriesSlice.Records> {
-        private val dbFilter = request.filter.toDbFilter(transactionTypes = listOf(TransactionType.OPEN_POSITION))
+        private val dbFilter = context.filter.toDbFilter(transactionTypes = listOf(TransactionType.OPEN_POSITION))
         private var recordsByBucket: Map<LocalDateTime, List<AnalyticsRecord>>? = null
 
         override suspend fun resolvePrevious(previous: DependencySlices): SeriesSlice.Records =
-            SeriesSlice.Records(repository.getRecordsBefore(request.userId, request.interval.from, dbFilter))
+            SeriesSlice.Records(repository.getRecordsBefore(context.userId, context.interval.from, dbFilter))
 
         override suspend fun resolveBucket(bucket: LocalDateTime, inputs: DependencySlices): SeriesSlice.Records =
             SeriesSlice.Records(recordsByBucket()[bucket] ?: emptyList())
 
         private suspend fun recordsByBucket(): Map<LocalDateTime, List<AnalyticsRecord>> =
             recordsByBucket
-                ?: repository.getRecords(request.userId, request.interval, dbFilter)
-                    .groupBy { request.interval.bucketFor(it.dateTime) }
+                ?: repository.getRecords(context.userId, context.interval, dbFilter)
+                    .groupBy { context.interval.bucketFor(it.dateTime) }
                     .also { recordsByBucket = it }
     }
 }
 
-class PairedPositionsSeriesDefinition :
-    SeriesDefinition<SeriesSlice.Positions>(Series.PairedPositions, dependencies = listOf(RECORDS)) {
+class PairedPositionsSeriesDefinition : SeriesDefinition<SeriesSlice.Positions>(
+    Series.PairedPositions,
+    dependencies = listOf(RECORDS),
+    contextSensitivity = setOf(ContextDimension.FILTER),
+) {
 
     companion object Dependencies {
         private val RECORDS = Series.OpenPositionRecords
     }
 
-    override fun createResolver(request: MetricResolutionRequest): SeriesBucketResolver<SeriesSlice.Positions> =
+    override fun createResolver(context: SeriesResolutionContext): SeriesBucketResolver<SeriesSlice.Positions> =
         Resolver()
 
     private inner class Resolver : SeriesBucketResolver<SeriesSlice.Positions> {

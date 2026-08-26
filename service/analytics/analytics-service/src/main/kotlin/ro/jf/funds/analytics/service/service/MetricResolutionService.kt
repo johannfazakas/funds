@@ -1,6 +1,5 @@
 package ro.jf.funds.analytics.service.service
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
@@ -18,60 +17,81 @@ class MetricResolutionService(
 ) {
     suspend fun resolve(request: MetricResolutionRequest): MetricResolutionReport = coroutineScope {
         val buckets = request.interval.generateBuckets()
-        val collected = linkedMapOf<Series.Metric, MutableMap<LocalDateTime, Map<GroupKey, BigDecimal>>>()
-        request.metrics.distinct().forEach { collected[it] = mutableMapOf() }
+        val collected = linkedMapOf<QueryId, MutableList<QueryBucketValue>>()
+        request.queries.forEach { collected[it.id] = mutableListOf() }
 
         resolveFlow(request).collect { bucketValue ->
-            collected.getValue(bucketValue.metric)[bucketValue.bucket] = bucketValue.values
+            collected.getValue(bucketValue.queryId).add(bucketValue)
         }
 
         MetricResolutionReport(
             buckets = buckets,
-            series = collected.mapValues { (_, byBucket) -> ScalarSeries(byBucket) },
+            series = collected.mapValues { (_, bucketValues) ->
+                ScalarSeries(bucketValues.associate { it.bucket to it.values })
+            },
         )
     }
 
-    fun resolveFlow(request: MetricResolutionRequest): Flow<MetricBucketValue> = channelFlow {
-        log.info { "Resolving metrics ${request.metrics} for user ${request.userId}, interval=${request.interval}, targetCurrency=${request.targetCurrency}, grouping=${request.grouping}" }
+    fun resolveFlow(request: MetricResolutionRequest): Flow<QueryBucketValue> = channelFlow {
+        log.info { "Resolving ${request.queries.size} queries for user ${request.userId}, interval=${request.interval}, targetCurrency=${request.targetCurrency}: ${request.queries}" }
         val buckets = request.interval.generateBuckets()
-        val requested = request.metrics.distinct()
-        val flows = wireNodeFlows(requested, request, buckets, this)
+        val flows = wireNodeFlows(request, buckets, this)
 
-        requested.forEach { metric ->
+        request.queries.forEach { query ->
             launch {
                 // shared flows never signal completion, so collection is bounded by the bucket clock:
                 // after one emission per bucket the subscription is cancelled, letting the request scope close
-                flows.getValue(metric)
+                flows.getValue(nodeKey(query.metric, query.context))
                     .filterIsInstance<SeriesEmission.Bucket>()
                     .take(buckets.size)
                     .collect { emission ->
                         val scalars = emission.value as SeriesSlice.Scalars
-                        send(MetricBucketValue(metric, emission.dateTime, scalars.values))
+                        send(QueryBucketValue(query.id, emission.dateTime, scalars.values))
                     }
             }
         }
     }
 
+    private data class SeriesNode(
+        val series: Series<*>,
+        val context: QueryContext,
+    )
+
     private fun wireNodeFlows(
-        requested: List<Series.Metric>,
         request: MetricResolutionRequest,
         buckets: List<LocalDateTime>,
         scope: CoroutineScope,
-    ): Map<Series<*>, Flow<SeriesEmission>> {
-        val flows = mutableMapOf<Series<*>, Flow<SeriesEmission>>()
-        for (series in resolutionOrder(requested)) {
-            val definition = registry[series]
-            val dependencyFlows = definition.dependencies.map { it to flows.getValue(it) }
-            flows[series] = nodeFlow(definition, request, buckets, dependencyFlows)
-                // shared so fan-out consumers observe a single execution per node; replay buffers the
-                // full emission history (previous seed + one slice per bucket) so consumers subscribing
-                // late or draining slowly never miss slices — keeps diamond topologies deadlock-free
-                .shareIn(scope, SharingStarted.Lazily, replay = buckets.size + 1)
+    ): Map<SeriesNode, Flow<SeriesEmission>> {
+        val flows = mutableMapOf<SeriesNode, Flow<SeriesEmission>>()
+        request.queries.forEach { query ->
+            for (series in resolutionOrder(query.metric)) {
+                val node = nodeKey(series, query.context)
+                if (node in flows) continue
+                val definition = registry[series]
+                val dependencyFlows = definition.dependencies.map { dependency ->
+                    dependency to flows.getValue(nodeKey(dependency, query.context))
+                }
+                flows[node] = nodeFlow(definition, request.resolutionContext(node.context), buckets, dependencyFlows)
+                    // shared so fan-out consumers observe a single execution per node; replay buffers the
+                    // full emission history (previous seed + one slice per bucket) so consumers subscribing
+                    // late or draining slowly never miss slices — keeps diamond topologies deadlock-free
+                    .shareIn(scope, SharingStarted.Lazily, replay = buckets.size + 1)
+            }
         }
         return flows
     }
 
-    private fun resolutionOrder(requested: List<Series.Metric>): List<Series<*>> {
+    private fun nodeKey(series: Series<*>, context: QueryContext): SeriesNode =
+        SeriesNode(series, context.projected(effectiveSensitivity(series)))
+
+    // a node must distinguish every context dimension its dependency closure distinguishes, otherwise
+    // one shared node would wire to dependency nodes resolved under another query's context
+    private fun effectiveSensitivity(series: Series<*>): Set<ContextDimension> {
+        val definition = registry[series]
+        return definition.contextSensitivity + definition.dependencies.flatMap { effectiveSensitivity(it) }
+    }
+
+    private fun resolutionOrder(requested: Series.Metric): List<Series<*>> {
         val order = mutableListOf<Series<*>>()
         val visited = mutableSetOf<Series<*>>()
 
@@ -81,17 +101,17 @@ class MetricResolutionService(
             order.add(series)
         }
 
-        requested.forEach { visit(it) }
+        visit(requested)
         return order
     }
 
     private fun nodeFlow(
         definition: SeriesDefinition<*>,
-        request: MetricResolutionRequest,
+        context: SeriesResolutionContext,
         buckets: List<LocalDateTime>,
         dependencyFlows: List<Pair<Series<*>, Flow<SeriesEmission>>>,
     ): Flow<SeriesEmission> = flow {
-        val resolver = definition.createResolver(request)
+        val resolver = definition.createResolver(context)
         if (dependencyFlows.isEmpty()) {
             emit(SeriesEmission.Previous(resolver.resolvePrevious(DependencySlices.EMPTY)))
             for (bucket in buckets) {

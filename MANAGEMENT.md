@@ -8,6 +8,8 @@
 
 ### Income report
 
+### Quarterly granularity
+
 ### Colors for Funds, Accounts, Labels
 
 ### Calculate interest rate when positions are closed

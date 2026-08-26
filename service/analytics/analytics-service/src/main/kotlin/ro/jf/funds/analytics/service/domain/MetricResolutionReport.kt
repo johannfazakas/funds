@@ -15,7 +15,7 @@ data class ScalarSeries(
 
 data class MetricResolutionReport(
     val buckets: List<LocalDateTime>,
-    val series: Map<Series.Metric, ScalarSeries>,
+    val series: Map<QueryId, ScalarSeries>,
 ) {
-    operator fun get(metric: Series.Metric): ScalarSeries = series.getValue(metric)
+    operator fun get(queryId: QueryId): ScalarSeries = series.getValue(queryId)
 }

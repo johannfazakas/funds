@@ -14,10 +14,13 @@ import ro.jf.funds.analytics.api.model.MetricUnitTypeTO
 import ro.jf.funds.analytics.api.model.MetricsReportRequestTO
 import ro.jf.funds.analytics.api.model.MetricsReportTO
 import ro.jf.funds.analytics.service.domain.AnalyticsInputRecordFilter
-import ro.jf.funds.analytics.service.domain.Series
+import ro.jf.funds.analytics.service.domain.MetricQuery
 import ro.jf.funds.analytics.service.domain.MetricResolutionReport
 import ro.jf.funds.analytics.service.domain.MetricResolutionRequest
+import ro.jf.funds.analytics.service.domain.QueryContext
+import ro.jf.funds.analytics.service.domain.QueryId
 import ro.jf.funds.analytics.service.domain.ReportInterval
+import ro.jf.funds.analytics.service.domain.Series
 import ro.jf.funds.analytics.service.service.MetricResolutionService
 import ro.jf.funds.platform.jvm.web.userId
 
@@ -41,13 +44,20 @@ fun Routing.metricsApiRouting(
                 MetricResolutionRequest(
                     userId = userId,
                     interval = ReportInterval(request.interval.granularity, request.interval.from, request.interval.to),
-                    filter = AnalyticsInputRecordFilter(
-                        fundIds = request.filter.fundIds,
-                        units = request.filter.units,
-                    ),
                     targetCurrency = request.targetCurrency,
-                    grouping = request.grouping,
-                    metrics = request.metrics.map { Series.of(it) },
+                    queries = request.queries.map { query ->
+                        MetricQuery(
+                            id = QueryId(query.id),
+                            metric = Series.of(query.metric),
+                            context = QueryContext(
+                                grouping = query.grouping,
+                                filter = AnalyticsInputRecordFilter(
+                                    fundIds = query.filter.fundIds.toSet(),
+                                    units = query.filter.units.toSet(),
+                                ),
+                            ),
+                        )
+                    },
                 )
             )
             call.respond(HttpStatusCode.OK, report.toTO(request))
@@ -58,11 +68,13 @@ fun Routing.metricsApiRouting(
 private fun MetricResolutionReport.toTO(request: MetricsReportRequestTO): MetricsReportTO = MetricsReportTO(
     granularity = request.interval.granularity,
     buckets = buckets,
-    series = series.map { (metric, scalarSeries) ->
+    series = request.queries.map { query ->
+        val scalarSeries = series.getValue(QueryId(query.id))
         MetricSeriesTO(
-            metric = metric.api,
-            unit = metric.api.unit,
-            currency = request.targetCurrency.takeIf { metric.api.unit == MetricUnitTypeTO.CURRENCY },
+            queryId = query.id,
+            metric = query.metric,
+            unit = query.metric.unit,
+            currency = request.targetCurrency.takeIf { query.metric.unit == MetricUnitTypeTO.CURRENCY },
             groups = scalarSeries.groupKeys
                 .sortedBy { it.apiValue }
                 .map { groupKey ->

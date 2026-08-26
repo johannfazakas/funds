@@ -5,13 +5,25 @@ import ro.jf.funds.platform.api.model.Currency
 
 @Serializable
 data class MetricsReportRequestTO(
-    val metrics: List<MetricTO>,
     val interval: ReportIntervalTO,
-    val filter: ReportFilterTO = ReportFilterTO(),
     val targetCurrency: Currency,
-    val grouping: GroupingCriteria? = null,
+    val queries: List<MetricQueryTO>,
 ) {
     init {
-        require(metrics.isNotEmpty()) { "At least one metric must be requested" }
+        require(queries.isNotEmpty()) { "At least one query must be requested" }
+        val duplicateIds = queries.groupingBy { it.id }.eachCount().filterValues { it > 1 }.keys
+        require(duplicateIds.isEmpty()) { "Query ids must be unique, duplicated: $duplicateIds" }
+    }
+}
+
+@Serializable
+data class MetricQueryTO(
+    val id: String,
+    val metric: MetricTO,
+    val grouping: GroupingCriteria? = null,
+    val filter: ReportFilterTO = ReportFilterTO(),
+) {
+    init {
+        require(id.isNotBlank()) { "Query id must not be blank" }
     }
 }

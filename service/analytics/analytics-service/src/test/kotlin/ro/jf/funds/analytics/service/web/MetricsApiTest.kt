@@ -22,6 +22,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import ro.jf.funds.analytics.api.model.GroupingCriteria
 import ro.jf.funds.analytics.api.model.MetricInfoTO
+import ro.jf.funds.analytics.api.model.MetricQueryTO
+import ro.jf.funds.analytics.api.model.ReportFilterTO
 import ro.jf.funds.analytics.api.model.MetricUnitTypeTO
 import ro.jf.funds.analytics.api.model.MetricsReportRequestTO
 import ro.jf.funds.analytics.api.model.MetricsReportTO
@@ -90,15 +92,24 @@ class MetricsApiTest {
         metrics: List<MetricTO>,
         targetCurrency: Currency = Currency.RON,
         groupBy: GroupingCriteria? = null,
+    ) = metricsQueriesRequest(
+        queries = metrics.mapIndexed { index, metric ->
+            MetricQueryTO(id = "q${index + 1}", metric = metric, grouping = groupBy)
+        },
+        targetCurrency = targetCurrency,
+    )
+
+    private fun metricsQueriesRequest(
+        queries: List<MetricQueryTO>,
+        targetCurrency: Currency = Currency.RON,
     ) = MetricsReportRequestTO(
-        metrics = metrics,
         interval = ReportIntervalTO(
             granularity = TimeGranularity.MONTHLY,
             from = LocalDateTime.parse("2024-01-01T00:00:00"),
             to = LocalDateTime.parse("2024-04-01T00:00:00"),
         ),
         targetCurrency = targetCurrency,
-        grouping = groupBy,
+        queries = queries,
     )
 
     @Test
@@ -130,6 +141,7 @@ class MetricsApiTest {
             )
             assertThat(report.series).hasSize(1)
             val series = report.series.single()
+            assertThat(series.queryId).isEqualTo("q1")
             assertThat(series.metric).isEqualTo(MetricTO.BALANCE)
             assertThat(series.unit).isEqualTo(MetricUnitTypeTO.CURRENCY)
             assertThat(series.currency).isEqualTo(Currency.RON)
@@ -222,6 +234,50 @@ class MetricsApiTest {
         }
 
     @Test
+    fun `given records in two funds - when requesting same metric with two query contexts - then returns one series per query`(): Unit =
+        testApplication {
+            configureEnvironment({ testModule() }, dbConfig, kafkaConfig, conversionServiceConfig)
+            analyticsRecordRepository.saveAll(
+                listOf(
+                    analyticsRecord(dateTime = LocalDateTime.parse("2023-12-01T10:00:00"), amount = "300.00"),
+                    analyticsRecord(dateTime = LocalDateTime.parse("2023-12-01T10:00:00"), amount = "200.00", recordFundId = otherFundId),
+                    analyticsRecord(dateTime = LocalDateTime.parse("2024-01-10T10:00:00"), amount = "100.00"),
+                )
+            )
+
+            val client = createJsonHttpClient()
+            val response = client.post("/funds-api/analytics/v1/metrics") {
+                contentType(ContentType.Application.Json)
+                header(USER_ID_HEADER, userId)
+                setBody(
+                    metricsQueriesRequest(
+                        listOf(
+                            MetricQueryTO(id = "by-fund", metric = MetricTO.BALANCE, grouping = GroupingCriteria.FUND),
+                            MetricQueryTO(id = "single-fund", metric = MetricTO.BALANCE, filter = ReportFilterTO(fundIds = listOf(fundId))),
+                        )
+                    )
+                )
+            }
+
+            assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+            val report = response.body<MetricsReportTO>()
+            assertThat(report.series.map { it.queryId }).containsExactly("by-fund", "single-fund")
+
+            val groupedSeries = report.series.first { it.queryId == "by-fund" }
+            assertThat(groupedSeries.groups.map { it.groupKey })
+                .containsExactlyInAnyOrder(fundId.toString(), otherFundId.toString())
+
+            val filteredSeries = report.series.first { it.queryId == "single-fund" }
+            val filteredGroup = filteredSeries.groups.single()
+            assertThat(filteredGroup.groupKey).isEqualTo("UNGROUPED")
+            assertThat(filteredGroup.values).containsExactly(
+                BigDecimal.parseString("300.00"),
+                BigDecimal.parseString("400.00"),
+                BigDecimal.parseString("400.00"),
+            )
+        }
+
+    @Test
     fun `given constant conversion rates - when requesting interest rate with different target currencies - then percentage series is identical`(): Unit =
         testApplication {
             configureEnvironment({ testModule() }, dbConfig, kafkaConfig, conversionServiceConfig)
@@ -266,28 +322,32 @@ class MetricsApiTest {
             configureEnvironment({ testModule() }, dbConfig, kafkaConfig, conversionServiceConfig)
             val client = createJsonHttpClient()
 
-            suspend fun post(metricsJson: String) = client.post("/funds-api/analytics/v1/metrics") {
+            suspend fun post(queriesJson: String) = client.post("/funds-api/analytics/v1/metrics") {
                 contentType(ContentType.Application.Json)
                 header(USER_ID_HEADER, userId)
                 setBody(
                     """
-                    {"metrics":$metricsJson,"interval":{"granularity":"MONTHLY","from":"2024-01-01T00:00:00",
-                     "to":"2024-04-01T00:00:00"},"targetCurrency":"RON"}
+                    {"interval":{"granularity":"MONTHLY","from":"2024-01-01T00:00:00",
+                     "to":"2024-04-01T00:00:00"},"targetCurrency":"RON","queries":$queriesJson}
                     """.trimIndent()
                 )
             }
 
-            val unknownResponse = post("""["BALANCE","BOGUS_METRIC"]""")
+            val unknownResponse = post("""[{"id":"q1","metric":"BALANCE"},{"id":"q2","metric":"BOGUS_METRIC"}]""")
             assertThat(unknownResponse.status).isEqualTo(HttpStatusCode.BadRequest)
             assertThat(unknownResponse.bodyAsErrorDetail()).contains("BOGUS_METRIC")
 
-            val internalResponse = post("""["PAIRED_POSITIONS"]""")
+            val internalResponse = post("""[{"id":"q1","metric":"PAIRED_POSITIONS"}]""")
             assertThat(internalResponse.status).isEqualTo(HttpStatusCode.BadRequest)
             assertThat(internalResponse.bodyAsErrorDetail()).contains("PAIRED_POSITIONS")
 
             val emptyResponse = post("[]")
             assertThat(emptyResponse.status).isEqualTo(HttpStatusCode.BadRequest)
-            assertThat(emptyResponse.bodyAsErrorDetail()).contains("metric")
+            assertThat(emptyResponse.bodyAsErrorDetail()).contains("query")
+
+            val duplicateIdsResponse = post("""[{"id":"q1","metric":"BALANCE"},{"id":"q1","metric":"NET_CHANGE"}]""")
+            assertThat(duplicateIdsResponse.status).isEqualTo(HttpStatusCode.BadRequest)
+            assertThat(duplicateIdsResponse.bodyAsErrorDetail()).contains("q1")
         }
 
     @Test

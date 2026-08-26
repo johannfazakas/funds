@@ -18,6 +18,7 @@ data class MetricsReportTO(
 
 @Serializable
 data class MetricSeriesTO(
+    val queryId: String,
     val metric: MetricTO,
     val unit: MetricUnitTypeTO,
     val currency: Currency? = null,
@@ -26,6 +27,6 @@ data class MetricSeriesTO(
 
 @Serializable
 data class MetricSeriesGroupTO(
-    val groupKey: String = "UNGROUPED",
+    val groupKey: String,
     val values: List<BigDecimal>,
 )

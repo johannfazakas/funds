@@ -10,24 +10,45 @@ import ro.jf.funds.platform.api.model.Currency
 class MetricsReportRequestTOTest {
 
     private fun request(
-        metrics: List<MetricTO> = listOf(MetricTO.BALANCE),
+        queries: List<MetricQueryTO> = listOf(MetricQueryTO(id = "q1", metric = MetricTO.BALANCE)),
         from: String = "2024-01-01T00:00:00",
         to: String = "2024-04-01T00:00:00",
     ) = MetricsReportRequestTO(
-        metrics = metrics,
         interval = ReportIntervalTO(
             granularity = TimeGranularity.MONTHLY,
             from = LocalDateTime.parse(from),
             to = LocalDateTime.parse(to),
         ),
         targetCurrency = Currency.RON,
+        queries = queries,
     )
 
     @Test
-    fun `given empty metric list - when creating request - then fails`() {
-        assertThatThrownBy { request(metrics = emptyList()) }
+    fun `given empty query list - when creating request - then fails`() {
+        assertThatThrownBy { request(queries = emptyList()) }
             .isInstanceOf(IllegalArgumentException::class.java)
-            .hasMessageContaining("metric")
+            .hasMessageContaining("query")
+    }
+
+    @Test
+    fun `given duplicate query ids - when creating request - then fails`() {
+        assertThatThrownBy {
+            request(
+                queries = listOf(
+                    MetricQueryTO(id = "q1", metric = MetricTO.BALANCE),
+                    MetricQueryTO(id = "q1", metric = MetricTO.TOTAL_PROFIT),
+                )
+            )
+        }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("q1")
+    }
+
+    @Test
+    fun `given blank query id - when creating query - then fails`() {
+        assertThatThrownBy { MetricQueryTO(id = " ", metric = MetricTO.BALANCE) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("id")
     }
 
     @Test
@@ -38,25 +59,27 @@ class MetricsReportRequestTOTest {
     }
 
     @Test
-    fun `given empty metric list in payload - when deserializing request - then fails`() {
+    fun `given empty query list in payload - when deserializing request - then fails`() {
         val payload = """
-            {"metrics":[],"interval":{"granularity":"MONTHLY","from":"2024-01-01T00:00:00","to":"2024-04-01T00:00:00"},"targetCurrency":"RON"}
+            {"interval":{"granularity":"MONTHLY","from":"2024-01-01T00:00:00","to":"2024-04-01T00:00:00"},"targetCurrency":"RON","queries":[]}
         """.trimIndent()
 
         assertThatThrownBy { Json.decodeFromString<MetricsReportRequestTO>(payload) }
-            .hasMessageContaining("metric")
+            .hasMessageContaining("query")
     }
 
     @Test
-    fun `given valid payload - when deserializing request - then parses metrics and nested interval`() {
+    fun `given valid payload - when deserializing request - then parses queries and nested interval`() {
         val payload = """
-            {"metrics":["BALANCE","TOTAL_PROFIT"],"interval":{"granularity":"MONTHLY","from":"2024-01-01T00:00:00","to":"2024-04-01T00:00:00"},"filter":{"fundIds":[]},"targetCurrency":"RON","grouping":"FUND"}
+            {"interval":{"granularity":"MONTHLY","from":"2024-01-01T00:00:00","to":"2024-04-01T00:00:00"},"targetCurrency":"RON","queries":[{"id":"q1","metric":"BALANCE","grouping":"FUND","filter":{"fundIds":[]}},{"id":"q2","metric":"TOTAL_PROFIT"}]}
         """.trimIndent()
 
         val request = Json.decodeFromString<MetricsReportRequestTO>(payload)
 
-        assertThat(request.metrics).containsExactly(MetricTO.BALANCE, MetricTO.TOTAL_PROFIT)
+        assertThat(request.queries.map { it.id }).containsExactly("q1", "q2")
+        assertThat(request.queries.map { it.metric }).containsExactly(MetricTO.BALANCE, MetricTO.TOTAL_PROFIT)
         assertThat(request.interval.granularity).isEqualTo(TimeGranularity.MONTHLY)
-        assertThat(request.grouping).isEqualTo(GroupingCriteria.FUND)
+        assertThat(request.queries[0].grouping).isEqualTo(GroupingCriteria.FUND)
+        assertThat(request.queries[1].grouping).isNull()
     }
 }

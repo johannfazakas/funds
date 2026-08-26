@@ -20,12 +20,17 @@ export interface ReportFilter {
     units?: { type: string; value: string }[];
 }
 
-export interface MetricsReportRequest {
-    metrics: string[];
-    interval: ReportInterval;
-    filter?: ReportFilter;
-    targetCurrency: string;
+export interface MetricQuery {
+    id: string;
+    metric: string;
     grouping?: GroupBy;
+    filter?: ReportFilter;
+}
+
+export interface MetricsReportRequest {
+    interval: ReportInterval;
+    targetCurrency: string;
+    queries: MetricQuery[];
 }
 
 export interface MetricSeriesGroup {
@@ -34,6 +39,7 @@ export interface MetricSeriesGroup {
 }
 
 export interface MetricSeries {
+    queryId: string;
     metric: string;
     unit: MetricUnit;
     currency?: string | null;

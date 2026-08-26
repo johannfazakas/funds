@@ -11,8 +11,8 @@ sealed interface SeriesEmission {
     data class Bucket(val dateTime: LocalDateTime, override val value: SeriesSlice) : SeriesEmission
 }
 
-data class MetricBucketValue(
-    val metric: Series.Metric,
+data class QueryBucketValue(
+    val queryId: QueryId,
     val bucket: LocalDateTime,
     val values: Map<GroupKey, BigDecimal>,
 )

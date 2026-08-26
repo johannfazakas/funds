@@ -7,17 +7,17 @@ import ro.jf.funds.analytics.service.domain.*
 
 class BalanceSeriesDefinition(
     private val conversions: AnalyticsConversionService,
-) : SeriesDefinition<SeriesSlice.Scalars>(Series.Balance, dependencies = listOf(AMOUNTS)) {
+) : SeriesDefinition<SeriesSlice.Scalars>(Series.Balance, ContextDimension.ALL, dependencies = listOf(AMOUNTS)) {
 
     companion object Dependencies {
         private val AMOUNTS = Series.TransactionAmounts
     }
 
-    override fun createResolver(request: MetricResolutionRequest): SeriesBucketResolver<SeriesSlice.Scalars> =
-        Resolver(request)
+    override fun createResolver(context: SeriesResolutionContext): SeriesBucketResolver<SeriesSlice.Scalars> =
+        Resolver(context)
 
     private inner class Resolver(
-        private val request: MetricResolutionRequest,
+        private val context: SeriesResolutionContext,
     ) : SeriesBucketResolver<SeriesSlice.Scalars> {
         private val balances = mutableMapOf<GroupKey, UnitAmounts>()
 
@@ -30,7 +30,7 @@ class BalanceSeriesDefinition(
         override suspend fun resolveBucket(bucket: LocalDateTime, inputs: DependencySlices): SeriesSlice.Scalars {
             val values = mutableMapOf<GroupKey, BigDecimal>()
             for ((groupKey, balance) in balances) {
-                values[groupKey] = conversions.convertAmounts(balance, request.targetCurrency, bucket.date)
+                values[groupKey] = conversions.convertAmounts(balance, context.targetCurrency, bucket.date)
             }
             val bucketAmounts = inputs[AMOUNTS].amounts
             for (groupKey in bucketAmounts.groupKeys) {

@@ -12,6 +12,18 @@ exactly one slice per interval bucket, in order — the *bucket-clock invariant*
 Dependents consume dependency slices as they are emitted, so buckets flow through the graph without waiting
 for upstream series to complete.
 
+A request carries a list of **queries**, each with a client-supplied id, a metric, and its own
+`QueryContext` (grouping + filter); interval, granularity, and target currency are request-level and shared
+by every query. A resolution node is identified by `(series, projected context)`: each query's context
+propagates unchanged down its dependency closure, and the node key projects it onto the dimensions the
+series is *effectively* sensitive to — its own declared `contextSensitivity` unioned with its dependency
+closure's; filters are set-based, so semantically equal filters compare equal by construction. Queries whose projected
+contexts collide share the node's single resolution through the existing shared-flow machinery; e.g. the
+grouping-insensitive `OPEN_POSITION_RECORDS`/`PAIRED_POSITIONS` chain runs once per distinct filter no
+matter how many groupings consume it. Every definition declares its sensitivity explicitly
+(`ContextDimension.ALL` unless it genuinely ignores a dimension) — over-declaring only duplicates work,
+under-declaring shares nodes whose outputs differ and yields wrong numbers.
+
 ## Components
 
 - `SeriesBucketResolver<T>` — the uniform resolver contract: `resolvePrevious(previous)` + `resolveBucket(bucket,
@@ -21,22 +33,27 @@ for upstream series to complete.
   `dependencies` list and the resolver's typed slice accesses (`inputs[AMOUNTS]`), so declared and accessed
   dependencies cannot drift. Dependency access is same-bucket only; anything cross-bucket (running balances,
   accumulated positions, previous valuation) is private accumulator state inside the resolver. Instances are
-  created per request via `createResolver(request)`, so state is request-confined.
-- `SeriesDefinition<T>` — binds a `Series<T>` to its dependency list and resolver factory; app-scoped
-  collaborators (repository, conversions) are constructor state on the definition and reach the resolver
-  through the outer scope.
+  created per node via `createResolver(context)` — a `SeriesResolutionContext` bundling the shared request
+  fields (user, interval, target currency) with the node's projected `QueryContext` — so state is
+  node-confined within the request.
+- `SeriesDefinition<T>` — binds a `Series<T>` to its dependency list, its `contextSensitivity`, and its
+  resolver factory; app-scoped collaborators (repository, conversions) are constructor state on the
+  definition and reach the resolver through the outer scope.
 - `SeriesRegistry` — all definitions, validated at startup: dependencies registered, graph acyclic, no
   duplicates. The registry assembly in `config/AnalyticsDependencies.kt` additionally requires every
   `Series.entries` value to have a definition (catalog completeness).
-- `MetricResolutionService` — the planner: topo-sorts the closure, drives each node's resolver over a zip of
+- `MetricResolutionService` — the planner: topo-sorts each query's closure, keys node flows by
+  `(series, projected context)` so colliding nodes are wired once, drives each node's resolver over a zip of
   its dependencies' flows, shares every node's flow with lazy full replay (resolve-once under fan-out,
-  deadlock-free diamonds), one coroutine per node inside a per-request `coroutineScope` (first failure
-  cancels the graph). Buckets are strictly sequential within a node; concurrency comes from independent
-  branches and pipeline skew. `resolveFlow(request)` exposes the per-bucket event stream (the seam for a
-  future streaming endpoint); `resolve(request)` collects it into a `MetricResolutionReport`, zero-backfilling
-  groups that first appear mid-interval.
-- Domain types (`Series`, `SeriesSlice`, `SeriesEmission`, `SeriesBucketResolver`, `MetricResolutionRequest/Report`,
-  grouping helpers) live in `ro.jf.funds.analytics.service.domain`.
+  deadlock-free diamonds), one coroutine per node inside a per-request `coroutineScope` (first failure —
+  shared node or not — cancels the whole graph, all queries included). Buckets are strictly sequential within
+  a node; concurrency comes from independent branches and pipeline skew. `resolveFlow(request)` exposes the
+  per-bucket event stream tagged with query ids (the seam for a future streaming endpoint);
+  `resolve(request)` collects it into a `MetricResolutionReport` keyed by query id, zero-backfilling groups
+  that first appear mid-interval.
+- Domain types (`Series`, `SeriesSlice`, `SeriesEmission`, `SeriesBucketResolver`, `QueryContext`,
+  `SeriesResolutionContext`, `MetricResolutionRequest/Report`, grouping helpers) live in
+  `ro.jf.funds.analytics.service.domain`.
 
 ## Series graph
 

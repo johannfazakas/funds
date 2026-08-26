@@ -193,10 +193,9 @@ class MetricsRegressionTest {
             header(USER_ID_HEADER, userId)
             setBody(
                 MetricsReportRequestTO(
-                    metrics = metrics,
                     interval = ReportIntervalTO(granularity = TimeGranularity.MONTHLY, from = from, to = to),
                     targetCurrency = targetCurrency,
-                    grouping = groupBy,
+                    queries = metrics.map { MetricQueryTO(id = it.name, metric = it, grouping = groupBy) },
                 )
             )
         }
