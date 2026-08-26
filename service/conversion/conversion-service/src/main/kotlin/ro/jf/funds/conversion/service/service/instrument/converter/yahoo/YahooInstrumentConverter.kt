@@ -1,6 +1,5 @@
 package ro.jf.funds.conversion.service.service.instrument.converter.yahoo
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -18,7 +17,7 @@ class YahooInstrumentConverter(
     private val cachedProxy: MonthlyCachedInstrumentConverterProxy = MonthlyCachedInstrumentConverterProxy(),
 ) : InstrumentConverter {
     override suspend fun convert(instrument: InstrumentConversionInfo, dates: List<LocalDate>): List<ConversionResponse> =
-        dates.mapNotNull { date -> checkHardcodedValues(instrument, date) ?: convert(instrument, date) }
+        dates.mapNotNull { date -> convert(instrument, date) }
 
     private suspend fun convert(instrument: InstrumentConversionInfo, date: LocalDate): ConversionResponse? {
         return cachedProxy.getCachedOrConvert(instrument, date) { from, to ->
@@ -61,29 +60,6 @@ class YahooInstrumentConverter(
                     )
                 }
             }
-    }
-
-    // IMAE doesn't have values for 2022 and I couldn't find a library/api that could provide it
-    private fun checkHardcodedValues(instrument: InstrumentConversionInfo, date: LocalDate): ConversionResponse? {
-        if (instrument.instrument.value == "IMAE") {
-            if (date.year == 2022) {
-                val rate = when (date.month) {
-                    Month.MAY -> BigDecimal.parseString("63.54")
-                    Month.JUNE -> BigDecimal.parseString("63.90")
-                    Month.JULY -> BigDecimal.parseString("59.025")
-                    Month.AUGUST -> BigDecimal.parseString("63.43")
-                    Month.SEPTEMBER -> BigDecimal.parseString("59.94")
-                    Month.OCTOBER -> BigDecimal.parseString("56.56")
-                    Month.NOVEMBER -> BigDecimal.parseString("60.34")
-                    Month.DECEMBER -> BigDecimal.parseString("64.725")
-                    else -> null
-                }
-                if (rate != null) {
-                    return ConversionResponse(instrument.instrument, instrument.mainCurrency, date, rate)
-                }
-            }
-        }
-        return null
     }
 
     private fun LocalDate.timestamp(): Long = atStartOfDayIn(TimeZone.UTC).epochSeconds

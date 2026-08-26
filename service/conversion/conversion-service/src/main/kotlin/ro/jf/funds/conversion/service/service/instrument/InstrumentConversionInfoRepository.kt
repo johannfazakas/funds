@@ -13,7 +13,7 @@ class InstrumentConversionInfoRepository {
         InstrumentConversionInfo(Instrument("SXR8"), YAHOO, "SXR8.DE", EUR),
         InstrumentConversionInfo(Instrument("QDVE"), YAHOO, "QDVE.DE", EUR),
         InstrumentConversionInfo(Instrument("EUNL"), YAHOO, "EUNL.DE", EUR),
-        InstrumentConversionInfo(Instrument("IMAE"), YAHOO, "IMAEA.XC", EUR),
+        InstrumentConversionInfo(Instrument("IMAE"), YAHOO, "IMAE.AS", EUR),
         InstrumentConversionInfo(Instrument("IS3N"), YAHOO, "IS3N.DE", EUR),
         InstrumentConversionInfo(Instrument("SUSW"), YAHOO, "SUSW.L", EUR),
         InstrumentConversionInfo(Instrument("ICBETNETF"), YAHOO, "ICBETNETF.RO", RON),
