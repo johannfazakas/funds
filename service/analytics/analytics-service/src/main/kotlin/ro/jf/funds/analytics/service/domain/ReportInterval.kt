@@ -32,6 +32,11 @@ data class ReportInterval(
         }
     }
 
+    fun bucketFor(dateTime: LocalDateTime): LocalDateTime {
+        val truncated = truncate(dateTime)
+        return if (truncated == truncate(from)) from else truncated
+    }
+
     fun truncate(dateTime: LocalDateTime): LocalDateTime {
         val date = dateTime.date
         return when (granularity) {

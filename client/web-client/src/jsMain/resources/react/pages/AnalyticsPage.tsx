@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getBalanceReport, getNetChangeReport, getPerformanceReport, getInterestRateReport, extractMetric, TimeGranularity, GroupBy, ReportResponse, PerformanceData, InterestRateData } from '../api/analyticsApi';
+import { listMetrics, getMetricsReport, TimeGranularity, GroupBy, MetricInfo, MetricSeries, MetricsReport } from '../api/analyticsApi';
 import { listFunds, Fund } from '../api/fundApi';
 import { listAccounts, Account } from '../api/accountApi';
 import ValueChart, { ValueChartDataPoint } from '../components/ValueChart';
@@ -15,14 +15,27 @@ interface AnalyticsPageProps {
     userId: string;
 }
 
-type ReportType = 'balance' | 'netChange' | 'performance' | 'interestRate';
+const metricLabels: Record<string, string> = {
+    BALANCE: 'Balance',
+    NET_CHANGE: 'Net Change',
+    TOTAL_INVESTMENT: 'Total Investment',
+    CURRENT_INVESTMENT: 'Current Investment',
+    TOTAL_INSTRUMENT_VALUE: 'Total Instrument Value',
+    CURRENCY_VALUE: 'Currency Value',
+    TOTAL_PROFIT: 'Total Profit',
+    CURRENT_PROFIT: 'Current Profit',
+    TOTAL_INTEREST_RATE: 'Total Interest Rate',
+    CURRENT_INTEREST_RATE: 'Current Interest Rate',
+};
 
-const reportTypeOptions: { value: ReportType; label: string; seriesName: string; color: string }[] = [
-    { value: 'balance', label: 'Balance', seriesName: 'Balance', color: '#2563eb' },
-    { value: 'netChange', label: 'Net Change', seriesName: 'Net Change', color: '#16a34a' },
-    { value: 'performance', label: 'Performance', seriesName: 'Performance', color: '#9333ea' },
-    { value: 'interestRate', label: 'Interest Rate', seriesName: 'Interest Rate', color: '#ea580c' },
-];
+function metricLabel(name: string): string {
+    return metricLabels[name] ?? name;
+}
+
+const unitColors: Record<string, string> = {
+    CURRENCY: '#2563eb',
+    PERCENTAGE: '#ea580c',
+};
 
 const granularityOptions: { value: TimeGranularity; label: string }[] = [
     { value: 'DAILY', label: 'Daily' },
@@ -37,20 +50,6 @@ const groupByOptions: { value: string; label: string }[] = [
     { value: 'ACCOUNT', label: 'Account' },
     { value: 'FUND', label: 'Fund' },
     { value: 'CATEGORY', label: 'Category' },
-];
-
-const performanceMetrics: { value: keyof PerformanceData; label: string }[] = [
-    { value: 'totalInvestment', label: 'Total Investment' },
-    { value: 'currentInvestment', label: 'Current Investment' },
-    { value: 'totalProfit', label: 'Total Profit' },
-    { value: 'currentProfit', label: 'Current Profit' },
-    { value: 'totalInstrumentValue', label: 'Total Instrument Value' },
-    { value: 'currencyValue', label: 'Currency Value' },
-];
-
-const interestRateMetrics: { value: keyof InterestRateData; label: string }[] = [
-    { value: 'totalInterestRate', label: 'Total Interest Rate' },
-    { value: 'currentInterestRate', label: 'Current Interest Rate' },
 ];
 
 function defaultFromDate(): string {
@@ -79,37 +78,34 @@ function formatBucketLabel(dateTime: string, granularity: TimeGranularity): stri
     }
 }
 
-function toSingleSeriesChartData(report: ReportResponse): ValueChartDataPoint[] {
-    return report.buckets.map(bucket => ({
-        label: formatBucketLabel(bucket.dateTime, report.granularity),
-        value: bucket.groups.length > 0
-            ? Math.round(parseFloat(bucket.groups[0].value))
-            : 0,
+function formatValue(rawValue: string | undefined, unit: string): number {
+    const value = rawValue !== undefined ? parseFloat(rawValue) : 0;
+    return unit === 'PERCENTAGE' ? Math.round(value * 100) / 100 : Math.round(value);
+}
+
+function toSingleSeriesChartData(report: MetricsReport, series: MetricSeries): ValueChartDataPoint[] {
+    const group = series.groups[0];
+    return report.buckets.map((bucket, index) => ({
+        label: formatBucketLabel(bucket, report.granularity),
+        value: formatValue(group?.values[index], series.unit),
     }));
 }
 
 function toGroupedChartData(
-    report: ReportResponse,
+    report: MetricsReport,
+    series: MetricSeries,
     resolveGroupName: (key: string) => string,
 ): { data: GroupedValueChartDataPoint[]; groups: string[] } {
-    const allGroupKeys = new Set<string>();
-    report.buckets.forEach(b =>
-        b.groups.forEach(g => {
-            if (g.groupKey !== null) allGroupKeys.add(g.groupKey);
-            else allGroupKeys.add('');
-        })
-    );
-    const groupKeys = Array.from(allGroupKeys).sort();
+    const groupKeys = series.groups.map(g => g.groupKey).sort();
     const groups = groupKeys.map(resolveGroupName);
 
-    const data: GroupedValueChartDataPoint[] = report.buckets.map(bucket => {
+    const data: GroupedValueChartDataPoint[] = report.buckets.map((bucket, index) => {
         const point: GroupedValueChartDataPoint = {
-            label: formatBucketLabel(bucket.dateTime, report.granularity),
+            label: formatBucketLabel(bucket, report.granularity),
         };
         for (const key of groupKeys) {
-            const name = resolveGroupName(key);
-            const groupBucket = bucket.groups.find(g => (g.groupKey ?? '') === key);
-            point[name] = groupBucket ? Math.round(parseFloat(groupBucket.value)) : 0;
+            const seriesGroup = series.groups.find(g => g.groupKey === key);
+            point[resolveGroupName(key)] = formatValue(seriesGroup?.values[index], series.unit);
         }
         return point;
     });
@@ -121,11 +117,21 @@ function toLocalDateTime(dateStr: string): string {
     return `${dateStr}T00:00:00`;
 }
 
+function shiftDay(dateStr: string, days: number): string {
+    const date = new Date(`${dateStr}T00:00:00`);
+    date.setDate(date.getDate() + days);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function AnalyticsPage({ userId }: AnalyticsPageProps) {
-    const [report, setReport] = useState<ReportResponse | null>(null);
+    const [report, setReport] = useState<MetricsReport | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [reportType, setReportType] = useState<ReportType>('balance');
+    const [metrics, setMetrics] = useState<MetricInfo[]>([]);
+    const [selectedMetric, setSelectedMetric] = useState<string>('BALANCE');
     const [granularity, setGranularity] = useState<TimeGranularity>('MONTHLY');
     const [fromDate, setFromDate] = useState(defaultFromDate);
     const [toDate, setToDate] = useState(defaultToDate);
@@ -133,11 +139,21 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
     const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
     const [targetCurrency, setTargetCurrency] = useState<string>('');
     const [groupBy, setGroupBy] = useState<string>('NONE');
-    const [selectedMetric, setSelectedMetric] = useState<string>('totalProfit');
 
     const [funds, setFunds] = useState<Fund[]>([]);
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [unitGroups, setUnitGroups] = useState<MultiSelectGroup[]>([]);
+
+    useEffect(() => {
+        async function loadMetricOptions() {
+            try {
+                setMetrics(await listMetrics());
+            } catch {
+                // metric options are best-effort
+            }
+        }
+        loadMetricOptions();
+    }, []);
 
     useEffect(() => {
         async function loadFilterOptions() {
@@ -183,7 +199,7 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
     }, [userId]);
 
     const resolveGroupName = (key: string): string => {
-        if (key === '') return 'None';
+        if (key === 'UNGROUPED') return 'None';
         if (groupBy === 'FUND') {
             const fund = funds.find(f => f.id === key);
             return fund ? fund.name : key;
@@ -204,27 +220,20 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                 const [type, value] = key.split(':');
                 return { type, value };
             });
-            const request = {
-                granularity,
-                from: toLocalDateTime(fromDate),
-                to: toLocalDateTime(toDate),
-                fundIds: selectedFundIds.length > 0 ? selectedFundIds : undefined,
-                units: units.length > 0 ? units : undefined,
+            const data = await getMetricsReport(userId, {
+                metrics: [selectedMetric],
+                interval: {
+                    granularity,
+                    from: toLocalDateTime(fromDate),
+                    to: toLocalDateTime(toDate),
+                },
+                filter: {
+                    fundIds: selectedFundIds.length > 0 ? selectedFundIds : undefined,
+                    units: units.length > 0 ? units : undefined,
+                },
                 targetCurrency,
-                groupBy: groupBy !== 'NONE' ? groupBy as GroupBy : undefined,
-            };
-            let data: ReportResponse;
-            if (reportType === 'balance') {
-                data = await getBalanceReport(userId, request);
-            } else if (reportType === 'netChange') {
-                data = await getNetChangeReport(userId, request);
-            } else if (reportType === 'performance') {
-                const perfData = await getPerformanceReport(userId, request);
-                data = extractMetric(perfData, selectedMetric as keyof PerformanceData);
-            } else {
-                const rateData = await getInterestRateReport(userId, request);
-                data = extractMetric(rateData, selectedMetric as keyof InterestRateData);
-            }
+                grouping: groupBy !== 'NONE' ? groupBy as GroupBy : undefined,
+            });
             setReport(data);
         } catch (err) {
             setError('Failed to load analytics data: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -241,18 +250,18 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
         }
     }, [targetCurrency]);
 
-    useEffect(() => {
-        if (reportType === 'performance') setSelectedMetric('totalProfit');
-        else if (reportType === 'interestRate') setSelectedMetric('totalInterestRate');
-    }, [reportType]);
+    const activeSeries = report?.series.find(s => s.metric === selectedMetric) ?? report?.series[0] ?? null;
+    const activeLabel = activeSeries ? metricLabel(activeSeries.metric) : metricLabel(selectedMetric);
+    const activeColor = activeSeries ? unitColors[activeSeries.unit] ?? unitColors.CURRENCY : unitColors.CURRENCY;
+    const chartCurrency = activeSeries?.unit === 'CURRENCY' ? targetCurrency : undefined;
 
-    const activeReportType = reportTypeOptions.find(r => r.value === reportType)!;
+    const isGrouped = activeSeries != null && groupBy !== 'NONE' &&
+        activeSeries.groups.some(g => g.groupKey !== 'UNGROUPED');
 
-    const isGrouped = report && groupBy !== 'NONE' &&
-        report.buckets.some(b => b.groups.length > 1 || (b.groups.length === 1 && b.groups[0].groupKey !== null));
-
-    const singleSeriesData = report && !isGrouped ? toSingleSeriesChartData(report) : [];
-    const groupedData = report && isGrouped ? toGroupedChartData(report, resolveGroupName) : null;
+    const singleSeriesData = report && activeSeries && !isGrouped
+        ? toSingleSeriesChartData(report, activeSeries) : [];
+    const groupedData = report && activeSeries && isGrouped
+        ? toGroupedChartData(report, activeSeries, resolveGroupName) : null;
 
     const fundMultiSelectOptions: MultiSelectOption[] = funds.map(f => ({ value: f.id, label: f.name }));
     const currencyOptions = unitGroups
@@ -269,33 +278,18 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-wrap items-end gap-4">
                             <div className="flex flex-col gap-1">
-                                <label className="text-sm text-muted-foreground">Report</label>
-                                <Select value={reportType} onValueChange={(v) => setReportType(v as ReportType)}>
-                                    <SelectTrigger className="w-[140px] h-9">
+                                <label className="text-sm text-muted-foreground">Metric</label>
+                                <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+                                    <SelectTrigger className="w-[200px] h-9">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {reportTypeOptions.map(r => (
-                                            <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                                        {metrics.map(m => (
+                                            <SelectItem key={m.metric} value={m.metric}>{metricLabel(m.metric)}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            {(reportType === 'performance' || reportType === 'interestRate') && (
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm text-muted-foreground">Metric</label>
-                                    <Select value={selectedMetric} onValueChange={setSelectedMetric}>
-                                        <SelectTrigger className="w-[200px] h-9">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {(reportType === 'performance' ? performanceMetrics : interestRateMetrics).map(m => (
-                                                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm text-muted-foreground">Granularity</label>
                                 <Select value={granularity} onValueChange={(v) => setGranularity(v as TimeGranularity)}>
@@ -361,13 +355,13 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                         <div className="flex flex-wrap items-end gap-4">
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm text-muted-foreground">From</label>
-                                <DatePicker value={fromDate} onChange={setFromDate} className="w-[160px]" />
+                                <DatePicker value={fromDate} onChange={setFromDate} maxDate={shiftDay(toDate, -1)} className="w-[160px]" />
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm text-muted-foreground">To</label>
-                                <DatePicker value={toDate} onChange={setToDate} className="w-[160px]" />
+                                <DatePicker value={toDate} onChange={setToDate} minDate={shiftDay(fromDate, 1)} className="w-[160px]" />
                             </div>
-                            <Button size="sm" onClick={loadData} disabled={!targetCurrency || loading}>
+                            <Button size="sm" onClick={loadData} disabled={!targetCurrency || loading || fromDate >= toDate}>
                                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                                 Generate
                             </Button>
@@ -389,28 +383,28 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                 </div>
             )}
 
-            {!loading && !error && report && !isGrouped && (
+            {!loading && !error && report && activeSeries && !isGrouped && (
                 <Card>
                     <CardContent className="pt-6">
                         <ValueChart
-                            title={activeReportType.seriesName}
+                            title={activeLabel}
                             data={singleSeriesData}
-                            seriesName={activeReportType.seriesName}
-                            seriesColor={activeReportType.color}
-                            currency={targetCurrency}
+                            seriesName={activeLabel}
+                            seriesColor={activeColor}
+                            currency={chartCurrency}
                         />
                     </CardContent>
                 </Card>
             )}
 
-            {!loading && !error && report && isGrouped && groupedData && (
+            {!loading && !error && report && activeSeries && isGrouped && groupedData && (
                 <Card>
                     <CardContent className="pt-6">
                         <GroupedValueChart
-                            title={activeReportType.seriesName}
+                            title={activeLabel}
                             data={groupedData.data}
                             groups={groupedData.groups}
-                            currency={targetCurrency}
+                            currency={chartCurrency}
                         />
                     </CardContent>
                 </Card>

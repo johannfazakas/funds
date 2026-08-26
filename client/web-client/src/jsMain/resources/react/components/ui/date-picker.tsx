@@ -10,11 +10,17 @@ interface DatePickerProps {
     value: string
     onChange: (value: string) => void
     className?: string
+    minDate?: string
+    maxDate?: string
 }
 
-function DatePicker({ value, onChange, className }: DatePickerProps) {
+function DatePicker({ value, onChange, className, minDate, maxDate }: DatePickerProps) {
     const [open, setOpen] = React.useState(false)
     const date = value ? parseISO(value) : undefined
+    const disabled = [
+        ...(minDate ? [{ before: parseISO(minDate) }] : []),
+        ...(maxDate ? [{ after: parseISO(maxDate) }] : []),
+    ]
 
     const handleSelect = (selected: Date | undefined) => {
         if (selected) {
@@ -53,6 +59,7 @@ function DatePicker({ value, onChange, className }: DatePickerProps) {
                         selected={date}
                         onSelect={handleSelect}
                         defaultMonth={date}
+                        disabled={disabled}
                         initialFocus
                     />
                 </Popover.Content>

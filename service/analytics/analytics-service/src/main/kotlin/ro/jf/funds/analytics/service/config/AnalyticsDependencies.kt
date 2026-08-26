@@ -11,9 +11,30 @@ import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
 import ro.jf.funds.analytics.service.domain.InterestRateCalculator
 import ro.jf.funds.analytics.service.service.AnalyticsService
+import ro.jf.funds.analytics.service.service.MetricResolutionService
 import ro.jf.funds.analytics.service.service.InterestRateService
 import ro.jf.funds.analytics.service.service.PerformanceService
+import ro.jf.funds.analytics.service.domain.Series
+import ro.jf.funds.analytics.service.service.series.*
 import ro.jf.funds.analytics.service.service.TransactionsCreatedHandler
+import ro.jf.funds.analytics.service.service.series.BalanceSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.CurrencyAmountsSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.CurrencyValueSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.CurrentInterestRateSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.CurrentInvestmentSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.CurrentProfitSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.InstrumentHoldingsSeriesDefinition
+import ro.jf.funds.analytics.service.service.AnalyticsConversionService
+import ro.jf.funds.analytics.service.service.series.SeriesDefinition
+import ro.jf.funds.analytics.service.service.series.SeriesRegistry
+import ro.jf.funds.analytics.service.service.series.NetChangeSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.OpenPositionRecordsSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.PairedPositionsSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.TotalInstrumentValueSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.TotalInterestRateSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.TotalInvestmentSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.TotalProfitSeriesDefinition
+import ro.jf.funds.analytics.service.service.series.TransactionAmountsSeriesDefinition
 import ro.jf.funds.fund.api.model.TransactionsCreatedTO
 import ro.jf.funds.platform.jvm.config.getEnvironmentProperty
 import ro.jf.funds.platform.jvm.config.getStringProperty
@@ -63,6 +84,32 @@ private val Application.analyticsServiceDependencies
         single<InterestRateCalculator> { InterestRateCalculator() }
         single<PerformanceService> { PerformanceService(get(), get()) }
         single<InterestRateService> { InterestRateService(get(), get(), get()) }
+        single<SeriesRegistry> {
+            val repository = get<AnalyticsRecordRepository>()
+            val interestRateCalculator = get<InterestRateCalculator>()
+            val conversions = AnalyticsConversionService(get<ConversionSdk>())
+            val definitions: List<SeriesDefinition<*>> = listOf(
+                TransactionAmountsSeriesDefinition(repository),
+                OpenPositionRecordsSeriesDefinition(repository),
+                InstrumentHoldingsSeriesDefinition(repository),
+                CurrencyAmountsSeriesDefinition(repository),
+                PairedPositionsSeriesDefinition(),
+                BalanceSeriesDefinition(conversions),
+                NetChangeSeriesDefinition(conversions),
+                TotalInvestmentSeriesDefinition(conversions),
+                CurrentInvestmentSeriesDefinition(conversions),
+                TotalInstrumentValueSeriesDefinition(conversions),
+                CurrencyValueSeriesDefinition(conversions),
+                TotalProfitSeriesDefinition(),
+                CurrentProfitSeriesDefinition(),
+                TotalInterestRateSeriesDefinition(conversions, interestRateCalculator),
+                CurrentInterestRateSeriesDefinition(conversions, interestRateCalculator),
+            )
+            val missing = Series.entries.filterNot { series -> definitions.any { it.series == series } }
+            require(missing.isEmpty()) { "Series without registered definitions: $missing" }
+            SeriesRegistry(definitions)
+        }
+        single<MetricResolutionService> { MetricResolutionService(get()) }
     }
 
 private val Application.analyticsEventConsumerDependencies

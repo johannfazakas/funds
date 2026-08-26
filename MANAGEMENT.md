@@ -2,6 +2,13 @@
 
 ## Functional Tasks
 
+### Remove legacy analytics report endpoints
+
+The unified metric resolution API (`POST/GET /funds-api/analytics/v1/metrics`) replaces the four
+`/funds-api/analytics/v1/reports/*` endpoints. Once the web client migration is verified, remove the legacy
+endpoints, `AnalyticsService`/`PerformanceService`/`InterestRateService`, and archive/update the legacy report
+specs (`ungrouped/grouped-performance-report`, `ungrouped/grouped-interest-rate-report`).
+
 ### Investment Report
 
 ### Budgeted expense report
@@ -84,6 +91,27 @@ One idea could be to handle generating multiple requests at a higher level, mayb
 
 ### Evaluate removing conversion classes from importer service, sdk might be enough
 
+### Improve interest rate calculation algorithm
+
+- XIRR (money-weighted return) — what you use now: the annualized discount rate that makes the NPV of all dated cash flows plus the final valuation equal zero. Sensitive to the timing and size of contributions, which is what you want for "how did my money do."
+- Time-weighted return (TWR) — chains sub-period returns between each cash flow, neutralizing contribution timing. This is what fund managers report ("how did the strategy do"), and it would actually be cheap in your architecture since you already have per-bucket valuations.
+- Modified Dietz — an approximation of the money-weighted return without iteration: gain divided by average invested capital, with cash flows day-weighted within the period. Cheaper than XIRR but drifts from it when flows are large or rates are high.
+- Simple Dietz — the cruder version that assumes all flows happen mid-period.
+
+Root-finding algorithms for XIRR
+
+- Newton–Raphson — what Excel and most libraries use. Quadratic convergence (very fast), but needs the derivative of the NPV function and can diverge or oscillate with pathological cash flows (e.g., sign changes producing multiple roots, or a bad initial guess).
+- Bisection — what you implemented. Only needs an initial bracket where NPV changes sign; converges linearly but guaranteed, and every iteration is trivially cheap. For a personal-finance workload the robustness-over-speed trade is the right one.
+- Secant method — Newton without the analytic derivative (approximates it from the last two points). Faster than bisection, but shares Newton's non-convergence risk.
+- Brent's method — the "best of both" hybrid: combines bisection's guaranteed bracketing with inverse quadratic interpolation's speed. It's what SciPy's brentq uses and would be the natural upgrade if bisection ever felt slow — though at your data sizes it won't.
+
 ### Use non-blocking DB
 
 ### Use non-blocking Kafka
+
+### Reduce memory consumption by using GraalVM
+
+## Bugs & investigations
+
+### Huge jump in Total interest rate around 2022
+
