@@ -27,6 +27,15 @@ But report data generation shouldn't depend on the report view.
 
 ### Analytics Forecasting
 
+### Automatic bank transaction ingestion
+
+Ingest transactions from Revolut, BT, ING via Enable Banking (free restricted mode, PSD2 aggregator) with a daily sync in import-service; Salt Bank stays on CSV import until aggregator coverage appears.
+Research notes: `docs/research/2026-08-28-bank-transaction-ingestion.md`
+
+- [ ] Feasibility probe: Enable Banking account, link real banks, inspect transaction payloads
+- [ ] Provider-agnostic bank-sync connector in import-service (daily pull, dedupe on provider transaction ID)
+- [ ] Consent UX in web client (initial connect + ~180-day SCA renewal)
+
 ### Partial transactions
 
 A full transaction might be imported from 2 different import files. 
