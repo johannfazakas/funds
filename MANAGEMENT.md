@@ -110,3 +110,7 @@ Root-finding algorithms for XIRR
 
 ### Huge jump in Total interest rate around 2022
 
+### Reevaluate transaction handling
+
+Ex in dashboard management, some code that can be considered business logic was moved to the repository just to be wrapped in the transaction.
+

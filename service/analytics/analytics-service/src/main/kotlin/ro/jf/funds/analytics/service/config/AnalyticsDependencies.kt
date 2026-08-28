@@ -9,6 +9,8 @@ import ro.jf.funds.conversion.sdk.ConversionSdk
 import java.time.Duration
 import ro.jf.funds.fund.api.event.FundEvents
 import ro.jf.funds.analytics.service.persistence.AnalyticsRecordRepository
+import ro.jf.funds.analytics.service.persistence.DashboardRepository
+import ro.jf.funds.analytics.service.service.DashboardService
 import ro.jf.funds.analytics.service.domain.InterestRateCalculator
 import ro.jf.funds.analytics.service.service.MetricResolutionService
 import ro.jf.funds.analytics.service.domain.Series
@@ -57,6 +59,7 @@ private val Application.analyticsPersistenceDependencies
         single<DataSource> { environment.getDataSource() }
         single<Database> { Database.connect(datasource = get()) }
         single<AnalyticsRecordRepository> { AnalyticsRecordRepository(get()) }
+        single<DashboardRepository> { DashboardRepository(get()) }
     }
 
 private val Application.analyticsIntegrationDependencies
@@ -104,6 +107,7 @@ private val Application.analyticsServiceDependencies
             SeriesRegistry(definitions)
         }
         single<MetricResolutionService> { MetricResolutionService(get()) }
+        single<DashboardService> { DashboardService(get()) }
     }
 
 private val Application.analyticsEventConsumerDependencies

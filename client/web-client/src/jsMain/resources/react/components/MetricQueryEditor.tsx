@@ -2,10 +2,13 @@ import { MetricInfo } from '../api/analyticsApi';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { MultiSelect, MultiSelectOption, MultiSelectGroup } from './ui/multi-select';
 import { Button } from './ui/button';
-import { ChevronDown, ChevronRight, Copy, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Input } from './ui/input';
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Copy, Eye, EyeOff, Trash2 } from 'lucide-react';
 
 export interface QueryState {
     id: string;
+    label: string;
+    labelTouched: boolean;
     metric: string;
     groupBy: string;
     fundIds: string[];
@@ -16,7 +19,6 @@ export interface QueryState {
 
 interface MetricQueryEditorProps {
     query: QueryState;
-    label: string;
     color: string;
     metricLabel: (name: string) => string;
     metrics: MetricInfo[];
@@ -24,14 +26,16 @@ interface MetricQueryEditorProps {
     fundOptions: MultiSelectOption[];
     unitGroups: MultiSelectGroup[];
     removable: boolean;
+    moveUpDisabled: boolean;
+    moveDownDisabled: boolean;
     onChange: (query: QueryState) => void;
     onDuplicate: () => void;
     onRemove: () => void;
+    onMove: (offset: number) => void;
 }
 
 function MetricQueryEditor({
     query,
-    label,
     color,
     metricLabel,
     metrics,
@@ -39,9 +43,12 @@ function MetricQueryEditor({
     fundOptions,
     unitGroups,
     removable,
+    moveUpDisabled,
+    moveDownDisabled,
     onChange,
     onDuplicate,
     onRemove,
+    onMove,
 }: MetricQueryEditorProps) {
     const summaryParts = [metricLabel(query.metric)];
     if (query.groupBy !== 'NONE') {
@@ -63,9 +70,15 @@ function MetricQueryEditor({
                         ? <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                     <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />
-                    <span className="font-medium text-sm">{label}</span>
+                    <span className="font-medium text-sm">{query.label}</span>
                     <span className="text-sm text-muted-foreground">{summaryParts.join(' · ')}</span>
                 </button>
+                <Button variant="ghost" size="sm" title="Move up" disabled={moveUpDisabled} onClick={() => onMove(-1)}>
+                    <ArrowUp className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" title="Move down" disabled={moveDownDisabled} onClick={() => onMove(1)}>
+                    <ArrowDown className="h-4 w-4" />
+                </Button>
                 <Button
                     variant="ghost"
                     size="sm"
@@ -83,6 +96,14 @@ function MetricQueryEditor({
             </div>
             {!query.collapsed && (
                 <div className="flex flex-wrap items-end gap-4 px-3 pb-3">
+                    <div className="flex flex-col gap-1">
+                        <label className="text-sm text-muted-foreground">Label</label>
+                        <Input
+                            value={query.label}
+                            onChange={(e) => onChange({ ...query, label: e.target.value, labelTouched: true })}
+                            className="w-[220px] h-9"
+                        />
+                    </div>
                     <div className="flex flex-col gap-1">
                         <label className="text-sm text-muted-foreground">Metric</label>
                         <Select value={query.metric} onValueChange={(v) => onChange({ ...query, metric: v })}>

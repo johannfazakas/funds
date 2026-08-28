@@ -41,6 +41,7 @@ function formatFull(value: number, unit: 'CURRENCY' | 'PERCENTAGE'): string {
 function MultiSeriesChart({ data, lines, currency }: MultiSeriesChartProps) {
     const [hiddenLines, setHiddenLines] = useState<Set<string>>(new Set());
     const currencyPrefix = currency ? `${currency} ` : '';
+    const yDomain: [(dataMin: number) => number, 'auto'] = [(dataMin: number) => Math.min(0, dataMin), 'auto'];
     const hasCurrency = lines.some(l => l.unit === 'CURRENCY');
     const hasPercentage = lines.some(l => l.unit === 'PERCENTAGE');
     const unitByLineKey = new Map(lines.map(l => [l.key, l.unit]));
@@ -73,7 +74,7 @@ function MultiSeriesChart({ data, lines, currency }: MultiSeriesChartProps) {
                                 yAxisId="currency"
                                 className="text-muted-foreground"
                                 tick={{ fill: 'currentColor', fontSize: 11 }}
-                                domain={['auto', 'auto']}
+                                domain={yDomain}
                                 tickFormatter={(v) => `${currencyPrefix}${formatCompact(v)}`}
                             />
                         )}
@@ -83,7 +84,7 @@ function MultiSeriesChart({ data, lines, currency }: MultiSeriesChartProps) {
                                 orientation={hasCurrency ? 'right' : 'left'}
                                 className="text-muted-foreground"
                                 tick={{ fill: 'currentColor', fontSize: 11 }}
-                                domain={['auto', 'auto']}
+                                domain={yDomain}
                                 tickFormatter={(v) => `${formatCompact(v)}%`}
                             />
                         )}

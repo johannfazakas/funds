@@ -6,6 +6,10 @@ import AccountsPage from './pages/AccountsPage';
 import RecordsPage from './pages/RecordsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import DashboardsListPage from './pages/DashboardsListPage';
+import DashboardViewPage from './pages/DashboardViewPage';
+import DashboardEditPage from './pages/DashboardEditPage';
+import DashboardChartEditPage from './pages/DashboardChartEditPage';
 import ImportsPage from './pages/ImportsPage';
 import ImportConfigurationsPage from './pages/ImportConfigurationsPage';
 import Sidebar from './components/Sidebar';
@@ -38,7 +42,7 @@ function App() {
                     element={
                         userId ? (
                             <div className="flex min-h-screen">
-                                <Sidebar onLogout={handleLogout} />
+                                <Sidebar userId={userId} onLogout={handleLogout} />
                                 <main className="flex-1 ml-56 min-h-screen bg-muted/40 p-6">
                                     <Outlet />
                                 </main>
@@ -55,6 +59,10 @@ function App() {
                     <Route path="/imports" element={<ImportsPage userId={userId!} />} />
                     <Route path="/import-configurations" element={<ImportConfigurationsPage userId={userId!} />} />
                     <Route path="/analytics" element={<AnalyticsPage userId={userId!} />} />
+                    <Route path="/dashboards" element={<DashboardsListPage userId={userId!} />} />
+                    <Route path="/dashboards/:dashboardId" element={<DashboardViewPage userId={userId!} />} />
+                    <Route path="/dashboards/:dashboardId/edit" element={<DashboardEditPage userId={userId!} />} />
+                    <Route path="/dashboards/:dashboardId/charts/:chartId/edit" element={<DashboardChartEditPage userId={userId!} />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>

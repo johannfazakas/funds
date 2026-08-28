@@ -1,16 +1,30 @@
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
 import ThemeToggle from './ThemeToggle';
+import { DASHBOARDS_CHANGED_EVENT, Dashboard, listDashboards } from '../api/dashboardApi';
 
 interface SidebarProps {
+    userId: string;
     onLogout: () => void;
 }
 
-function Sidebar({ onLogout }: SidebarProps) {
+function Sidebar({ userId, onLogout }: SidebarProps) {
+    const [dashboards, setDashboards] = useState<Dashboard[]>([]);
+
+    useEffect(() => {
+        const load = () => {
+            listDashboards(userId).then(setDashboards).catch(() => {});
+        };
+        load();
+        window.addEventListener(DASHBOARDS_CHANGED_EVENT, load);
+        return () => window.removeEventListener(DASHBOARDS_CHANGED_EVENT, load);
+    }, [userId]);
+
     return (
         <aside className="fixed left-0 top-0 w-56 h-screen bg-card border-r flex flex-col">
-            <div className="flex-1 p-4">
+            <div className="flex-1 p-4 overflow-y-auto">
                 <h1 className="text-xl font-bold mb-6 px-2">Funds</h1>
 
                 <nav className="space-y-4">
@@ -119,8 +133,38 @@ function Sidebar({ onLogout }: SidebarProps) {
                                 )
                             }
                         >
-                            Analytics
+                            Chart
                         </NavLink>
+                        <NavLink
+                            to="/dashboards"
+                            end
+                            className={({ isActive }) =>
+                                cn(
+                                    "flex items-center px-2 py-1.5 text-sm rounded-md transition-colors",
+                                    isActive
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                )
+                            }
+                        >
+                            Dashboards
+                        </NavLink>
+                        {dashboards.map(dashboard => (
+                            <NavLink
+                                key={dashboard.id}
+                                to={`/dashboards/${dashboard.id}`}
+                                className={({ isActive }) =>
+                                    cn(
+                                        "flex items-center px-2 py-1.5 pl-5 text-sm rounded-md transition-colors",
+                                        isActive
+                                            ? "bg-accent text-accent-foreground font-medium"
+                                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                    )
+                                }
+                            >
+                                {dashboard.name}
+                            </NavLink>
+                        ))}
                     </div>
                 </nav>
             </div>

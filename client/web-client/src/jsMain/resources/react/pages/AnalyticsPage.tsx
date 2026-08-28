@@ -1,75 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { listMetrics, streamMetricsReport, TimeGranularity, GroupBy, MetricInfo, MetricsReport, MetricsStreamValue } from '../api/analyticsApi';
+import { listMetrics, streamMetricsReport, TimeGranularity, GroupBy, MetricInfo, MetricsReport } from '../api/analyticsApi';
+import { Dashboard, DashboardQuery, appendDashboardChart, listDashboards, notifyDashboardsChanged, toMetricQuery } from '../api/dashboardApi';
 import { listFunds, Fund } from '../api/fundApi';
 import { listAccounts, Account } from '../api/accountApi';
-import MultiSeriesChart, { ChartLine, MultiSeriesChartDataPoint } from '../components/MultiSeriesChart';
+import MultiSeriesChart from '../components/MultiSeriesChart';
 import MetricQueryEditor, { QueryState } from '../components/MetricQueryEditor';
+import { ChartQueryView, autoQueryLabel, buildChartModel, emptyStreamReport, granularityOptions, groupByOptions, mergeStreamValue, metricLabel, queryHue, useIsDarkTheme } from '../lib/chartAssembly';
+import { buildUnitOptions } from '../lib/unitOptions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { MultiSelectOption, MultiSelectGroup } from '../components/ui/multi-select';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { DatePicker } from '../components/ui/date-picker';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import { Loader2, Plus } from 'lucide-react';
 
 interface AnalyticsPageProps {
     userId: string;
-}
-
-const metricLabels: Record<string, string> = {
-    BALANCE: 'Balance',
-    NET_CHANGE: 'Net Change',
-    TOTAL_INVESTMENT: 'Total Investment',
-    CURRENT_INVESTMENT: 'Current Investment',
-    TOTAL_INSTRUMENT_VALUE: 'Total Instrument Value',
-    CURRENCY_VALUE: 'Currency Value',
-    TOTAL_PROFIT: 'Total Profit',
-    CURRENT_PROFIT: 'Current Profit',
-    TOTAL_INTEREST_RATE: 'Total Interest Rate',
-    CURRENT_INTEREST_RATE: 'Current Interest Rate',
-};
-
-function metricLabel(name: string): string {
-    return metricLabels[name] ?? name;
-}
-
-const granularityOptions: { value: TimeGranularity; label: string }[] = [
-    { value: 'DAILY', label: 'Daily' },
-    { value: 'WEEKLY', label: 'Weekly' },
-    { value: 'MONTHLY', label: 'Monthly' },
-    { value: 'YEARLY', label: 'Yearly' },
-];
-
-const groupByOptions: { value: string; label: string }[] = [
-    { value: 'NONE', label: 'None' },
-    { value: 'FINANCIAL_UNIT', label: 'Financial Unit' },
-    { value: 'ACCOUNT', label: 'Account' },
-    { value: 'FUND', label: 'Fund' },
-    { value: 'CATEGORY', label: 'Category' },
-];
-
-const QUERY_HUES = [
-    '#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed',
-    '#0891b2', '#db2777', '#65a30d', '#ea580c', '#6366f1',
-    '#0d9488', '#ca8a04',
-];
-
-function shadeColor(hex: string, factor: number): string {
-    const channel = (offset: number) => {
-        const value = parseInt(hex.slice(offset, offset + 2), 16);
-        const shaded = factor >= 0
-            ? Math.round(value + (255 - value) * factor)
-            : Math.round(value * (1 + factor));
-        return Math.min(255, Math.max(0, shaded)).toString(16).padStart(2, '0');
-    };
-    return `#${channel(1)}${channel(3)}${channel(5)}`;
-}
-
-function groupShade(hue: string, groupIndex: number, groupCount: number): string {
-    if (groupCount <= 1) return hue;
-    // spread group lines from a darker to a lighter variant of the query hue
-    const spread = Math.min(0.75, 0.25 * (groupCount - 1));
-    const factor = -spread / 2 + (spread * groupIndex) / (groupCount - 1);
-    return shadeColor(hue, factor);
 }
 
 function generateQueryId(): string {
@@ -79,6 +28,8 @@ function generateQueryId(): string {
 function defaultQuery(): QueryState {
     return {
         id: generateQueryId(),
+        label: metricLabel('BALANCE'),
+        labelTouched: false,
         metric: 'BALANCE',
         groupBy: 'NONE',
         fundIds: [],
@@ -86,10 +37,6 @@ function defaultQuery(): QueryState {
         visible: true,
         collapsed: false,
     };
-}
-
-function queryLetter(index: number): string {
-    return index < 26 ? String.fromCharCode(65 + index) : `Q${index + 1}`;
 }
 
 function defaultFromDate(): string {
@@ -121,29 +68,13 @@ function loadPersistedState(): PersistedState | null {
         const state = JSON.parse(raw) as PersistedState;
         if (!Array.isArray(state.queries) || state.queries.length === 0) return null;
         if (state.queries.some(q => !q.id || !q.metric)) return null;
+        state.queries = state.queries.map(q => (q.label
+            ? q
+            : { ...q, label: metricLabel(q.metric), labelTouched: false }));
         return state;
     } catch {
         return null;
     }
-}
-
-function formatBucketLabel(dateTime: string, granularity: TimeGranularity): string {
-    const date = new Date(dateTime);
-    switch (granularity) {
-        case 'DAILY':
-            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        case 'WEEKLY':
-            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        case 'MONTHLY':
-            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
-        case 'YEARLY':
-            return date.getFullYear().toString();
-    }
-}
-
-function formatValue(rawValue: string | undefined, unit: string): number {
-    const value = rawValue !== undefined ? parseFloat(rawValue) : 0;
-    return unit === 'PERCENTAGE' ? Math.round(value * 100) / 100 : Math.round(value);
 }
 
 function toLocalDateTime(dateStr: string): string {
@@ -159,8 +90,38 @@ function shiftDay(dateStr: string, days: number): string {
     return `${year}-${month}-${day}`;
 }
 
+function toQueryView(query: QueryState): ChartQueryView {
+    return {
+        id: query.id,
+        label: query.label,
+        metric: query.metric,
+        grouping: query.groupBy !== 'NONE' ? query.groupBy as GroupBy : null,
+        fundIds: query.fundIds,
+        unitValues: query.units.map(key => key.split(':')[1]),
+        visible: query.visible,
+    };
+}
+
+function toDashboardQuery(query: QueryState): DashboardQuery {
+    const units = query.units.map(key => {
+        const [type, value] = key.split(':');
+        return { type, value };
+    });
+    return {
+        id: query.id,
+        label: query.label,
+        metric: query.metric,
+        grouping: query.groupBy !== 'NONE' ? query.groupBy as GroupBy : undefined,
+        filter: {
+            fundIds: query.fundIds.length > 0 ? query.fundIds : undefined,
+            units: units.length > 0 ? units : undefined,
+        },
+    };
+}
+
 function AnalyticsPage({ userId }: AnalyticsPageProps) {
     const persisted = useRef(loadPersistedState()).current;
+    const darkTheme = useIsDarkTheme();
 
     const [report, setReport] = useState<MetricsReport | null>(null);
     const [loading, setLoading] = useState(false);
@@ -175,6 +136,13 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
     const [funds, setFunds] = useState<Fund[]>([]);
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [unitGroups, setUnitGroups] = useState<MultiSelectGroup[]>([]);
+
+    const [showAddToDashboard, setShowAddToDashboard] = useState(false);
+    const [dashboards, setDashboards] = useState<Dashboard[]>([]);
+    const [addTargetDashboardId, setAddTargetDashboardId] = useState<string>('');
+    const [addChartName, setAddChartName] = useState('');
+    const [addingChart, setAddingChart] = useState(false);
+    const [addChartError, setAddChartError] = useState<string | null>(null);
 
     useEffect(() => {
         const state: PersistedState = { granularity, fromDate, toDate, targetCurrency, queries };
@@ -205,32 +173,10 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                 ]);
                 setFunds(fundsResult.items);
                 setAccounts(accountsResult.items);
-                const seen = new Set<string>();
-                const currencyUnits: MultiSelectOption[] = [];
-                const instrumentUnits: MultiSelectOption[] = [];
-                const currencies: string[] = [];
-                for (const account of accountsResult.items) {
-                    const key = `${account.unit.type}:${account.unit.value}`;
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        const option = { value: key, label: account.unit.value };
-                        if (account.unit.type === 'currency') {
-                            currencyUnits.push(option);
-                            currencies.push(account.unit.value);
-                        } else {
-                            instrumentUnits.push(option);
-                        }
-                    }
-                }
-                currencyUnits.sort((a, b) => a.label.localeCompare(b.label));
-                instrumentUnits.sort((a, b) => a.label.localeCompare(b.label));
-                currencies.sort();
-                const groups: MultiSelectGroup[] = [];
-                if (currencyUnits.length > 0) groups.push({ label: 'Currencies', options: currencyUnits });
-                if (instrumentUnits.length > 0) groups.push({ label: 'Instruments', options: instrumentUnits });
-                setUnitGroups(groups);
-                if (currencies.length > 0 && !targetCurrency) {
-                    setTargetCurrency(currencies[0]);
+                const options = buildUnitOptions(accountsResult.items);
+                setUnitGroups(options.unitGroups);
+                if (options.currencies.length > 0 && !targetCurrency) {
+                    setTargetCurrency(options.currencies[0]);
                 }
             } catch {
                 // filter options are best-effort
@@ -239,44 +185,9 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
         loadFilterOptions();
     }, [userId]);
 
-    const resolveGroupName = (groupBy: string, key: string): string => {
-        if (key === 'UNGROUPED') return 'Total';
-        if (groupBy === 'FUND') {
-            const fund = funds.find(f => f.id === key);
-            return fund ? fund.name : key;
-        }
-        if (groupBy === 'ACCOUNT') {
-            const account = accounts.find(a => a.id === key);
-            return account ? account.name : key;
-        }
-        return key;
-    };
-
     const abortRef = useRef<AbortController | null>(null);
 
     const metricUnit = (name: string) => metrics.find(m => m.metric === name)?.unit ?? 'CURRENCY';
-
-    const mergeValue = (report: MetricsReport, value: MetricsStreamValue): MetricsReport => {
-        const bucketIndex = report.buckets.indexOf(value.bucket);
-        if (bucketIndex < 0) return report;
-        return {
-            ...report,
-            series: report.series.map(series => {
-                if (series.queryId !== value.queryId) return series;
-                const groups = series.groups.map(g => ({ ...g, values: [...g.values] }));
-                for (const [groupKey, groupValue] of Object.entries(value.values)) {
-                    let group = groups.find(g => g.groupKey === groupKey);
-                    if (!group) {
-                        group = { groupKey, values: report.buckets.map(() => '0') };
-                        groups.push(group);
-                        groups.sort((a, b) => a.groupKey.localeCompare(b.groupKey));
-                    }
-                    group.values[bucketIndex] = groupValue;
-                }
-                return { ...series, groups };
-            }),
-        };
-    };
 
     const loadData = async () => {
         if (!targetCurrency) return;
@@ -296,40 +207,16 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                     to: toLocalDateTime(toDate),
                 },
                 targetCurrency,
-                queries: requestQueries.map(query => {
-                    const units = query.units.map(key => {
-                        const [type, value] = key.split(':');
-                        return { type, value };
-                    });
-                    return {
-                        id: query.id,
-                        metric: query.metric,
-                        grouping: query.groupBy !== 'NONE' ? query.groupBy as GroupBy : undefined,
-                        filter: {
-                            fundIds: query.fundIds.length > 0 ? query.fundIds : undefined,
-                            units: units.length > 0 ? units : undefined,
-                        },
-                    };
-                }),
+                queries: requestQueries.map(q => toMetricQuery(toDashboardQuery(q))),
             }, {
                 onBuckets: (buckets) => {
-                    current = {
-                        granularity: buckets.granularity,
-                        buckets: buckets.buckets,
-                        series: requestQueries.map(query => ({
-                            queryId: query.id,
-                            metric: query.metric,
-                            unit: metricUnit(query.metric),
-                            currency: metricUnit(query.metric) === 'CURRENCY' ? targetCurrency : null,
-                            groups: [],
-                        })),
-                    };
+                    current = emptyStreamReport(buckets, requestQueries.map(toQueryView), metricUnit, targetCurrency);
                     setReport(current);
                     setLoading(false);
                 },
                 onValue: (value) => {
                     if (!current) return;
-                    current = mergeValue(current, value);
+                    current = mergeStreamValue(current, value);
                     setReport(current);
                 },
                 onComplete: () => {},
@@ -356,8 +243,15 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
         }
     }, [targetCurrency]);
 
+    const fundName = (id: string) => funds.find(f => f.id === id)?.name ?? id;
+
+    const withAutoLabel = (query: QueryState): QueryState => (query.labelTouched
+        ? query
+        : { ...query, label: autoQueryLabel(toQueryView(query), fundName) });
+
     const updateQuery = (updated: QueryState) => {
-        setQueries(prev => prev.map(q => (q.id === updated.id ? updated : q)));
+        const next = withAutoLabel(updated);
+        setQueries(prev => prev.map(q => (q.id === next.id ? next : q)));
     };
 
     const addQuery = () => {
@@ -377,48 +271,49 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
         setQueries(prev => (prev.length > 1 ? prev.filter(q => q.id !== id) : prev));
     };
 
-    const chart: { data: MultiSeriesChartDataPoint[]; lines: ChartLine[] } | null = (() => {
-        if (!report) return null;
-        const lines: ChartLine[] = [];
-        const data: MultiSeriesChartDataPoint[] = report.buckets.map(bucket => ({
-            label: formatBucketLabel(bucket, report.granularity),
-        }));
-        queries.forEach((query, queryIndex) => {
-            if (!query.visible) return;
-            const series = report.series.find(s => s.queryId === query.id);
-            if (!series) return;
-            const hue = QUERY_HUES[queryIndex % QUERY_HUES.length];
-            const filterParts: string[] = [];
-            if (query.fundIds.length > 0) {
-                const names = query.fundIds.map(id => funds.find(f => f.id === id)?.name ?? id);
-                filterParts.push(names.length <= 2 ? names.join(', ') : `${names.length} funds`);
-            }
-            if (query.units.length > 0) {
-                const values = query.units.map(key => key.split(':')[1]);
-                filterParts.push(values.length <= 2 ? values.join(', ') : `${values.length} units`);
-            }
-            const filterSuffix = filterParts.length > 0 ? ` (${filterParts.join(' · ')})` : '';
-            const groupingSuffix = query.groupBy !== 'NONE'
-                ? ` by ${groupByOptions.find(g => g.value === query.groupBy)?.label ?? query.groupBy}`
-                : '';
-            const label = `${queryLetter(queryIndex)}: ${metricLabel(series.metric)}${groupingSuffix}${filterSuffix}`;
-            const groups = [...series.groups].sort((a, b) => a.groupKey.localeCompare(b.groupKey));
-            groups.forEach((group, groupIndex) => {
-                const lineKey = `${query.id}:${group.groupKey}`;
-                const groupName = resolveGroupName(query.groupBy, group.groupKey);
-                lines.push({
-                    key: lineKey,
-                    name: group.groupKey === 'UNGROUPED' ? label : `${label} — ${groupName}`,
-                    color: groupShade(hue, groupIndex, groups.length),
-                    unit: series.unit,
-                });
-                group.values.forEach((value, bucketIndex) => {
-                    data[bucketIndex][lineKey] = formatValue(value, series.unit);
-                });
-            });
+    const moveQuery = (id: string, offset: number) => {
+        setQueries(prev => {
+            const index = prev.findIndex(q => q.id === id);
+            const target = index + offset;
+            if (index < 0 || target < 0 || target >= prev.length) return prev;
+            const next = [...prev];
+            [next[index], next[target]] = [next[target], next[index]];
+            return next;
         });
-        return { data, lines };
-    })();
+    };
+
+    const openAddToDashboard = async () => {
+        setAddChartError(null);
+        setAddChartName('');
+        setShowAddToDashboard(true);
+        try {
+            const loaded = await listDashboards(userId);
+            setDashboards(loaded);
+            setAddTargetDashboardId(loaded[0]?.id ?? '');
+        } catch (err) {
+            setAddChartError(err instanceof Error ? err.message : 'Failed to load dashboards');
+        }
+    };
+
+    const addChartToDashboard = async () => {
+        if (!addTargetDashboardId || !addChartName.trim()) return;
+        setAddingChart(true);
+        setAddChartError(null);
+        try {
+            await appendDashboardChart(userId, addTargetDashboardId, {
+                name: addChartName.trim(),
+                queries: queries.map(toDashboardQuery),
+            });
+            notifyDashboardsChanged();
+            setShowAddToDashboard(false);
+        } catch (err) {
+            setAddChartError(err instanceof Error ? err.message : 'Failed to add chart');
+        } finally {
+            setAddingChart(false);
+        }
+    };
+
+    const chart = report ? buildChartModel(report, queries.map(toQueryView), funds, accounts, darkTheme) : null;
 
     const fundMultiSelectOptions: MultiSelectOption[] = funds.map(f => ({ value: f.id, label: f.name }));
     const currencyOptions = unitGroups
@@ -428,7 +323,7 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
 
     return (
         <div>
-            <h1 className="text-2xl font-bold mb-6">Analytics</h1>
+            <h1 className="text-2xl font-bold mb-6">Chart</h1>
 
             <Card className="mb-6">
                 <CardContent className="pt-6">
@@ -471,6 +366,9 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                             Generate
                         </Button>
+                        <Button variant="outline" size="sm" onClick={openAddToDashboard}>
+                            Add to dashboard
+                        </Button>
                     </div>
                 </CardContent>
             </Card>
@@ -501,17 +399,19 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                     <MetricQueryEditor
                         key={query.id}
                         query={query}
-                        label={queryLetter(index)}
-                        color={QUERY_HUES[index % QUERY_HUES.length]}
+                        color={queryHue(index, darkTheme)}
                         metricLabel={metricLabel}
                         metrics={metrics}
                         groupByOptions={groupByOptions}
                         fundOptions={fundMultiSelectOptions}
                         unitGroups={unitGroups}
                         removable={queries.length > 1}
+                        moveUpDisabled={index === 0}
+                        moveDownDisabled={index === queries.length - 1}
                         onChange={updateQuery}
                         onDuplicate={() => duplicateQuery(query.id)}
                         onRemove={() => removeQuery(query.id)}
+                        onMove={(offset) => moveQuery(query.id, offset)}
                     />
                 ))}
                 <div>
@@ -521,6 +421,62 @@ function AnalyticsPage({ userId }: AnalyticsPageProps) {
                     </Button>
                 </div>
             </div>
+
+            <Dialog open={showAddToDashboard} onOpenChange={setShowAddToDashboard}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add chart to dashboard</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        {dashboards.length === 0 && !addChartError && (
+                            <p className="text-sm text-muted-foreground">
+                                No dashboards yet — create one from the Dashboards page first.
+                            </p>
+                        )}
+                        {dashboards.length > 0 && (
+                            <>
+                                <div className="space-y-2">
+                                    <Label>Dashboard</Label>
+                                    <Select value={addTargetDashboardId} onValueChange={setAddTargetDashboardId}>
+                                        <SelectTrigger className="h-9">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {dashboards.map(d => (
+                                                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="chartName">Chart name</Label>
+                                    <Input
+                                        id="chartName"
+                                        value={addChartName}
+                                        onChange={(e) => setAddChartName(e.target.value)}
+                                        placeholder="Enter chart name"
+                                        autoFocus
+                                    />
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    The chart keeps the current queries and uses the dashboard's default period, granularity, and currency.
+                                </p>
+                            </>
+                        )}
+                        {addChartError && <p className="text-sm text-destructive">{addChartError}</p>}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowAddToDashboard(false)}>Cancel</Button>
+                        <Button
+                            onClick={addChartToDashboard}
+                            disabled={addingChart || !addTargetDashboardId || !addChartName.trim()}
+                        >
+                            {addingChart ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            Add chart
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
